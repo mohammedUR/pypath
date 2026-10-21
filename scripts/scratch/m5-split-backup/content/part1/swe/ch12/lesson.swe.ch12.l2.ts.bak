@@ -1,0 +1,312 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch12.l2 — "Graphical Displays of Data Sets
+ * عرض البيانات بيانيًا"
+ * Aligned with SWE ch12 s3 (12.3 Graphical Displays of Data Sets,
+ * pp.318-321: data sets, scales of measurement, bar charts, Gantt charts,
+ * hill charts).
+ * All expression is original — a paraphrase of the CC BY-SA 4.0 source, never
+ * a verbatim translation.
+ * SIMULATED-RENDERER pattern (established in PY4E ch16): matplotlib is NOT
+ * available in the sandbox — charts are TEXT. Every runnable field builds
+ * ASCII bar charts ('#'), a sparkline and fixed-bin histograms with plain
+ * string repetition and %-formatting. Deterministic only.
+ */
+const lesson = {
+  id: 'swe.ch12.l2',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 12,
+  title: { ar: 'عرض البيانات بيانيًا', en: 'Graphical Displays of Data Sets' },
+  estimatedMinutes: 30,
+  prerequisites: ['swe.ch12.l1'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'قبل أن تحسب أي إحصاء، انظر إلى البيانات — فالملخص الرقمي قد يخفي شكلًا كاملاً، والصورة تكشفه. لكن الرسم سلاح خادع بقدر ما هو مُنير: محور مبترَض يضخّم فروقًا هزيلة، ومتوسط لشدة «2.7» يتظاهر بأن الفجوة بين حرجة وعادية مسافة ثابتة، وشريط تقدّم يبتهج وهو الأقرب إلى المجهول الذي لم تدرجه أصلًا. لذا هذا الدرس عن قواعد الصدق قبل الحرفية: أي عمليات مسموحة على أي سلم قياس، ومتى يكون الرسم أعمدة لأصناف ومتى مدرجًا لمدى متصل، وكيف يجعل مخطط Gantt الوقت والتبعيات مرئية، وكيف يعرض مخطط التل ما لا يعرضه أي burndown: مقدار «لم أفهم بعد» في كل قطعة عمل. بيئتك لا تشغّل مكتبات الرسم — فسنرسم كل شيء بأشرطة نصية من محرف # فوق بياناتنا الثابتة، وهذا أفضل مما يبدو: من بنى الرسم سطرًا سطرًا لا يستطيع أن يُخادع به. بنهاية الدرس ستكون قادرًا على: تصنيف سلم قياس واختيار الإحصاء القانوني عليه، ورسم رسم أعمدة صادق ومدرج بصناديق ثابتة بالنص، وقراءة Gantt والتل كأداتي إدارة لا زخرفة.',
+        en: 'Before you compute a single statistic, look at the data — a number summary can hide a whole shape, and a picture reveals it. But charts deceive as easily as they inform: a truncated axis inflates tiny differences, an \u201caverage severity 2.7\u201d pretends the gap between Critical and Medium is a fixed distance, and a burndown celebrates right before the unlisted unknown detonates. So this lesson is about honesty before craft: which operations are legal on which measurement scale, when a display is a bar chart of categories and when a histogram of a continuous range, how a Gantt chart makes time and dependencies visible, and how a hill chart shows what no burndown does — how much \u201cnot figured out yet\u201d remains in each piece of work. Your sandbox has no plotting libraries — we draw everything as text bars of # over our fixed dataset, which is better training than it sounds: whoever builds the chart line by line cannot be fooled by it. By the end you will be able to: classify a measurement scale and pick its legal statistics, draw an honest bar chart and a fixed-bin histogram in text, and read Gantt and hill charts as management tools, not decoration.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "count = 42\nscale = 3\nprint('Medium | %s %d' % ('#' * (count // scale), count))",
+      question: {
+        ar: 'لماذا قسمنا على 3 قبل تكرار المحرف، ولماذا طبعنا الرقم 42 بجانب الشريط؟ وماذا سيحدث لخط الرسم لو كان count = 4000؟',
+        en: 'Why divide by 3 before repeating the character, and why print the number 42 beside the bar? And what would happen to the rendered line if count = 4000?',
+      },
+      reveal: {
+        ar: 'الطباعة: Medium | ############## 42. قسمة الأساس // تعطي 14 محرفًا — طول الشريط يتناسب مع القيمة دون أن يطابقها، حتى تبقى الأسطر قصيرة. والرقم الخام بجانب الشريط يحفظ الدقة التي ضحّى بها التحجيم: الشريط للعين والرقم للمرجع. مع count = 4000 لكانت السلسلة 1333 محرفًا — لهذا يحتاج كل مقياس رسم سقفًا. القاعدة نفسها في أدوات الرسم الحقيقية: المحور والتحجيم قرار صريح.',
+        en: 'It prints Medium | ############## 42. Floor division by 3 gives 14 characters — bar length is proportional to the value without matching it, keeping lines short. The raw number beside the bar preserves the exactness the scaling gave up: the bar is for the eye, the number is for the record. With count = 4000 the string would be 1333 characters — every renderer needs a cap. Same rule as real charting: axis and scaling are explicit decisions.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'مجموعات البيانات وسلالم القياس: ما يجوز وما لا يجوز', en: 'Data sets and measurement scales: what is legal' },
+      chunks: [
+        {
+          ar: 'مجموعة البيانات أبسط صورة أحادية المتغير: خاصية واحدة مقاسة عبر كيانات كثيرة — عيوبنا في أحد عشر إصدارًا. وثنائية المتغير تقرن خاصيتين لكل كيان (حجم الوحدة وعدد عيوبها) — وهي ما يحتاجه الانحدار في الدرس الخامس. القاعدة الأولى: انظر قبل أن تحسب؛ الرقم الملخص قد يخفي الشكل والصورة تكشفه.',
+          en: 'A univariate data set is one attribute measured across many entities — our defects across eleven releases. A bivariate set pairs two attributes per entity (module size and defect count) — exactly what regression needs in lesson five. First rule: look before you compute; the number summary can hide a shape the picture reveals.',
+        },
+        {
+          ar: 'ليست كل الأرقام تحمل المعلومات نفسها — أربعة سلالم من الأقل إلى الأكثر إفادة. الاسمي nominal: تساوٍ فقط (نوع العيب: واجهة/منطق/بيانات) — يجوز العدّ وإيجاد الأكثر تكرارًا mode، و«متوسط نوع العيب 2.3» هراء تام. الترتيبي ordinal: ترتيب بلا مسافات (الشدة S1<S2<S3) — يجوز الوسيط والمئين، ولا يجوز المتوسط لأن المسافة بين المستويات ليست ثابتة: عيب حرج ليس «يساوي» ثلاثة عيوب شكلية. الفتري interval: مسافات متساوية بلا صفر حقيقي (التاريخ، °C) — يجوز المتوسط والانحراف والفرق، ولا يجوز النسبة («20° ضعف 10°» بلا معنى). والنسبي ratio: صفر حقيقي يعني «لا شيء» (عدد العيوب، الزمن، KLOC) — كل شيء يجوز بما فيه «ضعف العيوب». عيوبنا النسبية فكل إحصاءات الفصل مسموحة عليها.',
+          en: 'Numbers do not all carry the same information — four scales, least to most informative. Nominal: equality only (defect type: UI/logic/data) — count and mode are legal; \u201cthe average defect type is 2.3\u201d is pure nonsense. Ordinal: order without distance (severity S1<S2<S3) — median and percentile are legal, the mean is not, because the gap between levels is not constant: one critical defect is not \u201cworth\u201d three trivial ones. Interval: equal distances, no true zero (dates, °C) — mean, spread and differences are legal, ratios are not (20° is not \u201ctwice as hot\u201d as 10°). Ratio: a true zero meaning \u201cnone\u201d (defect counts, time, KLOC) — everything is legal, including \u201ctwice the defects\u201d. Our counts are ratio-scaled, so every statistic in this chapter is fair game.',
+        },
+        {
+          ar: 'رسمان يخدعان ورسمان يريان. رسم الأعمدة bar chart يعرض قيمة لكل صنف nominal/ordinal بطول العمود — وشرطاه الصادقان: المحور يبدأ من الصفر (قطعه يضخّم الفروق)، والأصناف لا ترتيب طبيعي ملزم فإعادة ترتيبها لا تغيّر شيئًا. المدرج التكراري histogram مختلف جوهريًا: محوره المتصل مرتب، وعرض الصندوق قرار حقيقي — عريض يخفي البنية وضيّق يحولها إلى ضجيج. خلطهما خطأ شائع: الأعمدة للأصناف والمدرج لمدى متغير متصل. ولمخططات الوقت: Gantt يعرض الجدول — مهام على المحور العمودي وزمن أفقي وأشرطة تمتد من بداية كل مهمة إلى نهايتها، فيكشف التداخلات والسلسلة الحرجة التي تؤخر الكل إذا تأخرت. ومخطط التل hill chart يضيف ما يخفيه عدّاد المهام المنتهية: عدم اليقين uncertainty — نقطة تزحف صعودًا «نفهم الأمر الآن» وهبوطًا «تنفيذ روتيني فقط»؛ النقطة المتوقفة يد مرفوعة، واللغة عن العمل لا عن الشخص.',
+          en: 'Two displays that mislead, two that inform. A bar chart shows a numeric value per nominal/ordinal category with bar length encoding magnitude — two honesty rules: start the axis at zero (truncation exaggerates), and categories have no binding order, so reordering changes nothing. A histogram is fundamentally different: a continuous ordered axis where bin width is a real choice — too wide hides structure, too narrow turns it into noise. Confusing them is a classic error: bars are for categories, histograms for ranges of a continuous variable. For time: a Gantt chart displays a schedule — tasks on the vertical axis, time horizontal, bars spanning start to end — exposing overlaps and the critical path that delays everything if it slips. And the hill chart adds what a count of finished tasks hides: uncertainty — a dot climbs uphill \u201cfiguring it out\u201d then rolls downhill \u201cjust execution\u201d; a stopped dot is a raised hand, and the language is about the work, not the person.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'مزيج الشدة بأشرطة نصية', en: 'The severity mix as text bars' },
+      code: "def draw_bars(pairs, scale):\n    for name, value in pairs:\n        ticks = value // scale\n        print('%-8s | %s %d' % (name, '#' * ticks, value))\n\ndraw_bars([('Critical', 5), ('High', 18), ('Medium', 42), ('Low', 15)], 3)",
+      explanation: {
+        ar: 'ثمانون عيبًا هربت للعملاء في إصدار واحد، موزعة على الشدة: حرجة 5 وعالية 18 ومتوسطة 42 ومنخفضة 15. أربعة مكونات: قائمة أزواج (صنف، قيمة) — اصناف ordinal؛ وحلقة تطبع كل صنف؛ وticks = value // scale يحوّل القيمة إلى طول متناسب (42÷3 = 14 محرفًا)؛ و%-8s يوسّط الأسماء يسارًا بعرض ثابت لتنسيق الأعمدة. الشكل يضرب فورًا: القمة في Medium، والشريط الحرجة قصير لكن أثقل وزنًا — وهذا سبب طباعة الرقم بجانب الشريط: الطول للعين والقيمة للحكم. ولاحظ: لو كانت قيمة 0 لطبعت شريطًا فارغًا — المحور يبدأ من الصفر افتراضيًا في هذه البنية، ولا يمكن أن يصبح سالبًا أبدًا.',
+        en: 'Eighty defects that escaped to customers in one release, split by severity: Critical 5, High 18, Medium 42, Low 15. Four components: a list of (category, value) pairs — ordinal categories; a loop printing one row each; ticks = value // scale turning the value into a proportional length (42/3 = 14 characters); and %-8s left-padding names to a fixed width so columns align. The shape lands instantly: the hump at Medium, and the Critical bar is short but heaviest — which is why the number sits beside the bar: length for the eye, value for judgment. Note also: a value of 0 would print an empty bar — this construction starts at zero by construction and can never go negative.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.bar-trace',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرجه بالضبط — سطرًا لكل طباعة — دون تشغيله. مراجعة سريعة: «#» * n تكرر المحرف n مرة، وحلقة for تفك قائمة الأزواج إلى عنصرين.',
+        en: 'Read the code and predict its exact output — one line per print — without running it. A quick refresher: \u2019#\u2019 * n repeats the character n times, and a for loop unpacks each pair into two names.',
+      },
+      code: "def bar(n):\n    return '#' * n\n\nfor name, n in [('ui', 2), ('logic', 5)]:\n    print('%s %s' % (name, bar(n)))",
+      solution: 'ui ##\nlogic #####',
+      answer: 'ui ##\nlogic #####',
+      hints: [
+        { ar: 'الزوج الأول: (\'ui\', 2) — bar(2) تعيد \'##\' فيكون السطر ui ##.', en: "First pair: ('ui', 2) — bar(2) returns '##', so the line is ui ##." },
+        { ar: 'الزوج الثاني: (\'logic\', 5) — bar(5) تعيد خمسة محارف #: #####.', en: "Second pair: ('logic', 5) — bar(5) returns five # characters." },
+        { ar: 'لا يوجد تحجيم هنا: bar(n) تطابق القيمة حرفيًّا — تحجيم العملد draw_bars في الشارح لم يدخل هذا المقتطف.', en: 'No scaling here: bar(n) matches the value literally — the worked draw_bars scaling is not in this snippet.' },
+        { ar: 'الخرج:\nui ##\nlogic #####', en: 'The output:\nui ##\nlogic #####' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.ascii-histogram',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'المدرج النصي لبياناتنا (cfds جاهزة): لكل صندوق من bins اطبع سطرًا بصيغة [%2d,%2d) | %s %d — حيث %2d يرقّم بعرض محرفين للمحاذاة، والشريط «#»-تكرار للعدّ، ثم العدد. الصناديق نصف مفتوحة: lo <= v < hi. في النهاية اطبع counts: %s بقائمة الأعداد. المتوقع: [ 0, 5) | ## 2 ثم [ 5,10) | ##### 5 ثم [10,15) | ### 3 ثم [15,20) |  0 (شريط فارغ للعدد صفر!) ثم [20,25) | # 1 ثم counts: [2, 5, 3, 0, 1].',
+        en: 'The text histogram for our data (cfds is given): for each bin in bins print one line formatted [%2d,%2d) | %s %d — where %2d pads the number to width 2 for alignment, the bar is a repeat of \u2019#\u2019 per count, then the count. Bins are half-open: lo <= v < hi. Finally print counts: %s with the list of counts. Expected: [ 0, 5) | ## 2, then [ 5,10) | ##### 5, then [10,15) | ### 3, then [15,20) |  0 (an EMPTY bar for zero!), then [20,25) | # 1, then counts: [2, 5, 3, 0, 1].',
+      },
+      starterCode: "cfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nbins = [(0, 5), (5, 10), (10, 15), (15, 20), (20, 25)]\ncounts = []\n\nfor lo, hi in bins:\n    # عُدّ القيم في [lo, hi) ثم ألحق العدد بcounts واطبع السطر\n    # count values in [lo, hi), append to counts, print the line\n    pass\n",
+      solution: "cfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nbins = [(0, 5), (5, 10), (10, 15), (15, 20), (20, 25)]\ncounts = []\nfor lo, hi in bins:\n    count = 0\n    for v in cfds:\n        if lo <= v < hi:\n            count += 1\n    counts.append(count)\n    print('[%2d,%2d) | %s %d' % (lo, hi, '#' * count, count))\nprint('counts: %s' % counts)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'الصندوقان الأول والثاني صحيحان', en: 'First two bins are correct' },
+          code: "assert '[ 0, 5) | ## 2' in __learner_output__ and '[ 5,10) | ##### 5' in __learner_output__, 'expected: [ 0, 5) | ## 2 then [ 5,10) | ##### 5 | actual: %r' % __learner_output__",
+          expected: '[ 0, 5) | ## 2 then [ 5,10) | ##### 5',
+        },
+        {
+          id: 't2',
+          name: { ar: 'الذيل: صندوق 10-15 وصندوق 20-25', en: 'The tail: 10-15 and 20-25 bins' },
+          code: "assert '[10,15) | ### 3' in __learner_output__ and '[20,25) | # 1' in __learner_output__, 'expected: [10,15) | ### 3 then [20,25) | # 1 | actual: %r' % __learner_output__",
+          expected: '[10,15) | ### 3 then [20,25) | # 1',
+        },
+        {
+          id: 't3',
+          name: { ar: 'الصندوق الفارغ يظهر شريطًا صفر length', en: 'The empty bin shows a zero-length bar' },
+          code: "assert '[15,20) |  0' in __learner_output__, 'expected: [15,20) |  0 (empty bar for zero count) | actual: %r' % __learner_output__",
+          expected: '[15,20) |  0 (empty bar for zero count)',
+        },
+        {
+          id: 't4',
+          name: { ar: 'قائمة الأعداد [2, 5, 3, 0, 1]', en: 'The counts list is [2, 5, 3, 0, 1]' },
+          code: "assert counts == [2, 5, 3, 0, 1], 'expected: [2, 5, 3, 0, 1] | actual: %r' % (counts,)",
+          expected: '[2, 5, 3, 0, 1]',
+        },
+      ],
+      hints: [
+        { ar: 'العدّ حلقتان: خارجية على bins وفكّ (lo, hi)، وداخلية على cfds بشروط lo <= v < hi — النصف المفتوح يعني 5 تسقط في الصندوق الثاني لا الأول.', en: 'Counting is two loops: outer over bins unpacking (lo, hi), inner over cfds with lo <= v < hi — half-open means 5 lands in the second bin, not the first.' },
+        { ar: 'لا تنسَ counts.append(count) قبل الطباعة — الاختبار الأخير يفحص القائمة كاملة [2, 5, 3, 0, 1].', en: 'Remember counts.append(count) before printing — the last test checks the whole list [2, 5, 3, 0, 1].' },
+        { ar: 'سطر الطباعة: print(\'[%2d,%2d) | %s %d\' % (lo, hi, \'#\' * count, count)) — و\'#\' * 0 تسلسلة فارغة فيظهر الصندوق الفارغ بمسافة مزدوجة قبل 0.', en: "The print line: print('[%2d,%2d) | %s %d' % (lo, hi, '#' * count, count)) — and '#' * 0 is empty, so the empty bin shows two spaces before 0." },
+        { ar: 'لو ظهر أقل من 11 قيمة مجموعًا فراجع شروط الحدود: يجب lo <= v و v < hi معًا — و23 يسقط في [20,25) لأن 23 < 25.', en: 'If fewer than 11 values are binned, audit the boundaries: both lo <= v and v < hi must hold — and 23 lands in [20,25) because 23 < 25.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.axis-honesty',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'لوحة مبيعات تقارير إصدارين: الشهر الماضي 15 عيبًا وهذا الشهر 18. صمّم الرسم بحيث يبدأ المحور من 14 فيبدو العمودان كقمة وجبل. أي قاعدة صدق كسرها، وما التصحيح؟',
+        en: 'A dashboard compares two releases: 15 defects last month, 18 this month. The chart starts its axis at 14, so the two bars look like a foothill and a mountain. Which honesty rule is broken, and what is the fix?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'لا قاعدة مكسورة — التحجيم حق المصمم', en: 'No rule broken — scaling is the designer\u2019s right' } },
+        { id: 'b', text: { ar: 'قاعدة الصفر: طول العمود يرمّز القيمة، فبدء المحور من 14 يضخّم فرق 3 إلى جبل — ابدأ من الصفر ودع الرقم المطبوع يحمل الدقة', en: 'The zero-baseline rule: bar length encodes the value, so starting at 14 inflates a difference of 3 into a mountain — start at zero and let the printed number carry the precision' } },
+        { id: 'c', text: { ar: 'المشكلة أنه رسم أعمدة أصلًا — كان يجب مدرج تكراري', en: 'The problem is using a bar chart at all — it should have been a histogram' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'في رسم الأعمدة العين تقارن الأطوال — فلو بدأ المحور من 14 فإن عمود 15 يبدو صفرًا تقريبًا وعمود 18 ثلاثة أضعافه، والفرق الحقيقي 20%.', en: 'In a bar chart the eye compares lengths — with an axis starting at 14, the bar of 15 looks like zero and 18 looks triple, while the real difference is 20%.' },
+        { ar: 'المدرج التكراري لا علاقة له هنا: أصنافنا إصداران منفصلان لا مدى متصل — الالتباس بين الأعمدة والمدرج خطأ آخر بالدرس.', en: 'A histogram is irrelevant here: our categories are two separate releases, not a continuous range — the bar/histogram confusion is a different error from the lesson.' },
+        { ar: 'التصحيح مزدوج: محور من الصفر يحفظ التناسب، والقيمة المطبوعة بجانب العمود تحفظ الدقة — نفس ما فعلنا في الشارح النصي.', en: 'The fix is twofold: a zero axis preserves proportion, and the printed value beside the bar preserves precision — exactly what our text renderer does.' },
+        { ar: 'الجواب: b — bar length encodes value; truncate the axis and you exaggerate.', en: 'Answer: b — bar length encodes value; truncate the axis and you exaggerate.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.ordinal-statistic',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'الشدة (منخفض < متوسط < عالٍ < حرج) سلم ترتيبي — يُلخَّص بعدّ المستويات وحساب ____ لا المتوسط. (كلمة إنجليزية واحدة)',
+        en: 'Severity (Low < Medium < High < Critical) is an ordinal scale — summarize it with per-level counts and the ____ , not the mean. (one English word)',
+      },
+      answer: 'median',
+      solution: 'median',
+      hints: [
+        { ar: 'الترتيب موجود والمسافة ليست كذلك — إحصاءات الترتيب شرعية فقط.', en: 'Order exists, distance does not — only order-based statistics are legal.' },
+        { ar: 'هو القيمة الوسطى بعد الترتيب: نصف المستويات تحتها ونصفها فوقها — ولا يحتاج فجوات متساوية.', en: 'It is the middle value after sorting: half the levels below, half above — it needs no equal gaps.' },
+        { ar: '«متوسط الشدة 2.7» يعامل الفجوة بين الحرجة والعادية كمسافة ثابتة — وهذا البديل المسموح يقرأ: «نصف العيوب أشد من هذه الدرجة».', en: '\u201cAverage severity 2.7\u201d treats the Critical-to-Medium gap as constant — this legal alternative reads: \u201chalf the defects are at least this severe\u201d.' },
+        { ar: 'الجواب: median', en: 'Answer: median' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "def draw_bars(pairs, scale):\n    for name, value in pairs:\n        ticks = value // scale\n        print('%-8s | %s %d' % (name, '#' * ticks, value))\n\ndef spark(xs, threshold):\n    line = ''\n    for v in xs:\n        if v > threshold:\n            line = line + '#'\n        else:\n            line = line + '.'\n    return line\n\nseverity = [('Critical', 5), ('High', 18), ('Medium', 42), ('Low', 15)]\ndraw_bars(severity, 3)\nprint('spark: ' + spark([2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23], 9))\n\n# جرّب: غيّر scale من 3 إلى 1 ثم إلى 10 — متى يختفي شريط Critical؟ متى تتساوى الأشرطة كلها؟\n# try: change scale from 3 to 1 then to 10 — when does the Critical bar vanish? when do all bars look equal?\n# جرّب: ارسم الأصناف بترتيب مختلف — هل يتغير شيء في البيانات؟ وهل يتغير الحكم؟\n# try: draw the categories in a different order — does the data change? does the verdict?\n# جرّب: خفّض threshold إلى 6 — كم نقطة اشتعالت؟ هذا sparkline ميزانية من نوع آخر.\n# try: lower threshold to 6 — how many points ignite? a sparkline is a budget hill chart of sorts.",
+      prompt: {
+        ar: 'استوديو الرسم النصي: رسم أعمدة بمقياس متغير وsparkline يضيء ما يتجاوز عتبة. العب بالمقياس حتى تفهم المفاضلة بين الشكل والدقة، وخفّض العتبة حتى تشتعل الذيل كلها. لا اختبار هنا — فضولك فقط.',
+        en: 'The text-rendering studio: a bar chart with a tunable scale and a sparkline that ignites whatever crosses a threshold. Play with the scale until you feel the shape-vs-precision trade, and lower the threshold until the tail lights up. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ومن PY4E الفصل السادس: السلاسل تُكرر بـ * — \'#\' * n تنتج n محرفًا. لماذا كان \'#\' * (value // scale) جوهر مِرسالنا النصي؟',
+            en: 'From PY4E chapter 6: strings repeat with * — \u2019#\' * n yields n characters. Why was \u2019#\' * (value // scale) the heart of our text renderer?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأنه يحوّل العدد إلى طول متناسب — الشريط للعين والرقم المطبوع بجانبه للدقة', en: 'Because it converts a count into a proportional length — the bar for the eye, the printed number for precision' } },
+            { id: 'b', text: { ar: 'لأن القسمة تمنع الأخطاء البرمجية في الحلقات', en: 'Because division prevents runtime errors in loops' } },
+            { id: 'c', text: { ar: 'لأن * على السلاسل أسرع من حلقة طباعة يدوية فقط — ولا علاقة له بالدلالة', en: 'Because * on strings is merely faster than a manual print loop — semantics play no role' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'ترميز الطول هو جوهر أي رسم أعمدة: الطول يتناسب مع القيمة، والتحجيم قرار صريح يقرر كم محرفًا للوحدة. في مكتبات الرسم يسمى هذا سلم المحور — وأنا نطبّعه يدويًا بـ scale، فنرى ما تُخفيه الأدوات الجاهزة.',
+            en: 'Length encoding is the core of any bar chart: length proportional to value, with scaling as an explicit decision of characters per unit. Plotting libraries call this the axis scale — we implemented it by hand with scale, seeing what ready-made tools hide.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'أي وصف يفرق رسم الأعمدة عن المدرج التكراري صحيحًا؟',
+            en: 'Which statement correctly distinguishes a bar chart from a histogram?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الأعمدة للأصناف الاسمية/الترتيبية ومحورها لا معنى متصلًا له؛ والمدرج لمدى متغير متصل وصنادقه مرتبة وعرضها قرار حقيقي', en: 'Bars are for nominal/ordinal categories with no continuous axis meaning; histograms are for ranges of a continuous variable, with ordered bins whose width is a real choice' } },
+            { id: 'b', text: { ar: 'الأعمدة رأسية والمدرج أفقي — لا فرق آخر', en: 'Bars are vertical and histograms horizontal — no other difference' } },
+            { id: 'c', text: { ar: 'المدرج للأصناف والأعمدة للمدى المتصل — بالعكس تمامًا', en: 'Histograms are for categories and bars for continuous ranges — exactly backwards' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الفرق بنيوي لا هندسي: إعادة ترتيب أصناف رسم الأعمدة لا تغيّر شيئًا في البيانات، بينما تبديل صناديق المدرج يدمّر معناه لأن المحور متصل مرتب. لهذا يبدأ الأول من صفر ويقرأ بالقيم، والثاني يقرأ بالشكل: حدبة، فراغ، ذيل.',
+            en: 'The difference is structural, not geometric: reordering a bar chart\u2019s categories changes nothing about the data, while swapping a histogram\u2019s bins destroys its meaning because its axis is continuous and ordered. Hence bars start at zero and read by value; histograms read by shape: hump, gap, tail.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'زميل يحسب «متوسط الشدة 2.7» منسدلًا الأصناف إلى 1-4. ما أقوى دحض من الدرس؟',
+            en: 'A colleague computes \u201caverage severity 2.7\u201d by mapping levels to 1-4. What is the strongest rebuttal from the lesson?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لا دحض — الأرقام أرقام', en: 'No rebuttal — numbers are numbers' } },
+            { id: 'b', text: { ar: 'الشدة ترتيبية والمسافة بين المستويات ليست ثابتة — عيب حرج واحد ليس «يساوي» ثلاثة شكلية؛ أبلغ الوسيط وتوزيع المستويات', en: 'Severity is ordinal and the gaps between levels are not constant — one critical defect is not \u201cworth\u201d three trivial ones; report the median and the per-level distribution' } },
+            { id: 'c', text: { ar: '2.7 صحيح حسابيًا فالمشكلة فقط في تقريب المنزلة', en: '2.7 is arithmetically correct, so the only issue is decimal rounding' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'العدد يرسم المتوسط ممكنًا رياضيًا لكنه غير شرعي قياسيًا: الجمع يفترض مسافات متساوية بين المستويات، وهي غير موجودة. إصدار بعيب حرج واحد وخمسة منخفضة قد يكون أخطر من إصدار بعشرة متوسطة رغم أن المتوسط يقول العكس — لهذا الشدة تُلخَّص بالأعداد لكل مستوى والوسيط.',
+            en: 'The average is computable yet statistically illegal: addition assumes equal spacing between levels, which ordinal scales do not have. A release with one Critical and five Lows can be worse than one with ten Mediums even when the mean says otherwise — hence severity is summarized with per-level counts and a median.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'مخطط التل: قطعة عمل «نقشتها» نقطة تتحرك على تل. ماذا تعني نقطة متوقفة على المنحدر الصاعد؟',
+            en: 'Hill chart: each work item is a dot moving over a hill. What does a dot stalled on the uphill slope mean?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'أن الفريق كسول — عاقبه في الاجتماع', en: 'The team is lazy — discipline them in the meeting' } },
+            { id: 'b', text: { ar: 'أن المجهول لم يُحل بعد: تصميم مفتوح أو افتراض تقني غير مثبت — يد مرفوعة تسبق الموعد النهائي، والسؤال الصحيح «ما الذي يدفع هذا النطاق فوق التل؟»', en: 'An unsolved unknown: open design or an unproven technical assumption — a raised hand that precedes the missed deadline, and the right question is \u201cwhat would get this scope over the hill?\u201d' } },
+            { id: 'c', text: { ar: 'أن العمل انتهى — الهبوط تفصيل شكلي', en: 'The work is done — downhill is a formality' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'الصعود «نفهم الأمر»: أسئلة مفتوحة وتصميم غير محسوم؛ والهبوط «تنفيذ فقط»: المجهول حُلّ وبقي الروتين. عدّاد المهام يبدو في أتمّ صحته لحظة انفجار غير المدرج — والتل يجعل عدم اليقين مرئيًا إلى جانب الكمية، بلغة عن العمل لا عن الأشخاص.',
+            en: 'Uphill is \u201cfiguring it out\u201d: open questions and undecided design; downhill is \u201cjust execution\u201d: unknowns resolved, routine left. A task counter looks healthiest right before the unlisted unknown blows up — the hill makes uncertainty visible alongside quantity, in language about the work, not the people.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'قصّ المحور ليبدو التحسن أبهى — «الشكل نفسه، فقط مكبَّر»',
+          right: 'أعمدة من الصفر دائمًا؛ إن أردت التكبير فاعرض جدولًا رقميًا بجانب الرسم',
+          note: {
+            ar: 'طول العمود ترميز للقيمة: قطع المحور يكسر التناسب ويحوّل فرق 3 إلى جبل. مِرسالنا النصي لا يستطيع الغش أصلًا: \'#\' * ticks لا تعطي شريطًا سالبًا، والصفر شريط فارغ. الأداة التي لا تستطيع الكذب تُدرّب العين على الصدق.',
+            en: 'Bar length is an encoding of value: truncating the axis breaks proportion and turns a difference of 3 into a mountain. Our text renderer cannot cheat at all: \u2019#\' * ticks never yields a negative bar, and zero is an empty bar. A tool that cannot lie trains the eye in honesty.',
+          },
+        },
+        {
+          wrong: 'متوسط لبيانات اسمية أو ترتيبية — «متوسط نوع العيب 2.3» أو «متوسط الشدة 2.7»',
+          right: 'الاسمي: العدّ والmode فقط؛ والترتيبي: الوسيط والمئين والأعداد لكل مستوى',
+          note: {
+            ar: 'السلم يحدد العمليات القانونية قبل أن يحددها الذوق. الجمع يفترض مسافات متساوية وصفرًا ذا معنى — وهما غائبان عن الاسمي والترتيبي. خمس شدة حرجة ليست «نفس» خمس شكليات: التوزيع نفسه هو البيانات، ومتوسطه يدمّر ما يفترض أن يلخصه.',
+            en: 'The scale determines legal operations before taste does. Addition assumes equal spacing and a meaningful zero — both absent from nominal and ordinal data. Five critical defects are not \u201cthe same as\u201d five trivial ones: the distribution is the data, and averaging it destroys what it claims to summarize.',
+          },
+        },
+        {
+          wrong: 'مدرج تكراري للأصناف، أو أعمدة لمدى متصل — الالتباس الشائع',
+          right: 'أعمدة للفئات المنفصلة، ومدرج لقيم متصلة بصناديق مرتبة',
+          note: {
+            ar: 'الأول يتغير بإعادة الترتيب ولا يضر، والثاني يدمر بإعادة ترتيب الصناديق. علامة سريعة: اسأل «هل للمحور معنى كمّي متصل؟» — نوع العيب لا، وعدد العيوب نعم. وعرض صندوق المدرج قرار: عريض يخفي، ضيق يشوش.',
+            en: 'Reordering categories harms a bar chart not at all; reordering bins destroys a histogram. Quick test: does the axis have continuous quantitative meaning? Defect type: no. Defect count: yes. And bin width is a decision: too wide hides structure, too narrow turns it into noise.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'انظر قبل أن تحسب: الملخص الرقمي يخفي الشكل والصورة تكشفه. البيانات أحادية المتغير خاصية واحدة عبر كيانات، وثنائية تقرن خاصيتين — وهي وقود الانحدار في الدرس الخامس.', en: 'Look before you compute: the number summary hides a shape the picture reveals. Univariate data: one attribute across entities; bivariate pairs two — the fuel for lesson five\u2019s regression.' },
+        { ar: 'السلم يحدد القانون: اسمي (عدّ وmode)، ترتيبي (وسيط ومئين — لا متوسط للشدة)، فتري (متوسط وفروق — لا نسب)، نسبي بصفر حقيقي (كل شيء — وعيوبنا منه).', en: 'The scale sets the law: nominal (count and mode), ordinal (median and percentiles — never a mean of severity), interval (means and differences — no ratios), ratio with a true zero (everything — our defect counts belong here).' },
+        { ar: 'أعمدة صادقة: صفر تحت الأشرطة وصنف لا محور متصل؛ ومدرج بمدى متصل وصناديق عرضها قرار. وGantt للوقت والتبعيات والسلسلة الحرجة، والتل للمجهول: صعود «نفهم» وهبوط «نفّذ» — ورسم النص بـ\'#\' يجعل كل هذه القرارات بيدك.', en: 'Honest bars: zero baseline, categorical axis; histograms: continuous range, bins whose width is a decision. Gantt shows time, dependencies and the critical path; the hill shows the unknown — uphill \u201cfiguring it out\u201d, downhill \u201cexecution\u201d — and building charts in text with \u2019#\' puts every one of those decisions in your hands.' },
+      ],
+      reflectPrompt: {
+        ar: 'افتح الاستوديو وقلّب المقياس من 1 إلى 10. اسأل نفسك: آخر رسم أعمدة رأيته — هل بدأ محوره من الصفر؟ وأي مؤشر تقدم في عملك يعدّ المنجز ويخفي المجهول؟ وما الذي سيصنعه مخطط تل في مكانه؟',
+        en: 'Open the studio and swing the scale from 1 to 10. Ask yourself: the last bar chart you saw — did its axis start at zero? And which progress signal at work counts done while hiding the unknown — what would a hill chart build in its place?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch12.s3', pages: 'ص318-321 / pp.318-321' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch12.s3', pages: 'ص318-321 / pp.318-321' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

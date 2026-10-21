@@ -1,0 +1,55 @@
+import hashlib
+
+LEAKED = {
+    '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',
+    '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',
+    '65e84be33532fb784c48129675f9eff3a682b27168c0ea744b2cf58ee02337c5',
+    '1c8bfe8f801d79745c4631d09fff36c82aa37fc4cce4fc946683d7b336b63032',
+}
+
+ACCOUNTS = [
+    ('ada', 'Qw7!vXm2Rp'),
+    ('grace', 'password'),
+    ('linus', 'password'),
+    ('kay', 'Sunshine2026'),
+    ('alan', 'abc'),
+    ('betty', 'Tr0ub4dor&3x'),
+]
+
+def digest(pw):
+    return hashlib.sha256(pw.encode('utf-8')).hexdigest()
+
+def breached(pw):
+    return digest(pw) in LEAKED
+
+def weak(pw):
+    if len(pw) < 10:
+        return True
+    classes = 0
+    if any(c.islower() for c in pw):
+        classes = classes + 1
+    if any(c.isupper() for c in pw):
+        classes = classes + 1
+    if any(c.isdigit() for c in pw):
+        classes = classes + 1
+    if any(not c.isalnum() for c in pw):
+        classes = classes + 1
+    return classes < 3
+
+def audit(accounts):
+    weak_n = 0
+    reused_n = 0
+    breached_n = 0
+    seen = set()
+    for name, pw in accounts:
+        if weak(pw):
+            weak_n = weak_n + 1
+        if pw in seen:
+            reused_n = reused_n + 1
+        seen.add(pw)
+        if breached(pw):
+            breached_n = breached_n + 1
+    return (weak_n, reused_n, breached_n)
+
+weak_n, reused_n, breached_n = audit(ACCOUNTS)
+print('weak: %d / reused: %d / breached: %d' % (weak_n, reused_n, breached_n))

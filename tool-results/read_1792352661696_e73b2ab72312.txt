@@ -1,0 +1,986 @@
+     1→     1→
+     2→     2→===== صفحة الكتاب 247 =====
+     3→     3→6
+     4→     4→Builders’ Guide
+     5→     5→Alongside giant datasets and powerful hardware, great software tools have played an in-
+     6→     6→dispensable role in the rapid progress of deep learning. Starting with the pathbreaking
+     7→     7→Theano library released in 2007, flexible open-source tools have enabled researchers to
+     8→     8→rapidly prototype models, avoiding repetitive work when recycling standard components
+     9→     9→while still maintaining the ability to make low-level modifications. Over time, deep learn-
+    10→    10→ing’s libraries have evolved to offer increasingly coarse abstractions. Just as semiconductor
+    11→    11→designers went from specifying transistors to logical circuits to writing code, neural net-
+    12→    12→works researchers have moved from thinking about the behavior of individual artificial neu-
+    13→    13→rons to conceiving of networks in terms of whole layers, and now often design architectures
+    14→    14→with far coarser blocks in mind.
+    15→    15→So far, we have introduced some basic machine learning concepts, ramping up to fully-
+    16→    16→functional deep learning models. In the last chapter, we implemented each component of
+    17→    17→an MLP from scratch and even showed how to leverage high-level APIs to roll out the
+    18→    18→same models effortlessly. To get you that far that fast, we called upon the libraries, but
+    19→    19→skipped over more advanced details about how they work. In this chapter, we will peel
+    20→    20→back the curtain, digging deeper into the key components of deep learning computation,
+    21→    21→namely model construction, parameter access and initialization, designing custom layers
+    22→    22→and blocks, reading and writing models to disk, and leveraging GPUs to achieve dramatic
+    23→    23→speedups. These insights will move you from end user to power user, giving you the tools
+    24→    24→needed to reap the benefits of a mature deep learning library while retaining the flexibility to
+    25→    25→implement more complex models, including those you invent yourself! While this chapter
+    26→    26→does not introduce any new models or datasets, the advanced modeling chapters that follow
+    27→    27→rely heavily on these techniques.
+    28→    28→6.1 Layers and Modules
+    29→    29→When we first introduced neural networks, we focused on linear models with a single out-
+    30→    30→put. Here, the entire model consists of just a single neuron. Note that a single neuron (i)
+    31→    31→takes some set of inputs; (ii) generates a corresponding scalar output; and (iii) has a set of
+    32→    32→associated parameters that can be updated to optimize some objective function of interest.
+    33→    33→Then, once we started thinking about networks with multiple outputs, we leveraged vec-
+    34→    34→torized arithmetic to characterize an entire layer of neurons. Just like individual neurons,
+    35→    35→207
+    36→    36→
+    37→    37→===== صفحة الكتاب 248 =====
+    38→    38→208
+    39→    39→Builders’ Guide
+    40→    40→layers (i) take a set of inputs, (ii) generate corresponding outputs, and (iii) are described by
+    41→    41→a set of tunable parameters. When we worked through softmax regression, a single layer
+    42→    42→was itself the model. However, even when we subsequently introduced MLPs, we could
+    43→    43→still think of the model as retaining this same basic structure.
+    44→    44→Interestingly, for MLPs, both the entire model and its constituent layers share this structure.
+    45→    45→The entire model takes in raw inputs (the features), generates outputs (the predictions), and
+    46→    46→possesses parameters (the combined parameters from all constituent layers). Likewise,
+    47→    47→each individual layer ingests inputs (supplied by the previous layer) generates outputs (the
+    48→    48→inputs to the subsequent layer), and possesses a set of tunable parameters that are updated
+    49→    49→according to the signal that flows backwards from the subsequent layer.
+    50→    50→While you might think that neurons, layers, and models give us enough abstractions to go
+    51→    51→about our business, it turns out that we often find it convenient to speak about components
+    52→    52→that are larger than an individual layer but smaller than the entire model. For example, the
+    53→    53→ResNet-152 architecture, which is wildly popular in computer vision, possesses hundreds of
+    54→    54→layers. These layers consist of repeating patterns of groups of layers. Implementing such
+    55→    55→a network one layer at a time can grow tedious. This concern is not just hypothetical—
+    56→    56→such design patterns are common in practice. The ResNet architecture mentioned above
+    57→    57→won the 2015 ImageNet and COCO computer vision competitions for both recognition and
+    58→    58→detection (He et al., 2016) and remains a go-to architecture for many vision tasks. Similar
+    59→    59→architectures in which layers are arranged in various repeating patterns are now ubiquitous
+    60→    60→in other domains, including natural language processing and speech.
+    61→    61→To implement these complex networks, we introduce the concept of a neural network mod-
+    62→    62→ule. A module could describe a single layer, a component consisting of multiple layers,
+    63→    63→or the entire model itself! One benefit of working with the module abstraction is that they
+    64→    64→can be combined into larger artifacts, often recursively. This is illustrated in Fig. 6.1.1.
+    65→    65→By defining code to generate modules of arbitrary complexity on demand, we can write
+    66→    66→surprisingly compact code and still implement complex neural networks.
+    67→    67→t
+    68→    68→Fig. 6.1.1
+    69→    69→Multiple layers are combined into modules, forming repeating patterns of larger models.
+    70→    70→From a programming standpoint, a module is represented by a class. Any subclass of it
+    71→    71→must define a forward propagation method that transforms its input into output and must
+    72→    72→store any necessary parameters. Note that some modules do not require any parameters at
+    73→    73→
+    74→    74→===== صفحة الكتاب 249 =====
+    75→    75→209
+    76→    76→Layers and Modules
+    77→    77→all. Finally a module must possess a backpropagation method, for purposes of calculating
+    78→    78→gradients. Fortunately, due to some behind-the-scenes magic supplied by the auto differen-
+    79→    79→tiation (introduced in Section 2.5) when defining our own module, we only need to worry
+    80→    80→about parameters and the forward propagation method.
+    81→    81→import torch
+    82→    82→from torch import nn
+    83→    83→from torch.nn import functional as F
+    84→    84→To begin, we revisit the code that we used to implement MLPs (Section 5.1). The follow-
+    85→    85→ing code generates a network with one fully connected hidden layer with 256 units and
+    86→    86→ReLU activation, followed by a fully connected output layer with ten units (no activation
+    87→    87→function).
+    88→    88→net = nn.Sequential(nn.LazyLinear(256), nn.ReLU(), nn.LazyLinear(10))
+    89→    89→X = torch.rand(2, 20)
+    90→    90→net(X).shape
+    91→    91→torch.Size([2, 10])
+    92→    92→In this example, we constructed our model by instantiating an nn.Sequential, with layers
+    93→    93→in the order that they should be executed passed as arguments. In short, nn.Sequential
+    94→    94→defines a special kind of Module, the class that presents a module in PyTorch. It maintains
+    95→    95→an ordered list of constituent Modules. Note that each of the two fully connected layers is an
+    96→    96→instance of the Linear class which is itself a subclass of Module. The forward propagation
+    97→    97→(forward) method is also remarkably simple: it chains each module in the list together,
+    98→    98→passing the output of each as input to the next. Note that until now, we have been invok-
+    99→    99→ing our models via the construction net(X) to obtain their outputs. This is actually just
+   100→   100→shorthand for net.__call__(X).
+   101→   101→6.1.1 A Custom Module
+   102→   102→Perhaps the easiest way to develop intuition about how a module works is to implement
+   103→   103→one ourselves. Before we do that, we briefly summarize the basic functionality that each
+   104→   104→module must provide:
+   105→   105→1. Ingest input data as arguments to its forward propagation method.
+   106→   106→2. Generate an output by having the forward propagation method return a value. Note
+   107→   107→that the output may have a different shape from the input. For example, the first fully
+   108→   108→connected layer in our model above ingests an input of arbitrary dimension but returns
+   109→   109→an output of dimension 256.
+   110→   110→3. Calculate the gradient of its output with respect to its input, which can be accessed via
+   111→   111→its backpropagation method. Typically this happens automatically.
+   112→   112→
+   113→   113→===== صفحة الكتاب 250 =====
+   114→   114→210
+   115→   115→Builders’ Guide
+   116→   116→4. Store and provide access to those parameters necessary for executing the forward prop-
+   117→   117→agation computation.
+   118→   118→5. Initialize model parameters as needed.
+   119→   119→In the following snippet, we code up a module from scratch corresponding to an MLP
+   120→   120→with one hidden layer with 256 hidden units, and a 10-dimensional output layer. Note that
+   121→   121→the MLP class below inherits the class that represents a module. We will heavily rely on
+   122→   122→the parent class’s methods, supplying only our own constructor (the __init__ method in
+   123→   123→Python) and the forward propagation method.
+   124→   124→class MLP(nn.Module):
+   125→   125→def __init__(self):
+   126→   126→# Call the constructor of the parent class nn.Module to perform
+   127→   127→# the necessary initialization
+   128→   128→super().__init__()
+   129→   129→self.hidden = nn.LazyLinear(256)
+   130→   130→self.out = nn.LazyLinear(10)
+   131→   131→# Define the forward propagation of the model, that is, how to return the
+   132→   132→# required model output based on the input X
+   133→   133→def forward(self, X):
+   134→   134→return self.out(F.relu(self.hidden(X)))
+   135→   135→Let’s first focus on the forward propagation method. Note that it takes X as input, calcu-
+   136→   136→lates the hidden representation with the activation function applied, and outputs its logits.
+   137→   137→In this MLP implementation, both layers are instance variables. To see why this is reason-
+   138→   138→able, imagine instantiating two MLPs, net1 and net2, and training them on different data.
+   139→   139→Naturally, we would expect them to represent two different learned models.
+   140→   140→We instantiate the MLP’s layers in the constructor and subsequently invoke these layers on
+   141→   141→each call to the forward propagation method. Note a few key details. First, our customized
+   142→   142→__init__ method invokes the parent class’s __init__ method via super().__init__()
+   143→   143→sparing us the pain of restating boilerplate code applicable to most modules. We then
+   144→   144→instantiate our two fully connected layers, assigning them to self.hidden and self.out.
+   145→   145→Note that unless we implement a new layer, we need not worry about the backpropagation
+   146→   146→method or parameter initialization. The system will generate these methods automatically.
+   147→   147→Let’s try this out.
+   148→   148→net = MLP()
+   149→   149→net(X).shape
+   150→   150→torch.Size([2, 10])
+   151→   151→A key virtue of the module abstraction is its versatility. We can subclass a module to create
+   152→   152→layers (such as the fully connected layer class), entire models (such as the MLP class above),
+   153→   153→or various components of intermediate complexity. We exploit this versatility throughout
+   154→   154→the coming chapters, such as when addressing convolutional neural networks.
+   155→   155→
+   156→   156→===== صفحة الكتاب 251 =====
+   157→   157→211
+   158→   158→Layers and Modules
+   159→   159→6.1.2 The Sequential Module
+   160→   160→We can now take a closer look at how the Sequential class works. Recall that Sequen-
+   161→   161→tial was designed to daisy-chain other modules together. To build our own simplified
+   162→   162→MySequential, we just need to define two key methods:
+   163→   163→1. A method for appending modules one by one to a list.
+   164→   164→2. A forward propagation method for passing an input through the chain of modules, in the
+   165→   165→same order as they were appended.
+   166→   166→The following MySequential class delivers the same functionality of the default Sequen-
+   167→   167→tial class.
+   168→   168→class MySequential(nn.Module):
+   169→   169→def __init__(self, *args):
+   170→   170→super().__init__()
+   171→   171→for idx, module in enumerate(args):
+   172→   172→self.add_module(str(idx), module)
+   173→   173→def forward(self, X):
+   174→   174→for module in self.children():
+   175→   175→X = module(X)
+   176→   176→return X
+   177→   177→In the __init__ method, we add every module by calling the add_modules method. These
+   178→   178→modules can be accessed by the children method at a later date. In this way the system
+   179→   179→knows the added modules, and it will properly initialize each module’s parameters.
+   180→   180→When our MySequential’s forward propagation method is invoked, each added module is
+   181→   181→executed in the order in which they were added. We can now reimplement an MLP using
+   182→   182→our MySequential class.
+   183→   183→net = MySequential(nn.LazyLinear(256), nn.ReLU(), nn.LazyLinear(10))
+   184→   184→net(X).shape
+   185→   185→torch.Size([2, 10])
+   186→   186→Note that this use of MySequential is identical to the code we previously wrote for the
+   187→   187→Sequential class (as described in Section 5.1).
+   188→   188→6.1.3 Executing Code in the Forward Propagation Method
+   189→   189→The Sequential class makes model construction easy, allowing us to assemble new archi-
+   190→   190→tectures without having to define our own class. However, not all architectures are simple
+   191→   191→daisy chains. When greater flexibility is required, we will want to define our own blocks.
+   192→   192→For example, we might want to execute Python’s control flow within the forward propaga-
+   193→   193→tion method. Moreover, we might want to perform arbitrary mathematical operations, not
+   194→   194→simply relying on predefined neural network layers.
+   195→   195→
+   196→   196→===== صفحة الكتاب 252 =====
+   197→   197→212
+   198→   198→Builders’ Guide
+   199→   199→You may have noticed that until now, all of the operations in our networks have acted upon
+   200→   200→our network’s activations and its parameters. Sometimes, however, we might want to in-
+   201→   201→corporate terms that are neither the result of previous layers nor updatable parameters. We
+   202→   202→call these constant parameters. Say for example that we want a layer that calculates the
+   203→   203→function 𝑓(x, w) = 𝑐· w⊤x, where x is the input, w is our parameter, and 𝑐is some speci-
+   204→   204→fied constant that is not updated during optimization. So we implement a FixedHiddenMLP
+   205→   205→class as follows.
+   206→   206→class FixedHiddenMLP(nn.Module):
+   207→   207→def __init__(self):
+   208→   208→super().__init__()
+   209→   209→# Random weight parameters that will not compute gradients and
+   210→   210→# therefore keep constant during training
+   211→   211→self.rand_weight = torch.rand((20, 20))
+   212→   212→self.linear = nn.LazyLinear(20)
+   213→   213→def forward(self, X):
+   214→   214→X = self.linear(X)
+   215→   215→X = F.relu(X @ self.rand_weight + 1)
+   216→   216→# Reuse the fully connected layer. This is equivalent to sharing
+   217→   217→# parameters with two fully connected layers
+   218→   218→X = self.linear(X)
+   219→   219→# Control flow
+   220→   220→while X.abs().sum() > 1:
+   221→   221→X /= 2
+   222→   222→return X.sum()
+   223→   223→In this model, we implement a hidden layer whose weights (self.rand_weight) are ini-
+   224→   224→tialized randomly at instantiation and are thereafter constant. This weight is not a model
+   225→   225→parameter and thus it is never updated by backpropagation. The network then passes the
+   226→   226→output of this “fixed” layer through a fully connected layer.
+   227→   227→Note that before returning the output, our model did something unusual. We ran a while-
+   228→   228→loop, testing on the condition its ℓ1 norm is larger than 1, and dividing our output vector
+   229→   229→by 2 until it satisfied the condition. Finally, we returned the sum of the entries in X. To our
+   230→   230→knowledge, no standard neural network performs this operation. Note that this particular
+   231→   231→operation may not be useful in any real-world task. Our point is only to show you how to
+   232→   232→integrate arbitrary code into the flow of your neural network computations.
+   233→   233→net = FixedHiddenMLP()
+   234→   234→net(X)
+   235→   235→tensor(-0.3836, grad_fn=<SumBackward0>)
+   236→   236→We can mix and match various ways of assembling modules together. In the following
+   237→   237→example, we nest modules in some creative ways.
+   238→   238→class NestMLP(nn.Module):
+   239→   239→(continues on next page)
+   240→   240→
+   241→   241→===== صفحة الكتاب 253 =====
+   242→   242→213
+   243→   243→Parameter Management
+   244→   244→111
+   245→   245→(continued from previous page)
+   246→   246→def __init__(self):
+   247→   247→super().__init__()
+   248→   248→self.net = nn.Sequential(nn.LazyLinear(64), nn.ReLU(),
+   249→   249→nn.LazyLinear(32), nn.ReLU())
+   250→   250→self.linear = nn.LazyLinear(16)
+   251→   251→def forward(self, X):
+   252→   252→return self.linear(self.net(X))
+   253→   253→chimera = nn.Sequential(NestMLP(), nn.LazyLinear(20), FixedHiddenMLP())
+   254→   254→chimera(X)
+   255→   255→tensor(0.0679, grad_fn=<SumBackward0>)
+   256→   256→6.1.4 Summary
+   257→   257→Individual layers can be modules. Many layers can comprise a module. Many modules can
+   258→   258→comprise a module.
+   259→   259→A module can contain code. Modules take care of lots of housekeeping, including param-
+   260→   260→eter initialization and backpropagation. Sequential concatenations of layers and modules
+   261→   261→are handled by the Sequential module.
+   262→   262→6.1.5 Exercises
+   263→   263→1. What kinds of problems will occur if you change MySequential to store modules in a
+   264→   264→Python list?
+   265→   265→2. Implement a module that takes two modules as an argument, say net1 and net2 and
+   266→   266→returns the concatenated output of both networks in the forward propagation. This is
+   267→   267→also called a parallel module.
+   268→   268→3. Assume that you want to concatenate multiple instances of the same network. Imple-
+   269→   269→ment a factory function that generates multiple instances of the same module and build
+   270→   270→a larger network from it.
+   271→   271→Discussions111.
+   272→   272→6.2 Parameter Management
+   273→   273→Once we have chosen an architecture and set our hyperparameters, we proceed to the train-
+   274→   274→ing loop, where our goal is to find parameter values that minimize our loss function. After
+   275→   275→training, we will need these parameters in order to make future predictions. Additionally,
+   276→   276→we will sometimes wish to extract the parameters perhaps to reuse them in some other
+   277→   277→
+   278→   278→===== صفحة الكتاب 254 =====
+   279→   279→214
+   280→   280→Builders’ Guide
+   281→   281→context, to save our model to disk so that it may be executed in other software, or for ex-
+   282→   282→amination in the hope of gaining scientific understanding.
+   283→   283→Most of the time, we will be able to ignore the nitty-gritty details of how parameters are
+   284→   284→declared and manipulated, relying on deep learning frameworks to do the heavy lifting.
+   285→   285→However, when we move away from stacked architectures with standard layers, we will
+   286→   286→sometimes need to get into the weeds of declaring and manipulating parameters. In this
+   287→   287→section, we cover the following:
+   288→   288→• Accessing parameters for debugging, diagnostics, and visualizations.
+   289→   289→• Sharing parameters across different model components.
+   290→   290→import torch
+   291→   291→from torch import nn
+   292→   292→We start by focusing on an MLP with one hidden layer.
+   293→   293→net = nn.Sequential(nn.LazyLinear(8),
+   294→   294→nn.ReLU(),
+   295→   295→nn.LazyLinear(1))
+   296→   296→X = torch.rand(size=(2, 4))
+   297→   297→net(X).shape
+   298→   298→torch.Size([2, 1])
+   299→   299→6.2.1 Parameter Access
+   300→   300→Let’s start with how to access parameters from the models that you already know.
+   301→   301→When a model is defined via the Sequential class, we can first access any layer by indexing
+   302→   302→into the model as though it were a list. Each layer’s parameters are conveniently located in
+   303→   303→its attribute.
+   304→   304→We can inspect the parameters of the second fully connected layer as follows.
+   305→   305→net[2].state_dict()
+   306→   306→OrderedDict([('weight',
+   307→   307→tensor([[-0.1649,
+   308→   308→0.0605,
+   309→   309→0.1694, -0.2524,
+   310→   310→0.3526, -0.3414, -
+   311→   311→↩→0.2322,
+   312→   312→0.0822]])),
+   313→   313→('bias', tensor([0.0709]))])
+   314→   314→We can see that this fully connected layer contains two parameters, corresponding to that
+   315→   315→layer’s weights and biases, respectively.
+   316→   316→
+   317→   317→===== صفحة الكتاب 255 =====
+   318→   318→215
+   319→   319→Parameter Management
+   320→   320→Targeted Parameters
+   321→   321→Note that each parameter is represented as an instance of the parameter class. To do any-
+   322→   322→thing useful with the parameters, we first need to access the underlying numerical values.
+   323→   323→There are several ways to do this. Some are simpler while others are more general. The
+   324→   324→following code extracts the bias from the second neural network layer, which returns a
+   325→   325→parameter class instance, and further accesses that parameter’s value.
+   326→   326→type(net[2].bias), net[2].bias.data
+   327→   327→(torch.nn.parameter.Parameter, tensor([0.0709]))
+   328→   328→Parameters are complex objects, containing values, gradients, and additional information.
+   329→   329→That is why we need to request the value explicitly.
+   330→   330→In addition to the value, each parameter also allows us to access the gradient. Because we
+   331→   331→have not invoked backpropagation for this network yet, it is in its initial state.
+   332→   332→net[2].weight.grad == None
+   333→   333→True
+   334→   334→All Parameters at Once
+   335→   335→When we need to perform operations on all parameters, accessing them one-by-one can
+   336→   336→grow tedious. The situation can grow especially unwieldy when we work with more com-
+   337→   337→plex, e.g., nested, modules, since we would need to recurse through the entire tree to extract
+   338→   338→each sub-module’s parameters. Below we demonstrate accessing the parameters of all lay-
+   339→   339→ers.
+   340→   340→[(name, param.shape) for name, param in net.named_parameters()]
+   341→   341→[('0.weight', torch.Size([8, 4])),
+   342→   342→('0.bias', torch.Size([8])),
+   343→   343→('2.weight', torch.Size([1, 8])),
+   344→   344→('2.bias', torch.Size([1]))]
+   345→   345→6.2.2 Tied Parameters
+   346→   346→Often, we want to share parameters across multiple layers. Let’s see how to do this elegantly.
+   347→   347→In the following we allocate a fully connected layer and then use its parameters specifically
+   348→   348→to set those of another layer. Here we need to run the forward propagation net(X) before
+   349→   349→accessing the parameters.
+   350→   350→
+   351→   351→===== صفحة الكتاب 256 =====
+   352→   352→216
+   353→   353→Builders’ Guide
+   354→   354→112
+   355→   355→# We need to give the shared layer a name so that we can refer to its
+   356→   356→# parameters
+   357→   357→shared = nn.LazyLinear(8)
+   358→   358→net = nn.Sequential(nn.LazyLinear(8), nn.ReLU(),
+   359→   359→shared, nn.ReLU(),
+   360→   360→shared, nn.ReLU(),
+   361→   361→nn.LazyLinear(1))
+   362→   362→net(X)
+   363→   363→# Check whether the parameters are the same
+   364→   364→print(net[2].weight.data[0] == net[4].weight.data[0])
+   365→   365→net[2].weight.data[0, 0] = 100
+   366→   366→# Make sure that they are actually the same object rather than just having the
+   367→   367→# same value
+   368→   368→print(net[2].weight.data[0] == net[4].weight.data[0])
+   369→   369→tensor([True, True, True, True, True, True, True, True])
+   370→   370→tensor([True, True, True, True, True, True, True, True])
+   371→   371→This example shows that the parameters of the second and third layer are tied. They are
+   372→   372→not just equal, they are represented by the same exact tensor. Thus, if we change one of the
+   373→   373→parameters, the other one changes, too.
+   374→   374→You might wonder, when parameters are tied what happens to the gradients? Since the
+   375→   375→model parameters contain gradients, the gradients of the second hidden layer and the third
+   376→   376→hidden layer are added together during backpropagation.
+   377→   377→6.2.3 Summary
+   378→   378→We have several ways of accessing and tying model parameters.
+   379→   379→6.2.4 Exercises
+   380→   380→1. Use the NestMLP model defined in Section 6.1 and access the parameters of the various
+   381→   381→layers.
+   382→   382→2. Construct an MLP containing a shared parameter layer and train it. During the training
+   383→   383→process, observe the model parameters and gradients of each layer.
+   384→   384→3. Why is sharing parameters a good idea?
+   385→   385→Discussions112.
+   386→   386→6.3 Parameter Initialization
+   387→   387→Now that we know how to access the parameters, let’s look at how to initialize them prop-
+   388→   388→erly. We discussed the need for proper initialization in Section 5.4. The deep learning
+   389→   389→
+   390→   390→===== صفحة الكتاب 257 =====
+   391→   391→217
+   392→   392→Parameter Initialization
+   393→   393→framework provides default random initializations to its layers. However, we often want to
+   394→   394→initialize our weights according to various other protocols. The framework provides most
+   395→   395→commonly used protocols, and also allows to create a custom initializer.
+   396→   396→import torch
+   397→   397→from torch import nn
+   398→   398→By default, PyTorch initializes weight and bias matrices uniformly by drawing from a range
+   399→   399→that is computed according to the input and output dimension. PyTorch’s nn.init module
+   400→   400→provides a variety of preset initialization methods.
+   401→   401→net = nn.Sequential(nn.LazyLinear(8), nn.ReLU(), nn.LazyLinear(1))
+   402→   402→X = torch.rand(size=(2, 4))
+   403→   403→net(X).shape
+   404→   404→torch.Size([2, 1])
+   405→   405→6.3.1 Built-in Initialization
+   406→   406→Let’s begin by calling on built-in initializers. The code below initializes all weight parame-
+   407→   407→ters as Gaussian random variables with standard deviation 0.01, while bias parameters are
+   408→   408→cleared to zero.
+   409→   409→def init_normal(module):
+   410→   410→if type(module) == nn.Linear:
+   411→   411→nn.init.normal_(module.weight, mean=0, std=0.01)
+   412→   412→nn.init.zeros_(module.bias)
+   413→   413→net.apply(init_normal)
+   414→   414→net[0].weight.data[0], net[0].bias.data[0]
+   415→   415→(tensor([-0.0129, -0.0007, -0.0033,
+   416→   416→0.0276]), tensor(0.))
+   417→   417→We can also initialize all the parameters to a given constant value (say, 1).
+   418→   418→def init_constant(module):
+   419→   419→if type(module) == nn.Linear:
+   420→   420→nn.init.constant_(module.weight, 1)
+   421→   421→nn.init.zeros_(module.bias)
+   422→   422→net.apply(init_constant)
+   423→   423→net[0].weight.data[0], net[0].bias.data[0]
+   424→   424→(tensor([1., 1., 1., 1.]), tensor(0.))
+   425→   425→We can also apply different initializers for certain blocks. For example, below we initialize
+   426→   426→
+   427→   427→===== صفحة الكتاب 258 =====
+   428→   428→218
+   429→   429→Builders’ Guide
+   430→   430→the first layer with the Xavier initializer and initialize the second layer to a constant value
+   431→   431→of 42.
+   432→   432→def init_xavier(module):
+   433→   433→if type(module) == nn.Linear:
+   434→   434→nn.init.xavier_uniform_(module.weight)
+   435→   435→def init_42(module):
+   436→   436→if type(module) == nn.Linear:
+   437→   437→nn.init.constant_(module.weight, 42)
+   438→   438→net[0].apply(init_xavier)
+   439→   439→net[2].apply(init_42)
+   440→   440→print(net[0].weight.data[0])
+   441→   441→print(net[2].weight.data)
+   442→   442→tensor([-0.0974,
+   443→   443→0.1707,
+   444→   444→0.5840, -0.5032])
+   445→   445→tensor([[42., 42., 42., 42., 42., 42., 42., 42.]])
+   446→   446→Custom Initialization
+   447→   447→Sometimes, the initialization methods we need are not provided by the deep learning frame-
+   448→   448→work. In the example below, we define an initializer for any weight parameter 𝑤using the
+   449→   449→following strange distribution:
+   450→   450→𝑤∼
+   451→   451→
+   452→   452→
+   453→   453→𝑈(5, 10)
+   454→   454→with probability 1
+   455→   455→4
+   456→   456→0
+   457→   457→with probability 1
+   458→   458→2
+   459→   459→𝑈(−10, −5)
+   460→   460→with probability 1
+   461→   461→4
+   462→   462→(6.3.1)
+   463→   463→Again, we implement a my_init function to apply to net.
+   464→   464→def my_init(module):
+   465→   465→if type(module) == nn.Linear:
+   466→   466→print("Init", *[(name, param.shape)
+   467→   467→for name, param in module.named_parameters()][0])
+   468→   468→nn.init.uniform_(module.weight, -10, 10)
+   469→   469→module.weight.data *= module.weight.data.abs() >= 5
+   470→   470→net.apply(my_init)
+   471→   471→net[0].weight[:2]
+   472→   472→Init weight torch.Size([8, 4])
+   473→   473→Init weight torch.Size([1, 8])
+   474→   474→tensor([[ 0.0000, -7.6364, -0.0000, -6.1206],
+   475→   475→[ 9.3516, -0.0000,
+   476→   476→5.1208, -8.4003]], grad_fn=<SliceBackward0>)
+   477→   477→Note that we always have the option of setting parameters directly.
+   478→   478→
+   479→   479→===== صفحة الكتاب 259 =====
+   480→   480→219
+   481→   481→Lazy Initialization
+   482→   482→113
+   483→   483→net[0].weight.data[:] += 1
+   484→   484→net[0].weight.data[0, 0] = 42
+   485→   485→net[0].weight.data[0]
+   486→   486→tensor([42.0000, -6.6364,
+   487→   487→1.0000, -5.1206])
+   488→   488→6.3.2 Summary
+   489→   489→We can initialize parameters using built-in and custom initializers.
+   490→   490→6.3.3 Exercises
+   491→   491→Look up the online documentation for more built-in initializers.
+   492→   492→Discussions113.
+   493→   493→6.4 Lazy Initialization
+   494→   494→So far, it might seem that we got away with being sloppy in setting up our networks. Specif-
+   495→   495→ically, we did the following unintuitive things, which might not seem like they should
+   496→   496→work:
+   497→   497→• We defined the network architectures without specifying the input dimensionality.
+   498→   498→• We added layers without specifying the output dimension of the previous layer.
+   499→   499→• We even “initialized” these parameters before providing enough information to deter-
+   500→   500→mine how many parameters our models should contain.
+   501→   501→You might be surprised that our code runs at all. After all, there is no way the deep learning
+   502→   502→framework could tell what the input dimensionality of a network would be. The trick here
+   503→   503→is that the framework defers initialization, waiting until the first time we pass data through
+   504→   504→the model, to infer the sizes of each layer on the fly.
+   505→   505→Later on, when working with convolutional neural networks, this technique will become
+   506→   506→even more convenient since the input dimensionality (e.g., the resolution of an image) will
+   507→   507→affect the dimensionality of each subsequent layer. Hence the ability to set parameters
+   508→   508→without the need to know, at the time of writing the code, the value of the dimension can
+   509→   509→greatly simplify the task of specifying and subsequently modifying our models. Next, we
+   510→   510→go deeper into the mechanics of initialization.
+   511→   511→import torch
+   512→   512→from torch import nn
+   513→   513→from d2l import torch as d2l
+   514→   514→
+   515→   515→===== صفحة الكتاب 260 =====
+   516→   516→220
+   517→   517→Builders’ Guide
+   518→   518→To begin, let’s instantiate an MLP.
+   519→   519→net = nn.Sequential(nn.LazyLinear(256), nn.ReLU(), nn.LazyLinear(10))
+   520→   520→At this point, the network cannot possibly know the dimensions of the input layer’s weights
+   521→   521→because the input dimension remains unknown.
+   522→   522→Consequently the framework has not yet initialized any parameters. We confirm by at-
+   523→   523→tempting to access the parameters below.
+   524→   524→net[0].weight
+   525→   525→<UninitializedParameter>
+   526→   526→Next let’s pass data through the network to make the framework finally initialize parame-
+   527→   527→ters.
+   528→   528→X = torch.rand(2, 20)
+   529→   529→net(X)
+   530→   530→net[0].weight.shape
+   531→   531→torch.Size([256, 20])
+   532→   532→As soon as we know the input dimensionality, 20, the framework can identify the shape of
+   533→   533→the first layer’s weight matrix by plugging in the value of 20. Having recognized the first
+   534→   534→layer’s shape, the framework proceeds to the second layer, and so on through the computa-
+   535→   535→tional graph until all shapes are known. Note that in this case, only the first layer requires
+   536→   536→lazy initialization, but the framework initializes sequentially. Once all parameter shapes
+   537→   537→are known, the framework can finally initialize the parameters.
+   538→   538→The following method passes in dummy inputs through the network for a dry run to infer
+   539→   539→all parameter shapes and subsequently initializes the parameters. It will be used later when
+   540→   540→default random initializations are not desired.
+   541→   541→@d2l.add_to_class(d2l.Module)
+   542→   542→#@save
+   543→   543→def apply_init(self, inputs, init=None):
+   544→   544→self.forward(*inputs)
+   545→   545→if init is not None:
+   546→   546→self.net.apply(init)
+   547→   547→6.4.1 Summary
+   548→   548→Lazy initialization can be convenient, allowing the framework to infer parameter shapes
+   549→   549→automatically, making it easy to modify architectures and eliminating one common source
+   550→   550→of errors. We can pass data through the model to make the framework finally initialize
+   551→   551→parameters.
+   552→   552→
+   553→   553→===== صفحة الكتاب 261 =====
+   554→   554→221
+   555→   555→Custom Layers
+   556→   556→114
+   557→   557→6.4.2 Exercises
+   558→   558→1. What happens if you specify the input dimensions to the first layer but not to subsequent
+   559→   559→layers? Do you get immediate initialization?
+   560→   560→2. What happens if you specify mismatching dimensions?
+   561→   561→3. What would you need to do if you have input of varying dimensionality? Hint: look at
+   562→   562→the parameter tying.
+   563→   563→Discussions114.
+   564→   564→6.5 Custom Layers
+   565→   565→One factor behind deep learning’s success is the availability of a wide range of layers that
+   566→   566→can be composed in creative ways to design architectures suitable for a wide variety of
+   567→   567→tasks. For instance, researchers have invented layers specifically for handling images, text,
+   568→   568→looping over sequential data, and performing dynamic programming. Sooner or later, you
+   569→   569→will need a layer that does not exist yet in the deep learning framework. In these cases, you
+   570→   570→must build a custom layer. In this section, we show you how.
+   571→   571→import torch
+   572→   572→from torch import nn
+   573→   573→from torch.nn import functional as F
+   574→   574→from d2l import torch as d2l
+   575→   575→6.5.1 Layers without Parameters
+   576→   576→To start, we construct a custom layer that does not have any parameters of its own. This
+   577→   577→should look familiar if you recall our introduction to modules in Section 6.1. The following
+   578→   578→CenteredLayer class simply subtracts the mean from its input. To build it, we simply need
+   579→   579→to inherit from the base layer class and implement the forward propagation function.
+   580→   580→class CenteredLayer(nn.Module):
+   581→   581→def __init__(self):
+   582→   582→super().__init__()
+   583→   583→def forward(self, X):
+   584→   584→return X - X.mean()
+   585→   585→Let’s verify that our layer works as intended by feeding some data through it.
+   586→   586→layer = CenteredLayer()
+   587→   587→layer(torch.tensor([1.0, 2, 3, 4, 5]))
+   588→   588→
+   589→   589→===== صفحة الكتاب 262 =====
+   590→   590→222
+   591→   591→Builders’ Guide
+   592→   592→tensor([-2., -1.,
+   593→   593→0.,
+   594→   594→1.,
+   595→   595→2.])
+   596→   596→We can now incorporate our layer as a component in constructing more complex mod-
+   597→   597→els.
+   598→   598→net = nn.Sequential(nn.LazyLinear(128), CenteredLayer())
+   599→   599→As an extra sanity check, we can send random data through the network and check that the
+   600→   600→mean is in fact 0. Because we are dealing with floating point numbers, we may still see a
+   601→   601→very small nonzero number due to quantization.
+   602→   602→Y = net(torch.rand(4, 8))
+   603→   603→Y.mean()
+   604→   604→tensor(-6.5193e-09, grad_fn=<MeanBackward0>)
+   605→   605→6.5.2 Layers with Parameters
+   606→   606→Now that we know how to define simple layers, let’s move on to defining layers with pa-
+   607→   607→rameters that can be adjusted through training. We can use built-in functions to create
+   608→   608→parameters, which provide some basic housekeeping functionality. In particular, they gov-
+   609→   609→ern access, initialization, sharing, saving, and loading model parameters. This way, among
+   610→   610→other benefits, we will not need to write custom serialization routines for every custom
+   611→   611→layer.
+   612→   612→Now let’s implement our own version of the fully connected layer. Recall that this layer
+   613→   613→requires two parameters, one to represent the weight and the other for the bias. In this im-
+   614→   614→plementation, we bake in the ReLU activation as a default. This layer requires two input
+   615→   615→arguments: in_units and units, which denote the number of inputs and outputs, respec-
+   616→   616→tively.
+   617→   617→class MyLinear(nn.Module):
+   618→   618→def __init__(self, in_units, units):
+   619→   619→super().__init__()
+   620→   620→self.weight = nn.Parameter(torch.randn(in_units, units))
+   621→   621→self.bias = nn.Parameter(torch.randn(units,))
+   622→   622→def forward(self, X):
+   623→   623→linear = torch.matmul(X, self.weight.data) + self.bias.data
+   624→   624→return F.relu(linear)
+   625→   625→Next, we instantiate the MyLinear class and access its model parameters.
+   626→   626→linear = MyLinear(5, 3)
+   627→   627→linear.weight
+   628→   628→
+   629→   629→===== صفحة الكتاب 263 =====
+   630→   630→223
+   631→   631→File I/O
+   632→   632→115
+   633→   633→Parameter containing:
+   634→   634→tensor([[ 0.4783,
+   635→   635→0.4284, -0.0899],
+   636→   636→[-0.6347,
+   637→   637→0.2913, -0.0822],
+   638→   638→[-0.4325, -0.1645, -0.3274],
+   639→   639→[ 1.1898,
+   640→   640→0.6482, -1.2384],
+   641→   641→[-0.1479,
+   642→   642→0.0264, -0.9597]], requires_grad=True)
+   643→   643→We can directly carry out forward propagation calculations using custom layers.
+   644→   644→linear(torch.rand(2, 5))
+   645→   645→tensor([[0.0000, 0.9316, 0.0000],
+   646→   646→[0.1808, 1.4208, 0.0000]])
+   647→   647→We can also construct models using custom layers. Once we have that we can use it just
+   648→   648→like the built-in fully connected layer.
+   649→   649→net = nn.Sequential(MyLinear(64, 8), MyLinear(8, 1))
+   650→   650→net(torch.rand(2, 64))
+   651→   651→tensor([[ 0.0000],
+   652→   652→[13.0800]])
+   653→   653→6.5.3 Summary
+   654→   654→We can design custom layers via the basic layer class. This allows us to define flexible
+   655→   655→new layers that behave differently from any existing layers in the library. Once defined,
+   656→   656→custom layers can be invoked in arbitrary contexts and architectures. Layers can have local
+   657→   657→parameters, which can be created through built-in functions.
+   658→   658→6.5.4 Exercises
+   659→   659→1. Design a layer that takes an input and computes a tensor reduction, i.e., it returns 𝑦𝑘=
+   660→   660→Í
+   661→   661→𝑖, 𝑗𝑊𝑖𝑗𝑘𝑥𝑖𝑥𝑗.
+   662→   662→2. Design a layer that returns the leading half of the Fourier coefficients of the data.
+   663→   663→Discussions115.
+   664→   664→6.6 File I/O
+   665→   665→So far we have discussed how to process data and how to build, train, and test deep learn-
+   666→   666→ing models. However, at some point we will hopefully be happy enough with the learned
+   667→   667→
+   668→   668→===== صفحة الكتاب 264 =====
+   669→   669→224
+   670→   670→Builders’ Guide
+   671→   671→models that we will want to save the results for later use in various contexts (perhaps even
+   672→   672→to make predictions in deployment). Additionally, when running a long training process,
+   673→   673→the best practice is to periodically save intermediate results (checkpointing) to ensure that
+   674→   674→we do not lose several days’ worth of computation if we trip over the power cord of our
+   675→   675→server. Thus it is time to learn how to load and store both individual weight vectors and
+   676→   676→entire models. This section addresses both issues.
+   677→   677→import torch
+   678→   678→from torch import nn
+   679→   679→from torch.nn import functional as F
+   680→   680→6.6.1 Loading and Saving Tensors
+   681→   681→For individual tensors, we can directly invoke the load and save functions to read and
+   682→   682→write them respectively. Both functions require that we supply a name, and save requires
+   683→   683→as input the variable to be saved.
+   684→   684→x = torch.arange(4)
+   685→   685→torch.save(x, 'x-file')
+   686→   686→We can now read the data from the stored file back into memory.
+   687→   687→x2 = torch.load('x-file')
+   688→   688→x2
+   689→   689→tensor([0, 1, 2, 3])
+   690→   690→We can store a list of tensors and read them back into memory.
+   691→   691→y = torch.zeros(4)
+   692→   692→torch.save([x, y],'x-files')
+   693→   693→x2, y2 = torch.load('x-files')
+   694→   694→(x2, y2)
+   695→   695→(tensor([0, 1, 2, 3]), tensor([0., 0., 0., 0.]))
+   696→   696→We can even write and read a dictionary that maps from strings to tensors. This is conve-
+   697→   697→nient when we want to read or write all the weights in a model.
+   698→   698→mydict = {'x': x, 'y': y}
+   699→   699→torch.save(mydict, 'mydict')
+   700→   700→mydict2 = torch.load('mydict')
+   701→   701→mydict2
+   702→   702→
+   703→   703→===== صفحة الكتاب 265 =====
+   704→   704→225
+   705→   705→File I/O
+   706→   706→{'x': tensor([0, 1, 2, 3]), 'y': tensor([0., 0., 0., 0.])}
+   707→   707→6.6.2 Loading and Saving Model Parameters
+   708→   708→Saving individual weight vectors (or other tensors) is useful, but it gets very tedious if we
+   709→   709→want to save (and later load) an entire model. After all, we might have hundreds of param-
+   710→   710→eter groups sprinkled throughout. For this reason the deep learning framework provides
+   711→   711→built-in functionalities to load and save entire networks. An important detail to note is that
+   712→   712→this saves model parameters and not the entire model. For example, if we have a 3-layer
+   713→   713→MLP, we need to specify the architecture separately. The reason for this is that the models
+   714→   714→themselves can contain arbitrary code, hence they cannot be serialized as naturally. Thus,
+   715→   715→in order to reinstate a model, we need to generate the architecture in code and then load the
+   716→   716→parameters from disk. Let’s start with our familiar MLP.
+   717→   717→class MLP(nn.Module):
+   718→   718→def __init__(self):
+   719→   719→super().__init__()
+   720→   720→self.hidden = nn.LazyLinear(256)
+   721→   721→self.output = nn.LazyLinear(10)
+   722→   722→def forward(self, x):
+   723→   723→return self.output(F.relu(self.hidden(x)))
+   724→   724→net = MLP()
+   725→   725→X = torch.randn(size=(2, 20))
+   726→   726→Y = net(X)
+   727→   727→Next, we store the parameters of the model as a file with the name “mlp.params”.
+   728→   728→torch.save(net.state_dict(), 'mlp.params')
+   729→   729→To recover the model, we instantiate a clone of the original MLP model. Instead of ran-
+   730→   730→domly initializing the model parameters, we read the parameters stored in the file directly.
+   731→   731→clone = MLP()
+   732→   732→clone.load_state_dict(torch.load('mlp.params'))
+   733→   733→clone.eval()
+   734→   734→MLP(
+   735→   735→(hidden): LazyLinear(in_features=0, out_features=256, bias=True)
+   736→   736→(output): LazyLinear(in_features=0, out_features=10, bias=True)
+   737→   737→)
+   738→   738→Since both instances have the same model parameters, the computational result of the same
+   739→   739→input X should be the same. Let’s verify this.
+   740→   740→
+   741→   741→===== صفحة الكتاب 266 =====
+   742→   742→226
+   743→   743→Builders’ Guide
+   744→   744→116
+   745→   745→117
+   746→   746→Y_clone = clone(X)
+   747→   747→Y_clone == Y
+   748→   748→tensor([[True, True, True, True, True, True, True, True, True, True],
+   749→   749→[True, True, True, True, True, True, True, True, True, True]])
+   750→   750→6.6.3 Summary
+   751→   751→The save and load functions can be used to perform file I/O for tensor objects. We can
+   752→   752→save and load the entire sets of parameters for a network via a parameter dictionary. Saving
+   753→   753→the architecture has to be done in code rather than in parameters.
+   754→   754→6.6.4 Exercises
+   755→   755→1. Even if there is no need to deploy trained models to a different device, what are the
+   756→   756→practical benefits of storing model parameters?
+   757→   757→2. Assume that we want to reuse only parts of a network to be incorporated into a network
+   758→   758→having a different architecture. How would you go about using, say the first two layers
+   759→   759→from a previous network in a new network?
+   760→   760→3. How would you go about saving the network architecture and parameters? What restric-
+   761→   761→tions would you impose on the architecture?
+   762→   762→Discussions116.
+   763→   763→6.7 GPUs
+   764→   764→In tab_intro_decade, we illustrated the rapid growth of computation over the past two
+   765→   765→decades. In a nutshell, GPU performance has increased by a factor of 1000 every decade
+   766→   766→since 2000. This offers great opportunities but it also suggests that there was significant
+   767→   767→demand for such performance.
+   768→   768→In this section, we begin to discuss how to harness this computational performance for your
+   769→   769→research. First by using a single GPU and at a later point, how to use multiple GPUs and
+   770→   770→multiple servers (with multiple GPUs).
+   771→   771→Specifically, we will discuss how to use a single NVIDIA GPU for calculations. First,
+   772→   772→make sure you have at least one NVIDIA GPU installed. Then, download the NVIDIA
+   773→   773→driver and CUDA117 and follow the prompts to set the appropriate path. Once these prepa-
+   774→   774→rations are complete, the nvidia-smi command can be used to view the graphics card
+   775→   775→information.
+   776→   776→In PyTorch, every array has a device; we often refer it as a context. So far, by default, all
+   777→   777→
+   778→   778→===== صفحة الكتاب 267 =====
+   779→   779→227
+   780→   780→GPUs
+   781→   781→variables and associated computation have been assigned to the CPU. Typically, other con-
+   782→   782→texts might be various GPUs. Things can get even hairier when we deploy jobs across mul-
+   783→   783→tiple servers. By assigning arrays to contexts intelligently, we can minimize the time spent
+   784→   784→transferring data between devices. For example, when training neural networks on a server
+   785→   785→with a GPU, we typically prefer for the model’s parameters to live on the GPU.
+   786→   786→To run the programs in this section, you need at least two GPUs. Note that this might
+   787→   787→be extravagant for most desktop computers but it is easily available in the cloud, e.g., by
+   788→   788→using the AWS EC2 multi-GPU instances. Almost all other sections do not require multiple
+   789→   789→GPUs, but here we simply wish to illustrate data flow between different devices.
+   790→   790→import torch
+   791→   791→from torch import nn
+   792→   792→from d2l import torch as d2l
+   793→   793→6.7.1 Computing Devices
+   794→   794→We can specify devices, such as CPUs and GPUs, for storage and calculation. By default,
+   795→   795→tensors are created in the main memory and then the CPU is used for calculations.
+   796→   796→In PyTorch, the CPU and GPU can be indicated by torch.device('cpu') and torch.
+   797→   797→device('cuda'). It should be noted that the cpu device means all physical CPUs and
+   798→   798→memory. This means that PyTorch’s calculations will try to use all CPU cores. However, a
+   799→   799→gpu device only represents one card and the corresponding memory. If there are multiple
+   800→   800→GPUs, we use torch.device(f'cuda:{i}') to represent the 𝑖th GPU (𝑖starts at 0). Also,
+   801→   801→gpu:0 and gpu are equivalent.
+   802→   802→def cpu():
+   803→   803→#@save
+   804→   804→"""Get the CPU device."""
+   805→   805→return torch.device('cpu')
+   806→   806→def gpu(i=0):
+   807→   807→#@save
+   808→   808→"""Get a GPU device."""
+   809→   809→return torch.device(f'cuda:{i}')
+   810→   810→cpu(), gpu(), gpu(1)
+   811→   811→(device(type='cpu'),
+   812→   812→device(type='cuda', index=0),
+   813→   813→device(type='cuda', index=1))
+   814→   814→We can query the number of available GPUs.
+   815→   815→def num_gpus():
+   816→   816→#@save
+   817→   817→"""Get the number of available GPUs."""
+   818→   818→return torch.cuda.device_count()
+   819→   819→num_gpus()
+   820→   820→
+   821→   821→===== صفحة الكتاب 268 =====
+   822→   822→228
+   823→   823→Builders’ Guide
+   824→   824→2
+   825→   825→Now we define two convenient functions that allow us to run code even if the requested
+   826→   826→GPUs do not exist.
+   827→   827→def try_gpu(i=0):
+   828→   828→#@save
+   829→   829→"""Return gpu(i) if exists, otherwise return cpu()."""
+   830→   830→if num_gpus() >= i + 1:
+   831→   831→return gpu(i)
+   832→   832→return cpu()
+   833→   833→def try_all_gpus():
+   834→   834→#@save
+   835→   835→"""Return all available GPUs, or [cpu(),] if no GPU exists."""
+   836→   836→return [gpu(i) for i in range(num_gpus())]
+   837→   837→try_gpu(), try_gpu(10), try_all_gpus()
+   838→   838→(device(type='cuda', index=0),
+   839→   839→device(type='cpu'),
+   840→   840→[device(type='cuda', index=0), device(type='cuda', index=1)])
+   841→   841→6.7.2 Tensors and GPUs
+   842→   842→By default, tensors are created on the CPU. We can query the device where the tensor is
+   843→   843→located.
+   844→   844→x = torch.tensor([1, 2, 3])
+   845→   845→x.device
+   846→   846→device(type='cpu')
+   847→   847→It is important to note that whenever we want to operate on multiple terms, they need to be
+   848→   848→on the same device. For instance, if we sum two tensors, we need to make sure that both
+   849→   849→arguments live on the same device—otherwise the framework would not know where to
+   850→   850→store the result or even how to decide where to perform the computation.
+   851→   851→Storage on the GPU
+   852→   852→There are several ways to store a tensor on the GPU. For example, we can specify a stor-
+   853→   853→age device when creating a tensor. Next, we create the tensor variable X on the first gpu.
+   854→   854→The tensor created on a GPU only consumes the memory of this GPU. We can use the
+   855→   855→nvidia-smi command to view GPU memory usage. In general, we need to make sure that
+   856→   856→we do not create data that exceeds the GPU memory limit.
+   857→   857→X = torch.ones(2, 3, device=try_gpu())
+   858→   858→X
+   859→   859→
+   860→   860→===== صفحة الكتاب 269 =====
+   861→   861→229
+   862→   862→GPUs
+   863→   863→tensor([[1., 1., 1.],
+   864→   864→[1., 1., 1.]], device='cuda:0')
+   865→   865→Assuming that you have at least two GPUs, the following code will create a random tensor,
+   866→   866→Y, on the second GPU.
+   867→   867→Y = torch.rand(2, 3, device=try_gpu(1))
+   868→   868→Y
+   869→   869→tensor([[0.0022, 0.5723, 0.2890],
+   870→   870→[0.1456, 0.3537, 0.7359]], device='cuda:1')
+   871→   871→Copying
+   872→   872→If we want to compute X + Y, we need to decide where to perform this operation. For
+   873→   873→instance, as shown in Fig. 6.7.1, we can transfer X to the second GPU and perform the
+   874→   874→operation there. Do not simply add X and Y, since this will result in an exception. The
+   875→   875→runtime engine would not know what to do: it cannot find data on the same device and it
+   876→   876→fails. Since Y lives on the second GPU, we need to move X there before we can add the
+   877→   877→two.
+   878→   878→t
+   879→   879→Fig. 6.7.1
+   880→   880→Copy data to perform an operation on the same device.
+   881→   881→Z = X.cuda(1)
+   882→   882→print(X)
+   883→   883→print(Z)
+   884→   884→tensor([[1., 1., 1.],
+   885→   885→[1., 1., 1.]], device='cuda:0')
+   886→   886→tensor([[1., 1., 1.],
+   887→   887→[1., 1., 1.]], device='cuda:1')
+   888→   888→Now that the data (both Z and Y) are on the same GPU), we can add them up.
+   889→   889→Y + Z
+   890→   890→tensor([[1.0022, 1.5723, 1.2890],
+   891→   891→[1.1456, 1.3537, 1.7359]], device='cuda:1')
+   892→   892→
+   893→   893→===== صفحة الكتاب 270 =====
+   894→   894→230
+   895→   895→Builders’ Guide
+   896→   896→But what if your variable Z already lived on your second GPU? What happens if we still call
+   897→   897→Z.cuda(1)? It will return Z instead of making a copy and allocating new memory.
+   898→   898→Z.cuda(1) is Z
+   899→   899→True
+   900→   900→Side Notes
+   901→   901→People use GPUs to do machine learning because they expect them to be fast. But trans-
+   902→   902→ferring variables between devices is slow: much slower than computation. So we want you
+   903→   903→to be 100% certain that you want to do something slow before we let you do it. If the deep
+   904→   904→learning framework just did the copy automatically without crashing then you might not
+   905→   905→realize that you had written some slow code.
+   906→   906→Transferring data is not only slow, it also makes parallelization a lot more difficult, since
+   907→   907→we have to wait for data to be sent (or rather to be received) before we can proceed with
+   908→   908→more operations. This is why copy operations should be taken with great care. As a rule of
+   909→   909→thumb, many small operations are much worse than one big operation. Moreover, several
+   910→   910→operations at a time are much better than many single operations interspersed in the code
+   911→   911→unless you know what you are doing. This is the case since such operations can block if
+   912→   912→one device has to wait for the other before it can do something else. It is a bit like ordering
+   913→   913→your coffee in a queue rather than pre-ordering it by phone and finding out that it is ready
+   914→   914→when you are.
+   915→   915→Last, when we print tensors or convert tensors to the NumPy format, if the data is not in the
+   916→   916→main memory, the framework will copy it to the main memory first, resulting in additional
+   917→   917→transmission overhead. Even worse, it is now subject to the dreaded global interpreter lock
+   918→   918→that makes everything wait for Python to complete.
+   919→   919→6.7.3 Neural Networks and GPUs
+   920→   920→Similarly, a neural network model can specify devices. The following code puts the model
+   921→   921→parameters on the GPU.
+   922→   922→net = nn.Sequential(nn.LazyLinear(1))
+   923→   923→net = net.to(device=try_gpu())
+   924→   924→We will see many more examples of how to run models on GPUs in the following chapters,
+   925→   925→simply because the models will become somewhat more computationally intensive.
+   926→   926→For example, when the input is a tensor on the GPU, the model will calculate the result on
+   927→   927→the same GPU.
+   928→   928→net(X)
+   929→   929→
+   930→   930→===== صفحة الكتاب 271 =====
+   931→   931→231
+   932→   932→GPUs
+   933→   933→tensor([[0.7802],
+   934→   934→[0.7802]], device='cuda:0', grad_fn=<AddmmBackward0>)
+   935→   935→Let’s confirm that the model parameters are stored on the same GPU.
+   936→   936→net[0].weight.data.device
+   937→   937→device(type='cuda', index=0)
+   938→   938→Let the trainer support GPU.
+   939→   939→@d2l.add_to_class(d2l.Trainer)
+   940→   940→#@save
+   941→   941→def __init__(self, max_epochs, num_gpus=0, gradient_clip_val=0):
+   942→   942→self.save_hyperparameters()
+   943→   943→self.gpus = [d2l.gpu(i) for i in range(min(num_gpus, d2l.num_gpus()))]
+   944→   944→@d2l.add_to_class(d2l.Trainer)
+   945→   945→#@save
+   946→   946→def prepare_batch(self, batch):
+   947→   947→if self.gpus:
+   948→   948→batch = [a.to(self.gpus[0]) for a in batch]
+   949→   949→return batch
+   950→   950→@d2l.add_to_class(d2l.Trainer)
+   951→   951→#@save
+   952→   952→def prepare_model(self, model):
+   953→   953→model.trainer = self
+   954→   954→model.board.xlim = [0, self.max_epochs]
+   955→   955→if self.gpus:
+   956→   956→model.to(self.gpus[0])
+   957→   957→self.model = model
+   958→   958→In short, as long as all data and parameters are on the same device, we can learn models
+   959→   959→efficiently. In the following chapters we will see several such examples.
+   960→   960→6.7.4 Summary
+   961→   961→We can specify devices for storage and calculation, such as the CPU or GPU. By default,
+   962→   962→data is created in the main memory and then uses the CPU for calculations. The deep
+   963→   963→learning framework requires all input data for calculation to be on the same device, be it
+   964→   964→CPU or the same GPU. You can lose significant performance by moving data without care.
+   965→   965→A typical mistake is as follows: computing the loss for every minibatch on the GPU and
+   966→   966→reporting it back to the user on the command line (or logging it in a NumPy ndarray) will
+   967→   967→trigger a global interpreter lock which stalls all GPUs. It is much better to allocate memory
+   968→   968→for logging inside the GPU and only move larger logs.
+   969→   969→6.7.5 Exercises
+   970→   970→1. Try a larger computation task, such as the multiplication of large matrices, and see the
+   971→   971→difference in speed between the CPU and GPU. What about a task with a small number
+   972→   972→of calculations?
+   973→   973→
+   974→   974→===== صفحة الكتاب 272 =====
+   975→   975→232
+   976→   976→Builders’ Guide
+   977→   977→118
+   978→   978→2. How should we read and write model parameters on the GPU?
+   979→   979→3. Measure the time it takes to compute 1000 matrix–matrix multiplications of 100 × 100
+   980→   980→matrices and log the Frobenius norm of the output matrix one result at a time. Compare
+   981→   981→it with keeping a log on the GPU and transferring only the final result.
+   982→   982→4. Measure how much time it takes to perform two matrix–matrix multiplications on two
+   983→   983→GPUs at the same time. Compare it with computing in in sequence on one GPU. Hint:
+   984→   984→you should see almost linear scaling.
+   985→   985→Discussions118.
+   986→   986→

@@ -1,0 +1,248 @@
+{
+ "code": "MLS",
+ "title": "Machine Learning from Scratch",
+ "authors": [
+  "Danny Friedman"
+ ],
+ "license": "NO LICENSE STATED IN PDF — 'By Danny Friedman © Copyright 2020' only. Treat as All Rights Reserved pending human decision (see docs/OPEN-QUESTIONS.md OQ-2).",
+ "url": "https://dafriedman.github.io/mlfromscratch/",
+ "chapters": [
+  {
+   "id": "mls.ch1",
+   "number": 1,
+   "title": "Ordinary Linear Regression",
+   "pdfPage": 3,
+   "bookPage": 3,
+   "sections": [
+    {
+     "id": "mls.ch1.s1",
+     "number": "1.1",
+     "title": "The Loss-Minimization Perspective"
+    },
+    {
+     "id": "mls.ch1.s2",
+     "number": "1.2",
+     "title": "The Likelihood-Maximization Perspective"
+    },
+    {
+     "id": "mls.ch1.s3",
+     "number": "1.3",
+     "title": "Construction"
+    },
+    {
+     "id": "mls.ch1.s4",
+     "number": "1.4",
+     "title": "Implementation"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch2",
+   "number": 2,
+   "title": "Linear Regression Extensions",
+   "pdfPage": 11,
+   "bookPage": 11,
+   "sections": [
+    {
+     "id": "mls.ch2.s1",
+     "number": "2.1",
+     "title": "Regularized Regression (Ridge and Lasso)"
+    },
+    {
+     "id": "mls.ch2.s2",
+     "number": "2.2",
+     "title": "Bayesian Regression"
+    },
+    {
+     "id": "mls.ch2.s3",
+     "number": "2.3",
+     "title": "Generalized Linear Models (GLMs)"
+    },
+    {
+     "id": "mls.ch2.s4",
+     "number": "2.4",
+     "title": "Construction"
+    },
+    {
+     "id": "mls.ch2.s5",
+     "number": "2.5",
+     "title": "Implementation"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch3",
+   "number": 3,
+   "title": "Discriminative Classification",
+   "pdfPage": 33,
+   "bookPage": 33,
+   "sections": [
+    {
+     "id": "mls.ch3.s1",
+     "number": "3.1",
+     "title": "Logistic Regression"
+    },
+    {
+     "id": "mls.ch3.s2",
+     "number": "3.2",
+     "title": "The Perceptron Algorithm"
+    },
+    {
+     "id": "mls.ch3.s3",
+     "number": "3.3",
+     "title": "Fisher's Linear Discriminant"
+    },
+    {
+     "id": "mls.ch3.s4",
+     "number": "3.4",
+     "title": "Construction"
+    },
+    {
+     "id": "mls.ch3.s5",
+     "number": "3.5",
+     "title": "Implementation"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch4",
+   "number": 4,
+   "title": "Generative Classification",
+   "pdfPage": 38,
+   "bookPage": 38,
+   "sections": [
+    {
+     "id": "mls.ch4.s1",
+     "number": "4.1",
+     "title": "Linear and Quadratic Discriminant Analysis"
+    },
+    {
+     "id": "mls.ch4.s2",
+     "number": "4.2",
+     "title": "Naive Bayes"
+    },
+    {
+     "id": "mls.ch4.s3",
+     "number": "4.3",
+     "title": "Construction"
+    },
+    {
+     "id": "mls.ch4.s4",
+     "number": "4.4",
+     "title": "Implementation"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch5",
+   "number": 5,
+   "title": "Decision Trees",
+   "pdfPage": 54,
+   "bookPage": 54,
+   "sections": [
+    {
+     "id": "mls.ch5.s1",
+     "number": "5.1",
+     "title": "Regression Trees"
+    },
+    {
+     "id": "mls.ch5.s2",
+     "number": "5.2",
+     "title": "Classification Trees"
+    },
+    {
+     "id": "mls.ch5.s3",
+     "number": "5.3",
+     "title": "Construction"
+    },
+    {
+     "id": "mls.ch5.s4",
+     "number": "5.4",
+     "title": "Implementation"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch6",
+   "number": 6,
+   "title": "Tree Ensemble Methods",
+   "pdfPage": 66,
+   "bookPage": 66,
+   "sections": [
+    {
+     "id": "mls.ch6.s1",
+     "number": "6.1",
+     "title": "Bagging"
+    },
+    {
+     "id": "mls.ch6.s2",
+     "number": "6.2",
+     "title": "Random Forests"
+    },
+    {
+     "id": "mls.ch6.s3",
+     "number": "6.3",
+     "title": "Boosting"
+    },
+    {
+     "id": "mls.ch6.s4",
+     "number": "6.4",
+     "title": "Construction"
+    },
+    {
+     "id": "mls.ch6.s5",
+     "number": "6.5",
+     "title": "Implementation"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch7",
+   "number": 7,
+   "title": "Neural Networks",
+   "pdfPage": 84,
+   "bookPage": 84,
+   "sections": [
+    {
+     "id": "mls.ch7.s1",
+     "number": "7.1",
+     "title": "Concept"
+    },
+    {
+     "id": "mls.ch7.s2",
+     "number": "7.2",
+     "title": "Construction"
+    },
+    {
+     "id": "mls.ch7.s3",
+     "number": "7.3",
+     "title": "Implementation"
+    }
+   ]
+  },
+  {
+   "id": "mls.appendix",
+   "number": "A",
+   "title": "Appendix (Math, Gradient Descent, Cross Validation, Datasets)",
+   "pdfPage": 104,
+   "bookPage": 104,
+   "sections": [
+    {
+     "id": "mls.A.s1",
+     "number": "A.1",
+     "title": "Derivatives and Gradient Descent"
+    },
+    {
+     "id": "mls.A.s2",
+     "number": "A.2",
+     "title": "Cross Validation"
+    },
+    {
+     "id": "mls.A.s3",
+     "number": "A.3",
+     "title": "Datasets (Boston, Breast Cancer, Penguins, Tips, Wine)"
+    }
+   ]
+  }
+ ]
+}

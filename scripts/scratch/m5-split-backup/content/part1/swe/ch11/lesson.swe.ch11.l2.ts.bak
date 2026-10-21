@@ -1,0 +1,360 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch11.l2 — "Finding Vulnerabilities: from Manual Review to Autonomous Agents
+ * البحث عن الثغرات: من الفحص اليدوي إلى المستقل"
+ * Aligned with SWE ch11 s3 (Finding Vulnerabilities, from Manual to Autonomous,
+ * pp.293-295).
+ * All expression is original — a paraphrase of the CC BY-SA 4.0 source, never
+ * a verbatim translation.
+ * Runnable design: a mini security linter over EMBEDDED source strings using
+ * ast (eval/exec deny-list, SQL built by string concatenation, bare except)
+ * plus a deterministic fuzz loop over a FIXED candidate list. Deterministic
+ * by construction: nothing interactive, nothing unpredictable, no process
+ * spawning, no network access.
+ */
+
+const lesson = {
+  id: 'swe.ch11.l2',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 11,
+  title: { ar: 'البحث عن الثغرات: من الفحص اليدوي إلى المستقل', en: 'Finding Vulnerabilities: from Manual Review to Autonomous Agents' },
+  estimatedMinutes: 30,
+  prerequisites: ['swe.ch11.l1'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'الدرس الأول أعطاك المفردات: ما تحميه، ومن يهدده، وأي فئة من القائمة يسكن العيب. لكن معرفة الفئات لا تجد نسختك أنت من الحقن ولا ثغرة الوصول المكسورة في مشروعك — فكيف يُبحث فعلًا؟ اليوم نمشي طيف الأدوات كله: العين البشرية في المراجعة التي ترى ما لا تراه الآلة، ثم العائلات الثلاث للمسح الآلي — ساكن يقرأ الشيفرة، وديناميكي يهاجم التطبيق العامل، وفاحص تركيب يقرأ قائمة الاعتماديات — ثم التغذية بمئات المدخلات المصممة بحثًا عن انهيار، ثم الموجة الجديدة: وكلاء ذكاء اصطناعي يصلح المعروف، ويصطاد المجهول، ويهاجم مستقلًّا ليُثبت بالبرهان. وأخذك العملي منقّح أمني مصغّر بثلاث قواعد على شيفرة مدسوسة، وحلقة تغذية حتمية على قائمة مرشحين مثبتة. بنهاية الدرس ستكون قادرًا على: تسمية SAST وDAST وSCA وما يراه كلٌّ وحده، وتشغيل قواعد ast بنفسك، وفهم لماذا التفويض أول قواعد أي أداة هجومية.',
+        en: 'Lesson one gave you the vocabulary: what you protect, who threatens it, and which category a defect lives in. But knowing the categories does not find your instance of injection or the broken access check in your project — how is the search actually done? Today we walk the whole tool spectrum: the human eye in review, which sees what machines cannot; then the three scanner families — static reading the source, dynamic attacking the running app, composition analysis reading the dependency manifest; then feeding crafted inputs by the hundred hunting crashes; then the new wave: AI agents that fix known findings, hunt unknown ones, and attack on their own to prove findings. Your hands-on anchor: a mini security linter with three ast rules over embedded source strings, plus a deterministic fuzz loop over a fixed candidate list. By the end of this lesson you will be able to: name SAST, DAST and SCA and what each alone sees, run ast-based rules yourself, and explain why authorization is the first rule of any attack tool.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "import ast\n\ntree = ast.parse('value = eval(user_text)')\nfor node in ast.walk(tree):\n    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):\n        print(node.func.id)",
+      question: {
+        ar: 'سطر بايثون واحد حُلّل إلى شجرة. ماذا يطبع هذا المسير على الشجرة؟ وما القاعدة الأمنية التي يمكن أن تعلّق على هذا الاسم تحديدًا؟',
+        en: 'One line of Python parsed into a tree. What does this walk print for the tree? And what security rule could hang on that specific name?',
+      },
+      reveal: {
+        ar: 'يطبع سطرًا واحدًا: eval. لأن ast.parse حوّل السطر إلى شجرة، وast.walk زار كل عقدة، وast.Call يمسك نداء الدوال وnode.func.id يقرأ اسمها — وهذا بالضبط بذرة منقّح اليوم: قاعدة تحمّل اسم النداء وتسأل هل هو في قائمة الرصد. الفكرة الأعم من الفصل التاسع: الأداة الساكنة تقرأ الشيفرة بلا تشغيلها — فقط هنا نقرأ الشجرة بنيويًّا بدل أن نطارد الأنماط نصًّا.',
+        en: 'It prints a single line: eval. ast.parse turned the line into a tree, ast.walk visited every node, ast.Call grabs function calls and node.func.id reads the callee name — which is exactly the seed of today\u2019s linter: a rule that carries the call name and asks whether it sits on a watch-list. The deeper idea comes from chapter nine: a static tool reads code without running it — here we read the tree structurally instead of chasing patterns in text.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'من العين البشرية إلى العائلات الثلاث للمسح', en: 'From the human eye to the three scanner families' },
+      chunks: [
+        {
+          ar: 'المراجعة اليدوية للشيفرة تبقى أداة البحث الأولى: عين بشرية تقرأ التغيير قبل أن يعمل — وترى ما لا تكتبه قاعدة: نية غامضة في مواصفة، وتصميم يمنح صلاحيات أكثر من الحاجة، وتسلسل تحقق يمكن تجاوزه منطقيًّا. أما التمثيل الآلي فينقسم ثلاث عائلات يوزّعن العمل على ما تنظران إليه: SAST الفحص الساكن الأمني يقرأ الشيفرة دون تشغيلها مطاردًا الأنماط الهشة — محبات الحقن، وإزالة التسلسل غير الآمنة، والأسرار المدسوسة في المصدر؛ وDAST الفحص الديناميكي يهاجم التطبيق العامل من الخارج كما يفعل الخصم — بلا علم بالشيفرة، بمدخلات معادية على الواجهات؛ وSCA فاحص التركيب لا يقرأ شيفرك ولا يشغّل تطبيقك بل يقرأ قائمة الاعتماديات ويقارن كل حزمة بقواعد الثغرات المعلنة. وهناك التغذية fuzzing: اختبار ديناميكي يرمي عاصفة من مدخلات مصممة ويصغي لصوت الانهيار.',
+          en: 'Manual code review stays the first search tool: a human eye reading a change before it runs — seeing what no rule captures: a vague intent in a spec, a design granting more privilege than needed, a check sequence that can be stepped around. Automation then splits into three families that divide the work by what they look at: SAST, static application security testing, reads source without running it, hunting fragile patterns — injection sinks, unsafe deserialization, secrets hard-coded into the source; DAST, dynamic application security testing, attacks the running application from the outside the way an adversary would — knowing nothing of the code, probing interfaces with hostile inputs; and SCA, software composition analysis, reads neither your code nor your running app but the dependency manifest, checking every package against known-vulnerability databases. And there is fuzzing: dynamic testing that throws a storm of crafted inputs and listens for the sound of a crash.',
+        },
+        {
+          ar: 'وكلها تحمل تحذير الفصل التاسع عن الإيجابيات والسلبيات الكاذبة بضِعف قوته: ماسح يغرق المطوّرين بإنذارات كاذبة يدرّبهم على تجاهله — فتضيع نتائجه الحقيقية وسط الضجيج؛ وإنذار كاذب بالسلب أخبث — أداة تطمئن فريقًا على شيفرة مريضة، كما رأيت في منقّح الفصل التاسع الذي عدا except مجردة وقال صفر. لذلك تكسب الأداة حق الفعل فقط بإبقاء إشارتها عالية: قواعد دقيقة، وفرز للنتائج، وقياس لما يُعالَج فعلًا من تقاريرها.',
+          en: 'All of them carry chapter nine\u2019s warning about false positives and false negatives at double strength: a scanner that floods developers with false alarms trains them to ignore it — its true findings drown in the noise; and a false negative is the more treacherous — a tool reassuring a team about sick code, like the chapter-nine linter that counted a bare except and said zero. So a tool earns the right to act only by keeping its signal high: precise rules, triaged results, and measurement of how many of its reports actually get fixed.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الذكاء الاصطناعي يدخل حلقة البحث', en: 'AI enters the search loop' },
+      chunks: [
+        {
+          ar: 'موجة أدوات تطبّق النماذج اللغوية الكبيرة على الأمن عند ثلاث نقاط متمايزة. الأولى تُصلح المعروف: Copilot Autofix يجمع مسح CodeQL مع ترقيعات يقترحها النموذج — حين يرفع الماسح تنبيهًا يقترح النموذج رقعة يراجعها المطوّر؛ أبلغت GitHub عن تغطية لنحو 90% من أنواع التنبيهات عبر لغات منها بايثون، وسرعة معالجة نحو ثلاثة أضعاف إجمالًا — سبعة في حقن المتصفح واثنا عشر في حقن SQL — لكنه لا يكتشف أصناف عيوب جديدة: يقصّر المسافة من تنبيه معروف إلى إصلاح مدموج. والثانية تصطاد المجهول: Big Sleep، تعاون بين Google Project Zero وDeepMind، وكيل يبحث شيفرة حقيقية عن ثغرات — وعثر على فيض مخزن قابل للاستغلال في محرك SQLite قبل وصوله إصدارًا، فيما وُصف بأول ثغرة عالمية حقيقية يكتشفها وكيل ذكاء اصطناعي، ثم ساعد لاحقًا في إحباط استغلال قائم في البرية.',
+          en: 'A wave of tools now applies large language models to security, at three distinct points. The first fixes known findings: Copilot Autofix pairs CodeQL scanning with model-suggested patches — when the scanner raises an alert, the model proposes a concrete patch for the developer to review; GitHub reported coverage of roughly 90% of alert types across languages including Python, and remediation about three times faster overall — seven times for cross-site scripting and twelve for SQL injection — yet it finds no new bug classes: it shortens the distance from a known alert to a merged fix. The second hunts the unknown: Big Sleep, a collaboration between Google Project Zero and DeepMind, is an agent searching real code for vulnerabilities — it found an exploitable stack buffer underflow in the SQLite engine before it reached a release, in what was described as the first real-world vulnerability discovered by an AI agent, and later helped pre-empt an exploitation already in the wild.',
+        },
+        {
+          ar: 'والثالثة تتحقق بالهجوم: Strix وكلاء اختبار اختراق مستقلون مفتوحا المصدر — يشغّلون هدفك ديناميكيًّا، ويجدون الثغرات، ويتحققون منها ببرهان مفهوم عامل أو لا شيء؛ والفرق التصميمي عن المنقّح الساكن هو هذا التحقق: تقرير «حقن SQL محتمل» يصير دليلًا لا تخمينًا، فيُغلق فجوة الإيجابيات الكاذبة من الجهة الأخرى. لكنها أدوات قوة تقطع في الاتجاهين وقواعدها الثلاث غير قابلة للتفاوض: التفويض أولًا — اختبر فقط ما تملكه أو مرّخَّصًا لاختباره، وهجوم غير مرخَّص قد يكون جريمة، والنطاق والإذن المكتوب قبل أي مسح؛ والتحقق يبقى عملك — أعد إنتاج النتيجة واحكم على أثرها، فالوكلاء تبالغ وتفوّت عيوب المنطق وتهلوس؛ وهي لا تعوّض التصميم الآمن — وكيل يجد ثغرة متأخرًا أغلى من قرار تصميم جعلها مستحيلة.',
+          en: 'The third validates by attacking: Strix, open-source autonomous AI penetration-testing agents — they run your target dynamically, find vulnerabilities, and validate them through an actual working proof-of-concept or nothing; the design difference from a static linter is that validation: “possible SQL injection” becomes evidence, not a guess, closing the false-positive gap from the other side. But these are power tools that cut both ways, with three non-negotiable rules: authorization first — test only what you own or are permitted to test, and an unauthorized attack can be a crime; scope and written permission come before any scan; validation stays yours — reproduce the finding and judge its real impact, since agents over-report, miss logic flaws, and hallucinate; and they never replace secure design — an agent finding a bug late costs more than a design decision that made it impossible.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'منقّح أمني مصغّر بثلاث قواعد على شجرة ast', en: 'A mini security linter: three rules over an ast tree' },
+      code: "import ast\n\nSAMPLE = '''import helper\n\ndef run(db, name, user_text):\n    try:\n        db.execute('SELECT * FROM users WHERE n = ' + name)\n        return eval(user_text)\n    except:\n        return None\n'''\n\nDENY = {'eval', 'exec'}\n\ndef call_name(node):\n    if isinstance(node.func, ast.Name):\n        return node.func.id\n    if isinstance(node.func, ast.Attribute):\n        return node.func.attr\n    return ''\n\ndef lint(source):\n    tree = ast.parse(source)\n    findings = {'eval': 0, 'sql-concat': 0, 'bare-except': 0}\n    for node in ast.walk(tree):\n        if isinstance(node, ast.Call):\n            name = call_name(node)\n            if name in DENY:\n                findings['eval'] = findings['eval'] + 1\n            if name == 'execute' and node.args and not isinstance(node.args[0], ast.Constant):\n                findings['sql-concat'] = findings['sql-concat'] + 1\n        if isinstance(node, ast.ExceptHandler) and node.type is None:\n            findings['bare-except'] = findings['bare-except'] + 1\n    return findings\n\nreport = lint(SAMPLE)\nfor rule in sorted(report):\n    print('%s: %d' % (rule, report[rule]))",
+      explanation: {
+        ar: 'ثلاث قواعد من فئات قائمة أمس: القاعدة الأولى تمسك نداء eval وexec — اسم النداء في قائمة الرصد DENY؛ والثانية تكتشف SQL مبنيًّا بالسلسلة: نداء execute وسيطه الأول ليس ثابتًا نصيًّا بل تعبير مركّب فيه متغير — حدّ الكود/البيانات أعيدت كتابته؛ والثالثة بند except مجردة بلا نوع — نفس قاعدة الفصل التاسع. لاحظ مساعد call_name: نداء eval دالة مجردة فاسمه في ast.Name، بينما db.execute صفة على كائن فاسمه في ast.Attribute — والقاعدة تقرأ الاثنين. النتيجة على العينة: bare-except: 1 وeval: 1 وsql-concat: 1 — تقرير من ثلاثة أرقام يجيب سؤال الفئة: أين نسختك من الفئات؟',
+        en: 'Three rules drawn from yesterday\u2019s categories: rule one grabs eval and exec calls — the callee name sits on the DENY watch-list; rule two detects SQL built by concatenation — an execute call whose first argument is not a string constant but a compound expression with a variable, the code/data boundary rewritten; rule three is a bare except clause with no type — the chapter-nine rule again. Note the call_name helper: a bare eval lands in ast.Name, while db.execute is an attribute on an object landing in ast.Attribute — the rule reads both. On the sample the report reads bare-except: 1, eval: 1, sql-concat: 1 — three numbers answering the category question: where are your instances?',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.write-fuzz',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'اكتب عدّاد التغذية: دالة fuzz(fn, candidates) تستدعي fn على كل مرشح بالترتيب وتُمسك أي استثناء يرتفع (except Exception) فتزيدها واحدًا، وتعيد عدد الانهيارات. ثم اطبع سطرين: candidates: %d بعدد القائمة وcrashes: %d بعدد الانهيارات. الدالة الهدف first_word معطوبة فعلًا على مدخلات فارغة — المتوقع: candidates: 5 ثم crashes: 2، وأي قائمة نظيفة تعطي crashes: 0.',
+        en: 'Write the fuzz counter: fuzz(fn, candidates) calls fn on each candidate in order, catching any exception that rises (except Exception) and adding one, returning the crash count. Then print two lines: candidates: %d with the list length and crashes: %d with the crash count. The target first_word is genuinely broken on empty inputs — expected: candidates: 5 then crashes: 2, and a clean list gives crashes: 0.',
+      },
+      starterCode: "def first_word(text):\n    if not isinstance(text, str):\n        return ''\n    return text.split()[0]  # السطر المشتبه به / the suspect line\n\nCANDIDATES = ['abc', 'two words', '', '   ', 'x']\n\ndef fuzz(fn, candidates):\n    # لكل مرشح: استدعِ fn ثم أمسك أي استثناء وزد العدّاد\n    # for each candidate: call fn, catch any exception, count it\n    ...\n\nprint('candidates: %d' % len(CANDIDATES))\nprint('crashes: %d' % fuzz(first_word, CANDIDATES))",
+      solution: "def first_word(text):\n    if not isinstance(text, str):\n        return ''\n    return text.split()[0]  # السطر المشتبه به / the suspect line\n\nCANDIDATES = ['abc', 'two words', '', '   ', 'x']\n\ndef fuzz(fn, candidates):\n    crashes = 0\n    for c in candidates:\n        try:\n            fn(c)\n        except Exception:\n            crashes = crashes + 1\n    return crashes\n\nprint('candidates: %d' % len(CANDIDATES))\nprint('crashes: %d' % fuzz(first_word, CANDIDATES))",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'القائمة المثبتة تكشف انهيارين', en: 'The fixed list exposes two crashes' },
+          code: "assert fuzz(first_word, CANDIDATES) == 2, 'expected: 2 | actual: %r' % fuzz(first_word, CANDIDATES)",
+          expected: '2',
+        },
+        {
+          id: 't2',
+          name: { ar: 'التقرير يطبع عدد الانهيارات', en: 'The report prints the crash count' },
+          code: "assert 'crashes: 2' in __learner_output__, 'expected: crashes: 2 | actual: %r' % __learner_output__",
+          expected: 'crashes: 2',
+        },
+        {
+          id: 't3',
+          name: { ar: 'قائمة نظيفة تعطي صفر — لا إنذارات كاذبة', en: 'A clean list gives zero — no false positives' },
+          code: "assert fuzz(first_word, ['ok', 'also ok']) == 0, 'expected: 0 | actual: %r' % fuzz(first_word, ['ok', 'also ok'])",
+          expected: '0',
+        },
+        {
+          id: 't4',
+          name: { ar: 'التقرير يطبع عدد المرشحين', en: 'The report prints the candidate count' },
+          code: "assert 'candidates: 5' in __learner_output__, 'expected: candidates: 5 | actual: %r' % __learner_output__",
+          expected: 'candidates: 5',
+        },
+      ],
+      hints: [
+        { ar: 'حلقة التغذية جسدها try/except داخل for: الاستدعاء نفسه في try — الانهيار استثناء يُمسك، لا خطأ يوقف العدّ.', en: 'The fuzz loop is a try/except inside a for: the call itself sits in try — a crash is a caught exception, not an error that stops the count.' },
+        { ar: 'أمسك واسعًا: except Exception — لأن السطر المشتبه به يرفع IndexError على \'\' و\'   \' (split يعيد قائمة فارغة) لا ValueError؛ والإمساك الضيّق يُفوّت الانقلاب.', en: "Catch wide: except Exception — the suspect line raises IndexError on '' and '   ' (split returns an empty list), not ValueError; a narrow catch misses the flip." },
+        { ar: 'الهيكل:\ncrashes = 0\nfor c in candidates:\n    try:\n        fn(c)\n    except Exception:\n        crashes = crashes + 1\nreturn crashes', en: 'The skeleton:\ncrashes = 0\nfor c in candidates:\n    try:\n        fn(c)\n    except Exception:\n        crashes = crashes + 1\nreturn crashes' },
+        { ar: 'الحل الكامل يطبع candidates: 5 ثم crashes: 2 — المرشحان \'\' و\'   \' هما المنقلبان لأن text.split()[0] على قائمة فارغة يرفع IndexError.', en: "The full solution prints candidates: 5 then crashes: 2 — the two flippers are '' and '   ' because text.split()[0] on an empty list raises IndexError." },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-ast',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرجه بالضبط — سطرًا لكل طباعة — دون تشغيله. تذكّر أن الجمع المتسلسل يبني شجرة متداخلة: كل + عقدة.',
+        en: 'Read the code and predict its exact output — one line per print — without running it. Remember that chained concatenation builds a nested tree: every + is a node.',
+      },
+      code: "import ast\n\nSRC = \"db.execute('SELECT * FROM users WHERE n = ' + name + ' AND x = 1')\\n\"\n\ntree = ast.parse(SRC)\ncalls = 0\nconcats = 0\nfor node in ast.walk(tree):\n    if isinstance(node, ast.Call):\n        calls = calls + 1\n    if isinstance(node, ast.BinOp):\n        concats = concats + 1\nprint('calls: %d' % calls)\nprint('concats: %d' % concats)",
+      solution: 'calls: 1\nconcats: 2',
+      answer: 'calls: 1\nconcats: 2',
+      hints: [
+        { ar: 'نداء واحد فقط في السطر: db.execute(...) — فcalls تساوي 1 مهما بلغت الوسائط.', en: 'There is exactly one call in the line: db.execute(...) — so calls is 1 no matter how many arguments it takes.' },
+        { ar: 'الوسيط المركّب: نص + name + نص. التسلسل المتروح ليس عقدة واحدة بثلاثة أطراف — بل شجرة: عقدة جمع خارجية تُربط طرفها الأيسر بعقدة جمع داخلية.', en: 'The compound argument: string + name + string. Chained concatenation is not one node with three arms — it is a tree: an outer addition whose left arm binds an inner addition.' },
+        { ar: 'إذن عقدتا BinOp — الخارجية والداخلية — فconcats تساوي 2، وast.walk يزور الاثنتين لأنه ينزل في التداخل.', en: 'So there are two BinOp nodes — outer and inner — making concats 2, and ast.walk visits both because it descends into the nesting.' },
+        { ar: 'الخرج:\ncalls: 1\nconcats: 2', en: 'The output:\ncalls: 1\nconcats: 2' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-sca',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'مكتبة تسجيل شائعة جدًّا تجلس داخل تطبيقك اعتماديةً غير مباشرة، وفيها ثغرة معلنة قديمة. أي عائلة مسح كان أملها الأوفر في رصدها قبل أي هجوم ديناميكي؟',
+        en: 'A very common logging library sits inside your app as a transitive dependency, carrying an old published vulnerability. Which scanner family had the best chance of flagging it before any dynamic attack?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'SAST — لأنه يقرأ الشيفرة المصدرية للتطبيق', en: 'SAST — because it reads the application source' } },
+        { id: 'b', text: { ar: 'DAST — لأنه يهاجم التطبيق العامل من الخارج', en: 'DAST — because it attacks the running application from outside' } },
+        { id: 'c', text: { ar: 'SCA — لأنه يفحص قائمة الاعتماديات ضد قواعد الثغرات المعلنة، والخطر في حزمة لا في شيفرك', en: 'SCA — because it checks the dependency manifest against published vulnerability databases, and the risk lives in a package, not your code' } },
+      ],
+      answer: 'c',
+      solution: 'c',
+      hints: [
+        { ar: 'اسأل أولًا: أين يسكن العيب؟ في كود مكتبة كتبها غرباء — لا في أسطر مشروعك.', en: 'Ask first: where does the defect live? In library code written by strangers — not in your project\u2019s lines.' },
+        { ar: 'SAST يقرأ شيفرة تطبيقك عادةً — ولن يصل إلى مصدر كل مكتبة تابعة بعمقها الكامل.', en: 'SAST usually reads your application code — it does not reach into the full source of every dependency.' },
+        { ar: 'DAST يهاجم الواجهات العاملة وقد لا يمس مسار المكتبة إطلاقًا — أما سجل الثغرات المعلنة فهو بالضبط موطن SCA: قارن الإصدارات فتحصل على الرصد قبل أي استغلال.', en: 'DAST attacks live interfaces and may never touch the library\u2019s path — while the published-vulnerability record is exactly SCA\u2019s home turf: compare versions and you get the flag before any exploit.' },
+        { ar: 'الجواب: c — وهذا سيناريو Log4Shell الذي سيدرسه الدرس الثالث كاملة: اعتمادية غير مباشرة لا تعرف أنها عندك.', en: 'Answer: c — and this is the Log4Shell scenario our third lesson studies in full: a transitive dependency you did not know you had.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-fuzzing',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'أسلوب اختبار ديناميكي يرمي عاصفة من مدخلات مصممة على الهدف ويصغي لصوت الانهيار — وهو ما بنيتَ حلقتَه على قائمة مثبتة اليوم — يسمى ____. (كلمة إنجليزية واحدة)',
+        en: 'The dynamic-testing technique that throws a storm of crafted inputs at a target and listens for a crash — the one you looped over a fixed list today — is called ____. (one English word)',
+      },
+      answer: 'fuzzing',
+      solution: 'fuzzing',
+      hints: [
+        { ar: 'الاسم من الطابع الفوضوي للمدخلات: ضباب يُرشّ على البرنامج حتى يكشف انزلاقه.', en: 'The name comes from the messy character of the inputs: a haze sprayed at the program until its slip shows.' },
+        { ar: 'ليس اختبار فئات تكافؤ منظمة — بل فيض مدخلات شاذة مع إمساك كل استثناء كإشارة.', en: 'Not orderly equivalence classes — a flood of odd inputs with every caught exception taken as a signal.' },
+        { ar: 'حلقتك اليوم كانت نسخته الحتمية المصغّرة: قائمة مرشحين مثبتة وعدّاد crashes.', en: 'Today\u2019s loop was its deterministic miniature: a fixed candidate list and a crash counter.' },
+        { ar: 'الجواب: fuzzing', en: 'Answer: fuzzing' },
+      ],
+    },
+    {
+      kind: 'debug',
+      id: 'ex5.debug-walk',
+      required: true,
+      brokenCode: "import ast\n\nSRC = 'def run(user_text):\\n    return eval(user_text)\\n'\n\ndef count_eval(source):\n    tree = ast.parse(source)\n    found = 0\n    for node in tree.body:\n        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'eval':\n            found = found + 1\n    return found\n\nfound = count_eval(SRC)\nprint('eval: %d' % found)",
+      prompt: {
+        ar: 'شغّل الكود المعطوب ولاحظ الإنذار الكاذب بالسلب: SRC فيه نداء eval صريح داخل دالة run — ومع ذلك يطبع المنقّح eval: 0! لا استثناء ولا انهيار، والأداة تطمئنك زورًا على شيفرة مريضة. السبب في نطاق المسير لا في القاعدة: tree.body يعطيك عقد المستوى الأعلى فقط — وهنا دالة run واحدة — والنداء متداخل داخل جسدها فلا يُرى من القمة. أصلح المسير بالتبديل إلى ast.walk(tree) الذي ينزل في التداخل كلّه فيصير العدّ eval: 1.',
+        en: 'Run the broken code and witness the false negative: SRC holds an explicit eval call inside run — yet the linter prints eval: 0! No exception, no crash, and the tool falsely reassures you about sick code. The defect is in the walk scope, not the rule: tree.body yields only top-level nodes — here a single function definition — and the call is nested inside its body, invisible from the top. Fix the traversal by switching to ast.walk(tree), which descends through the whole nesting, and the count becomes eval: 1.',
+      },
+      solution: "import ast\n\nSRC = 'def run(user_text):\\n    return eval(user_text)\\n'\n\ndef count_eval(source):\n    tree = ast.parse(source)\n    found = 0\n    for node in ast.walk(tree):\n        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'eval':\n            found = found + 1\n    return found\n\nfound = count_eval(SRC)\nprint('eval: %d' % found)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'التقرير يعلن النداء: eval: 1', en: 'The report announces the call: eval: 1' },
+          code: "assert 'eval: 1' in __learner_output__, 'expected: eval: 1 | actual: %r' % __learner_output__",
+          expected: 'eval: 1',
+        },
+        {
+          id: 't2',
+          name: { ar: 'العدّ نفسه صحيح على العينة', en: 'The count itself is right on the sample' },
+          code: "assert count_eval(SRC) == 1, 'expected: 1 | actual: %r' % count_eval(SRC)",
+          expected: '1',
+        },
+        {
+          id: 't3',
+          name: { ar: 'بلا إنذارات كاذبة على شيفرة نظيفة', en: 'No false positives on clean code' },
+          code: "assert count_eval('x = 1\\n') == 0, 'expected: 0 | actual: %r' % count_eval('x = 1\\n')",
+          expected: '0',
+        },
+      ],
+      hints: [
+        { ar: 'الكود يعمل بلا أي خطأ — وهذا موطن الخطر: فشل صامت لا يصرخ. اسأل ماذا يفحص القانون فعلًا.', en: 'The code runs without any error — and that is the danger: a silent failure that never screams. Ask what the loop actually examines.' },
+        { ar: 'tree.body ليس مسيرًا للشجرة بل قائمة أبناء القمة: عقدة def واحدة هنا — وeval مخبَّأ داخل جسدها.', en: 'tree.body is not a tree walk — it is the list of top-level children: here a single def node — with eval hidden inside its body.' },
+        { ar: 'استدعِ ast.walk(tree) في الحلقة: for node in ast.walk(tree): — فتنزل إلى كل التداخل وتجد النداء.', en: 'Call ast.walk(tree) in the loop: for node in ast.walk(tree): — descending through all the nesting to find the call.' },
+        { ar: 'بعد الإصلاح يطبع eval: 1 — وجرّب count_eval على x = 1 فتجد 0: القاعدة السليمة لا تجرّح النظيف.', en: 'After the fix it prints eval: 1 — and try count_eval on x = 1 to see 0: a healthy rule never wounds clean code.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "import ast\n\nSAMPLE = '''def run(db, name, user_text):\n    try:\n        db.execute('SELECT * FROM users WHERE n = ' + name)\n        return eval(user_text)\n    except:\n        return None\n'''\n\nDENY = {'eval', 'exec', 'compile'}\n\ndef call_name(node):\n    if isinstance(node.func, ast.Name):\n        return node.func.id\n    if isinstance(node.func, ast.Attribute):\n        return node.func.attr\n    return ''\n\ndef lint(source):\n    tree = ast.parse(source)\n    findings = {'eval': 0, 'sql-concat': 0, 'bare-except': 0}\n    for node in ast.walk(tree):\n        if isinstance(node, ast.Call):\n            name = call_name(node)\n            if name in DENY:\n                findings['eval'] = findings['eval'] + 1\n            if name == 'execute' and node.args and not isinstance(node.args[0], ast.Constant):\n                findings['sql-concat'] = findings['sql-concat'] + 1\n        if isinstance(node, ast.ExceptHandler) and node.type is None:\n            findings['bare-except'] = findings['bare-except'] + 1\n    return findings\n\nprint(lint(SAMPLE))\nprint(lint('x = 1\\n'))\nprint(lint('exec(text)\\n'))\n\n# جرّب: قاعدة رابعة تعدّ أسطر السرود المدسوس — مثل أي سطر فيه 'password = \"' نصيًّا\n# try: a fourth rule counting embedded secrets — any line containing 'password = \"' as text\n# جرّب: ارفع compile إلى قائمة الرصد وشاهد العدّ يتغير على عينة عندك\n# try: add compile to the watch-list and watch the count change on your own sample\n# جرّب: ابنِ عينة نظيفة تعطي صفرًا في القواعد الثلاث — ما الذي يجعلها نظيفة فعلًا؟\n# try: build a clean sample scoring zero on all three rules — what makes it genuinely clean?",
+      prompt: {
+        ar: 'الملعب منقّحك: وسّع قائمة الرصد، وأضف قاعدة سطرية للسرود المدسوسة — الأسرار في المصدر صنف يطارده الفحص الساكن فعليًّا — وابنِ عينة نظيفة وابحث عن العينة الأقسى. جرّب أيضًا تمرير شيفرة من عندك إلى lint وشاهد التقرير. لا اختبار هنا — فضولك فقط.',
+        en: 'The sandbox is your linter: widen the watch-list, add a line rule for embedded secrets — hard-coded credentials are a real SAST category — build a clean sample, then hunt for the nastiest sample you can write. Also feed lint some of your own code and read the report. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ومن فصل الاختبار في هذا الكتاب (الفصل العاشر): اختيارك لقائمة المرشحين في حلقة التغذية اليوم كان ثابتًا ومقصودًا. أي مبدأ من مبادئ اختيار المدخلات هناك يحكم هذا الاختيار؟',
+            en: 'From this book\u2019s testing chapter (chapter ten): the candidate list in today\u2019s fuzz loop was fixed and deliberate. Which input-selection principle from that chapter governs this choice?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'أصناف تكافؤ وحدود مدروسة بدل الصيد بالحظ — كل مرشح يمثل سلوكًا: نص سليم، مسافة، فارغ', en: 'Equivalence classes and boundaries chosen deliberately instead of fishing by luck — each candidate stands for a behavior: valid text, whitespace, empty' } },
+            { id: 'b', text: { ar: 'أكبر عدد ممكن من المدخلات مهما كان نوعها', en: 'As many inputs as possible regardless of kind' } },
+            { id: 'c', text: { ar: 'الاعتماد على مولّد أرقام لتغطية كل شيء', en: 'Relying on a number generator to cover everything' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'حتى التغذية صناعة اختيار: الفارغ والمسافة كلاهما ينهار في السطر نفسه لكنهما صفتان مختلفتان — والقائمة الثابتة تُبقي التجربة قابلة لإعادة التشغيل والشرح، وهو شرط الأوراكل الصادق هناك ومتطلب الحتمية هنا.',
+            en: 'Even fuzzing is a craft of selection: the empty string and the whitespace both crash the same line yet are different behaviors — and a fixed list keeps the experiment rerunnable and explainable, which was the honest-oracle requirement there and the determinism requirement here.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ومن PY4E الفصل الرابع: def تخزن شيفرة تحت اسم وتعيدها بـ return. لماذا جُمّعت قواعد المنقّح في دوال صغيرة مثل count_eval(source) لا في نص واحد كبير؟',
+            en: 'From PY4E chapter four: def stores code under a name and returns with return. Why were the linter rules gathered into small functions like count_eval(source) rather than one large script?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن بايثون تمنع وضع أكثر من قاعدة في ملف واحد', en: 'Because Python forbids more than one rule per file' } },
+            { id: 'b', text: { ar: 'لأن لكل قاعدة عقدًا صغيرًا: مدخل نص وقيمة معادة تُستدعى وتُختبر على أمثلة متعددة بمفردها', en: 'Because each rule gets a small contract: text in, a returned count, callable and testable alone on many samples' } },
+            { id: 'c', text: { ar: 'لأن الدوال تجعل الكود أسرع تنفيذًا بالضرورة', en: 'Because functions always make code faster' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'القاعدة كدالة تُستدعى على أي عينة وتُقارن قيمتها المعادة — بالضبط ما فعله اختبار الإصلاح على x = 1: صفر على النظيف وواحد على المريض. والدوال الكبيرة غير القابلة للفصل تخفي أي قاعدة خاطئة داخل جسدها.',
+            en: 'A rule as a function can be called on any sample and its return value compared — exactly what the fix check did on x = 1: zero for clean, one for sick. Monolithic scripts hide a wrong rule inside their bulk.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'أي العائلات الثلاث لا تقرأ شيفرة المصدر ولا تشغّل التطبيق — وإنما تقرأ بيانًا وتقارنه بسجل ثغرات؟',
+            en: 'Which of the three families reads neither source code nor a running app — it reads a manifest and compares it against a vulnerability record?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'SAST', en: 'SAST' } },
+            { id: 'b', text: { ar: 'DAST', en: 'DAST' } },
+            { id: 'c', text: { ar: 'SCA — فاحص التركيب البرمجي', en: 'SCA — software composition analysis' } },
+          ],
+          answer: 'c',
+          explanation: {
+            ar: 'الثلاث يكمل بعضه لأن كلًّا يرى ما لا يراه الآخران: SAST يقرأ المصدر، وDAST يهاجم العامل من الخارج، وSCA يقرأ قائمة الاعتماديات — وهو الوحيد القادر على رصد ثغرة حزمة قبل أي تشغيل.',
+            en: 'The three complement each other because each sees what the others cannot: SAST reads the source, DAST attacks the running app from outside, SCA reads the dependency manifest — and only SCA can flag a package vulnerability before anything runs.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'وكيل اختبار اختراق مستقل وجد ثغرة في نظام يستطيع الوصول إليه تقنيًّا بسهولة. ما القاعدة الأولى قبل أي مسح — وفق نص الدرس؟',
+            en: 'An autonomous penetration-testing agent found a vulnerability on a system it can technically reach with ease. What is the first rule before any scan, per the lesson?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'التفويض: اختبر فقط ما تملكه أو مرّخَّصًا لاختباره — النطاق والإذن المكتوب قبل أي مسح، وإلا فقد يكون الفعل جريمة', en: 'Authorization: test only what you own or are permitted to test — scope and written permission before any scan, or the act may be a crime' } },
+            { id: 'b', text: { ar: 'السرعة: أبلغ عن الثغرة فورًا علنًا قبل أن يستغلها غيرك', en: 'Speed: disclose the finding publicly at once before others exploit it' } },
+            { id: 'c', text: { ar: 'العمق: أوقف الوكلاء وأعد الفحص يدويًّا فقط', en: 'Depth: stop the agents and redo everything by hand' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'قواعد الأداة القوية الثلاث: تفويض قبل كل شيء، ثم تحقق يبقى عملك — أعد الإنتاج واحكم على الأثر، فالوكلاء تبالغ وتهلوس — ثم لا تعويض عن التصميم الآمن. سهولة الوصول التقني ليست إذنًا.',
+            en: 'The three rules of a power tool: authorization before everything; then validation stays yours — reproduce and judge impact, since agents over-report and hallucinate; then no substitute for secure design. Technical reachability is not permission.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'أداة واحدة «تكفي» — أو تجاهل أداة تغرقك إنذارات كاذبة حتى لا تُقرأ تقاريرها',
+          right: 'شبكة من العائلات الثلاث + فرز للنتائج + قياس ما يُعالَج فعلًا — الإشارة العالية هي رأس مال الأداة',
+          note: {
+            ar: 'لا SAST وحده ولا DAST وحده يرى كل شيء: الأول لا يشغّل، والثاني لا يقرأ. والإنذار الكاذب بالسلب أخطر من الضجيج: أداة تطمئن فريقًا زورًا. لذلك يقيس الفصل قيمة الماسح ببقاء إشارته عالية — نفس منطق الفصل التاسع للتحليل الساكن العام.',
+            en: 'Neither SAST nor DAST alone sees everything: one never runs, the other never reads. And the false negative is worse than the noise — a tool that falsely reassures a team. So the chapter weighs a scanner by how long it keeps its signal high — the same logic chapter nine applied to general static analysis.',
+          },
+        },
+        {
+          wrong: 'تشغيل أدوات الهجوم على أي نظام يصله الوكيل — «مجرد اختبار»',
+          right: 'نطاق مكتوب وإذن صريح وقواعد اشتباك قبل أي مسح — اختبر ما تملكه أو ما مرّخَّص لك فقط',
+          note: {
+            ar: 'نص الدرس قاطع: هجوم غير مرخَّص قد يكون جريمة مهما كانت النية تعليمية، ووثيقة النطاق والإذن جزء من العملية الهندسية لا إجراء شكلي. والتحقق يبقى عملك بعد الأداة: أعد إنتاج النتيجة واحكم على أثرها الحقيقي — فالوكلاء تبالغ وتفوّت عيوب المنطق وتهلوس.',
+            en: 'The lesson is blunt: an unauthorized attack can be a crime however educational the intent, and the scope-and-permission document is part of engineering practice, not a formality. Validation stays yours after the tool: reproduce the finding and judge its real impact — agents over-report, miss logic flaws, and hallucinate.',
+          },
+        },
+        {
+          wrong: 'اعتبار تقرير الوكيل أو رقعته النموذجية كلمة أخيرة — أو الاكتفاء بالمسح بدل التصميم',
+          right: 'النتيجة بداية فرز لا نهايته؛ والرقعة تُراجع كأي كود؛ والوكيل مكمّل لنمذجة التهديدات وأقل الامتيازات لا بديل عنهما',
+          note: {
+            ar: 'Autofix يقصّر طريق التنبيه المعروف إلى رقعة مراجَعة، وBig Sleep يصطاد المجهول، وStrix يتحقق ببرهان عامل — لكن الثلاثة تعمل داخل حدود: تقرير بلا إعادة إنتاج ليس إصلاحًا، ووكيل يجد ثغرة متأخرًا أغلى من قرار تصميم جعلها مستحيلة أصلًا.',
+            en: 'Autofix shortens the known-alert-to-patch path, Big Sleep hunts the unknown, Strix validates with a working proof-of-concept — but all three operate inside limits: an unreproduced report is not a fix, and an agent finding a bug late costs more than the design decision that made it impossible in the first place.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'البحث يبدأ بعين بشرية ترى النية والتصميم، ثم ثلاث عائلات يكمل بعضها: SAST يقرأ المصدر، وDAST يهاجم العامل من الخارج، وSCA يقرأ قائمة الاعتماديات — وكلها تخضع لاقتصاد الإشارة: بلا فرز تضيع النتائج في الضجيج، وبإنذار كاذب بالسلب تطمئن زورًا.', en: 'The search starts with a human eye that sees intent and design, then three complementary families: SAST reads the source, DAST attacks the running app from outside, SCA reads the dependency manifest — all governed by signal economics: without triage findings drown in noise, and a false negative falsely reassures.' },
+        { ar: 'التغذية fuzzing ترمي مدخلات مصممة وتعدّ الانهيارات — وحتى قائمتها اختيار مقصود بأصناف وحدود، والقائمة الثابتة تجعل التجربة حتمية قابلة لإعادة التشغيل.', en: 'Fuzzing throws crafted inputs and counts crashes — even its list is deliberate selection by classes and boundaries, and a fixed list keeps the experiment deterministic and rerunnable.' },
+        { ar: 'الذكاء الاصطناعي عند ثلاث نقاط: Autofix يصلح المعروف أسرع، وBig Sleep يصطاد المجهول في شيفرة حقيقية، وStrix يتحقق ببرهان عامل — والقواعد الثلاث: تفويض أولًا، والتحقق عملك، ولا تعويض عن التصميم الآمن. ومنقّح اليوم أثبت بالكتلة التصحيحية أن نطاق المسير خطأ صامت يساوي صفرًا على شيفرة مريضة.', en: 'AI lands at three points: Autofix fixes the known faster, Big Sleep hunts the unknown in real code, Strix validates with a working proof-of-concept — under three rules: authorization first, validation stays yours, no substitute for secure design. And today\u2019s linter proved in the debug block that a wrong walk scope silently equals zero on sick code.' },
+      ],
+      reflectPrompt: {
+        ar: 'افتح الملعب وأضف قاعدة السرود المدسوسة ثم اكتب عينتين: نظيفة تمامًا وأخرى تخالف القواعد الأربع كلها. اسأل نفسك: في مشروعك القادم — أي العائلات الثلاث تحتاجه أولًا، ومن يملك إذن تشغيل أدوات الهجوم على بيئتك؟',
+        en: 'Open the sandbox, add the embedded-secrets rule, then write two samples: one perfectly clean and one violating all four rules. Ask yourself: in your next project — which of the three families do you need first, and who holds the permission to run attack tooling against your environment?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch11.s3', pages: 'ص293-295 / pp.293-295' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch11.s3', pages: 'ص293-295 / pp.293-295' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

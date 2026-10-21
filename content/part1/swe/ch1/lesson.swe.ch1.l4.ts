@@ -1,0 +1,389 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch1.l4 — "Chapter 1 Review and Project: The Engineer's Balance"
+ * مراجعة الفصل 1 ومشروع: ميزان المهندس
+ * Aligned with SWE ch1 s7 (Conclusion, pp.27-28) + chapter review.
+ * All expression is original — a paraphrase of the CC BY-SA 4.0 source, never
+ * a verbatim translation (the stage-cost table stays the lesson-2 rule-of-thumb
+ * model; the balance model is original fixed-data arithmetic).
+ * Runnable design: the chapter project "The Engineer's Balance" — a decision-
+ * support model chaining the responsibility gate (refuse crunch), the iron
+ * triangle (capacity = time * cost, forced third corner) and the defect-cost
+ * table — plus a debug block whose missing gate silently absorbs a crunch
+ * demand and prints a normal recommendation.
+ * Deterministic only: no input(), no exit(), no random, no unittest.main.
+ */
+const lesson = {
+  id: 'swe.ch1.l4',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 1,
+  title: { ar: 'مراجعة الفصل 1 ومشروع: ميزان المهندس', en: 'Chapter 1 Review and Project: The Engineer\u2019s Balance' },
+  estimatedMinutes: 35,
+  prerequisites: ['swe.ch1.l3'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'أربعة مفاهيم حملناها في هذا الفصل: الهندسة تبدأ حيث يعتمد الآخرون على برنامجك؛ والمتطلبات أصعب جزء لأن تحديد ما نبنيه يسبق بناءه صح؛ والتعقيد جوهري والعرضي منه يُهاجم بالتجزئة؛ والعيوب حتمية فبنينا لها شبكات. ثم جعلنا المقايضات صريحة بمثلث حديدي، وقلنا لا بأخلاقيات مهنية. اليوم تُغلق كلها في مشروع واحد: ميزان المهندس — نموذج دعم قرار يجمع بوابة المسؤولية والمثلث وجدول كلفة العيوب في دالة واحدة تطبع توصية صادقة: اشحن، أو قصّ النطاق، أو حرّك التاريخ، أو وظّف، أو ارفض. ثم تنقلب الطاولة في كتلة التصحيح: نسخة بلا بوابة مسؤولية تمرّ في كل الحالات العادية وتبتلع الطلب الخاطئ الوحيد بصمت — هكذا تتعطل الأنظمة الأخلاقية: لا في الحالات السعيدة.',
+        en: 'Four ideas carried this chapter: engineering begins where others depend on your program; requirements are the hardest part because deciding what to build precedes building it right; complexity is intrinsic with its accidental half attacked by decomposition; and defects are inevitable, so we build nets. Then we made trade-offs explicit with an iron triangle and said no with a professional ethic. Today it all closes into one project: The Engineer\u2019s Balance — a decision-support model chaining a responsibility gate, the triangle, and the defect-cost table into a single function that prints an honest recommendation: ship, cut scope, move the date, hire, or refuse. Then the tables turn in the debug block: a version with no responsibility gate passes every ordinary case and silently swallows the one wrong demand — that is how ethical systems fail: not in the happy cases.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "def balance(scope, time, cost):\n    capacity = time * cost\n    if scope <= capacity:\n        return 'ship'\n    return 'cut %d' % (scope - capacity)\n\nprint(balance(8, 4, 2))\nprint(balance(11, 4, 2))\nprint(balance(11, 5, 3))",
+      question: {
+        ar: 'دالة ميزان مصغرة: السعة = الزمن × الكلفة بأشهر-مطور. ماذا يطبع السطر الثالث لطلب 11 ميزة بـ 5 أشهر و3 مطورين؟',
+        en: 'A mini balance: capacity = time * cost in developer-months. What does the third line print for a demand of 11 features with 5 months and 3 developers?',
+      },
+      reveal: {
+        ar: 'ship — السعة 15 أشهر-مطور تغطي الطلب 11 فارقةً 4. القاعدة بسيطة: الطلب داخل السعة يشحن وما فوقه يقصّ قدره. لكن الميزان الكامل في هذا الدرس يضيف ما تنساه النماذج البسيطة: ماذا لو ضغط المدير على الأركان الثلاثة معًا؟ وهل كل طلب يستحق التنفيذ أصلًا؟',
+        en: 'ship — the 15 developer-month capacity covers the demand of 11 with 4 to spare. The rule is simple: demand inside capacity ships, excess gets cut. But the full balance in this lesson adds what simple models forget: what if the manager presses on all three corners at once? And does every request deserve to be built at all?',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'مراجعة: التعريف والمتطلبات والتعقيد والعيوب', en: 'Recap: definition, requirements, complexity, defects' },
+      chunks: [
+        {
+          ar: 'التعريف: تطبيق منضبط للمبادئ والأساليب والأدوات لبناء أنظمة مفيدة وصحيحة بالقدر الكافي واقتصادية التغيير — بفريق، تحت متطلبات متغيرة، بمقياس يحطم الجهد المرتجل. والمتطلبات: بروكس — أصعب جزء منفرد أن تقرر بدقة ماذا ستبني؛ المستخدم يصف حلًا وأنت تحفر إلى المشكلة؛ أصحاب المصلحة أوسع من المستخدم النهائي (رعاة ومنظمون)؛ والمبدأ الحاكم: كلفة التغيير تتناسب مع حجم التغيير لا حجم النظام. والتعقيد: جوهري — قانون الضرائب معقد — لا يُلغى، وعرضي — تبعات وأسماء وتكرار — يُهاجم؛ والبرمجيات غير مرئية ومتقطعة ومتغيرة كل سبرنت، فالتجزئة بتماسك عالٍ وتقارن منخفض هي السلاح الأول.',
+          en: 'The definition: the disciplined application of principles, methods and tools to build systems that are useful, correct enough, and economical to change — by a team, under changing requirements, at a scale defeating ad-hoc effort. Requirements: Brooks — deciding precisely what to build is the hardest single part; users describe solutions while you dig for the problem; stakeholders reach beyond the end user (sponsors, regulators); and the governing principle: change cost proportional to the change, not the system. Complexity: essential — tax law is complicated — cannot be removed; accidental — tangles, names, duplication — is attacked; software is invisible, discrete and redesigned every sprint, so decomposition with high cohesion and low coupling is the primary weapon.',
+        },
+        {
+          ar: 'والعيوب: سلسلة mistake ثم fault ثم failure — فعل بشري يترك عيبًا في الشيفرة يتحول فشلًا حين يستدعيه تنفيذ. الشبكات متراكبة ومختلفة: مراجعات تقلل الأخطاء، والفحص الساكن يجد العيوب قبل التشغيل، والاختبار يستفز الفشل في بيئة آمنة — ويظهر وجود العيوب لا غيابها (ديكسترا) — والصندوقان الأسود والأبيض يكمل أحدهما الآخر. وكلفة العيب تنمو بالمرحلة: 1 في المتطلبات حتى 100 في الإنتاج في نموذجنا التقريبي — فالامساك المبكر ليس ترفًا بل هو الاقتصاد كله.',
+          en: 'Defects: the mistake then fault then failure chain — a human act leaves a flaw in the code that becomes a failure when an execution triggers it. The nets overlap and differ: reviews cut mistakes, static checking finds faults before they run, testing provokes failures in a safe setting — showing the presence of bugs, never their absence (Dijkstra) — and black-box and white-box complement each other. Defect cost grows by stage: 1 at requirements up to 100 at production in our rule-of-thumb model — catching early is not a luxury but the whole economics.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'مراجعة: المثلث والمسؤولية — وخريطة الكتاب', en: 'Recap: triangle and responsibility — and the book ahead' },
+      chunks: [
+        {
+          ar: 'المثلث الحديدي: نطاق وكلفة وزمن — اختر اثنين؛ أجايل تثبت الزمن والكلفة وتترك النطاق ينصرف، والمخططة تعكسه، وcrunch يخفي المقايضة ويقترض من الجودة. والمسؤولية: فولكسفاغن — نظام يحقق مواصفته قد يكون فاسدًا، فمتطلب ما كان يجب تنفيذه؛ وTherac-25 — حاجز واحد لا يكفي وتقارير الميدان تؤخذ بجدية والتزامن وإعادة الاستخدام مضاعفا خطر؛ ومدونة ACM أساس قابل للاقتباس لقول لا. وما تبقى من الكتاب ينتظم إجاباتٍ عن الضغوط ذاتها: عملية تنسّق الفريق (2)، ومتطلبات (3-5)، وتصميم ومعمارية تروّضان التعقيد (6-7)، وتحكم إصدارات (8)، وفحص ساكن واختبارات يمسكان العيوب مبكرًا (9-10)، وأمن (11)، ومقاييس (12)، وذكاء اصطناعي عبر الدورة (13)، وتسليم (14)، وصيانة وتطور يذهب إليهما معظم الجهد (15).',
+          en: 'The iron triangle: scope, cost, time — pick two; agile fixes time and cost and lets scope flex, plan-driven flips it, and crunch hides the trade-off while borrowing against quality. Responsibility: Volkswagen — a system satisfying its spec can still be wrong, a requirement that should never have been implemented; Therac-25 — one safeguard is not enough, field reports matter, concurrency and reuse are risk multipliers; the ACM Code is a citable basis for refusal. The rest of the book is organized as answers to the same pressures: process coordinating the team (2), requirements (3-5), design and architecture taming complexity (6-7), version control (8), static checking and testing catching defects early (9-10), security (11), metrics (12), AI across the lifecycle (13), delivery (14), and maintenance and evolution where most effort goes (15).',
+        },
+        {
+          ar: 'وأربعة مبادئ عابرة تختصر الفصل كله — عدّها عدّة حقيبتك في كل ما يأتي: البرمجيات معقدة، والمتطلبات تتغير، والعيوب حتمية، والفرق تحتاج تنسيقًا. كل تقنية في هذا الكتاب تكسب مكانها بالإجابة عن واحد منها: git يجيب عن التنسيق، والاختبارات عن العيوب، والمعمارية عن التعقيد، والتكرارات القصيرة عن التغير. وحين تشك في غرض أداة ما اسأل: أي ضغط تعالجه؟ إن لم تجد جوابًا فهي زينة.',
+          en: 'And four cross-cutting principles compress the whole chapter — carry them as your kit for everything ahead: software is complex; requirements change; defects are inevitable; teams need coordination. Every technique in this book earns its place by answering one of them: git answers coordination, tests answer defects, architecture answers complexity, short iterations answer change. When in doubt about a tool\u2019s purpose, ask: which pressure does it treat? If there is no answer, it is decoration.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'الميزان الكامل: بوابة مسؤولية ومثلث وكلفة عيوب', en: 'The full balance: responsibility gate, triangle, defect cost' },
+      code: "def balance(scope, time, cost, flex):\n    # the responsibility gate runs first: some demands are refused, not traded\n    if flex == 'crunch':\n        return 'refuse: crunch hides the trade-off'\n    capacity = time * cost\n    if scope <= capacity:\n        return 'ship as planned'\n    over = scope - capacity\n    if flex == 'scope':\n        return 'cut scope: %d' % over\n    if flex == 'time':\n        return 'move date: +%d months' % (-(-over // cost))\n    return 'hire: +%d devs' % (-(-over // time))\n\nprint(balance(8, 4, 2, 'crunch'))\nprint(balance(8, 4, 2, 'scope'))\nprint(balance(12, 4, 2, 'time'))\nprint(balance(12, 4, 2, 'cost'))\nover = 4\nprint('crunch debt: %d vs caught early: %d' % (over * 100, over * 1))",
+      explanation: {
+        ar: 'أربع طبقات بالترتيب — وهذا ترتيب الدروس نفسه. بوابة المسؤولية أولًا: طلب crunch — إثبات الأركان الثلاثة معًا — يُرفض صراحة لأنه يخفي المقايضة، ولا يُحسب حسابًا. ثم السعة: 8 أشهر-مطور يشحن الطلب 8 كما هو. وفوق السعة يُحسب الزائد 4 ويُحسم بحسب الركن الذي انصرف: قصّ 4 ميزات، أو +2 أشهر (الزائد 4 على مطورين)، أو +1 مطور (الزائد 4 على 4 أشهر). والسطر الأخير يدمج جدول العيوب: لو ابتُلع الزائد بالسهر وهرب إلى الإنتاج فكلفته 400 وحدة في نموذجنا، ولو أمُسك في المتطلبات ف4 — مئة ضعف نفس المقايضة. ولاحظ الصيغة -(-over // cost): تقريب لأعلى بالأعداد الصحيحة فلا كسور أشهر.',
+        en: 'Four layers in order — the same order as the lessons. The responsibility gate first: a crunch demand — all three corners pinned — is refused outright because it hides the trade-off; it is not computed. Then capacity: 8 developer-months ship the demand of 8 as-is. Above capacity the excess 4 is priced by whichever corner gives: cut 4 features, or +2 months (excess 4 over 2 developers), or +1 developer (excess 4 over 4 months). The last line joins the defect table: if the excess is crunched away and escapes to production it costs 400 units in our model, versus 4 caught at requirements — a hundred times the same trade. Note -(-over // cost): integer ceiling so months stay whole.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.project-balance',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: "مشروع الفصل: ابنِ ميزان المهندس كاملًا. عرّف STAGE_COST بالمراحل الخمس (requirements: 1، design: 5، code: 10، testing: 20، production: 100) ودالة balance(scope, time, cost, flex): بوابة المسؤولية أولًا — flex يساوي crunch تعيد السلسلة refuse: crunch hides the trade-off؛ ثم السعة time*cost — الطلب داخلها يعيد ship as planned؛ فوقها احسب over وارجع بحسب الركن المنصرف: scope يعيد cut scope: %d، وtime يعيد move date: +%d months بالتقريب لأعلى على الكلفة، وغير ذلك يعيد hire: +%d devs بالتقريب لأعلى على الزمن. اطبع توصيات السيناريوهات الأربعة بالترتيب: (8، 4، 2، scope) ثم (12، 4، 2، time) ثم (12، 4، 2، cost) ثم (8، 4، 2، crunch) — سطر لكل نداء — ثم سطر crunch escapes: %d units vs caught in requirements: %d لكلفة 4 عيوب تهرب إلى الإنتاج مقابل أمساكها في المتطلبات.",
+        en: "The chapter project: build the full Engineer's Balance. Define STAGE_COST with the five stages (requirements: 1, design: 5, code: 10, testing: 20, production: 100) and balance(scope, time, cost, flex): the responsibility gate first — flex equal to crunch returns the string refuse: crunch hides the trade-off; then capacity time*cost — demand inside it returns ship as planned; above it compute over and return by the corner that gives: scope returns cut scope: %d, time returns move date: +%d months with integer ceiling over cost, otherwise hire: +%d devs with integer ceiling over time. Print the four scenario recommendations in order: (8, 4, 2, scope), then (12, 4, 2, time), then (12, 4, 2, cost), then (8, 4, 2, crunch) — one line per call — then the line crunch escapes: %d units vs caught in requirements: %d for 4 faults escaping to production versus being caught at requirements.",
+      },
+      starterCode: "STAGE_COST = {\n    'requirements': 1,\n    'design': 5,\n    'code': 10,\n    'testing': 20,\n    'production': 100,\n}\n\ndef balance(scope, time, cost, flex):\n    # TODO: the responsibility gate runs first: flex == 'crunch' -> return\n    #       'refuse: crunch hides the trade-off'\n    capacity = time * cost\n    # TODO: scope <= capacity -> return 'ship as planned'\n    over = scope - capacity\n    # TODO: flex == 'scope' -> return 'cut scope: %d' % over\n    # TODO: flex == 'time' -> return 'move date: +%d months' % (-(-over // cost))\n    # TODO: otherwise return 'hire: +%d devs' % (-(-over // time))\n    ...\n\n# TODO: print balance(8, 4, 2, 'scope'), balance(12, 4, 2, 'time'),\n#       balance(12, 4, 2, 'cost'), balance(8, 4, 2, 'crunch') — one line each\n# TODO: print the crunch escapes line: 4 faults to production vs caught at requirements\n",
+      solution: "STAGE_COST = {'requirements': 1, 'design': 5, 'code': 10, 'testing': 20, 'production': 100}\n\ndef balance(scope, time, cost, flex):\n    # the responsibility gate runs first: some demands are refused, not traded\n    if flex == 'crunch':\n        return 'refuse: crunch hides the trade-off'\n    capacity = time * cost\n    if scope <= capacity:\n        return 'ship as planned'\n    over = scope - capacity\n    if flex == 'scope':\n        return 'cut scope: %d' % over\n    if flex == 'time':\n        return 'move date: +%d months' % (-(-over // cost))\n    return 'hire: +%d devs' % (-(-over // time))\n\nprint(balance(8, 4, 2, 'scope'))\nprint(balance(12, 4, 2, 'time'))\nprint(balance(12, 4, 2, 'cost'))\nprint(balance(8, 4, 2, 'crunch'))\nprint('crunch escapes: %d units vs caught in requirements: %d' % (\n    4 * STAGE_COST['production'], 4 * STAGE_COST['requirements']))",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'التوصيات الأربع تطبع بالترتيب الصحيح', en: 'The four recommendations print in the right order' },
+          code: "assert 'ship as planned' in __learner_output__ and 'move date: +2 months' in __learner_output__ and 'hire: +1 devs' in __learner_output__ and 'refuse: crunch hides the trade-off' in __learner_output__, 'expected: all four recommendations | actual: %r' % __learner_output__",
+          expected: 'all four recommendations',
+        },
+        {
+          id: 't2',
+          name: { ar: 'الميزان يحسم سيناريوهات جديدة', en: 'The balance decides fresh scenarios' },
+          code: "assert balance(10, 5, 2, 'scope') == 'ship as planned' and balance(13, 5, 2, 'scope') == 'cut scope: 3', 'expected: ship / cut scope: 3 | actual: %r' % ((balance(10, 5, 2, 'scope'), balance(13, 5, 2, 'scope')),)",
+          expected: 'ship / cut scope: 3',
+        },
+        {
+          id: 't3',
+          name: { ar: 'سقف الكلفة وسطر الهروب صحيحان', en: 'The ceiling arithmetic and escape line are correct' },
+          code: "assert balance(16, 5, 3, 'cost') == 'hire: +1 devs' and balance(16, 5, 3, 'time') == 'move date: +1 months' and 'crunch escapes: 400 units vs caught in requirements: 4' in __learner_output__, 'expected: hire/move ceilings and escape line | actual: %r' % __learner_output__",
+          expected: 'hire/move ceilings and escape line',
+        },
+      ],
+      hints: [
+        { ar: 'البوابة قبل الحساب: إن كانت flex تساوي crunch فارجع سلسلة الرفض مباشرة — حتى لو كانت السعة كافية. الرفض قرار لا حساب.', en: 'The gate comes before any arithmetic: if flex equals crunch, return the refusal string immediately — even when capacity suffices. Refusal is a decision, not a computation.' },
+        { ar: 'التقريب لأعلى بالأعداد الصحيحة: -(-over // cost) — فالزائد 4 على كلفة 2 يعطي شهرين كاملين، والزائد 1 على كلفة 3 يعطي شهرًا واحدًا.', en: 'Integer ceiling: -(-over // cost) — excess 4 over cost 2 gives 2 whole months, and excess 1 over cost 3 gives 1 month.' },
+        { ar: 'الهيكل:\nif flex == \'crunch\':\n    return \'refuse: crunch hides the trade-off\'\ncapacity = time * cost\nif scope <= capacity:\n    return \'ship as planned\'\nover = scope - capacity\nif flex == \'scope\':\n    return \'cut scope: %d\' % over\nif flex == \'time\':\n    return \'move date: +%d months\' % (-(-over // cost))\nreturn \'hire: +%d devs\' % (-(-over // time))', en: "The skeleton:\nif flex == 'crunch':\n    return 'refuse: crunch hides the trade-off'\ncapacity = time * cost\nif scope <= capacity:\n    return 'ship as planned'\nover = scope - capacity\nif flex == 'scope':\n    return 'cut scope: %d' % over\nif flex == 'time':\n    return 'move date: +%d months' % (-(-over // cost))\nreturn 'hire: +%d devs' % (-(-over // time))" },
+        { ar: 'السطر الخامس يقرأ القاموس لا أرقامًا حرفية: 4 * STAGE_COST[\'production\'] = 400 مقابل 4 * STAGE_COST[\'requirements\'] = 4 — مئة ضعف نفس العيب.', en: "The fifth line reads the dict, not literal numbers: 4 * STAGE_COST['production'] = 400 versus 4 * STAGE_COST['requirements'] = 4 — a hundred times the same fault." },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-checklist',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقع خرجه — سطران: قائمة المسؤولية تفحص أربع صفات، تجمع أسماء الصفات الخاطئة مرتبةً، ثم تحكم: رفض إن وُجد ذنب وإلا اشحن. ماذا يطبع؟',
+        en: 'Read the code and predict its output — two lines: the responsibility list checks four qualities, collects the names of failing ones in sorted order, then rules: refuse if any flag fell, else ship. What does it print?',
+      },
+      code: "CHECK = {'public_interest': True, 'honest': True, 'safe': False, 'competent': True}\nflags = []\nfor name in sorted(CHECK):\n    if not CHECK[name]:\n        flags.append(name)\nprint('review:', ','.join(flags))\nprint('verdict:', 'refuse' if flags else 'ship')",
+      solution: "review: safe\nverdict: refuse",
+      answer: "review: safe\nverdict: refuse",
+      hints: [
+        { ar: 'sorted(CHECK) يرتب المفاتيح ألفبائيًا: competent، honest، public_interest، safe — والفحص يجري بهذا الترتيب.', en: 'sorted(CHECK) orders the keys alphabetically: competent, honest, public_interest, safe — the scan runs in that order.' },
+        { ar: 'صفة واحدة فقط False: safe — فقائمة flags تصير [\'safe\'] وكل البقية تعبر.', en: 'Exactly one quality is False: safe — so flags becomes [\'safe\'] and everything else passes.' },
+        { ar: 'السطر الأول يطبع review: safe — والثاني: قائمة غير فارغة تعني refuse.', en: 'Line one prints review: safe — and line two: a non-empty list means refuse.' },
+        { ar: 'الخرج:\nreview: safe\nverdict: refuse', en: 'The output:\nreview: safe\nverdict: refuse' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-nets',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'خلاصة الكتاب توزع الضغوط الأربع على الفصول: أي ضغط يجيب عنه زوج الفصول 9 و10 — الفحص الساكن والاختبارات؟',
+        en: 'The book maps the four pressures onto its chapters: which pressure do chapters 9 and 10 — static checking and testing — answer?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'الفرق تحتاج تنسيقًا', en: 'Teams need coordination' } },
+        { id: 'b', text: { ar: 'المتطلبات تتغير', en: 'Requirements change' } },
+        { id: 'c', text: { ar: 'العيوب حتمية — فحصٌ يجدها قبل أن تعمل واختبارٌ يستفز فشلها في بيئة آمنة', en: 'Defects are inevitable — checking finds them before they run, testing provokes their failure in a safe setting' } },
+      ],
+      answer: 'c',
+      solution: 'c',
+      hints: [
+        { ar: 'الفحص الساكن يمسك fault قبل التنفيذ، والاختبار يستفز failure في بيئتك لا عند المستخدم — شبكتان من شبكات الدرس الثاني.', en: 'Static checking grips the fault before execution; testing provokes the failure in your environment, not at users — two nets from lesson two.' },
+        { ar: 'التنسيق يجيب عنه تحكم الإصدارات (الفصل 8)، والتغير تجيب عنه العملية والتكرارات (الفصل 2).', en: 'Coordination is answered by version control (chapter 8), change by process and iterations (chapter 2).' },
+        { ar: 'الضغط «العيوب حتمية» ظهر في الدرس الثاني بسلسلة mistake ثم fault ثم failure — والفصلان 9 و10 هما شبكتاه الهندسيتان.', en: 'The pressure defects-are-inevitable appeared in lesson two as the mistake-fault-failure chain — chapters 9 and 10 are its engineering nets.' },
+        { ar: 'الجواب: c.', en: 'Answer: c.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.numeric-over',
+      exKind: 'numeric',
+      required: true,
+      prompt: {
+        ar: 'بلا تشغيل: طلب 13 ميزة بـ 5 أشهر و2 مطور — والسعة بالأشهر-مطور. كم الميزات الزائدة over التي يجب أن ينصرف ركنٌ عنها؟',
+        en: 'Without running: a demand of 13 features with 5 months and 2 developers — capacity in developer-months. How many excess features (over) must a corner absorb?',
+      },
+      answer: '3',
+      solution: '3',
+      tolerance: 0,
+      hints: [
+        { ar: 'السعة = الزمن × الكلفة = 5 × 2 = 10 أشهر-مطور.', en: 'Capacity = time * cost = 5 * 2 = 10 developer-months.' },
+        { ar: 'الزائد = الطلب - السعة = 13 - 10.', en: 'Excess = demand - capacity = 13 - 10.' },
+        { ar: 'ثلاث ميزات فوق السعة — وقد تُقص، أو تُقسم على الكلفة أشهرًا، أو على الزمن مطورين.', en: 'Three features over capacity — to be cut, divided by cost into months, or by time into developers.' },
+        { ar: 'الجواب: 3', en: 'Answer: 3' },
+      ],
+    },
+    {
+      kind: 'debug',
+      id: 'ex5.debug-silent-crunch',
+      required: true,
+      brokenCode: "def balance(scope, time, cost, flex):\n    # BUG: the responsibility gate is missing — crunch is absorbed silently\n    capacity = time * cost\n    if scope <= capacity:\n        return 'ship as planned'\n    over = scope - capacity\n    if flex == 'scope':\n        return 'cut scope: %d' % over\n    if flex == 'time':\n        return 'move date: +%d months' % (-(-over // cost))\n    return 'hire: +%d devs' % (-(-over // time))\n\nprint('scope: 8 time: 4 cost: 2 flex: crunch')\nprint(balance(8, 4, 2, 'crunch'))\nprint('scope: 12 time: 4 cost: 2 flex: crunch')\nprint(balance(12, 4, 2, 'crunch'))",
+      prompt: {
+        ar: 'الميزان يعمل في كل الحالات العادية — لكن طلب crunch — إثبات الأركان الثلاثة معًا — يمرّ بلا بوابة مسؤولية: الحالة الأولى تُطبع ship as planned والثانية hire: +1 devs، ولا كلمة refuse في التقرير كله. هذا هو العَرَض: النموذج يبتلع الطلب الخاطئ الوحيد بصمت ويقدم توصية عادية بدل الرفض — مثل مهندس يقبل طلبًا ينبغي رفضه. أضف البوابة في صدر balance: أي نداء بـ flex يساوي crunch يعيد refuse: crunch hides the trade-off بغض النظر عن الأرقام، مع بقاء التوصيات الصادقة الأخرى كما هي تمامًا.',
+        en: 'The balance works in every ordinary case — but a crunch demand, all three corners pinned at once, walks past with no responsibility gate: case one prints ship as planned, case two prints hire: +1 devs, and the word refuse appears nowhere in the report. That is the symptom: the model silently swallows the one wrong demand and prints a normal recommendation instead of a refusal — like an engineer accepting a request that should be refused. Add the gate at the top of balance: any call with flex equal to crunch returns refuse: crunch hides the trade-off regardless of the numbers, while every honest recommendation stays exactly as it is.',
+      },
+      solution: "def balance(scope, time, cost, flex):\n    # the responsibility gate runs first: some demands are refused, not traded\n    if flex == 'crunch':\n        return 'refuse: crunch hides the trade-off'\n    capacity = time * cost\n    if scope <= capacity:\n        return 'ship as planned'\n    over = scope - capacity\n    if flex == 'scope':\n        return 'cut scope: %d' % over\n    if flex == 'time':\n        return 'move date: +%d months' % (-(-over // cost))\n    return 'hire: +%d devs' % (-(-over // time))\n\nprint('scope: 8 time: 4 cost: 2 flex: crunch')\nprint(balance(8, 4, 2, 'crunch'))\nprint('scope: 12 time: 4 cost: 2 flex: crunch')\nprint(balance(12, 4, 2, 'crunch'))",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'بوابة الرفض تعمل في الحالتين', en: 'The refusal gate fires in both cases' },
+          code: "assert __learner_output__.count('refuse: crunch hides the trade-off') == 2, 'expected: 2 refusals | actual: %r' % __learner_output__",
+          expected: '2 refusals',
+        },
+        {
+          id: 't2',
+          name: { ar: 'لم يعد هناك ابتلاع صامت', en: 'No more silent absorption' },
+          code: "assert 'ship as planned' not in __learner_output__ and 'hire:' not in __learner_output__, 'expected: no silent recommendations | actual: %r' % __learner_output__",
+          expected: 'no silent recommendations',
+        },
+        {
+          id: 't3',
+          name: { ar: 'التوصيات الصادقة لم تُمَس', en: 'The honest recommendations are untouched' },
+          code: "assert balance(12, 4, 2, 'time') == 'move date: +2 months' and balance(12, 4, 2, 'cost') == 'hire: +1 devs' and balance(12, 4, 2, 'scope') == 'cut scope: 4', 'expected: +2 months / +1 devs / cut scope: 4 | actual: %r' % ((balance(12, 4, 2, 'time'), balance(12, 4, 2, 'cost'), balance(12, 4, 2, 'scope')),)",
+          expected: '+2 months / +1 devs / cut scope: 4',
+        },
+      ],
+      hints: [
+        { ar: 'العيب أخلاقي لا حسابي: كل الحالات العادية صحيحة — الطلب الوحيد الذي يحتاج حكمًا هو وحده الذي مرّ بصمت.', en: 'The defect is ethical, not arithmetic: every ordinary case is right — the only demand needing judgment is the one that slipped through silently.' },
+        { ar: 'بوابة المسؤولية تسبق كل حساب: شرط على flex يساوي crunch يعيد سلسلة الرفض قبل قراءة السعة أصلًا.', en: 'The responsibility gate precedes all computation: a condition on flex equal to crunch returns the refusal string before capacity is even read.' },
+        { ar: 'أضف في صدر الدالة مباشرة:\nif flex == \'crunch\':\n    return \'refuse: crunch hides the trade-off\'\n\nولا تغيّر أي سطر آخر.', en: "Add at the very top of the function:\nif flex == 'crunch':\n    return 'refuse: crunch hides the trade-off'\n\nand change no other line." },
+        { ar: 'بعد الإصلاح يطبع السطران: refuse: crunch hides the trade-off مرتين — والنداءات الثلاثة الصادقة (scope وtime وcost) تبقى بنتائجها نفسها.', en: 'After the fix both lines print refuse: crunch hides the trade-off — and the three honest calls (scope, time, cost) keep their exact results.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "STAGE_COST = {'requirements': 1, 'design': 5, 'code': 10, 'testing': 20, 'production': 100}\n\ndef balance(scope, time, cost, flex):\n    if flex == 'crunch':\n        return 'refuse: crunch hides the trade-off'\n    capacity = time * cost\n    if scope <= capacity:\n        return 'ship as planned'\n    over = scope - capacity\n    if flex == 'scope':\n        return 'cut scope: %d' % over\n    if flex == 'time':\n        return 'move date: +%d months' % (-(-over // cost))\n    return 'hire: +%d devs' % (-(-over // time))\n\nfor flex in ['scope', 'time', 'cost', 'crunch']:\n    print(flex, '->', balance(12, 4, 2, flex))\n\n# جرّب: ضاعف الفريق (cost=4) — ماذا تصير توصيتا time وcost؟ وهل يبقى crunch مرفوضًا؟\n# try: double the team (cost=4) — what do the time and cost recommendations become? does crunch stay refused?\n# جرّب: أضف مرحلة إلى STAGE_COST بقيمة تقديرية منك واحسب كلفة هروب 3 عيوب من الاختبار إلى الإنتاج\n# try: add a stage to STAGE_COST with your own estimate and price 3 faults escaping testing to production\n",
+      prompt: {
+        ar: 'الملعب يفتح الميزان كاملًا: حرّك السعة والطلب والركن المنصرف وشاهد التوصية تتبدل، وتذكر أن بوابة الرفض لا تتحرك مهما كبرت الأرقام. لا اختبار هنا — فضولك فقط.',
+        en: 'The sandbox opens the full balance: move capacity, demand and the giving corner and watch the recommendation change — and remember the refusal gate never moves, whatever the numbers. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ومن الفصل الثامن: أي تخصص يعطي كل تغيير اسمًا وتاريخًا ومالكًا — الأساس الذي تُبنى عليه كل التخصصات اللاحقة؟',
+            en: 'From chapter eight: which discipline gives every change a name, a history, and an owner — the substrate every later discipline builds on?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'تحكم الإصدارات — git', en: 'Version control — git' } },
+            { id: 'b', text: { ar: 'المقاييس — الفصل 12', en: 'Metrics — chapter 12' } },
+            { id: 'c', text: { ar: 'الصيانة — الفصل 15', en: 'Maintenance — chapter 15' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'خلاصة الكتاب تعدّ git أرضية كل ما بعده: سجل الالتزامات ذاكرة تنفيذية لكل تغيير — وهو نفسه ما استعملته في الفصل 15 لتوصيف الشيفرة العتيقة ومراجعة التغييرات.',
+            en: 'The book\u2019s conclusion names git the substrate of everything after: the commit history is an executable memory of every change — the same history you used in chapter 15 to characterize legacy code and review diffs.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: '«العيوب حتمية» — أي زوج فصول يمسكها مبكرًا: واحد يجدها قبل أن تعمل وواحد يستفز فشلها في بيئة آمنة؟',
+            en: '"Defects are inevitable" — which chapter pair catches them early: one finding faults before they run, the other provoking failures in a safe setting?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الفصلان 6 و7 — التصميم والمعمارية', en: 'Chapters 6 and 7 — design and architecture' } },
+            { id: 'b', text: { ar: 'الفصلان 9 و10 — الفحص الساكن والاختبارات', en: 'Chapters 9 and 10 — static checking and testing' } },
+            { id: 'c', text: { ar: 'الفصلان 14 و15 — التسليم والصيانة', en: 'Chapters 14 and 15 — delivery and maintenance' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'نفس شبكات الدرس الثاني: الفحص الساكن يمسك fault قبل التنفيذ، والاختبار يستفز failure في بيئة آمنة — لا تقنية تكفي وحدها ولهذا الزوج متكامل.',
+            en: 'The same nets as lesson two: static checking grips faults before execution, testing provokes failures in a safe setting — neither suffices alone, which is why the pair is complementary.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: '«أنت مسؤول عمّا تشحنه مهما كان مَن طلب» — أي فصل علّمك البناء الدفاعي: أمن من الشيفرة إلى سلسلة التوريد، وطبقات لا حاجز واحد؟',
+            en: '"You are accountable for what you ship, regardless of who asked" — which chapter taught defensive construction: security from the code to the supply chain, layers rather than one safeguard?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الفصل 11 — الأمن', en: 'Chapter 11 — security' } },
+            { id: 'b', text: { ar: 'الفصل 2 — العملية', en: 'Chapter 2 — process' } },
+            { id: 'c', text: { ar: 'الفصل 13 — الذكاء الاصطناعي', en: 'Chapter 13 — AI' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'فصل الأمن وسّع مبدأ defense in depth من Therac-25 إلى ممارسة يومية: تحقق مدخلات وأقل امتياز وتثبيت تبعيات مدققة — كل طبقة تحمي إن نقضت أخرى.',
+            en: 'The security chapter widened Therac-25\u2019s defense-in-depth into daily practice: input validation, least privilege, pinned audited dependencies — each layer protects when another is breached.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'ومن الفصل 14: النشر المستمر جعل الإصدار قرارًا روتينيًا. كيف يعيد ذلك تشكيل المثلث الحديدي؟',
+            en: 'From chapter 14: continuous delivery made releasing a routine decision. How does that reshape the iron triangle?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'شحنات صغيرة متكررة: الزمن لكل تغيير يتقلص والنطاق يتجزأ والمقايضة تصير صغيرة روتينية', en: 'Small frequent ships: per-change time shrinks, scope splits up, and the trade-off becomes a small routine one' } },
+            { id: 'b', text: { ar: 'يلغي الحاجة إلى أي تقدير', en: 'It removes the need for any estimation' } },
+            { id: 'c', text: { ar: 'يثبت النطاق والزمن والكلفة معًا', en: 'It pins scope, time and cost all together' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'حين يصير الإصدار روتينًا لا حدثًا سنويًا، لا تتراكم دفعة عملاقة تختبر المثلث حتى الكسر: كل تغيير يسأل المقايضة ذاتها بمقياس صغير — وهذا امتداد مباشر لاختيار أجايل في هذا الفصل.',
+            en: 'When release is routine rather than a yearly event, no giant batch accumulates to stretch the triangle until it snaps: each change asks the same trade-off at small scale — a direct extension of agile\u2019s choice in this chapter.',
+          },
+        },
+        {
+          id: 'q5',
+          question: {
+            ar: 'ومن الفصل 15: الصيانة تستهلك نحو 60% من كلفة النظام عبر عمره. أي مفهوم من هناك يجعل الكلفة المبكرة الصغيرة في هذا الفصل (اختبارات ومعمارية) استثمارًا في نظام يبقى قابلًا للتغيير؟',
+            en: 'From chapter 15: maintenance consumes roughly 60% of a system\u2019s lifetime cost. Which concept from there makes this chapter\u2019s small early cost (tests and architecture) an investment in a system that stays changeable?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الشيفرة العتيقة تُعرَّف بغياب الاختبارات — والتغطية المبكرة تحميك من وراثة الخوف', en: 'Legacy code is defined by absent tests — early coverage protects you from inheriting fear' } },
+            { id: 'b', text: { ar: 'إعادة كتابة كاملة كل ثلاث سنوات', en: 'A full rewrite every three years' } },
+            { id: 'c', text: { ar: 'تعليقات كثيرة بدل الاختبارات', en: 'Plenty of comments instead of tests' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الفصل 15 عرّف العتيقة بأنها شيفرة تخاف تغييرها لأن لا شيء يثبّت سلوكها. حكاية الشركتين في هذا الفصل هي الوجه المبكر للقصة نفسها: من يدفع الاختبارات والمعمارية أولًا لا يرث لاحقًا نظامًا يخاف لمسه.',
+            en: 'Chapter 15 defined legacy as code you fear to change because nothing pins its behavior. This chapter\u2019s two-companies tale is the early face of the same story: whoever pays for tests and architecture up front never inherits a system they fear to touch.',
+          },
+        },
+        {
+          id: 'q6',
+          question: {
+            ar: 'والمثلث من هذا الفصل: أساليب أجايل تثبت أي ركنين؟',
+            en: 'And the triangle from this chapter: which two corners do agile methods fix?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الزمن والكلفة — والنطاق ينصرف', en: 'Time and cost — scope flexes' } },
+            { id: 'b', text: { ar: 'النطاق والزمن — والكلفة تنصرف', en: 'Scope and time — cost flexes' } },
+            { id: 'c', text: { ar: 'النطاق والكلفة — والزمن ينصرف', en: 'Scope and cost — time flexes' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'سبرنت محدد الطول بفريق ثابت: الزمن والكلفة مثبتان والنطاق هو المتغير — تشحن شيئًا ذا قيمة في الموعد. وهذا هو الركن الذي يجيب عنه ميزان مشروعك: لما ضغط المدير الثلاثة، رفضت crunch وسمحت للنطاق بالانصاف.',
+            en: 'A fixed-length sprint with a fixed team: time and cost pinned, scope is the variable — ship something valuable on the date. That is the corner your project\u2019s balance answers: when the manager pinned all three, you refused crunch and let scope give.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'الميزان آلة حساب: أعطيه الأرقام فيعطيني الجواب النهائي',
+          right: 'الميزان يُظهر المقايضة ولا يقرر بدل أصحاب المصلحة — دوره إظهار الثمن بصدق ورفض ما يجب رفضه، والاختيار بين الأركان قرار إنساني',
+          note: {
+            ar: 'مخرجات مشروعك توصيات لا أوامر: cut scope أو move date أو hire كلها عروض أثمنة لأصحاب المصلحة. والنموذج نفسه تبسيط مقصود — سعة شهر-مطور لكل ميزة — قيمته في إظهار الشكل لا في مطابقة الواقع رقمًا برقم.',
+            en: 'Your project\u2019s outputs are recommendations, not orders: cut scope, move date and hire are price offers to stakeholders. And the model itself is a deliberate simplification — one developer-month per feature — valuable for showing the shape, not for matching reality number for number.',
+          },
+        },
+        {
+          wrong: 'كتلة التصحيح كانت تحسينًا شكليًا — حذف الحارس لا يغيّر النتائج العادية',
+          right: 'غياب بوابة المسؤولية صامت: كل الحالات العادية صحيحة والطلب الخاطئ الوحيد يمرّ بلا رفض — العيوب الأخلاقية كهذا لا تظهر في الحالات السعيدة',
+          note: {
+            ar: 'هذا نمط عام يفوق الميزان: العيب الذي يظهر في كل الاختبارات الروتينية يكمن في الحالة الوحيدة التي تحتاج حكمًا — فولكسفاغن اجتازت فحوصها كلها. أضِف دائمًا حالة «الطلب الذي يجب رفضه» إلى حزمك.',
+            en: 'A general pattern beyond the balance: the defect that passes every routine test hides in the one case needing judgment — Volkswagen passed all its checks. Always add the request-that-should-be-refused case to your suites.',
+          },
+        },
+        {
+          wrong: 'خلاصة الكتاب: قواعد ثابتة تُحفظ وتُطبق حرفيًا',
+          right: 'النهج تجريبي: خطوات صغيرة، تغذية سريعة، تجارب عند الشك، والدليل المقاس يحسم — والمبادئ الأربعة (تعقيد، تغيّر، عيوب، تنسيق) هي الذي تقيس عليه كل تقنية',
+          note: {
+            ar: 'ناتو 1968 اقترح هندسةً بأساليب متعمدة، لكن الجواب النهائي لم يكن قانون بناء — فالبرمجيات أكثر تغيرًا من أن تُقيَّد. أدواتك ستتغير كل سنوات؛ ما يبقى هو الضغوط الأربع وطرق قياسك لها.',
+            en: 'NATO 1968 proposed engineering with deliberate methods, but the final answer was no building code — software is too changeable to be pinned. Your tools will rotate every few years; what stays is the four pressures and how you measure them.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'الفصل في أربعة: الهندسة تبدأ عند اعتماد الآخرين على برنامجك؛ أصعب جزء تحديد ما نبنيه (بروكس)؛ التعقيد جوهري فتبحر بالتجزئة — تماسك عالٍ وتقارن منخفض — وتهاجم العرضي؛ والعيوب حتمية فتبني شبكات متراكبة تمسكها مبكرًا.', en: 'The chapter in four: engineering starts when others depend on your program; the hardest part is deciding what to build (Brooks); complexity is intrinsic, so you sail by decomposition — high cohesion, low coupling — and attack the accidental; defects are inevitable, so you build overlapping nets that catch them early.' },
+        { ar: 'المقايضات صريحة لا صامتة: المثلث الحديدي — اختر اثنين — وحساب الركن المفروض يجعل الثمن أرقامًا؛ وميزان المهندس يجمعها: بوابة مسؤولية أولًا، ثم سعة، ثم توصية صادقة — اشحن أو قصّ أو حرّك أو وظّف أو ارفض.', en: 'Trade-offs are explicit, never silent: the iron triangle — pick two — and computing the forced corner turns the price into numbers; the Engineer\u2019s Balance chains them: responsibility gate first, then capacity, then an honest recommendation — ship, cut, move, hire, or refuse.' },
+        { ar: 'وأخلاقك جزء من الأداة: فولكسفاغن أثبتت أن تحقق المواصفة لا يعني الصواب، وTherac-25 أن حاجزًا واحدًا لا يكفي — فاحمل مدونة ACM أساسًا للرفض، والمبادئ الأربعة العابرة (تعقيد، تغيّر، عيوب، تنسيق) عدّتك لكل ما يأتي.', en: 'And your ethics are part of the toolkit: Volkswagen proved spec satisfaction is not correctness, Therac-25 that one safeguard is not enough — carry the ACM Code as your basis for refusal, and the four cross-cutting principles (complexity, change, defects, coordination) as your kit for everything ahead.' },
+      ],
+      reflectPrompt: {
+        ar: 'افتح الملعب وحرّك السعة والطلب والركن المنصرف. اسأل نفسك: في مشروعك القادم — أي ركن سيسمح له بالانصاف عمدًا، وأي طلب ستضعه على بوابة الرفض مهما كانت الأرقام؟',
+        en: 'Open the sandbox and move capacity, demand and the giving corner. Ask yourself: in your next project — which corner will you deliberately let give, and which request will you place behind the refusal gate no matter the numbers?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch1.s7', pages: 'ص27-28 / pp.27-28' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch1.s7', pages: 'ص27-28 / pp.27-28' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

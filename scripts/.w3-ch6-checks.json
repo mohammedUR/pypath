@@ -1,0 +1,157 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch6.l1",
+   "id": "ex3.trace-secret",
+   "code": "class Ledger:\n    def __init__(self):\n        self._entries = []          # the secret: the storage decision\n    def add(self, amount):\n        self._entries.append(amount)\n    def total(self):\n        return sum(self._entries)\n\nledger = Ledger()\nledger.add(30)\nledger.add(12)\nprint(\"total:\", ledger.total())\nprint(\"peeking at the secret:\", ledger._entries)",
+   "answer": "total: 42\npeeking at the secret: [30, 12]"
+  },
+  {
+   "lesson": "swe.ch6.l2",
+   "id": "ex3.trace-visibility",
+   "code": "class User:\n    def __init__(self, uid):\n        self._id = uid            # - private: the secret\n    def send(self, text):         # + public: the promise\n        return \"sent \" + text\n\nu = User(\"u7\")\nprint(\"public:\", u.send(\"hi\"))\nprint(\"private peek:\", u._id)",
+   "answer": "public: sent hi\nprivate peek: u7"
+  },
+  {
+   "lesson": "swe.ch6.l3",
+   "id": "ex3.trace-inversion",
+   "code": "class MessageRouter:\n    def __init__(self, transport):\n        self._transport = transport\n    def route(self, msg):\n        self._transport.deliver(msg[\"to\"], msg[\"body\"])\n\nclass FakeTransport(list):\n    def deliver(self, to, body):\n        self.append(to)\n\nsent = FakeTransport()\nMessageRouter(sent).route({\"to\": \"noor\", \"body\": \"hi\"})\nMessageRouter(sent).route({\"to\": \"sami\", \"body\": \"yo\"})\nprint(\"delivered:\", len(sent))\nprint(\"first:\", sent[0])",
+   "answer": "delivered: 2\nfirst: noor"
+  },
+  {
+   "lesson": "swe.ch6.l4",
+   "id": "ex2.trace-fan-table",
+   "code": "G = {\"a\": [\"b\", \"c\"], \"b\": [\"c\"], \"c\": [], \"d\": [\"c\"]}\nprint(\"edges:\", sum(len(v) for v in G.values()))\nfor m in sorted(G):\n    fan_in = sum(1 for deps in G.values() if m in deps)\n    print(m, fan_in, len(G[m]))",
+   "answer": "edges: 4\na 0 2\nb 1 1\nc 3 0\nd 0 1"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch6.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "a = {\"payments\": [\"card_api\", \"ledger\", \"email\", \"logging\"]}\nb = {\"payments\": [\"pay_interface\"],\n     \"card_api\": [\"pay_interface\"],\n     \"ledger\": [\"pay_interface\"],\n     \"email\": [\"pay_interface\"],\n     \"logging\": [\"pay_interface\"]}\nprint(\"A edges:\", sum(len(v) for v in a.values()))\nprint(\"B edges:\", sum(len(v) for v in b.values()))\nprint(\"B payments imports:\", b[\"payments\"])"
+  },
+  {
+   "lesson": "swe.ch6.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "imports = {\n    \"ui\": [\"app\", \"format\"],\n    \"app\": [\"domain\", \"store\"],\n    \"domain\": [],\n    \"store\": [\"domain\"],\n    \"format\": [],\n}\n\nfan_out = {m: len(deps) for m, deps in imports.items()}\nfan_in = {m: 0 for m in imports}\nfor deps in imports.values():\n    for d in deps:\n        fan_in[d] += 1\n\nfor m in imports:\n    print(m, \"fan-out\", fan_out[m], \"fan-in\", fan_in[m])\n\nhub = max(fan_in, key=lambda m: fan_in[m])\nbusiest = max(fan_out, key=lambda m: fan_out[m])\nprint(f\"most depended-on: {hub} ({fan_in[hub]} importers)\")\nprint(f\"widest caller: {busiest} ({fan_out[busiest]} imports)\")"
+  },
+  {
+   "lesson": "swe.ch6.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "imports = {\n    \"ui\": [\"app\", \"format\"],\n    \"app\": [\"domain\", \"store\"],\n    \"domain\": [],\n    \"store\": [\"domain\"],\n    \"format\": [],\n}\n\nfan_out = {m: len(ds) for m, ds in imports.items()}\nfan_in = {m: 0 for m in imports}\nfor ds in imports.values():\n    for d in ds:\n        fan_in[d] += 1\n\nfor m in imports:\n    print(m, \"fan-out\", fan_out[m], \"fan-in\", fan_in[m])\n\n# Try it: make \"format\" import \"domain\" and re-run — watch domain's fan-in.\n# Then invent a module \"helpers\" that imports four things. What is its\n# fan-out, and would you flag it as a design smell?"
+  },
+  {
+   "lesson": "swe.ch6.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "conv = {\"id\": \"c1\", \"messages\": []}\nconv[\"messages\"].append({\"id\": \"m1\", \"body\": \"ping\"})\nconv[\"messages\"].append({\"id\": \"m2\", \"body\": \"pong\"})\n\nattachments = {\"a1\": {\"name\": \"report.pdf\"}}\nconv[\"messages\"][0][\"attachment\"] = attachments[\"a1\"]   # shared part\n\ndel conv\nprint(\"attachments pool still holds:\", attachments[\"a1\"][\"name\"])"
+  },
+  {
+   "lesson": "swe.ch6.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "from dataclasses import dataclass, field\n\n@dataclass\nclass Message:\n    id: str\n    body: str\n\n@dataclass\nclass Conversation:\n    id: str\n    messages: list = field(default_factory=list)   # composition: whole owns parts\n\n    def add(self, body):\n        m = Message(id=f\"{self.id}-m{len(self.messages) + 1}\", body=body)\n        self.messages.append(m)\n        return m\n\n@dataclass\nclass GroupConversation(Conversation):   # generalization: is-a\n    members: list = field(default_factory=list)\n\nc = Conversation(\"c1\")\nc.add(\"hi\")\nc.add(\"ready?\")\ng = GroupConversation(\"g1\", members=[\"sami\", \"noor\"])\ng.add(\"hello all\")\nfor conv in (c, g):\n    print(conv.id, \"->\", [m.body for m in conv.messages])"
+  },
+  {
+   "lesson": "swe.ch6.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "from dataclasses import dataclass, field\n\n@dataclass\nclass Message:\n    id: str\n    body: str\n\n@dataclass\nclass Conversation:\n    id: str\n    messages: list = field(default_factory=list)\n\n    def send(self, body):\n        m = Message(id=self.id + \"-m\" + str(len(self.messages) + 1), body=body)\n        self.messages.append(m)\n        return m\n\nc = Conversation(\"c1\")\nc.send(\"hi\")\nc.send(\"ready?\")\nfor m in c.messages:\n    print(m.id, m.body)\n\n# Your turn: add an Attachment dataclass (name: str) and let a Message hold\n# one. Then ask the lifetime questions: does the attachment die with the\n# conversation (composition) or could a shared pool own it (aggregation)?"
+  },
+  {
+   "lesson": "swe.ch6.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "MODULES = {\"messaging\"}                     # one box in the development view\nPROCESSES = {\"router\", \"sender\", \"sync\"}    # three processes at runtime\nNODES = {\"app-1\", \"app-2\"}                  # two machines in the deployment view\n\nprint(\"one thing, three views:\", len(MODULES), len(PROCESSES), len(NODES))"
+  },
+  {
+   "lesson": "swe.ch6.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "MODULES = {                      # development view: what may depend on what\n    \"ui\": [\"router\", \"domain\"],\n    \"router\": [\"domain\", \"transport\"],\n    \"domain\": [],                # design rule: the domain depends on nothing\n    \"storage\": [\"domain\"],\n    \"transport\": [],\n}\nTALKS = {                        # process view: who talks to whom at runtime\n    \"web_ui\": [\"gateway\"],\n    \"gateway\": [\"router\", \"store\"],\n    \"router\": [\"store\"],\n    \"store\": [],\n}\nNODES = {                        # deployment view: what runs where\n    \"client\": [\"web_ui\"],\n    \"server\": [\"gateway\", \"router\"],\n    \"backup\": [\"store\"],\n}\n\ndef runs_on(node):\n    return \" \".join(sorted(NODES[node]))\n\ndef who_talks_to(comp):\n    return \" \".join(sorted(s for s, d in TALKS.items() if comp in d))\n\nprint(\"views: module process deployment\")\nprint(\"backup runs:\", runs_on(\"backup\"))\nprint(\"talks to store:\", who_talks_to(\"store\"))\nprint(\"domain deps:\", \" \".join(MODULES[\"domain\"]) or \"none\")"
+  },
+  {
+   "lesson": "swe.ch6.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "MODULES = {\n    \"ui\": [\"router\", \"domain\"],\n    \"router\": [\"domain\", \"transport\"],\n    \"domain\": [],\n    \"storage\": [\"domain\"],\n    \"transport\": [],\n}\nNODES = {\n    \"client\": [\"web_ui\"],\n    \"server\": [\"gateway\", \"router\"],\n    \"backup\": [\"store\"],\n}\n\ndef components_on(node):\n    return sorted(NODES[node])\n\nprint(\"server runs:\", \" \".join(components_on(\"server\")))\n\n# Your turn: ops wants the attachment store on its own machine.\n# 1. Move \"store\" to a new \"storage\" node in NODES and re-print with\n#    components_on. Which view did you just edit?\n# 2. Now answer a runtime question instead: who talks to \"store\"?\n#    Write talks_to() over TALKS below and print it. Different view,\n#    different table, same system.\nTALKS = {\n    \"web_ui\": [\"gateway\"],\n    \"gateway\": [\"router\", \"store\"],\n    \"router\": [\"store\"],\n    \"store\": [],\n}"
+  },
+  {
+   "lesson": "swe.ch6.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "GRAPH = {\n    \"auth\": [\"notify\"],\n    \"notify\": [\"auth\"],\n}\nprint(\"auth imports notify:\", \"notify\" in GRAPH[\"auth\"])\nprint(\"notify imports auth:\", \"auth\" in GRAPH[\"notify\"])"
+  },
+  {
+   "lesson": "swe.ch6.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "G = {\"api\": [\"core\", \"cli\"], \"core\": [\"util\"], \"cli\": [\"core\", \"util\"], \"util\": []}\nLIMIT = 2\n\ndef fan_out(mod):\n    return len(G[mod])\n\ndef fan_in(mod):\n    return sum(1 for deps in G.values() if mod in deps)\n\nfor m in sorted(G):\n    tag = \"  <-- smell candidate\" if fan_out(m) > LIMIT else \"\"\n    print(f\"{m} fan-in {fan_in(m)} fan-out {fan_out(m)}{tag}\")\n\ntwo_way = \"cli\" in G[\"api\"] or \"api\" in G[\"cli\"]\nprint(\"direct two-way import:\", two_way)"
+  },
+  {
+   "lesson": "swe.ch6.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "GRAPH = {\n    \"app\":     [\"router\", \"auth\", \"notify\", \"logging\"],\n    \"router\":  [\"auth\", \"models\"],\n    \"auth\":    [\"notify\", \"models\"],\n    \"notify\":  [\"auth\"],\n    \"models\":  [],\n    \"logging\": [],\n}\n\ndef fan_out(graph, mod):\n    return len(graph[mod])\n\ndef fan_in(graph, mod):\n    return sum(1 for deps in graph.values() if mod in deps)\n\nfor m in sorted(GRAPH):\n    print(m, \"fan-in\", fan_in(GRAPH, m), \"fan-out\", fan_out(GRAPH, m))\n\n# Your turn: the team debates splitting \"app\".\n# 1. Move half its imports into a new module (say \"billing\") in the table and\n#    re-print. Which number moved: fan-in, fan-out, or both?\n# 2. Add one import that closes a NEW cycle (say logging imports router).\n#    Trace the chain by hand before printing anything: which modules close it?"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch6.l1",
+   "id": "ex1.coupling-kind",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch6.l2",
+   "id": "ex2.rel-kind",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch6.l3",
+   "id": "ex2.which-view",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch6.l4",
+   "id": "ex3.mcq-real-arch",
+   "answer": "b",
+   "solution": "b"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch6.l1",
+   "id": "ex4.fill-hiding",
+   "answer": "hiding"
+  },
+  {
+   "lesson": "swe.ch6.l2",
+   "id": "ex4.fill-composition",
+   "answer": "composition"
+  },
+  {
+   "lesson": "swe.ch6.l3",
+   "id": "ex4.fill-scenarios",
+   "answer": "scenarios"
+  },
+  {
+   "lesson": "swe.ch6.l4",
+   "id": "ex4.fill-fanin",
+   "answer": "in"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch6.l4",
+   "id": "ex5.debug-blind-import",
+   "brokenCode": "GRAPH = {\n    \"app\":     [\"router\", \"auth\", \"notify\", \"logging\"],\n    \"router\":  [\"auth\", \"models\"],\n    \"auth\":    [\"notify\", \"models\"],\n    \"notify\":  [\"auth\"],\n    \"models\":  [],\n    \"logging\": [],\n}\n\ndef reaches(graph, src, dst):\n    # BUG: one hop only - transitive imports are invisible\n    return dst in graph[src]\n\ndef find_cycle(graph):\n    # BUG: only direct self-imports register as a cycle\n    for mod in graph:\n        if mod in graph[mod]:\n            return [mod, mod]\n    return None\n\nprint(\"app reaches models:\", reaches(GRAPH, \"app\", \"models\"))\ncycle = find_cycle(GRAPH)\nprint(\"cycle:\", \" -> \".join(cycle) if cycle else \"none\")"
+  }
+ ]
+}

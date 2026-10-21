@@ -1,0 +1,319 @@
+     1→import type { Lesson } from '@/lib/content/schema';
+     2→
+     3→/**
+     4→ * swe.ch9.l3 — "Automated Static Analysis / التحليل الثابت الآلي"
+     5→ * Aligned with SWE ch9 s4 (9.4 Automated Static Analysis, pp.240–243).
+     6→ * All expression is original (paraphrase of CC BY-SA 4.0 book text).
+     7→ * THE runnable core of the chapter: ast.parse + ast.walk run fine in the
+     8→ * bundled Pyodide, so we build mini-linters from scratch (pyflakes/ruff are
+     9→ * NOT available and are never imported — only taught as concepts). Worked
+    10→ * example: bare-except detector via ast.ExceptHandler with type is None;
+    11→ * write_code: count functions without a docstring via ast.FunctionDef +
+    12→ * ast.get_docstring; numeric: precision from the book's confusion matrix;
+    13→ * fill: the ast module name. Everything deterministic on embedded sources.
+    14→ */
+    15→const lesson = {
+    16→  id: 'swe.ch9.l3',
+    17→  version: 1,
+    18→  part: 'I',
+    19→  track: 'P3',
+    20→  book: 'SWE',
+    21→  chapter: 9,
+    22→  title: { ar: 'التحليل الثابت الآلي', en: 'Automated Static Analysis' },
+    23→  estimatedMinutes: 35,
+    24→  prerequisites: ['swe.ch9.l2'],
+    25→  blocks: [
+    26→    {
+    27→      kind: 'hook',
+    28→      text: {
+    29→        ar: 'المراجعة البشرية غالية وغير موفوقة عند الفحوص الميكانيكية — البشر سيئون في ملاحظة أن كل مسار شيفرة يغلق الملف، والحاسوب ممتاز في ذلك. التحليل الثابت الآلي automated static analysis هو استخدام أدوات تفحص الشيفرة المصدرية دون تشغيلها وتُبلغ عن عيوب محتملة ومخالفات أسلوب وأنماط خطرة: تعمل في ثوانٍ على كل تغيير، ولا تتعب، ولا تتخطى الأجزاء المملة. وهذا الدرس شذرة خاصة: لا تتوفر أدوات linter جاهزة في ملعبك، فسنصنعها بأيدينا — وحدة ast في بايثون تفتح الشيفرة وتحولها شجرة دون تنفيذ سطر واحد، وعلى تلك الشجرة سنبني كاشفات قواعد حقيقية: bare except، ودوال بلا توثيق، وسطور أطول من حد الفريق. وفي نهاية الطريق مفاجأة منهجية: الأداة نفسها تخطئ بطريقتين معروفتين — وقياس خطئها علم كامل. بنهاية الدرس ستكون قادرًا على: تسمية أصناف الأدوات الأربعة وما يجيب عنه كل منها، وكتابة كاشف عيوب يمشي شجرة ast، وتمييز الإيجابي الكاذب عن السلبي الكاذب وحساب precision، وتفسير لماذا الثقة المورد النادر عند الأدوات.',
+    30→        en: 'Human review is expensive and unreliable at mechanical checks — people are bad at noticing that every code path closes the file, computers are excellent at it. Automated static analysis is the use of tools that examine source code without running it and report likely defects, style violations and dangerous patterns: they run in seconds on every change, never tire, and never skip the boring parts. This lesson has a special twist: no ready-made linter exists in your sandbox, so we build them ourselves — Python\u2019s ast module opens code and turns it into a tree without executing a single line, and on that tree we will build real rule detectors: bare except, functions without docstrings, lines longer than the team limit. And down the road a methodological surprise: the tool itself errs in two well-known ways — and measuring its errors is a science of its own. By the end of this lesson you will be able to: name the four tool categories and what each answers; write a defect detector that walks an ast tree; tell false positives from false negatives and compute precision; and explain why trust is the scarce resource for tools.',
+    31→      },
+    32→    },
+    33→    {
+    34→      kind: 'predict',
+    35→      code: "import ast\ntree = ast.parse('try:\\n    pass\\nexcept:\\n    pass\\n')\nfor node in ast.walk(tree):\n    if isinstance(node, ast.ExceptHandler):\n        print(node.type)",
+    36→      question: {
+    37→        ar: 'شيفرة تُقرأ ولا تعمل: مررنا نصاً يحوي try/except إلى ast.parse ثم مشينا الشجرة بحثاً عن عقد معالجات الاستثناء. ماذا سيطبع، وماذا يعني أن يكون نوع الاستثناء المطبوع None؟',
+    38→        en: 'Code that is read, never run: we handed a try/except text to ast.parse, then walked the tree looking for exception-handler nodes. What will it print — and what does a handler type of None mean?',
+    39→      },
+    40→      reveal: {
+    41→        ar: 'None — وسطر واحد فقط. عقدة ExceptHandler تصف بند except: أيا كان نوعه، وحين يترك نوعه فارغاً (except: المجردة) تكون الصفة type تساوي None. هذه بالضبط علامة الخطر التي تبحث عنها الأدوات: except: المجردة تلتقط كل شيء حتى الأخطاء التي لم تتوقعها كالمقاطعة أو نفاد الذاكرة فتبتلعها بصمت. مفتاح الدرس كله في هذا السطر: ast.parse فحص بلا تشغيل.',
+    42→        en: 'None — and only one line. An ExceptHandler node describes an except clause, and when the clause names no type (a bare except:) its type attribute is None. That is exactly the danger mark tools hunt: a bare except: catches everything, including interrupts and memory errors you never anticipated, and swallows them silently. The whole lesson sits in this line: ast.parse is examination without execution.',
+    43→      },
+    44→    },
+    45→    {
+    46→      kind: 'concept',
+    47→      heading: { ar: 'عائلة الأدوات: لكل أداة سؤالها', en: 'The tool family: each answers its own question' },
+    48→      chunks: [
+    49→        {
+    50→          ar: '«التحليل الثابت» مظلة فوق أصناف متمايزة، واعرفها لتجمع المجموعة الصحيحة. مدققو الأنواع type checkers يتحققون أن العمليات تُطبق على أنواع متوافقة: لا جمع عدد بسلسلة، ولا استدعاء تابع غير موجود — وفي اللغات المكتوبة سابقاً يكون المترجم هو المدقق، وفي بايثون تضيف أدوات التدريج typing فحصاً اختيارياً قبل التشغيل؛ خطأ نوع يُمسك قبل التشغيل هو إخفاق لا يبلغ المستخدم أبداً. الـ linters تشير إلى قضايا الأسلوب والبنى المشبوهة والعيوب الصغيرة: متغيرات غير مستخدمة، وأسماء مظللة، ومقارنات صادقة دائماً — كل واحدة هامشية، لكنها معاً تحفظ اتساق الشيفرة وقابليتها للقراءة وتلتقط عللاً تختبئ أخطاء كتابة. هما أرخص أدوات التبني وأول ما يشغله الفريق.',
+    51→          en: '\u201cStatic analysis\u201d is an umbrella over distinct categories — know them to assemble the right set. Type checkers verify that operations apply to compatible kinds of data: no adding a number to a string, no calling a nonexistent method — in statically typed languages the compiler plays this role, and for Python gradual-typing tools add opt-in checking before anything runs; a type error caught pre-run is a failure that can never reach a user. Linters flag style issues, suspicious constructs and small correctness hazards: unused variables, shadowed names, comparisons that are always true — each minor, but together they keep a codebase consistent and readable and catch the occasional real bug hiding as a typo. They are the cheapest to adopt and usually the first a team turns on.',
+    52→        },
+    53→        {
+    54→          ar: 'محللو تدفق البيانات data-flow analyzers يتتبعون كيف تتحرك القيم عبر البرنامج فيجدون عللاً تمتد عبر أسطر: متغير يُستخدم قبل إسناده، ومورد يفتح على مسار ولا يُغلق على آخر، وقيمة قد تكون None تصله إلى إزالة إحالة، ومدخلات مستخدم تسرُب إلى استعلام قاعدة بيانات — مخاطر SQL injection. هذه أصعب الفحوص على البشر لأنها تتطلب محاكاة ذهنية لكل مسار تنفيذ — وهي حرفياً ما بُنيت الآلة لأجله. وصيادو أنماط العيوب bug-pattern finders يرمزون فهرساً من أشكال شيفرة معروفة السوء ويمسحونها: قيمة إرجاع مهمة تُهمل، وقفل يؤخذ بلا تحريره — كل نمط عضةً لسع مبرمجين كفاية حتى كتب أحدهم كاشفاً له، ونسخها الأمنية تسمى SAST. ومعظم الفرق تشغلها معاً في التكامل المستمر: كل تغيير يُدقق نوعياً ويُلنّت ويُمسح آلياً قبل أن ينظر إليه بشر — الآلة للميكانيكي والإنسان للحكم.',
+    55→          en: 'Data-flow analyzers trace how values move through the program to find defects spanning lines: a variable used before assignment, a resource opened on one path and not closed on another, a possibly-null value reaching a dereference, user input flowing into a database query — SQL-injection risk. These are the checks humans are worst at, because they demand mentally simulating every path — exactly what machines were built for. Bug-pattern finders encode a catalog of known-bad code shapes and scan for them: ignored return values that must be checked, a lock acquired without release — each pattern has bitten enough programmers that someone wrote a detector; their security-focused variants are called SAST. Most teams run several together in continuous integration: every change is type-checked, linted and pattern-scanned before a human looks at it — the machine handles the mechanical, humans handle judgment.',
+    56→        },
+    57→      ],
+    58→    },
+    59→    {
+    60→      kind: 'concept',
+    61→      heading: { ar: 'الأداة ليست وحيًا: الكاذب والسلبي', en: 'The tool is no oracle: positives and negatives' },
+    62→      chunks: [
+    63→        {
+    64→          ar: 'لأن الأداة تسري عن كل التنفيذات الممكنة دون أن تشغل أياً منها، فهي تراوغ — والتراوغ يولد خطأين. الإيجابي الكاذب false positive: أداة تبلغ عن عيب ليس عيباً — تصرخ ذئباً والشيفرة سليمة. والسلبي الكاذب false negative أشد خطراً: عيب حقيقي مرّ دون إنذار — الذئب تسلل، فحصلت على طمأنة كاذبة. رتبهما في مصفوفة الالتباس نفسها التي ستعود في الاختبار والتصنيف: عيب موجود وأبلغت = إيجابي صادق؛ عيب موجود وصمتت = سلبي كاذب؛ لا عيب وأبلغت = إيجابي كاذب؛ لا عيب وصمتت = سلبي صادق. ومنها مفردتان: precision نسبة إنذارات الأداة التي كانت لعيوب حقيقية من مجموع إنذاراتها — انخفاضها ضجيج؛ وrecall نسبة العيوب الحقيقية التي وجدتها من مجموع الموجود فعلاً — انخفاضها فوات. ولا تكبر الاثنتان معاً: أداة أكثر شراسة تصطاد عيوباً أكثر (recall أعلى) وتلوّم بريئين أكثر (precision أقل)، وأداة لا تُبلغ إلا ما تيقنت صمتت عما لا تقدر على إثباته.',
+    65→          en: 'Because the tool reasons about all possible executions without running any, it must approximate — and approximation breeds two errors. A false positive: the tool reports a defect that is not one — crying wolf over fine code. A false negative, the more dangerous: a real defect passes unreported — the wolf slips past and you get false reassurance. Arrange them in the same confusion matrix you will meet again in testing and classification: defect exists and reported = true positive; defect exists and silent = false negative; no defect and reported = false positive; no defect and silent = true negative. From it, two terms: precision is the fraction of the tool\u2019s alarms that were real — low precision means noise; recall is the fraction of real defects it caught — low recall means misses. You cannot maximize both: a more aggressive tool catches more bugs (higher recall) and flags more innocents (lower precision); one that reports only what it is sure of stays silent about what it cannot prove.',
+    66→        },
+    67→        {
+    68→          ar: 'ولماذا يقرر هذا المفاضلة مصير الأداة عملياً؟ لأن للإيجابيات الكاذبة كلفة بشرية تتراكم: أداة تغرق المراجعين بالإنذارات الكاذبة يتوقف الناس عن قراءة مخرجاتها — ومتى أُهملت فقدت حتى العيوب الحقيقية المدفونة في الضجيج. أداة recall تسعون بالمئة لا تساوي شيئاً إذا علّم معدل إيجابيات كاذب ستين بالمئة الفريق الضغط على «تجاهل» منعكساً. لهذا تضحّي الأدوات العملية عمداً بالاستذكار لصالح الدقة: أداة تُبلغ أقل لكنها تكاد لا تخطئ تكسب ثقة الفريق وتُتّبع، و«الشاملة» المتكررة الخطأ تُطفأ. خبرة Google المعلنة: تستهدف معدل إيجابيات كاذب منخفضاً — نحو واحد من عشرة أو أفضل — حتى يعامل المطورون الإنذارات كعمل مستحق لا كضجيج. المبدأ: الثقة المورد النادر — دقة عالية تشتريها، ومطاردة recall على حسابها تنفقها. واحذر الفخ المقابل: تقرير نظيف ليس برهان صحة — السلبيات الكاذبة حقيقية، و«الـ linter راضٍ» أرضية لا سقف.',
+    69→          en: 'Why does this trade-off decide a tool\u2019s fate in practice? Because false positives have a compounding human cost: a tool flooding reviewers with false alarms gets its output ignored — and once ignored, it also misses the real defects buried in the noise. A checker with 90% recall is worthless if a 60% false-positive rate trains the team to click dismiss reflexively. That is why practical tools deliberately sacrifice recall for precision: a tool reporting fewer defects but almost always right earns trust and gets acted upon, while a \u201cthorough\u201d tool that is frequently wrong gets turned off. Google\u2019s published experience: they target a low false-positive rate — roughly one in ten or better — so developers treat warnings as worth fixing, not as noise. The principle: trust is the scarce resource — high precision buys it; chasing recall at its expense spends it. And beware the mirror pitfall: a clean report is not proof of correctness — false negatives are real, and \u201cthe linter is happy\u201d is a floor, not a ceiling.',
+    70→        },
+    71→      ],
+    72→    },
+    73→    {
+    74→      kind: 'worked',
+    75→      title: { ar: 'منقّح مصغر: كاشف except المجردة', en: 'A mini linter: the bare-except detector' },
+    76→      code: "import ast\n\nSAMPLE = '''def load(path):\n    try:\n        return open(path).read()\n    except:\n        return ''\n'''\n\ntree = ast.parse(SAMPLE)\nbare = 0\nfor node in ast.walk(tree):\n    if isinstance(node, ast.ExceptHandler) and node.type is None:\n        bare = bare + 1\nprint('bare except: %d' % bare)",
+    77→      explanation: {
+    78→        ar: 'هذه هي دورة حياة أي أداة تحليل ثابت في أربعة أسطر: ast.parse يقرأ النص ويبني الشجرة دون تنفيذ أي شيء — وopen لم يُستدعَ ولم يُقرأ ملف؛ ast.walk يمر على كل عقدة في الشجرة مهما تعششت؛ isinstance يفحص هل بُنيت العقدة من صنف ExceptHandler (كائنات الفصل الرابع عشر من مسار بايثون تشتغل هنا كخدمة)؛ ثم القاعدة نفسها: node.type is None يعني بند except بلا نوع — النمط الخطِر. الناتج سطر منسق واحد: bare except: 1. لاحظ أن الكاشف لا يعرف ماذا تفعل الدالة ولا يهتم — هذا رادار أنماط لا عقل مفسر، وستعيد بناء نفس القاعدة داخل مشروع الدرس الرابع.',
+    79→        en: 'This is the lifecycle of any static-analysis tool in four lines: ast.parse reads the text and builds the tree without executing anything — open was never called, no file was read; ast.walk visits every node however deeply nested; isinstance checks whether the node was built from the ExceptHandler class (chapter-14 objects from the Python track doing useful work here); then the rule itself: node.type is None means an except clause with no type — the risky pattern. The output is one formatted line: bare except: 1. Note the detector neither knows nor cares what the function does — this is a pattern radar, not an interpreting mind; and you will rebuild this exact rule inside the fourth lesson\u2019s project.',
+    80→      },
+    81→    },
+    82→    {
+    83→      kind: 'exercise',
+    84→      id: 'ex1.missing-docs',
+    85→      exKind: 'write_code',
+    86→      required: true,
+    87→      prompt: {
+    88→        ar: 'قاعدة فريقك: كل دالة لها سلسلة توثيق docstring. اكتب دالة missing_docs(source) تستقبل شيفرة مصدرية نصاً وتعيد قائمة بأسماء الدوال التي بلا docstring: استخدم ast.parse لبناء الشجرة، وامشِها بـ ast.walk، واحتفظ بعقد ast.FunctionDef التي تعطي ast.get_docstring(node) القيمة None، وأضف اسم الدالة node.name إلى القائمة. ثم اطبع سطرين: functions without docstring: 1 ثم اسم أول دالة مخالفة للعينة SAMPLE المعطاة.',
+    89→        en: 'Your team rule: every function carries a docstring. Write missing_docs(source) that takes source code as text and returns the names of functions lacking a docstring: use ast.parse to build the tree, walk it with ast.walk, keep ast.FunctionDef nodes for which ast.get_docstring(node) is None, and append the function\u2019s node.name to the list. Then print two lines: functions without docstring: 1 and the name of the first offending function for the given SAMPLE.',
+    90→      },
+    91→      starterCode: "import ast\n\nSAMPLE = '''def ok_total(a, b):\n    \"\"\"Return the sum of a and b.\"\"\"\n    return a + b\n\ndef hidden(path):\n    return path\n\ndef greet(name):\n    \"\"\"Say hello.\"\"\"\n    print('hello ' + name)\n'''\n\ndef missing_docs(source):\n    # امشِ الشجرة بـ ast.walk واحتفظ بعقد FunctionDef بلا docstring\n    # walk the tree with ast.walk, keep FunctionDef nodes with no docstring\n    return []\n\nmissing = missing_docs(SAMPLE)\nprint('functions without docstring: %d' % len(missing))\nprint(missing[0])\n",
+    92→      solution: "import ast\n\nSAMPLE = '''def ok_total(a, b):\n    \"\"\"Return the sum of a and b.\"\"\"\n    return a + b\n\ndef hidden(path):\n    return path\n\ndef greet(name):\n    \"\"\"Say hello.\"\"\"\n    print('hello ' + name)\n'''\n\ndef missing_docs(source):\n    tree = ast.parse(source)\n    missing = []\n    for node in ast.walk(tree):\n        if isinstance(node, ast.FunctionDef) and ast.get_docstring(node) is None:\n            missing.append(node.name)\n    return missing\n\nmissing = missing_docs(SAMPLE)\nprint('functions without docstring: %d' % len(missing))\nprint(missing[0])",
+    93→      tests: [
+    94→        {
+    95→          id: 't1',
+    96→          name: { ar: 'الدالة الوحيدة المخالفة هي hidden', en: 'The sole offender is hidden' },
+    97→          code: "assert missing_docs(SAMPLE) == ['hidden'], 'expected: [hidden] | actual: %r' % (missing_docs(SAMPLE),)",
+    98→          expected: '[hidden]',
+    99→        },
+   100→        {
+   101→          id: 't2',
+   102→          name: { ar: 'تعمم على عينة صغيرة بلا توثيق', en: 'Generalizes to a small undocumented sample' },
+   103→          code: "assert missing_docs('def f():\\n    return 1\\n') == ['f'], 'expected: [f] | actual: %r' % (missing_docs('def f():\\n    return 1\\n'),)",
+   104→          expected: '[f]',
+   105→        },
+   106→        {
+   107→          id: 't3',
+   108→          name: { ar: 'الدالة الموثقة لا تُلمس', en: 'A documented function is never flagged' },
+   109→          code: "assert missing_docs('def g():\\n    \"\"\"docs\"\"\"\\n    return 2\\n') == [], 'expected: [] | actual: %r' % (missing_docs('def g():\\n    \"\"\"docs\"\"\"\\n    return 2\\n'),)",
+   110→          expected: '[]',
+   111→        },
+   112→        {
+   113→          id: 't4',
+   114→          name: { ar: 'التقرير مطبوع منسقاً', en: 'The report is printed formatted' },
+   115→          code: "assert 'functions without docstring: 1' in __learner_output__ and 'hidden' in __learner_output__, 'expected: functions without docstring: 1 then hidden | actual: %r' % __learner_output__",
+   116→          expected: 'functions without docstring: 1 then hidden',
+   117→        },
+   118→      ],
+   119→      hints: [
+   120→        { ar: 'النمط هو نمط الكاشف في المثال المشروح نفسه: parse ثم walk ثم isinstance ثم شرطك الإضافي على get_docstring.', en: 'The pattern is the worked detector itself: parse, then walk, then isinstance, then your extra condition on get_docstring.' },
+   121→        { ar: 'ast.get_docstring(node) يعيد نص التوثيق أو None إن لم يوجد — فاختبار is None هو شرط المخالفة.', en: 'ast.get_docstring(node) returns the docstring text or None when absent — testing is None is the violation condition.' },
+   122→        { ar: 'الهيكل:\ntree = ast.parse(source)\nmissing = []\nfor node in ast.walk(tree):\n    if isinstance(node, ast.FunctionDef) and ast.get_docstring(node) is None:\n        missing.append(node.name)\nreturn missing', en: 'The skeleton:\ntree = ast.parse(source)\nmissing = []\nfor node in ast.walk(tree):\n    if isinstance(node, ast.FunctionDef) and ast.get_docstring(node) is None:\n        missing.append(node.name)\nreturn missing' },
+   123→        { ar: "الحل الكامل كما في المثال، مع node.name لاسم الدالة:\nmissing.append(node.name)", en: "Full solution as in the worked example, with node.name for the function name:\nmissing.append(node.name)" },
+   124→      ],
+   125→    },
+   126→    {
+   127→      kind: 'exercise',
+   128→      id: 'ex2.numeric-precision',
+   129→      exKind: 'numeric',
+   130→      required: true,
+   131→      prompt: {
+   132→        ar: 'بلا تشغيل: مسحت أداة وحدة يعرف بالتدقيق اليدوي أنها تحوي 20 عيباً حقيقياً من صنفها. رفعت الأداة 30 إنذاراً، منها 12 وافق عيباً حقيقياً. احسب precision الأداة بالنسبة المئوية الصحيحة — نسبة إنذاراتها الصادقة من مجموع إنذاراتها.',
+   133→        en: 'Without running: a tool scanned a module known from a hand audit to contain 20 real defects of the kind it targets. The tool raised 30 alarms, 12 of them matching real defects. Compute the tool\u2019s precision as a whole-number percentage — the fraction of its alarms that were real.',
+   134→      },
+   135→      answer: '40',
+   136→      solution: '40',
+   137→      tolerance: 0,
+   138→      hints: [
+   139→        { ar: 'precision = الإيجابيات الصادقة ÷ مجموع الإنذارات — من تعريف الدرس.', en: 'precision = true positives / total alarms — straight from the lesson definition.' },
+   140→        { ar: 'الإيجابيات الصادقة 12 والمجموع 30.', en: 'True positives are 12 out of 30 total.' },
+   141→        { ar: '12 ÷ 30 = 0.4 — وبالنسبة المئوية 40. (وللمهتمين: recall = 12 ÷ 20 = 60.)', en: '12 / 30 = 0.4 — as a percentage, 40. (For the curious: recall = 12 / 20 = 60.)' },
+   142→        { ar: 'الجواب: 40', en: 'Answer: 40' },
+   143→      ],
+   144→    },
+   145→    {
+   146→      kind: 'exercise',
+   147→      id: 'ex3.mcq-fn',
+   148→      exKind: 'mcq',
+   149→      required: true,
+   150→      prompt: {
+   151→        ar: 'أي الخطأين يعطيك طمأنة كاذبة false reassurance، ولماذا هو الأخطر؟',
+   152→        en: 'Which of the two errors gives you false reassurance, and why is it the more dangerous?',
+   153→      },
+   154→      options: [
+   155→        { id: 'a', text: { ar: 'السلبي الكاذب false negative: عيب حقيقي مر دون إنذار — الشيفرة مكسورة فعلاً لكن الأداة صامتة فتظنها نظيفة وتنشرها', en: 'The false negative: a real defect passed unreported — the code is genuinely broken but the tool stayed silent, so you believe it clean and ship it' } },
+   156→        { id: 'b', text: { ar: 'الإيجابي الكاذب false positive: إنذار عن شيفرة سليمة — مزعج لكنه لا يدع عيباً يعبر', en: 'The false positive: an alarm over fine code — annoying, but it lets no defect through' } },
+   157→        { id: 'c', text: { ar: 'الإيجابي الصادق true positive: لأن كل إنذار يكلف المراجع وقت قراءة', en: 'The true positive: every alarm costs the reviewer reading time' } },
+   158→      ],
+   159→      answer: 'a',
+   160→      explanation: {
+   161→        ar: 'الإيجابي الكاذب يصرخ ذئباً فيكلفك فحصاً زائداً؛ السلبي الكاذب يدع الذئب يعبر: طمأنة كاذبة أشد خطراً لأنها تحل محل الحذر نفسه. ولهذا يقول الكتاب: تقرير نظيف أرضية لا سقف — الصمت ليس برهان صحة.',
+   162→        en: 'A false positive cries wolf and costs an extra look; a false negative lets the wolf through: false reassurance is worse because it replaces vigilance itself. Hence the book\u2019s line: a clean report is a floor, not a ceiling — silence is not proof of correctness.',
+   163→      },
+   164→    },
+   165→    {
+   166→      kind: 'exercise',
+   167→      id: 'ex4.fill-ast',
+   168→      exKind: 'fill_blank',
+   169→      required: true,
+   170→      prompt: {
+   171→        ar: 'الوحدة القياسية التي تقرأ شيفرة بايثون كنصاً وتبني منها شجرة تركيب دون تنفيذ أي شيء هي ____. (اسم الوحدة)',
+   172→        en: 'The standard module that reads Python source as text and builds its parse tree without executing anything is ____. (the module name)',
+   173→      },
+   174→      answer: 'ast',
+   175→      solution: 'ast',
+   176→      hints: [
+   177→        { ar: 'رأيتها في أول سطر من كل كاشف اليوم: import ____. أسماء مركبة تحلل إلى شجرة syntax.', en: 'You saw it on the first line of every detector today: import ____. Its name parses to a syntax tree.' },
+   178→        { ar: 'اختصار لـ Abstract Syntax Tree — الشجرة التي ترى فيها البرنامج دون تشغيله.', en: 'Short for Abstract Syntax Tree — the tree in which you see the program without running it.' },
+   179→        { ar: 'من توابعها: parse لبناء الشجرة، وwalk لمرورها، وFunctionDef وExceptHandler أصناف عقد.', en: 'Among its members: parse builds the tree, walk traverses it, FunctionDef and ExceptHandler are node classes.' },
+   180→        { ar: 'الجواب: ast', en: 'Answer: ast' },
+   181→      ],
+   182→    },
+   183→    {
+   184→      kind: 'sandbox',
+   185→      starterCode: "# ملعبك الحر — كاشفاتك المصغرة على شجرة ast\n# Your playground — your mini detectors over the ast tree\n\nimport ast\n\nSAMPLE = '''def report(items):\n    # FIXME: this loop re-scans the list on every call, find a cheaper way\n    total = 0\n    for it in items:\n        total = total + it\n    return total\n'''\n\ntree = ast.parse(SAMPLE)\nfuncs = 0\nfor node in ast.walk(tree):\n    if isinstance(node, ast.FunctionDef):\n        funcs = funcs + 1\nprint('functions: %d' % funcs)\nprint('docstring: %s' % ast.get_docstring(tree.body[0]))\n\nfor line in SAMPLE.split('\\n'):\n    if 'TODO' in line or 'FIXME' in line:\n        print('flagged: %s' % line.strip())\n\n# جرّب: عدد الأسطر الأطول من 79 محرفًا في SAMPLE — استخدم enumerate بـ start=1\n# try: count lines in SAMPLE longer than 79 characters — use enumerate with start=1\n# جرّب: مرر شيفرة من عندك إلى ast.parse ثم اطبع type(node).__name__ لكل عقدة يمشيها ast.walk\n# try: parse your own code and print type(node).__name__ for every node ast.walk visits\n",
+   186→      prompt: {
+   187→        ar: "جرّب بنفسك: لاحظ أن docstring الطباعي None — الدالة بلا توثيق فالقاعدة ستعلّمها لو كتبت الكاشف كاملاً. ثم اكتب عداد الأسطر الطويلة بأرقام أسطر تبدأ من 1 — إنها القاعدة الثانية من مشروع الدرس القادم، جرّبها هنا مبكراً. وأخيراً امشِ شيفرة من عندك واطبع أسماء أنواع العقد: سترى Program وFunctionDef وAssign وغيرها — هذه قاموس الكائنات الذي تفحصه أدوات linter الحقيقية.",
+   188→        en: 'Try it yourself: notice the printed docstring is None — the function is undocumented, and the full rule would flag it. Then write the long-line counter with line numbers starting at 1 — it is rule two of next lesson\u2019s project; try it here early. Finally walk your own code and print node type names: you will see Module, FunctionDef, Assign and friends — this is the object vocabulary real linters inspect.',
+   189→      },
+   190→    },
+   191→    {
+   192→      kind: 'quiz',
+   193→      id: 'quiz3',
+   194→      items: [
+   195→        {
+   196→          id: 'q1',
+   197→          question: {
+   198→            ar: 'ومن فصل البرمجة كائنية التوجه في مسار بايثون (الفصل الرابع عشر): isinstance(node, ast.ExceptHandler) — ماذا تفحص بالضبط؟',
+   199→            en: 'From the object-oriented chapter of the Python track (chapter 14): what exactly does isinstance(node, ast.ExceptHandler) check?',
+   200→          },
+   201→          options: [
+   202→            { id: 'a', text: { ar: 'هل بُني الكائن node من الصنف ast.ExceptHandler أو من أحفاده — سؤال عن نوع الكائن لا عن قيمته', en: 'Whether the object node was built from the ast.ExceptHandler class or a descendant — a question about the object\u2019s kind, not its value' } },
+   203→            { id: 'b', text: { ar: 'هل السلسلة node تساوي نصاً ExceptHandler', en: 'Whether the string node equals the text ExceptHandler' } },
+   204→            { id: 'c', text: { ar: 'هل للصنف ExceptHandler توابع باسم node', en: 'Whether the ExceptHandler class has a method named node' } },
+   205→          ],
+   206→          answer: 'a',
+   207→          explanation: {
+   208→            ar: 'كل عقد في شجرة ast كائنات من أصناف بايثون — وisinstance نفس الأداة التي فرزت بها الكائنات في فصل OOP صارت هنا قلب كاشف العيوب: تفحص الصنف تصف نوع العبارة التي قرأها المحلل.',
+   209→            en: 'Every node in the ast tree is an object of a Python class — and isinstance, the very tool you used to sort objects in the OOP chapter, becomes the heart of a defect detector: it checks the class that describes the kind of statement the parser read.',
+   210→          },
+   211→        },
+   212→        {
+   213→          id: 'q2',
+   214→          question: {
+   215→            ar: 'أداة أبقت صمتها عن خلل حقيقي في مسار خطأ نادر — أي خلية في مصفوفة الالتباس تسكنها هذه الحالة؟',
+   216→            en: 'A tool stayed silent about a real defect on a rare error path — which cell of the confusion matrix does this live in?',
+   217→          },
+   218→          options: [
+   219→            { id: 'a', text: { ar: 'الخلية: العيب موجود والأداة لم تُبلغ — سلبي كاذب false negative، وهي مصدر الطمأنة الكاذبة', en: 'The cell: defect exists and the tool reported nothing — a false negative, the source of false reassurance' } },
+   220→            { id: 'b', text: { ar: 'إيجابي كاذب false positive: الأداة أزعجت بلا داع', en: 'A false positive: the tool cried wolf for nothing' } },
+   221→            { id: 'c', text: { ar: 'إيجابي صادق true positive: الأداة أدت عملها', en: 'A true positive: the tool did its job' } },
+   222→          ],
+   223→          answer: 'a',
+   224→          explanation: {
+   225→            ar: 'عيب موجود + صمت = سلبي كاذب. وهو الأخطر لأنه يبدو نظافة: تقرير هادئ يكسو عيباً حياً. تذكر مسارات الأخطاء النادرة — هي بالضبط حيث تفشل العيون البشرية وتتوه اختباراتك، والأداة يجب أن تمسكها.',
+   226→            en: 'Defect exists + silence = false negative. It is the worst because it looks like cleanliness: a quiet report draped over a live defect. Remember rare error paths — exactly where human eyes fail and your tests miss; the tool is supposed to catch them.',
+   227→          },
+   228→        },
+   229→        {
+   230→          id: 'q3',
+   231→          question: {
+   232→            ar: 'ما تعريف precision بدقة؟',
+   233→            en: 'What is precision, precisely?',
+   234→          },
+   235→          options: [
+   236→            { id: 'a', text: { ar: 'نسبة إنذارات الأداة الصادقة: من كل ما أبلغت عنه، كم كان عيباً حقيقياً؟ — انخفاضها يعني ضجيجاً من الإيجابيات الكاذبة', en: 'The fraction of the tool\u2019s alarms that were real: of everything it flagged, how much was an actual defect? — low precision means false-alarm noise' } },
+   237→            { id: 'b', text: { ar: 'نسبة العيوب الحقيقية التي وجدتها من مجموع العيوب الموجودة فعلاً — انخفاضها يعني فواتاً', en: 'The fraction of real defects it found out of all that exist — low precision means misses' } },
+   238→            { id: 'c', text: { ar: 'عدد الأسطر التي تمسحها الأداة في الثانية', en: 'The number of lines the tool scans per second' } },
+   239→          ],
+   240→          answer: 'a',
+   241→          explanation: {
+   242→            ar: 'الدقة precision حصة الإنذارات الصادقة، والاستذكار recall حصة العيوب المكتشفة — الخيار ب هو تعريف recall. والأداة التي تريد الثقة تعلو دقتها: إنذارها يستحق القراءة دائماً تقريباً.',
+   243→            en: 'Precision is the share of true alarms; recall is the share of defects caught — option b defines recall. A tool that wants trust leads with precision: reading its alarms is almost always worth it.',
+   244→          },
+   245→        },
+   246→        {
+   247→          id: 'q4',
+   248→          question: {
+   249→            ar: 'لماذا تضحي الأدوات العملية عمداً بجزء من recall لصالح precision؟',
+   250→            en: 'Why do practical tools deliberately sacrifice part of their recall for precision?',
+   251→          },
+   252→          options: [
+   253→            { id: 'a', text: { ar: 'لأن الإيجابيات الكاذبة تلتهم الثقة: من يغرق بالضجيج يُتجاهل فتضيع حتى إنذاراته الصادقة — أداة إنذارها قليل لكنه صادق تُتّبع (Google تستهدف نحو إنذار كاذب واحد من عشرة)', en: 'Because false positives eat trust: a tool flooded with noise gets ignored, losing even its true findings — one with fewer but honest alarms gets acted upon (Google targets roughly one false positive in ten or better)' } },
+   254→            { id: 'b', text: { ar: 'لأن recall بلا ثمن فيمكن إهماله بأمان', en: 'Because recall costs nothing and can be ignored safely' } },
+   255→            { id: 'c', text: { ar: 'لأن precision أسهل حساباً من recall', en: 'Because precision is easier to compute than recall' } },
+   256→          ],
+   257→          answer: 'a',
+   258→          explanation: {
+   259→            ar: 'كلفة الإيجابي الكاذب بشرية تتراكم: أداة recall تسعين بالمئة عديمة القيمة إن علّم معدل إنذار كاذب ستين بالمئة الفريق زر «تجاهل». الثقة المورد النادر — دقة عالية تشتريها ومطاردة recall على حسابها تنفقها.',
+   260→            en: 'The false-positive cost is human and compounds: a 90% recall checker is worthless if a 60% false-positive rate trains the team to hit dismiss. Trust is the scarce resource — high precision buys it, chasing recall at its expense spends it.',
+   261→          },
+   262→        },
+   263→      ],
+   264→    },
+   265→    {
+   266→      kind: 'pitfalls',
+   267→      items: [
+   268→        {
+   269→          wrong: '«تقرير الـ linter نظيف — إذن الشيفرة صحيحة، ننشر»',
+   270→          right: '«نظافة الأداة أرضية لا سقف — السلبيات الكاذبة حقيقية والاختبار ما يزال لازماً»',
+   271→          note: {
+   272→            ar: 'الأداة تجد الأصناف التي بُنيت لها فقط، ولا تقول شيئاً هل الشيفرة تفعل الشيء الصحيح أصلاً. تقرير نظيف يعني: لم تجد الأداة ما تبحث عنه — لا أن لا شيء موجود.',
+   273→            en: 'The tool finds only the categories it was built for, and says nothing about whether the code does the right thing at all. A clean report means the tool found none of what it hunts — not that nothing is there.',
+   274→          },
+   275→        },
+   276→        {
+   277→          wrong: '«أشعل كل القواعد بأقصى شراسة لأمسك أكبر عدد عيوب»',
+   278→          right: '«اضبط الدقة أولاً: إنذارات قليلة صادقة تُتَّبع، والضجيج يُطفئ الأداة كلها»',
+   279→          note: {
+   280→            ar: 'أداة يغرق ضجيجها الفريق يكسب زر تجاهل منعكساً — وحين يُهمل مخرجها تضيع حتى عيوبها الحقيقية. ابدأ بقواعد قليلة لا تخطئ تقريباً وأضف ببطء.',
+   281→            en: 'A tool whose noise floods the team earns the reflexive dismiss button — and once ignored, even its real defects are lost. Start with a few rules that almost never err, and add slowly.',
+   282→          },
+   283→        },
+   284→        {
+   285→          wrong: '«سأتتبع كل مسار تنفيذ بنفسي لأتأكد أن كل open يقابله close»',
+   286→          right: '«دع الآلة تمشي كل المسارات — محلل تدفق البيانات يفعل ذلك في ثوانٍ دون تعب»',
+   287→          note: {
+   288→            ar: 'محاكاة كل مسار ذهنياً أسوأ ما في الفحص الميكانيكي على البشر — مسار الخطأ النادر يضيع دائماً تقريباً. هذا حرفياً عمل الآلة: امشِ المسارين وراقب المورد المفتوح الذي لم يغلق.',
+   289→            en: 'Mentally simulating every path is the worst mechanical check for humans — the rare error path almost always slips. This is literally the machine\u2019s job: walk both paths and watch the opened resource that never closes.',
+   290→          },
+   291→        },
+   292→      ],
+   293→    },
+   294→    {
+   295→      kind: 'summary',
+   296→      bullets: [
+   297→        { ar: 'التحليل الثابت الآلي يفحص الشيفرة دون تشغيلها في ثوانٍ ولا يتعب: مدققو أنواع وlinters ومحللو تدفق بيانات وصيادو أنماط عيوب — الآلة للميكانيكي والإنسان للحكم.', en: 'Automated static analysis examines code without running it, in seconds, untiring: type checkers, linters, data-flow analyzers, bug-pattern finders — the machine handles the mechanical, humans handle judgment.' },
+   298→        { ar: 'الأداة تراوغ بطريقتين: إيجابي كاذب صيحة ذئب، وسلبي كاذب ذئب عبر — ومن المصفوفة مفردتا precision (حصة الإنذارات الصادقة) وrecall (حصة العيوب المكتشفة) والاثنان يتقايضان.', en: 'The tool errs two ways: a false positive cries wolf, a false negative lets the wolf through — and from the matrix come precision (share of true alarms) and recall (share of defects caught), which trade off.' },
+   299→        { ar: 'الثقة المورد النادر: دقة عالية تشتريها والضجيج ينفقها — ووحدة ast تكفي لبناء منقّح مصغر يمشي الشجرة ويكشف bare except والدوال بلا توثيق دون تشغيل شيفرتها.', en: 'Trust is the scarce resource: high precision buys it, noise spends it — and the ast module is enough to build a mini linter that walks the tree and catches bare excepts and undocumented functions without executing their code.' },
+   300→      ],
+   301→      reflectPrompt: {
+   302→        ar: 'في الملعب: خذ أطول دالة كتبتها في هذه السلسلة ومررها عبر كاشف الدوال بلا docstring الذي بنته اليوم، ثم امش عقد الشجرة واطبع أسماء الأنواع. أي عقدة فاجأتك؟ وهل تعتبر قاعدة docstring قاعدة دقة عالية أم قاعدة ضجيج — ولماذا يقبل الفرق الأولى ويرفض الثانية؟',
+   303→        en: 'In the sandbox: run your longest function from this series through the missing-docstring detector you built today, then walk the tree and print type names. Which node type surprised you? And is the docstring rule a high-precision rule or a noise rule — why do teams accept the former and reject the latter?',
+   304→      },
+   305→    },
+   306→    {
+   307→      kind: 'sources',
+   308→      items: [
+   309→        { book: 'SWE', section: 'swe.ch9.s4', pages: 'ص240-243 / pp.240-243' },
+   310→      ],
+   311→    },
+   312→  ],
+   313→  sources: [
+   314→    { book: 'SWE', section: 'swe.ch9.s4', pages: 'ص240-243 / pp.240-243' },
+   315→  ],
+   316→} satisfies Lesson;
+   317→
+   318→export default lesson;
+   319→

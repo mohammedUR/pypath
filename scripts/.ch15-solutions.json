@@ -1,0 +1,267 @@
+[
+ {
+  "lesson": "py4e.ch15.l1",
+  "id": "ex1.first-table",
+  "solution": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE tracks (title TEXT, plays INTEGER)')\ncur.execute('INSERT INTO tracks (title, plays) VALUES (?, ?)', ('My Way', 15))\ncur.execute('SELECT title, plays FROM tracks')\nrow = cur.fetchone()\nprint(row)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الصف المجلوب هو (My Way, 15)",
+     "en": "The fetched row is (My Way, 15)"
+    },
+    "code": "assert row == ('My Way', 15), 'expected: (My Way, 15) | actual: %r' % (row,)",
+    "expected": "(My Way, 15)"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الصف طُبع في الخرج",
+     "en": "The row was printed"
+    },
+    "code": "assert \"('My Way', 15)\" in __learner_output__, 'expected: the row printed | actual: %r' % __learner_output__",
+    "expected": "the row printed"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الصف مخزّن فعلًا في الجدول",
+     "en": "The row is really stored in the table"
+    },
+    "code": "cur.execute('SELECT COUNT(*) FROM tracks')\nstored = cur.fetchone()[0]\nassert stored == 1, 'expected: 1 stored row | actual: %r' % (stored,)",
+    "expected": "1 stored row"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch15.l2",
+  "id": "ex1.tracks-table",
+  "solution": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE tracks (title TEXT, plays INTEGER)')\ncur.execute('INSERT INTO tracks (title, plays) VALUES (?, ?)', ('Thunderstruck', 20))\ncur.execute('INSERT INTO tracks (title, plays) VALUES (?, ?)', ('My Way', 15))\nconn.commit()\n\ncur.execute('SELECT title, plays FROM tracks')\nfor row in cur:\n    print(row)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الصفوفان مخزنان بالترتيب",
+     "en": "Both rows stored in order"
+    },
+    "code": "cur.execute('SELECT title, plays FROM tracks')\nrows = cur.fetchall()\nassert rows == [('Thunderstruck', 20), ('My Way', 15)], 'expected: two rows in order | actual: %r' % (rows,)",
+    "expected": "two rows in order"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الخرج يعرض الصفين",
+     "en": "The output shows both rows"
+    },
+    "code": "assert \"('Thunderstruck', 20)\" in __learner_output__ and \"('My Way', 15)\" in __learner_output__, 'expected: both rows printed | actual: %r' % __learner_output__",
+    "expected": "both rows printed"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "عدد صفوف الجدول اثنان",
+     "en": "The table holds two rows"
+    },
+    "code": "cur.execute('SELECT COUNT(*) FROM tracks')\ncnt = cur.fetchone()[0]\nassert cnt == 2, 'expected: 2 rows | actual: %r' % (cnt,)",
+    "expected": "2 rows"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch15.l3",
+  "id": "ex1.network-brief",
+  "solution": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE Twitter (name TEXT, retrieved INTEGER, friends INTEGER)')\nseed = [\n    ('drchuck', 1, 4),\n    ('opencontent', 1, 3),\n    ('lhawthorn', 1, 2),\n    ('steve_coppin', 0, 1),\n    ('davidkocher', 0, 1),\n    ('hrheingold', 0, 1),\n]\nfor row in seed:\n    cur.execute('INSERT INTO Twitter (name, retrieved, friends) VALUES (?, ?, ?)', row)\nconn.commit()\n\ncur.execute('SELECT COUNT(*) FROM Twitter WHERE retrieved = 0')\nprint('waiting: %d' % cur.fetchone()[0])\n\ncur.execute('SELECT AVG(friends) FROM Twitter')\nprint('average: %s' % cur.fetchone()[0])\n\ncur.execute('SELECT name FROM Twitter ORDER BY friends DESC LIMIT 1')\nprint('top: %s' % cur.fetchone()[0])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "عدد غير المستكشفين 3",
+     "en": "The unexplored count is 3"
+    },
+    "code": "assert 'waiting: 3' in __learner_output__, 'expected: waiting: 3 | actual: %r' % __learner_output__",
+    "expected": "waiting: 3"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "المتوسط 2.0",
+     "en": "The average is 2.0"
+    },
+    "code": "assert 'average: 2.0' in __learner_output__, 'expected: average: 2.0 | actual: %r' % __learner_output__",
+    "expected": "average: 2.0"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "القمة drchuck",
+     "en": "The top is drchuck"
+    },
+    "code": "assert 'top: drchuck' in __learner_output__, 'expected: top: drchuck | actual: %r' % __learner_output__",
+    "expected": "top: drchuck"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "تحقق مستقل من القاعدة نفسها",
+     "en": "An independent check against the database itself"
+    },
+    "code": "cur.execute('SELECT COUNT(*) FROM Twitter WHERE retrieved = 0')\nwaiting = cur.fetchone()[0]\nassert waiting == 3, 'expected: 3 waiting in the table | actual: %r' % (waiting,)",
+    "expected": "3 waiting in the table"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch15.l4",
+  "id": "ex1.people-follows",
+  "solution": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE People (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')\ncur.execute('CREATE TABLE Follows (from_id INTEGER, to_id INTEGER, UNIQUE(from_id, to_id))')\n\nfor name in ['drchuck', 'opencontent', 'lhawthorn']:\n    cur.execute('INSERT INTO People (name) VALUES (?)', (name,))\n\ncur.execute('INSERT INTO Follows (from_id, to_id) VALUES (?, ?)', (1, 2))\ncur.execute('INSERT INTO Follows (from_id, to_id) VALUES (?, ?)', (1, 3))\nconn.commit()\n\ncur.execute('SELECT id, name FROM People')\nprint(cur.fetchall())\ncur.execute('SELECT from_id, to_id FROM Follows')\nprint(cur.fetchall())",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الأشخاص الثلاثة بمفاتيحهم التلقائية",
+     "en": "The three people with their automatic keys"
+    },
+    "code": "cur.execute('SELECT id, name FROM People')\npeople = cur.fetchall()\nassert people == [(1, 'drchuck'), (2, 'opencontent'), (3, 'lhawthorn')], 'expected: three numbered people | actual: %r' % (people,)",
+    "expected": "three numbered people"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "علاقتا المتابعة مخزنتان",
+     "en": "Both follow relations stored"
+    },
+    "code": "cur.execute('SELECT from_id, to_id FROM Follows')\nfollows = cur.fetchall()\nassert follows == [(1, 2), (1, 3)], 'expected: two relations | actual: %r' % (follows,)",
+    "expected": "two relations"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الخرج يعرض الجدولين",
+     "en": "The output shows both tables"
+    },
+    "code": "assert \"[(1, 'drchuck'), (2, 'opencontent'), (3, 'lhawthorn')]\" in __learner_output__ and '[(1, 2), (1, 3)]' in __learner_output__, 'expected: both fetchall reprs printed | actual: %r' % __learner_output__",
+    "expected": "both fetchall reprs printed"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch15.l5",
+  "id": "ex1.follows-join-people",
+  "solution": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE People (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')\ncur.execute('CREATE TABLE Follows (from_id INTEGER, to_id INTEGER)')\nfor name in ['drchuck', 'opencontent', 'lhawthorn']:\n    cur.execute('INSERT INTO People (name) VALUES (?)', (name,))\ncur.execute('INSERT INTO Follows (from_id, to_id) VALUES (?, ?)', (1, 2))\ncur.execute('INSERT INTO Follows (from_id, to_id) VALUES (?, ?)', (1, 3))\nconn.commit()\n\ncur.execute('SELECT Follows.to_id, People.name FROM Follows JOIN People ON Follows.to_id = People.id')\nfor row in cur:\n    print('%d -> %s' % (row[0], row[1]))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "النتيجة المركبة صحيحة",
+     "en": "The combined result is right"
+    },
+    "code": "cur.execute('SELECT Follows.to_id, People.name FROM Follows JOIN People ON Follows.to_id = People.id')\nrows = cur.fetchall()\nassert rows == [(2, 'opencontent'), (3, 'lhawthorn')], 'expected: two combined rows | actual: %r' % (rows,)",
+    "expected": "two combined rows"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الخرج يعرض الاسمين بصيغة السهم",
+     "en": "The output shows both names in arrow format"
+    },
+    "code": "assert '2 -> opencontent' in __learner_output__ and '3 -> lhawthorn' in __learner_output__, 'expected: 2 -> opencontent / 3 -> lhawthorn | actual: %r' % __learner_output__",
+    "expected": "2 -> opencontent / 3 -> lhawthorn"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "بلا ON كانت النتيجة ستتضخم — تحقق من العدد",
+     "en": "Without ON the result would inflate — verify the count"
+    },
+    "code": "cur.execute('SELECT COUNT(*) FROM Follows JOIN People ON Follows.to_id = People.id')\njoined = cur.fetchone()[0]\nassert joined == 2, 'expected: 2 joined rows (not 6 cartesian) | actual: %r' % (joined,)",
+    "expected": "2 joined rows (not 6 cartesian)"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch15.l6",
+  "id": "ex2.music-library-project",
+  "solution": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE genres (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')\ncur.execute('CREATE TABLE artists (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')\ncur.execute('CREATE TABLE albums (id INTEGER PRIMARY KEY, title TEXT, artist_id INTEGER, genre_id INTEGER, tracks INTEGER)')\n\nfor gid, gname in [(1, 'Tarab'), (2, 'Jazz'), (3, 'Folk')]:\n    cur.execute('INSERT INTO genres (id, name) VALUES (?, ?)', (gid, gname))\nfor aid, aname in [(1, 'Fairuz'), (2, 'Ziad Rahbani'), (3, 'Marcel Khalife')]:\n    cur.execute('INSERT INTO artists (id, name) VALUES (?, ?)', (aid, aname))\nfor title, artist_id, genre_id, tracks in [\n    ('Ahdan', 1, 1, 8),\n    ('Kifak Inta', 1, 1, 10),\n    ('Ya Ana Ya Ana', 1, 1, 7),\n    ('Ana Mosh Kafir', 2, 2, 6),\n    ('Houdou Nisbi', 2, 2, 5),\n    ('Wahin', 3, 3, 12),\n]:\n    cur.execute('INSERT INTO albums (title, artist_id, genre_id, tracks) VALUES (?, ?, ?, ?)', (title, artist_id, genre_id, tracks))\nconn.commit()\n\ncur.execute('SELECT albums.title, artists.name FROM albums JOIN artists ON albums.artist_id = artists.id')\nfor row in cur:\n    print('album: %s / artist: %s' % (row[0], row[1]))\n\ncur.execute('SELECT COUNT(*) FROM artists')\nprint('artists: %d' % cur.fetchone()[0])\n\ncur.execute('SELECT COUNT(*) FROM albums')\nprint('albums: %d' % cur.fetchone()[0])\n\ncur.execute('SELECT genres.name FROM albums JOIN genres ON albums.genre_id = genres.id GROUP BY genres.name ORDER BY COUNT(*) DESC LIMIT 1')\nprint('top genre: %s' % cur.fetchone()[0])\n\ncur.execute('SELECT AVG(tracks) FROM albums')\nprint('avg tracks: %.1f' % cur.fetchone()[0])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "عددا الجداول صحيحان",
+     "en": "Both table counts are right"
+    },
+    "code": "assert 'artists: 3' in __learner_output__ and 'albums: 6' in __learner_output__, 'expected: artists: 3 / albums: 6 | actual: %r' % __learner_output__",
+    "expected": "artists: 3 / albums: 6"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "النوع الأغنى Tarab",
+     "en": "The richest genre is Tarab"
+    },
+    "code": "assert 'top genre: Tarab' in __learner_output__, 'expected: top genre: Tarab | actual: %r' % __learner_output__",
+    "expected": "top genre: Tarab"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "متوسط المسارات 8.0",
+     "en": "The average tracks is 8.0"
+    },
+    "code": "assert 'avg tracks: 8.0' in __learner_output__, 'expected: avg tracks: 8.0 | actual: %r' % __learner_output__",
+    "expected": "avg tracks: 8.0"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الأزواج مركبة بJOIN: ألبوم مع فنانه",
+     "en": "Pairs assembled by JOIN: album with its artist"
+    },
+    "code": "assert 'album: Kifak Inta / artist: Fairuz' in __learner_output__ and 'album: Houdou Nisbi / artist: Ziad Rahbani' in __learner_output__, 'expected: joined album/artist pairs | actual: %r' % __learner_output__",
+    "expected": "joined album/artist pairs"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "تحقق مستقل: الـ JOIN المطابق يعطي 6 لا 18",
+     "en": "Independent check: the matched JOIN gives 6, not 18"
+    },
+    "code": "cur.execute('SELECT COUNT(*) FROM albums JOIN artists ON albums.artist_id = artists.id')\njoined = cur.fetchone()[0]\nassert joined == 6, 'expected: 6 joined rows (not 18 cartesian) | actual: %r' % (joined,)",
+    "expected": "6 joined rows (not 18 cartesian)"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch15.l6",
+  "id": "ex5.debug-join-no-on",
+  "solution": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE artists (id INTEGER PRIMARY KEY, name TEXT)')\ncur.execute('CREATE TABLE albums (id INTEGER PRIMARY KEY, title TEXT, artist_id INTEGER)')\n\ncur.execute('INSERT INTO artists (name) VALUES (?)', ('Fairuz',))\ncur.execute('INSERT INTO artists (name) VALUES (?)', ('Ziad Rahbani',))\ncur.execute('INSERT INTO albums (title, artist_id) VALUES (?, ?)', ('Ahdan', 1))\ncur.execute('INSERT INTO albums (title, artist_id) VALUES (?, ?)', ('Kifak Inta', 1))\ncur.execute('INSERT INTO albums (title, artist_id) VALUES (?, ?)', ('Houdou Nisbi', 2))\nconn.commit()\n\ncur.execute('SELECT COUNT(*) FROM albums JOIN artists ON albums.artist_id = artists.id')  # قاعدة المطابقة تعود / the match rule returns\ntotal = cur.fetchone()[0]\nprint('albums: %d' % total)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "العدد الصادق: 3",
+     "en": "The honest count: 3"
+    },
+    "code": "assert 'albums: 3' in __learner_output__, 'expected: albums: 3 | actual: %r' % __learner_output__",
+    "expected": "albums: 3"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "سطر تقرير واحد بلا تضخم",
+     "en": "One report line, no inflation"
+    },
+    "code": "assert __learner_output__.count('albums:') == 1, 'expected: exactly one albums line | actual: %r' % __learner_output__",
+    "expected": "exactly one albums line"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "كل ألبوم وجد شريكه — تحقق مستقل",
+     "en": "Every album found its partner — independent check"
+    },
+    "code": "cur.execute('SELECT COUNT(*) FROM albums')\nalbums_total = cur.fetchone()[0]\ncur.execute('SELECT COUNT(*) FROM albums JOIN artists ON albums.artist_id = artists.id')\njoined_total = cur.fetchone()[0]\nassert albums_total == 3 and joined_total == albums_total, 'expected: 3 albums all matched | actual: %r' % ((albums_total, joined_total),)",
+    "expected": "3 albums all matched"
+   }
+  ]
+ }
+]

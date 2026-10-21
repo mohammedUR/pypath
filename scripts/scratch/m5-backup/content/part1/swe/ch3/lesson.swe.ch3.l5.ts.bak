@@ -1,0 +1,381 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch3.l5 — "Chapter 3 Review and Project: The Requirements Pack"
+ * مراجعة الفصل 3 ومشروع: حزمة المتطلبات
+ * Aligned with SWE ch3 s8 (Conclusion, pp.85-86) + the chapter review.
+ * All expression is original — a paraphrase of the CC BY-SA 4.0 source, never
+ * a verbatim translation.
+ * Runnable design: a deterministic mini requirements-kit — the story validator
+ * from l3, a Must-first priority tally, and the abuse-case table from l4 over
+ * fixed data, printing a compact pack summary. The debug block is a validator
+ * with a WRONG rule (prefix-only check) that accepts a malformed story and
+ * inflates the Must count — it RUNS and shows the symptom.
+ * Deterministic only: no input(), no exit(), no random, no unittest.main.
+ */
+const lesson = {
+  id: 'swe.ch3.l5',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 3,
+  title: { ar: 'مراجعة الفصل 3 ومشروع: حزمة المتطلبات', en: 'Chapter 3 Review and Project: The Requirements Pack' },
+  estimatedMinutes: 35,
+  prerequisites: ['swe.ch3.l4'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'نهاية الفصل هي اللحظة التي يُختبر فيها كل ما سبق في صفحة واحدة: جلسة خطة الإصدار، والراعي يسأل السؤال الذي يفصل المشاريع الناضجة عن الهاجرة — ما كل Must لديه سيناريو قبول يمر؟ وما الحالات التي يستطيع بها الخصم إيذاء المرضى؟ لا إجابة بذوق ولا بحاضر قوي: إجابة بحزمة متطلبات — قصص مفحوصة الصيغة، عدّ أولويات، وجدول حالات إساءة تربط كل دفاع بالهجوم الذي يوقفه. الفصل الثالث أعطاك الأدوات كلها: تعريف المتطلب ودورته، طبقات الاحتياج الثلاث وأدوات استنباطها، قصص INVEST وسيناريوهات Given/When/Then، سلّم الأهداف وتعارضاتها، وشجرة الهجوم. واليوم تركبها في آلة واحدة صغيرة تحسب بدل أن تهذي، وتوسم بدل أن تشتهي — ثم تكسرها وتصلحها، لأن مدققًا بلا قاعدة خاطئة مجربة لا يُوثق. بنهاية الدرس تملك حزمة تقرأ أمام راعٍ في دقيقة.',
+        en: 'The end of the chapter is where everything before it gets tested on one page: a release-planning session, and the sponsor asks the question that separates mature projects from hopeful ones — which of our Musts have a passing acceptance scenario, and where can an adversary hurt our patients? Not an answer by taste or by the loudest voice: an answer as a requirements pack — format-checked stories, a priority tally, and an abuse-case table tying each defense to the attack it stops. Chapter 3 handed you every tool: the requirement definition and its cycle, the three need layers and their elicitation tools, INVEST stories and Given/When/Then scenarios, the goal ladder and its conflicts, and the attack tree. Today you assemble them into one small machine that counts instead of daydreaming and flags instead of wishing — then you break it and fix it, because a validator without a proven wrong rule is not trustworthy. By the end you hold a pack you can read to a sponsor in a minute.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "story = 'As a clinician, I want faster charts.'\nprint('role:', story.startswith('As a '))\nprint('benefit:', ', so that ' in story)",
+      question: {
+        ar: 'قصة ST-4 من حزمة اليوم أمامك كسطرين فحص. ماذا يطبع الكود، وماذا يعني ذلك لمصير القصة في عدّ الـMust؟',
+        en: 'Story ST-4 from today\u2019s pack is in front of you as two checks. What does the code print, and what does that mean for the story\u2019s fate in the Must tally?',
+      },
+      reveal: {
+        ar: 'يطبع role: True ثم benefit: False — الدور سليم والفائدة غائبة: القصة بطولها كله بلا لماذا. مصيرها في الحزمة: INVALID، ولا يدخل في عدّ الـMust الصالح للبناء. هذه هي الحصة الأدق للفصل كله: قصة بلا فائدة ليست جاهزية أقل — هي معنى غائب، وميزة لا يستطيع أحد تبريرها مرشحة للحذف.',
+        en: 'It prints role: True then benefit: False — the role is fine, the benefit is absent: however long the story is, it has no why. Its fate in the pack: INVALID, excluded from the buildable-Must tally. That is the whole chapter in miniature: a story without a benefit is not slightly less ready — it is missing meaning, and a feature nobody can justify is a candidate for the cut list.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الفصل في سطور', en: 'The chapter in a few lines' },
+      chunks: [
+        {
+          ar: 'المتطلب عبارة متفق عليها عن حاجة: سلوك يُبديه النظام أو خاصية يتحلى بها — ماذا ولماذا لا كيف. وتتحرك في حلقة دائمة: استنباط ثم تحليل ثم تصوير ثم تحقق، والبناء يغذي الاستنباط. الاحتياجات ثلاث طبقات: مُعلن يُقال بسهولة وغالبًا نصف حل، وضمني يُفترض بديهيًا وتفوّته فيشعر المستخدم أن النظام مكسور، وكامن لا يُعرف حتى يُرى — والأدوات تثلّث لأن لكل أداة نقطة عمياء: مقابلات وملاحظة واستبيانات ونماذج وعصف ولعب دور ودراسة الأنظمة القائمة. والافتراض المدفون خطر غير متتبع: اكتبه سؤالًا في اللقاء القادم. والجودة تحتاج معيار قياس مُقاس وإلا اكتُشف في أسوأ يوم.',
+          en: 'A requirement is an agreed statement of a need: a behavior to exhibit or a property to possess — what and why, never how. It moves in a permanent cycle: elicit, analyze, specify, validate, with build feeding back into elicit. Needs come in three layers: stated, easy to say and usually half-solutions; implied, assumed obvious and missing them makes the system feel broken; latent, unknown until seen. Tools triangulate because each has a blind spot: interviews, observation, surveys, prototypes, brainstorming, role play, existing-systems data. A buried assumption is untracked risk: write it as a question for the next meeting. And quality needs a measured fit criterion or it is discovered on your worst day.',
+        },
+        {
+          ar: 'أما الصياغة فلكل غرض صيغة: قصة Connextra بثلاثة أجزاء تفحصها INVEST وتزوّد بمعايير قبول Given/When/Then تشتغل اختبارًا؛ وميزات تجمع القصص لخارطة طريق؛ وسيناريو روائي بشخصية وهدف واستثناءات يُمشى عمدًا يكشف الناقص. وتحت كل شيء أهداف: غايات لا وسائل، لينة تُشبَع بالحجة والقياس، قابلة للقياس، ذات مالك — والمساهمة ترفع الأولوية والتعارض يُحسم صراحةً. ثم قلب السؤال للأمن: شجرة هجوم لأصل حرج، أوراقها متطلبات أمنية مربوطة بالهجمات التي توقفها، عبر STRIDE وحدود الثقة والهندسة الاجتماعية. لا شيء من هذا يمنح اليقين — الغرض اكتشاف الخطأ مبكرًا بينما الإصلاح رخيص، بتخريج هدف واضح لما نبنيه قبل أن نبنيه خطأ.',
+          en: 'Each job has its form: a three-part Connextra story inspected by INVEST and armed with Given/When/Then acceptance criteria that run as tests; features that group stories into a roadmap; and a narrative scenario with a persona, a goal and deliberately walked exceptions that exposes what is missing. Beneath everything sit goals: ends not means, soft ones satisfied by argument and measurement, measurable, owned — contribution raises priority and conflict is resolved explicitly. Then security inverts the question: an attack tree per critical asset, its leaves security requirements tied to the attacks they stop, found via STRIDE, trust boundaries and social engineering. None of this produces certainty — the purpose is catching errors early while correction is cheap, by committing to a clear statement of what to build before building it wrong.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'تشريح حزمة المتطلبات', en: 'Anatomy of the requirements pack' },
+      chunks: [
+        {
+          ar: 'الحزمة ثلاث صفوف فوق بيانات ثابتة. الصف الأول مدقق القصص: القاعدة ثلاثية — البادئة As a ثم الجزء , I want ثم , so that — ما أخفق يوسم INVALID بسبب محدد، وما نجح يدخل العدّ. الصف الثاني أولويات: من القصص الصالحة نعدّ Must — الجاهزة للسبرنت — وShould: الحصة stories: 4 valid: 3 must: 2 تجيب في سطر عن سؤال الراعي: كم جاهزًا لدينا، وكم منها Must؟ الصف الثالث جدول الإساءة: حالات فاعلها من مجموعة misusers (منتحل، موظف سابق، غريب) موسومة بصنف STRIDE الذي تنتمي إليه — والحصيلة abuses: 2 مع أسمائها. ثلاثة صفوف، بيانات ثابتة، خرج حتمي: هذه ليست أداة سحرية بل نظافة هندسية — نفس روح سجل REQ في الدرس الأول وشجرة الهجوم في الرابع، مجمعة في مخرج واحد تقرأه في دقيقة.',
+          en: 'The pack is three rows over fixed data. Row one, the story validator: the rule is three-part — the As a prefix, then the , I want part, then , so that — failures flag INVALID with a specific reason; passes enter the tally. Row two, priorities: among valid stories we count Must — sprint-ready — and Should: the line stories: 4 valid: 3 must: 2 answers the sponsor in one breath: how many ready, how many Must? Row three, the abuse table: cases whose actor is in the misusers set (impostor, ex-employee, stranger), each tagged with its STRIDE category — tally abuses: 2 with names. Three rows, fixed data, deterministic output: not magic — engineering hygiene: the REQ ledger from lesson one and the attack tree from lesson four, assembled into one output read in a minute.',
+        },
+        {
+          ar: 'وقبل البناء تمر بالكسر: كتلة التصحيح تريك مدققًا بقاعدة خاطئة — يفحص البادئة وكلمة I want فقط ويتغافل عن , so that — فيقبل قصة ST-4 المعطوبة ويضخّم الحصيلة: valid: 4 must: 3 بدل الصحيح valid: 3 must: 2. الفشل أيضًا صامت: لا انهيار ولا استثناء — الحزمة تطبع أرقامًا واثقة وخاطئة، وهذا أخطر صنف عطل في أدوات الجودة. إصلاحه ليس إضافة شرط أكاديميًا: القصص الصالحة فقط هي التي تُبنى، وفائدة غائبة تعني محادثة بلا لماذا واختبار قبول مستحيل — فالعدّ الخاطئ يتفجر لاحقًا كخطة سبرنت مبنية على وهم.',
+          en: 'And before building you walk through breaking: the debug block shows a validator with a wrong rule — it checks the prefix and the word I want only, ignoring , so that — so it accepts broken ST-4 and inflates the tally: valid: 4 must: 3 instead of the correct valid: 3 must: 2. The failure is also silent: no crash, no exception — the pack prints confident wrong numbers, the most dangerous failure class in quality tooling. Fixing it is not academic rule-adding: only valid stories get built, and a missing benefit means a conversation without a why and an impossible acceptance test — so the wrong count later explodes as a sprint plan built on a phantom.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'حزمة مصغّرة: قصتان وعدّ واحد', en: 'A mini pack: two stories, one tally' },
+      code: "MINI = [\n    {'key': 'ST-1', 'priority': 'Must', 'story': 'As a clerk, I want to flag a patient, so that the clinician prepares.'},\n    {'key': 'ST-2', 'priority': 'Should', 'story': 'As a clinician, I want faster charts.'},\n]\n\ndef valid_story(s):\n    return s.startswith('As a ') and ', I want ' in s and ', so that ' in s\n\nvalid = 0\nmust = 0\nfor st in MINI:\n    ok = valid_story(st['story'])\n    valid += ok\n    must += ok and st['priority'] == 'Must'\n    print('%s %s %s' % (st['key'], st['priority'], 'valid' if ok else 'INVALID'))\nprint('stories: %d valid: %d must: %d' % (len(MINI), valid, must))",
+      explanation: {
+        ar: 'أربع حركات: الدالة valid_story تحوّل قاعدة الدرس الثالث إلى تعبير واحد — البادئة ثم الجزءان؛ والحلقة تطبع حكمًا لكل قصة؛ والعدّ يحدث مشروطًا بالصلاحية: valid ترتفع لكل قصة صالحة، وmust ترتفع فقط للصالحة ذات الأولوية Must — فالقصة المعطوبة لا تدخل العدّين مهما كانت أولويتها؛ وسطر الحصيلة stories: 2 valid: 1 must: 1. لاحظ أن ST-2 من Should معطوبة أيضًا لكنها لا تُوسم INVALID إلا مرة — الحزمة لا تكرّر العقوبة، تكتفي بالحقيقة. هذه هي البذرة التي توسّعها في المشروع إلى قصص أربع وجدول إساءة.',
+        en: 'Four moves: valid_story turns the third lesson\u2019s rule into one expression — prefix then both parts; the loop prints a verdict per story; counting is validity-gated: valid rises for every sound story while must rises only for sound ones with priority Must — a broken story enters neither count however high its priority; and the summary line stories: 2 valid: 1 must: 1. Note that ST-2 is also broken and only flagged once — the pack does not punish twice, it states the truth once. This is the seed you expand into four stories plus the abuse table in the project.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.requirements-pack',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'المشروع: ابنِ حزمة المتطلبات كاملة. أكمل build_pack() فتطبع لكل قصة سطرًا بصيغة key priority verdict (valid أو INVALID) بحكم valid_story ثلاثية الأجزاء، ثم سطر الحصيلة stories: %d valid: %d must: %d — العدّ مشروط بالصلاحية، والـmust للصالحة ذات الأولوية Must — ثم جدول الإساءة: مرّ على ABUSES واطبع abuse: actor/action لكل حالة فاعلها من MISUSERS، وأخيرًا سطر abuses: %d. أرجع قائمة أزواج (key, priority, ok). المتوقع: ST-4 وحدها INVALID وحصيلة stories: 4 valid: 3 must: 2 وabuses: 2.',
+        en: 'The project: build the full requirements pack. Complete build_pack() so it prints one line per story formatted key priority verdict (valid or INVALID) per the three-part valid_story, then the tally stories: %d valid: %d must: %d — counting validity-gated, with must counting sound Must-priority stories — then the abuse table: walk ABUSES printing abuse: actor/action for each case whose actor is in MISUSERS, and finally abuses: %d. Return the list of (key, priority, ok) tuples. Expected: ST-4 alone INVALID, tally stories: 4 valid: 3 must: 2, and abuses: 2.',
+      },
+      starterCode: "STORIES = [\n    {'key': 'ST-1', 'priority': 'Must', 'story': 'As a clerk, I want to flag a patient, so that the clinician prepares before the visit.'},\n    {'key': 'ST-2', 'priority': 'Must', 'story': 'As a clerk, I want to search by phone, so that I can fix misspelled records inline.'},\n    {'key': 'ST-3', 'priority': 'Should', 'story': 'As a manager, I want weekly no-show rates, so that staffing can be planned.'},\n    {'key': 'ST-4', 'priority': 'Must', 'story': 'As a clinician, I want faster charts.'},\n]\nABUSES = [\n    {'actor': 'front-desk clerk', 'action': 'check in an arriving patient'},\n    {'actor': 'impostor', 'action': 'reset another users password', 'stride': 'Spoofing'},\n    {'actor': 'clinician', 'action': 'open the day visit list'},\n    {'actor': 'ex-employee', 'action': 'read records with revoked rights', 'stride': 'Elevation of privilege'},\n]\nMISUSERS = {'impostor', 'ex-employee', 'stranger'}\n\ndef valid_story(s):\n    # TODO: القاعدة الثلاثية: البادئة + , I want + , so that\n    # TODO: the three-part rule: prefix + , I want + , so that\n    ...\n\ndef build_pack():\n    pack = []\n    # TODO: مرّ على STORIES — احكم واطبع واجمع (key, priority, ok) في pack\n    # TODO: walk STORIES — judge, print, collect (key, priority, ok) into pack\n    # TODO: اطبع سطر الحصيلة stories/valid/must — العد مشروط بالصلاحية\n    # TODO: print the stories/valid/must tally — counting is validity-gated\n    # TODO: جدول الإساءة: abuse: actor/action لكل misuser ثم abuses: %d\n    # TODO: the abuse table: abuse: actor/action per misuser, then abuses: %d\n    return pack\n\nbuild_pack()",
+      solution: "STORIES = [\n    {'key': 'ST-1', 'priority': 'Must', 'story': 'As a clerk, I want to flag a patient, so that the clinician prepares before the visit.'},\n    {'key': 'ST-2', 'priority': 'Must', 'story': 'As a clerk, I want to search by phone, so that I can fix misspelled records inline.'},\n    {'key': 'ST-3', 'priority': 'Should', 'story': 'As a manager, I want weekly no-show rates, so that staffing can be planned.'},\n    {'key': 'ST-4', 'priority': 'Must', 'story': 'As a clinician, I want faster charts.'},\n]\nABUSES = [\n    {'actor': 'front-desk clerk', 'action': 'check in an arriving patient'},\n    {'actor': 'impostor', 'action': 'reset another users password', 'stride': 'Spoofing'},\n    {'actor': 'clinician', 'action': 'open the day visit list'},\n    {'actor': 'ex-employee', 'action': 'read records with revoked rights', 'stride': 'Elevation of privilege'},\n]\nMISUSERS = {'impostor', 'ex-employee', 'stranger'}\n\ndef valid_story(s):\n    return s.startswith('As a ') and ', I want ' in s and ', so that ' in s\n\ndef build_pack():\n    pack = []\n    for st in STORIES:\n        ok = valid_story(st['story'])\n        pack.append((st['key'], st['priority'], ok))\n        print('%s %s %s' % (st['key'], st['priority'], 'valid' if ok else 'INVALID'))\n    valid = sum(1 for _, _, ok in pack if ok)\n    must = sum(1 for _, p, ok in pack if ok and p == 'Must')\n    print('stories: %d valid: %d must: %d' % (len(STORIES), valid, must))\n    n_abuse = 0\n    for a in ABUSES:\n        if a['actor'] in MISUSERS:\n            n_abuse += 1\n            print('abuse: %s/%s' % (a['actor'], a['action']))\n    print('abuses: %d' % n_abuse)\n    return pack\n\nbuild_pack()",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'حصيلة الحزمة وأحكام القصص معًا', en: 'Pack tally and per-story verdicts together' },
+          code: "assert 'stories: 4 valid: 3 must: 2' in __learner_output__ and 'ST-4 Must INVALID' in __learner_output__ and 'ST-1 Must valid' in __learner_output__, 'expected: stories: 4 valid: 3 must: 2 + ST-4 Must INVALID + ST-1 Must valid | actual: %r' % __learner_output__",
+          expected: 'stories: 4 valid: 3 must: 2 + ST-4 Must INVALID + ST-1 Must valid',
+        },
+        {
+          id: 't2',
+          name: { ar: 'البنية ترجع بأربعة أحكام صحيحة', en: 'The structure returns four correct verdicts' },
+          code: "pack = build_pack()\nassert pack[3] == ('ST-4', 'Must', False) and pack[0] == ('ST-1', 'Must', True), 'expected: ST-4 False + ST-1 True | actual: %r' % ((pack[0], pack[3]),)",
+          expected: 'ST-4 False + ST-1 True',
+        },
+        {
+          id: 't3',
+          name: { ar: 'جدول الإساءة يلخص حالتي خصم', en: 'The abuse table summarizes two adversary cases' },
+          code: "assert 'abuse: impostor/reset another users password' in __learner_output__ and 'abuses: 2' in __learner_output__, 'expected: impostor case + abuses: 2 | actual: %r' % __learner_output__",
+          expected: 'impostor case + abuses: 2',
+        },
+      ],
+      hints: [
+        { ar: 'valid_story تعبير واحد من ثلاثة فحوص مرتبطة بـand: البادئة ثم , I want ثم , so that — أعد استخدامها في الحلقة لا تعِد كتابتها.', en: "valid_story is one expression of three checks joined by and: the prefix, then , I want, then , so that — reuse it in the loop, do not rewrite it." },
+        { ar: 'العدّ مشروط بالصلاحية: valid تعدّ الأزواج ذات ok صحيح، وmust يشترط أيضًا p == Must — بذلك لا تدخل القصة المعطوبة العدّين.', en: 'Counting is validity-gated: valid counts tuples with a True ok, and must also requires p == Must — so a broken story enters neither count.' },
+        { ar: 'الهيكل:\nfor st in STORIES:\n    ok = valid_story(st[\'story\'])\n    pack.append((st[\'key\'], st[\'priority\'], ok))\n    print(\'%s %s %s\' % (st[\'key\'], st[\'priority\'], \'valid\' if ok else \'INVALID\'))\nvalid = sum(1 for _, _, ok in pack if ok)\nmust = sum(1 for _, p, ok in pack if ok and p == \'Must\')\nprint(\'stories: %d valid: %d must: %d\' % (len(STORIES), valid, must))', en: "The skeleton:\nfor st in STORIES:\n    ok = valid_story(st['story'])\n    pack.append((st['key'], st['priority'], ok))\n    print('%s %s %s' % (st['key'], st['priority'], 'valid' if ok else 'INVALID'))\nvalid = sum(1 for _, _, ok in pack if ok)\nmust = sum(1 for _, p, ok in pack if ok and p == 'Must')\nprint('stories: %d valid: %d must: %d' % (len(STORIES), valid, must))" },
+        { ar: 'جدول الإساءة نفس منطق الدرس الرابع: a[\'actor\'] in MISUSERS يقرر، واطبع abuse: %s/%s بactor وaction، وعُدّ في n_abuse قبل سطر abuses: %d.', en: "The abuse table reuses the fourth lesson\u2019s logic: a['actor'] in MISUSERS decides; print abuse: %s/%s with actor and action; count into n_abuse before the abuses: %d line." },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-pack',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرجه بالضبط — دون تشغيله. صفوف صغيرة من حزمة معطاة مسبقًا: انتبه لأي صف تُحسب في must valid.',
+        en: 'Read the code and predict its exact output — without running it. Small rows of a precomputed pack: watch which rows count into must valid.',
+      },
+      code: "MINI = [\n    ('ST-1', 'Must', True),\n    ('ST-2', 'Should', True),\n    ('ST-3', 'Must', False),\n]\nfor key, priority, ok in MINI:\n    print('%s %s %s' % (key, priority, 'valid' if ok else 'INVALID'))\nprint('must valid:', sum(1 for _, p, ok in MINI if p == 'Must' and ok))",
+      solution: "ST-1 Must valid\nST-2 Should valid\nST-3 Must INVALID\nmust valid: 1",
+      answer: "ST-1 Must valid\nST-2 Should valid\nST-3 Must INVALID\nmust valid: 1",
+      hints: [
+        { ar: 'الصفوف الثلاثة تُطبع بالترتيب: valid أو INVALID بحسب العنصر الثالث.', en: 'The three rows print in order: valid or INVALID by the third element.' },
+        { ar: 'ST-3 معطوبة فتطبع INVALID رغم أولويتها Must.', en: 'ST-3 is broken, so it prints INVALID despite its Must priority.' },
+        { ar: 'must valid يشترط الشرطين معًا: أولوية Must وok صحيح — ST-1 وحدها تجمعهما.', en: 'must valid requires both conditions: Must priority and a True ok — only ST-1 has both.' },
+        { ar: 'الخرج:\nST-1 Must valid\nST-2 Should valid\nST-3 Must INVALID\nmust valid: 1', en: 'The output:\nST-1 Must valid\nST-2 Should valid\nST-3 Must INVALID\nmust valid: 1' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-defense-justification',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'راعٍ متشكك سأل: لماذا أضيّع سبعة أيام على متطلبات أمنية؟ أي صف من حزمتك يجيب بأقوى حجة؟',
+        en: 'A skeptical sponsor asks: why waste seven days on security requirements? Which row of your pack answers most forcefully?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'صف القصص الصالحة — عددها يظهر جاهزية الفريق', en: 'The valid-stories row — its count shows team readiness' } },
+        { id: 'b', text: { ar: 'جدول الإساءة — كل متطلب أمني مربوط بالهجوم الذي يوقفه، مثل منع إعادة كلمة سر الغير أمام حالة المنتحل', en: 'The abuse table — each security requirement is tied to the attack it stops, like blocking password resets for others against the impostor case' } },
+        { id: 'c', text: { ar: 'سطر الحصيلة — الأعداد الكبيرة تقتنع الرعاة', en: 'The tally line — big numbers convince sponsors' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'الراعي لا يطالب بجماليات: يطلب منطقًا يربط كلفة بضرر ممنوع.', en: 'The sponsor does not ask for aesthetics: they want a rationale tying cost to an averted harm.' },
+        { ar: 'تذكّر من الدرس الرابع: الشجرة تربط كل دفاع بالهجوم الذي يوقفه — والجدول هو الشجرة مصفوفةً.', en: 'Recall the fourth lesson: the tree ties each defense to the attack it stops — the table is the tree laid flat.' },
+        { ar: 'حالة المنتحل (Spoofing) ليست تخويفًا: هي مسار محدد يمكن أن يقع غدًا، والدفاع المطلوب يمنعه بوجه محدد.', en: 'The impostor case (Spoofing) is not scaremongering: it is a concrete path that could happen tomorrow, and the requested defense blocks it specifically.' },
+        { ar: 'الجواب: b — هكذا يصبح الأمن متطلبات مبررة لا قائمة أمنيات: كل ورقة لهجوم، وكل دفاع له ورقة.', en: 'Answer: b — that is how security becomes justified requirements, not a wish list: every leaf has an attack, every defense a leaf.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.numeric-must-fix',
+      exKind: 'numeric',
+      required: true,
+      prompt: {
+        ar: 'حزمتك تطبع stories: 4 valid: 3 must: 2. افترض أن الفريق أكمل قصة ST-4 المعطوبة بإضافة جملة so that حقيقية، وأعيد بناء الحزمة. كم يصير رقم must؟',
+        en: 'Your pack prints stories: 4 valid: 3 must: 2. Suppose the team completes broken story ST-4 by adding a real so-that clause and the pack is rebuilt. What does must become?',
+      },
+      answer: '3',
+      solution: '3',
+      hints: [
+        { ar: 'ST-4 أصلاً Must — ما منعها من العدّ هو الصلاحية وحدها، لا الأولوية.', en: 'ST-4 is already Must — what kept it out of the tally was validity alone, not priority.' },
+        { ar: 'بجملة so that تجتاز الفحص الثلاثي فتصير valid، فتدخل عدّ must مباشرة.', en: 'With a so-that clause it passes the three-part check, becomes valid, and enters the must tally directly.' },
+        { ar: 'الصالحون صاروا أربعة، وثلاثتهم Must: ST-1 وST-2 وST-4.', en: 'The valid set becomes four, and three of them are Must: ST-1, ST-2 and ST-4.' },
+        { ar: 'الجواب: 3', en: 'Answer: 3' },
+      ],
+    },
+    {
+      kind: 'debug',
+      id: 'ex5.debug-loose-validator',
+      required: true,
+      brokenCode: "STORIES = [\n    {'key': 'ST-1', 'priority': 'Must', 'story': 'As a clerk, I want to flag a patient, so that the clinician prepares before the visit.'},\n    {'key': 'ST-2', 'priority': 'Must', 'story': 'As a clerk, I want to search by phone, so that I can fix misspelled records inline.'},\n    {'key': 'ST-3', 'priority': 'Should', 'story': 'As a manager, I want weekly no-show rates, so that staffing can be planned.'},\n    {'key': 'ST-4', 'priority': 'Must', 'story': 'As a clinician, I want faster charts.'},\n]\n\ndef valid_story(s):\n    # WRONG rule: checks the prefix and the want clause only\n    return s.startswith('As a') and 'I want' in s\n\npack = []\nfor st in STORIES:\n    ok = valid_story(st['story'])\n    pack.append((st['key'], st['priority'], ok))\n    print('%s %s %s' % (st['key'], st['priority'], 'valid' if ok else 'INVALID'))\nvalid = sum(1 for _, _, ok in pack if ok)\nmust = sum(1 for _, p, ok in pack if ok and p == 'Must')\nprint('stories: %d valid: %d must: %d' % (len(STORIES), valid, must))",
+      prompt: {
+        ar: 'الحزمة تطبع أرقامًا واثقة: ST-4 Must valid وحصيلة stories: 4 valid: 4 must: 3. لكن ST-4 بلا جملة so that أصلًا — لا لماذا، لا معيار قبول ممكن، لا محادثة — ومع ذلك دخلت عدّ الجاهزية! القاعدة المعيبة تفحص البادئة وكلمة I want فقط وتتغافل عن الجزء الأهم. أصلح valid_story إلى القاعدة الثلاثية (البادئة As a متباعدة عن الفاصلة، ثم , I want، ثم , so that) حتى تعود الحقيقة: ST-4 Must INVALID وحصيلة stories: 4 valid: 3 must: 2. واختبر دالتك على قصة صالحة وقصة بلا فائدة.',
+        en: 'The pack prints confident numbers: ST-4 Must valid and a tally of stories: 4 valid: 4 must: 3. But ST-4 has no so-that clause at all — no why, no possible acceptance test, no conversation — yet it entered the readiness tally! The faulty rule checks only the prefix and the word I want, ignoring the most important part. Fix valid_story into the three-part rule (the spaced As a prefix, then , I want, then , so that) until the truth returns: ST-4 Must INVALID and a tally of stories: 4 valid: 3 must: 2. And test your function on a valid story and a benefit-less one.',
+      },
+      solution: "STORIES = [\n    {'key': 'ST-1', 'priority': 'Must', 'story': 'As a clerk, I want to flag a patient, so that the clinician prepares before the visit.'},\n    {'key': 'ST-2', 'priority': 'Must', 'story': 'As a clerk, I want to search by phone, so that I can fix misspelled records inline.'},\n    {'key': 'ST-3', 'priority': 'Should', 'story': 'As a manager, I want weekly no-show rates, so that staffing can be planned.'},\n    {'key': 'ST-4', 'priority': 'Must', 'story': 'As a clinician, I want faster charts.'},\n]\n\ndef valid_story(s):\n    return s.startswith('As a ') and ', I want ' in s and ', so that ' in s\n\npack = []\nfor st in STORIES:\n    ok = valid_story(st['story'])\n    pack.append((st['key'], st['priority'], ok))\n    print('%s %s %s' % (st['key'], st['priority'], 'valid' if ok else 'INVALID'))\nvalid = sum(1 for _, _, ok in pack if ok)\nmust = sum(1 for _, p, ok in pack if ok and p == 'Must')\nprint('stories: %d valid: %d must: %d' % (len(STORIES), valid, must))",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'الحقيقة تعود للحصيلة', en: 'The truth returns to the tally' },
+          code: "assert 'stories: 4 valid: 3 must: 2' in __learner_output__ and 'ST-4 Must INVALID' in __learner_output__, 'expected: stories: 4 valid: 3 must: 2 + ST-4 Must INVALID | actual: %r' % __learner_output__",
+          expected: 'stories: 4 valid: 3 must: 2 + ST-4 Must INVALID',
+        },
+        {
+          id: 't2',
+          name: { ar: 'القاعدة الثلاثية تقبل الصالحة وترفض بلا فائدة', en: 'The three-part rule accepts the sound story and rejects the benefit-less one' },
+          code: "assert valid_story('As a clerk, I want to flag a patient, so that the clinician prepares.') is True, 'expected: True | actual: %r' % valid_story('As a clerk, I want to flag a patient, so that the clinician prepares.')\nassert valid_story('As a clerk, I want to flag a patient.') is False, 'expected: False | actual: %r' % valid_story('As a clerk, I want to flag a patient.')",
+          expected: 'True + False',
+        },
+      ],
+      hints: [
+        { ar: 'لا تعدّل البيانات ولا الحلقة — العيب بالكامل داخل valid_story: بادئة بلا مسافة واختبار كلمة I want ضيّع جداً.', en: 'Do not touch the data or the loop — the defect is entirely inside valid_story: a prefix without its trailing space and a too-loose I want substring check.' },
+        { ar: 'قارن مع القاعدة الصحيحة: s.startswith(\'As a \') بمسافة، و\', I want \' بالفاصلة، و\', so that \' بالفاصلة — ثلاثة فحوص بـand.', en: "Compare with the correct rule: s.startswith('As a ') with the space, ', I want ' with the comma, ', so that ' with the comma — three checks joined by and." },
+        { ar: 'لماذا خدعت القاعدة القديمة؟ لأن ST-4 تبدأ بـAs a وتحوي I want — لكن بلا فاصلة ولا so that: القبول الوهمي صامت لا يرمي استثناء.', en: 'Why did the old rule lie? ST-4 starts with As a and contains I want — but no comma, no so that: the phantom acceptance is silent, it throws nothing.' },
+        { ar: 'الإصلاح:\ndef valid_story(s):\n    return s.startswith(\'As a \') and \', I want \' in s and \', so that \' in s\nوبعدها ST-4 Must INVALID والحصيلة stories: 4 valid: 3 must: 2.', en: "The fix:\ndef valid_story(s):\n    return s.startswith('As a ') and ', I want ' in s and ', so that ' in s\nAfterwards ST-4 Must INVALID and the tally stories: 4 valid: 3 must: 2." },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "STORIES = [\n    {'key': 'ST-1', 'priority': 'Must', 'story': 'As a clerk, I want to flag a patient, so that the clinician prepares.'},\n    {'key': 'ST-2', 'priority': 'Must', 'story': 'As a clinician, I want faster charts.'},\n]\n\ndef valid_story(s):\n    return s.startswith('As a ') and ', I want ' in s and ', so that ' in s\n\nfor st in STORIES:\n    print(st['key'], 'valid' if valid_story(st['story']) else 'INVALID')\n\n# جرّب: أصلح ST-2 بكتابة جملة so that حقيقية — أين ستضيفها في الحزمة؟\n# try: fix ST-2 by writing a real so-that clause — where does it move in the pack?\n# جرّب: خفّض أولوية ST-2 إلى Should — يتغير شيء في valid؟ و في must؟\n# try: demote ST-2 to Should — does valid change? does must?\n# جرّب: أضف حالة إساءة ثالثة وأعطها صنف STRIDE من عندك\n# try: add a third abuse case with a STRIDE category of your own",
+      prompt: {
+        ar: 'الملعب يربط الفصل كله في حركة واحدة: أكمل فائدة ST-2 وشاهد صعودها من INVALID إلى عدّ must، ثم خفّض أولويتها ولاحظ أي رقم يتحرك وأي ثابت — الصلاحية والأولوية بابان مستقلان. وأخيرًا أضف حالة إساءة بصنف STRIDE من عندك: هكذا تنمو الحزمة من بيانات تمارين إلى أصل مشروع حي. لا اختبار هنا — فضولك فقط.',
+        en: 'The sandbox ties the whole chapter in one move: complete ST-2\u2019s benefit and watch it rise from INVALID into the must tally; then demote its priority and notice which number moves and which stays — validity and priority are independent gates. Finally add an abuse case with your own STRIDE tag: that is how the pack grows from exercise data into a living project asset. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'من الفصل 1: مثلث الحديد يربط النطاق والزمن والكلفة. ماذا يحدث إجباريًا حين يتمدد النطاق مع ثبات الزمن والكلفة؟',
+            en: 'From chapter 1: the iron triangle binds scope, time and cost. What necessarily happens when scope grows while time and cost stay fixed?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لا شيء — المطورون الجيدون يستوعبون الزيادة', en: 'Nothing — good developers absorb the increase' } },
+            { id: 'b', text: { ar: 'يجب أن يتحرك ركن: إما زمن أطول أو نطاق أقل — وإن رفض الاثنان فالجودة هي من تدفع الثمن', en: 'A corner must give: either more time or less scope — and if neither is accepted, quality pays the price' } },
+            { id: 'c', text: { ar: 'تتحسن الكلفة تلقائيًا لتعويض التمدد', en: 'Cost improves automatically to compensate the growth' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'المثلث رياضة لا مجاملة: تمدد النطاق بثبات الركنين الآخرين يدفع من ركنٍ مخفي هو الجودة — اختبارات مقصوصة ومعايير قبول ضائعة. وفي لغة هذا الفصل: متطلبات قُبلت دون حسم مقايضة.',
+            en: 'The triangle is arithmetic, not diplomacy: scope growth with the other two corners pinned is paid by a hidden corner — quality — in cut tests and dropped acceptance criteria. In this chapter\u2019s language: requirements accepted without settling the trade-off.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'من الفصل 2: أي ممارسة تجعل عمل المتطلبات في أجايل مستمرًا بجرعات صغيرة لا دفعة واحدة؟',
+            en: 'From chapter 2: which practice makes requirements work in agile continuous, in small doses rather than one batch?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'تنقيح قائمة الأعمال المتراكمة أول كل تكرار والتحقق منها على نظام عامل آخره', en: 'Backlog refinement at the start of each iteration and validation against working software at its end' } },
+            { id: 'b', text: { ar: 'توقيع مواصفة كاملة عند الانطلاق ثم تجميدها', en: 'Signing a complete specification at kickoff, then freezing it' } },
+            { id: 'c', text: { ar: 'تكليف مالك منتج واحد بكتابة كل القصص وحده', en: 'Assigning one product owner to write every story alone' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'كل تكرار رحلة حول دورة المتطلبات: استنباط وتصوير وتحقق — والقصة وعد بمحادثة يفصّلها الفريق عند آخر لحظة مسؤولة حين يعرف أكثر ما سيعرف.',
+            en: 'Every iteration is a trip around the requirements cycle: elicit, specify, validate — and the story is a promise of a conversation detailed at the last responsible moment, when the team knows the most it will ever know.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'رتب مراحل دورة المتطلبات كما وردت في الدرس الأول من هذا الفصل.',
+            en: 'Order the stages of the requirements cycle as taught in this chapter\u2019s first lesson.',
+          },
+          options: [
+            { id: 'a', text: { ar: 'استنباط ثم تحليل ثم تصوير ثم تحقق — ثم تعود الحلقة', en: 'Elicit, then analyze, then specify, then validate — then the loop repeats' } },
+            { id: 'b', text: { ar: 'تصوير ثم استنباط ثم تحقق ثم تحليل', en: 'Specify, then elicit, then validate, then analyze' } },
+            { id: 'c', text: { ar: 'تحقق أولًا ثم استنباط وتصوير معًا', en: 'Validate first, then elicit and specify together' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الاستنباط يسحب الحاجات، والتحليل ينظمها، والتصوير يجعلها قابلة للعمل، والتحقق يكشف الفجوة ويعيدك للبداية — والبناء يغذي الاستنباط لأن المستخدمين يتعلمون ما يريدون باستخدام شيء.',
+            en: 'Elicitation draws needs out, analysis organizes them, specification makes them actionable, validation exposes the gap and restarts the loop — with build feeding elicit, because users learn what they want by using something.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'مستخدم قال بعد رؤية نموذج أولي: لم أكن أعرف أنني أحتاج وسم غير المؤكدين، والآن لا أستطيع بدونه. أي نوع احتياج هذا؟',
+            en: 'A user says after seeing a prototype: I did not know I needed the unconfirmed-patient flag, and now I cannot live without it. Which kind of need is this?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'احتياجًا معلنًا stated', en: 'A stated need' } },
+            { id: 'b', text: { ar: 'احتياجًا ضمنيًا implied', en: 'An implied need' } },
+            { id: 'c', text: { ar: 'احتياجًا كامنًا latent — وهو حيث الإبهاج والميزة التنافسية', en: 'A latent need — where delight and competitive advantage live' } },
+          ],
+          answer: 'c',
+          explanation: {
+            ar: 'الكامن لا يُعرف حتى يُرى: النموذج الأولي هو أفضل أداة له، وفي كانو يقابلها المُبهج الذي يتحلل تدريجيًا إلى توقع أساسي.',
+            en: 'Latent is unknown until seen: the prototype is its best tool, and in Kano it maps to the delighter that gradually decays into a basic expectation.',
+          },
+        },
+        {
+          id: 'q5',
+          question: {
+            ar: 'قصة لا يستطيع الفريق كتابة اختبار قبول لها. أي حرف INVEST تخفقه، وما العلاج؟',
+            en: 'A story for which the team cannot write an acceptance test. Which INVEST letter does it fail, and what is the fix?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'Testable — المتطلب ما زال غامضًا: أصلح القصة حتى تصير كيف سنعرف؟ جوابًا ملموسًا', en: 'Testable — the requirement is still ambiguous: fix the story until how will we know? has a concrete answer' } },
+            { id: 'b', text: { ar: 'Small — اقسمها إلى قصص أصغر ويحل الغموض وحده', en: 'Small — split it into smaller stories and the ambiguity dissolves by itself' } },
+            { id: 'c', text: { ar: 'Independent — اقطع تبعياتها عن القصص الأخرى', en: 'Independent — cut its dependencies on other stories' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'إن لم تستطع تحديد مقدمًا كيف تعرف أنها نجحت فأنت لم تفهم القصة بعد. INVEST أداة تشخيص: قصة أخفقت لا تُدفع قسرًا إلى السبرنت بل تُصلَح — قسّم، أو spike، أو وضّح حتى يقف معيار القبول.',
+            en: 'If you cannot state in advance how you will know it works, you do not yet understand the story. INVEST is a diagnostic: a failing story is not forced into the sprint — fix it: split, spike, or clarify until the acceptance criterion stands.',
+          },
+        },
+        {
+          id: 'q6',
+          question: {
+            ar: 'بعد اكتمال شجرة هجوم لأصل حرج، كيف تتحول أوراقها إلى حزمة المتطلبات؟',
+            en: 'Once an attack tree for a critical asset is complete, how do its leaves enter the requirements pack?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'تُحفظ كملحق يُقرأ بعد الإطلاق حين يتوفر وقت', en: 'They are filed as an appendix read after launch, when time allows' } },
+            { id: 'b', text: { ar: 'كل ورقة تصير متطلبًا أمنيًا مربوطًا بالهجوم الذي يوقفه — مصادقة ثنائية ضد التخمين، تشفير النسخ ضد القراءة الجانبية', en: 'Each leaf becomes a security requirement tied to the attack it stops — multi-factor auth against guessing, encrypted backups against side-channel reads' } },
+            { id: 'c', text: { ar: 'تدمج كلها في قصة واحدة كبيرة باسم الأمان', en: 'They all merge into one big story named security' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'الشجرة تربط الدفاع بالهجوم — وهذا المنطق الذي يطلب الراعي قبل تمويل أي أسبوع أمني. والجدول في حزمتك اليوم نفس الفعل مصفوفةً: حالة منتحل، صنف Spoofing، دفاع واضح.',
+            en: 'The tree ties each defense to its attack — the rationale a sponsor demands before funding a security week. The table in today\u2019s pack is the same move flattened: impostor case, Spoofing tag, a concrete defense.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'الحزمة مستند يُنجز مرة عند بداية المشروع ثم يُحفظ في مجلد',
+          right: 'الحزمة منظر حي تُحدّث كل دورة: كل تكرار يعيد الحكم على القصص والأولويات وحالات الإساءة',
+          note: {
+            ar: 'الفصل كله يقول إن الفهم يتنقل: ما صار صالحًا اليوم يبلى غدًا. الحزمة تُقرأ في كل تخطيط إصدار وتنمو بشجرة هجوم جديدة كلما أضفت أصلًا — والخيال الوحيد هو مصفوفة يدوية لا يشغّلها أحد.',
+            en: 'The whole chapter says understanding moves: what is valid today decays tomorrow. The pack is read at every release planning and grows a new attack tree each time you add an asset — the only fiction is a hand-maintained matrix nobody runs.',
+          },
+        },
+        {
+          wrong: 'المدقق الذي يقبل البادئة وI want كافٍ عمليًا — الباقي تفاصيل',
+          right: 'القاعدة الثلاثية كلها أو لا شيء: البادئة و, I want و, so that — وأنت رأيت القبول الوهمي في كتلة التصحيح',
+          note: {
+            ar: 'الرقم الواثق الخاطئ أخطر من الانهيار: valid: 4 must: 3 بلا استثناء ولا رمض. قاعدة ناقصة في أداة عدّ تتسرب إلى خطة سبرنت كاملة — ولذلك اختبار القاعدة على حالة حدّية واحدة (قصة بلا فائدة) ليس ترفًا.',
+            en: 'A confident wrong number is worse than a crash: valid: 4 must: 3 with no exception and no warning. A partial rule in a counting tool leaks into an entire sprint plan — which is why testing the rule on one boundary case (a benefit-less story) is not ceremony.',
+          },
+        },
+        {
+          wrong: 'حصيلة must وعدٌ من الفريق بأننا سنبني كل ما فيها — فالعدد التزام يُحفظ',
+          right: 'must عدد جاهزية لا وعد تسليم: قصة بلا سيناريو قبول مارّ وعدٌ لا يحفظه أحد',
+          note: {
+            ar: 'هذه وصلة الاتجاه الأمامي من التتبع: كل Must يستحق سيناريو قبول يمر في المجرى. الحزمة تكشف الفجوة بدل تبتلعها: عدّ صحيح ثم قصص تتحقق واحدًا واحدًا — لا جدول طموح يتضخم بصمت.',
+            en: 'This is the forward-traceability link: every Must deserves an acceptance scenario passing in the pipeline. The pack exposes the gap instead of swallowing it: an honest count, then stories verified one by one — not an ambitious table inflating silently.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'الفصل كله في جملة: المتطلب جسر بين حاجة إنسان وفريق — والحاجة لا تُسلَّم نظيفة: ضمر أو نصف حل أو متنكرة في حل، لذا دورة استنباط/تحليل/تصوير/تحقق لا تنتهي والبناء يغذي الاستنباط.', en: 'The chapter in one sentence: a requirement is a bridge from a person\u2019s need to a team\u2019s action — and the need never arrives clean: tacit, half-solved, or dressed as a solution, so the elicit/analyze/specify/validate cycle never ends and build feeds elicit.' },
+        { ar: 'الأدوات تتراكب: طبقات مُعلن/ضمني/كامن تُستنبط بالتثليث، وتُكتب قصصًا INVEST ومعايير Given/When/Then تشتغل، وميزات للطريق، وسيناريوهات تكشف الاستثناءات، وأهداف ذات مالك تُحسم تعارضاتها صراحةً، وشجرة هجوم لكل أصل حرج.', en: 'The tools compound: stated/implied/latent layers elicited by triangulation, written as INVEST stories with Given/When/Then criteria that run, features for the roadmap, scenarios exposing exceptions, owned goals whose conflicts are settled explicitly, and an attack tree per critical asset.' },
+        { ar: 'حزمة المتطلبات آلة حتمية: مدقق ثلاثي الأجزاء، عدّ Must مشروط بالصلاحية، وجدول إساءة يربط الدفاع بالهجوم — ورأيت ثمن القاعدة الناقصة: قبول وهمي صامت يضخّم الأرقام، فاختبر مدققاتك على حالة حدّية.', en: 'The requirements pack is a deterministic machine: a three-part validator, a validity-gated Must tally, and an abuse table tying defense to attack — and you saw the price of a partial rule: silent phantom acceptance inflating numbers, so test your validators on a boundary case.' },
+      ],
+      reflectPrompt: {
+        ar: 'افتح الملعب وأصلح ST-2 وشاهد حصيلتها تصعد. اسأل نفسك: لو طلبت منك غدًا حزمة متطلبات في دقيقة — أي صف منها يفتقد مهارته أكثر من أداته، وما التمرين الذي ستبدأ به؟',
+        en: 'Open the sandbox, fix ST-2, and watch her tally rise. Ask yourself: if you had to hand over a requirements pack in one minute tomorrow — which row is your skill thinner than your tool, and which exercise would you redo first?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch3.s8', pages: 'ص85-86 / pp.85-86' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch3.s8', pages: 'ص85-86 / pp.85-86' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

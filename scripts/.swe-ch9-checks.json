@@ -1,0 +1,159 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch9.l1",
+   "id": "ex2.trace-weights",
+   "code": "sev = 'major'\nweights = {'critical': 3, 'major': 2, 'minor': 1}\nprint(weights[sev])\nprint(weights.get('blocker', 0))",
+   "answer": "2\n0"
+  },
+  {
+   "lesson": "swe.ch9.l2",
+   "id": "ex2.trace-kind",
+   "code": "def kind(c):\n    if c.startswith('nit:'):\n        return 'nit'\n    if c.startswith('blocking:'):\n        return 'blocking'\n    return 'note'\n\nprint(kind('nit: spacing'))\nprint(kind('blocking: data loss'))\nprint(kind('looks right to me'))",
+   "answer": "nit\nblocking\nnote"
+  },
+  {
+   "lesson": "swe.ch9.l4",
+   "id": "ex1.trace-marker-count",
+   "code": "lines = ['x = 1', 'y = 2  # TODO fix', 'z = ' + '3' * 80, 'w = 4']\ntodos = 0\nfor line in lines:\n    todos = todos + line.count('TODO')\nprint(todos)\nprint(len(lines[2]))\nprint(len(lines))",
+   "answer": "1\n84\n4"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch9.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "findings = ['critical', 'minor', 'major', 'critical']\ncritical = 0\nfor f in findings:\n    if f == 'critical':\n        critical = critical + 1\nprint('critical findings: %d' % critical)"
+  },
+  {
+   "lesson": "swe.ch9.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "logged = ['critical', 'major', 'minor', 'major', 'critical']\ncounts = {}\nfor f in logged:\n    counts[f] = counts.get(f, 0) + 1\nprint('logged defects: %d' % len(logged))\nfor sev in ['critical', 'major', 'minor']:\n    print('%s: %d' % (sev, counts.get(sev, 0)))"
+  },
+  {
+   "lesson": "swe.ch9.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحر — عيّار التنقيح بين يديك\n# Your playground — the inspection scorer in your hands\n\nFINDINGS = [\n    ('critical', 'lock taken but never released'),\n    ('major', 'name misleads the reader'),\n    ('minor', 'inconsistent spacing'),\n    ('major', 'error path leaks a file handle'),\n    ('minor', 'comment spelling'),\n]\nWEIGHTS = {'critical': 3, 'major': 2, 'minor': 1}\n\ntotal = 0\ncriticals = 0\nfor sev, desc in FINDINGS:\n    total = total + WEIGHTS[sev]\n    if sev == 'critical':\n        criticals = criticals + 1\n\nprint('findings: %d' % len(FINDINGS))\nprint('criticals: %d' % criticals)\nprint('score: %d' % total)\n\n# جرّب: أضف ملاحظتين جديدتين بخطورتين مختلفتين وأعد الحساب\n# try: add two new findings with different severities and recompute\n# جرّب: اطبع WEIGHTS.get('blocker', 0) — لماذا لا ينكسر العد؟\n# try: print WEIGHTS.get('blocker', 0) — why does the tally not break?\n"
+  },
+  {
+   "lesson": "swe.ch9.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "comment = 'nit: add a space after the comma'\nprint(comment.startswith('nit:'))\nprint('blocking' in comment)"
+  },
+  {
+   "lesson": "swe.ch9.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "waits = [2, 9, 1, 40, 3]\nwithin_day = 0\nfor w in waits:\n    if w <= 24:\n        within_day = within_day + 1\nprint('changes: %d' % len(waits))\nprint('reviewed within a day: %d' % within_day)\nprint('longest wait: %d' % max(waits))"
+  },
+  {
+   "lesson": "swe.ch9.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحر — مصنّف تعليقات المراجعة\n# Your playground — the review-comment classifier\n\nCOMMENTS = [\n    'nit: add a space after the comma',\n    'blocking: this drops the last item',\n    'does this handle the empty list?',\n    'why is this 79 and not 88?',\n    'nit: rename x to total',\n    'looks good to me',\n]\n\ndef classify(comment):\n    if comment.startswith('nit:'):\n        return 'nit'\n    if comment.startswith('blocking:'):\n        return 'blocking'\n    if comment.endswith('?'):\n        return 'question'\n    return 'note'\n\nfor c in COMMENTS:\n    print('%s -> %s' % (classify(c), c))\n\n# جرّب: أضف تعليقًا يبدأ بـ nit: وينتهي بعلامة استفهام — أي فئة أمسكته؟ ولماذا؟\n# try: add a comment starting with nit: and ending with ? — which bucket caught it, and why?\n# جرّب: قلب ترتيب القواعد (الاستفهام أولًا) وأعد التشغيل — ما الذي تغير؟\n# try: reorder the rules (question first) and rerun — what changed?\n"
+  },
+  {
+   "lesson": "swe.ch9.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import ast\ntree = ast.parse('try:\\n    pass\\nexcept:\\n    pass\\n')\nfor node in ast.walk(tree):\n    if isinstance(node, ast.ExceptHandler):\n        print(node.type)"
+  },
+  {
+   "lesson": "swe.ch9.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import ast\n\nSAMPLE = '''def load(path):\n    try:\n        return open(path).read()\n    except:\n        return ''\n'''\n\ntree = ast.parse(SAMPLE)\nbare = 0\nfor node in ast.walk(tree):\n    if isinstance(node, ast.ExceptHandler) and node.type is None:\n        bare = bare + 1\nprint('bare except: %d' % bare)"
+  },
+  {
+   "lesson": "swe.ch9.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحر — كاشفاتك المصغرة على شجرة ast\n# Your playground — your mini detectors over the ast tree\n\nimport ast\n\nSAMPLE = '''def report(items):\n    # FIXME: this loop re-scans the list on every call, find a cheaper way\n    total = 0\n    for it in items:\n        total = total + it\n    return total\n'''\n\ntree = ast.parse(SAMPLE)\nfuncs = 0\nfor node in ast.walk(tree):\n    if isinstance(node, ast.FunctionDef):\n        funcs = funcs + 1\nprint('functions: %d' % funcs)\nprint('docstring: %s' % ast.get_docstring(tree.body[0]))\n\nfor line in SAMPLE.split('\\n'):\n    if 'TODO' in line or 'FIXME' in line:\n        print('flagged: %s' % line.strip())\n\n# جرّب: عدد الأسطر الأطول من 79 محرفًا في SAMPLE — استخدم enumerate بـ start=1\n# try: count lines in SAMPLE longer than 79 characters — use enumerate with start=1\n# جرّب: مرر شيفرة من عندك إلى ast.parse ثم اطبع type(node).__name__ لكل عقدة يمشيها ast.walk\n# try: parse your own code and print type(node).__name__ for every node ast.walk visits\n"
+  },
+  {
+   "lesson": "swe.ch9.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "lines = ['x = 1', 'y = 2  # TODO fix', 'z = ' + '3' * 80, 'w = 4']\nfor i, line in enumerate(lines, start=1):\n    if len(line) > 79:\n        print(i)\nprint(lines[1].count('TODO'))"
+  },
+  {
+   "lesson": "swe.ch9.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import ast\n\nSOURCE = '''def load(path):\n    try:\n        return open(path).read()\n    except:\n        return ''\n'''\n\ntree = ast.parse(SOURCE)\nbare = 0\nfor node in ast.walk(tree):\n    if isinstance(node, ast.ExceptHandler) and node.type is None:\n        bare = bare + 1\n\nlong_lines = 0\nfor line in SOURCE.split('\\n'):\n    if len(line) > 79:\n        long_lines = long_lines + 1\n\nprint('bare except: %d' % bare)\nprint('long lines: %d' % long_lines)"
+  },
+  {
+   "lesson": "swe.ch9.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — منقّحك المصغّر وقواعدك الجديدة\n# Your playground — your mini linter and your own rules\n\nimport ast\n\nSAMPLE = '''def load(path):\n    # TODO: validate the path before opening it\n    try:\n        return open(path).read()\n    except:\n        return ''\n'''\n\ndef lint(source):\n    tree = ast.parse(source)\n    bare = 0\n    for node in ast.walk(tree):\n        if isinstance(node, ast.ExceptHandler) and node.type is None:\n            bare = bare + 1\n    long_lines = []\n    todos = 0\n    for number, line in enumerate(source.split('\\n'), start=1):\n        if len(line) > 79:\n            long_lines.append(number)\n        todos = todos + line.count('TODO') + line.count('FIXME')\n    return {'bare': bare, 'long': long_lines, 'todos': todos}\n\nprint(lint(SAMPLE))\nprint(lint('x = 1\\n'))\nprint(lint('try:\\n    run()\\nexcept:\\n    pass\\n'))\n\n# جرّب: قاعدة رابعة تعدّ أسطر 'import *' — النمط الذي تحذّر منه الأدوات\n# try: a fourth rule counting 'import *' lines — a pattern tools warn about\n# جرّب: أضف لكل قاعدة درجة خطورة severity في التقرير: error أم warning؟\n# try: give each rule a severity in the report: error or warning?"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch9.l1",
+   "id": "ex3.mcq-preparation",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "swe.ch9.l2",
+   "id": "ex3.numeric-chunks",
+   "answer": "5",
+   "solution": "5"
+  },
+  {
+   "lesson": "swe.ch9.l2",
+   "id": "ex4.mcq-nit",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "swe.ch9.l3",
+   "id": "ex2.numeric-precision",
+   "answer": "40",
+   "solution": "40"
+  },
+  {
+   "lesson": "swe.ch9.l3",
+   "id": "ex3.mcq-fn",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "swe.ch9.l4",
+   "id": "ex3.mcq-trust",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "swe.ch9.l4",
+   "id": "ex4.numeric-occurrences",
+   "answer": "2",
+   "solution": "2"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch9.l1",
+   "id": "ex4.fill-reader",
+   "answer": "reader"
+  },
+  {
+   "lesson": "swe.ch9.l3",
+   "id": "ex4.fill-ast",
+   "answer": "ast"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch9.l4",
+   "id": "ex5.debug-wrong-node",
+   "brokenCode": "import ast\n\nSAMPLE = '''def load(path):\n    try:\n        return open(path).read()\n    except:\n        return ''\n'''\n\ndef count_bare(source):\n    tree = ast.parse(source)\n    bare = 0\n    for node in ast.walk(tree):\n        if isinstance(node, ast.Assign):\n            bare = bare + 1\n    return bare\n\nbare = count_bare(SAMPLE)\nprint('bare except: %d' % bare)"
+  }
+ ]
+}

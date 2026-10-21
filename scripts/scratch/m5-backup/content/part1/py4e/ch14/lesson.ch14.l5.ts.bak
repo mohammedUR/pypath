@@ -1,0 +1,317 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * py4e.ch14.l5 — "Inheritance / الوراثة"
+ * Aligned with PY4E ch14 s10 (الوراثة).
+ * All expression is original.
+ * The book's canonical CricketFan(PartyAnimal) with six() + extending and
+ * overriding + is-a + a brief super() mention. type(j) prints the class name
+ * (deterministic); no default-repr printing anywhere.
+ */
+const lesson = {
+  id: 'py4e.ch14.l5',
+  version: 1,
+  part: 'I',
+  track: 'P1',
+  book: 'PY4E',
+  chapter: 14,
+  title: { ar: 'الوراثة', en: 'Inheritance' },
+  estimatedMinutes: 18,
+  prerequisites: ['py4e.ch14.l4'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'صنف PartyAnimal كامل بين يديك — فماذا لو أردت مشجع كريكيت: يفعل كل ما يفعله الحزباني ويضيف فوقه نقاطًا وضربات ستات؟ الوراثة inheritance هي الجواب: class CricketFan(PartyAnimal) تعلن أن كل مشجع كريكيت هو حزباني أيضًا — علاقة is-a — فيرث توابعه وخواصه جملة، ثم يضيف فوقها ما يشاء. اليوم ستبني أول إرث لك: نمدد الصنف بتابع جديد، ونتجاوز تابعًا موجودًا، ونتعرف على super() التي تستدعي نسخة الأب. بنهاية الدرس ستكون قادرًا على: كتابة صنف يرث من صنف آخر، واستدعاء التوابع الموروثة من كائن الابن، وشرح علاقة is-a، والتمييز بين الإضافة والتجاوز واستخدام super() بضبطة.',
+        en: 'You hold the complete PartyAnimal class — but what if you want a cricket fan: one who does everything a party animal does and on top of it adds points and sixes? Inheritance is the answer: class CricketFan(PartyAnimal) declares that every cricket fan is a party animal too — an is-a relationship — so it inherits the methods and properties wholesale, then adds whatever it likes on top. Today you will build your first inheritance: extend a class with a new method, override an existing one, and meet super(), which calls the parent version. By the end of this lesson you will be able to: write a class inheriting from another, call inherited methods from the child\u2019s object, explain the is-a relationship, and distinguish extension from override while using super() with precision.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "class PartyAnimal:\n    def __init__(self, nam):\n        self.name = nam\n        self.x = 0\n\n    def party(self):\n        self.x = self.x + 1\n        print(self.name, 'party', self.x)\n\nclass CricketFan(PartyAnimal):\n    points = 0\n\nj = CricketFan('Jim')\nj.party()\nprint('points' in dir(j))",
+      question: {
+        ar: 'صنف CricketFan جسده أسطر قليلة — ولم نكتب فيه party إطلاقًا. كيف أجابت j.party() ثم طبع True؟',
+        en: 'The body of CricketFan is only a couple of lines — we never wrote party in it. How did j.party() answer, and why did it print True?',
+      },
+      reveal: {
+        ar: 'بالوراثة: class CricketFan(PartyAnimal) جعل كل مشجع كريكيت حزبانيًا — فانتقلت party وخواصها إلى الابن بلا إعادة كتابة سطر واحد، وحتى المنشئ استُعير من الأب لتخزين Jim. وdir(j) وجدت points التي أضافها الابن إلى جانب الموروث. كل ما تعلمته عن الأصناف ينتقل الآن عبر عائلة كاملة.',
+        en: 'Through inheritance: class CricketFan(PartyAnimal) made every cricket fan a party animal — so party and its properties moved to the child without rewriting a single line, and even the constructor was borrowed from the parent to store Jim. And dir(j) found points, added by the child, next to the inherited things. Everything you learned about classes now travels through a whole family.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الوراثة: علاقة is-a', en: 'Inheritance: the is-a relationship' },
+      chunks: [
+        {
+          ar: 'الوراثة تجعل صنفًا يبنى فوق صنف آخر: class CricketFan(PartyAnimal) — اسم الصنف الجديد ثم بين قوسين اسم الأب. الابن CricketFan يرث من أبيه كل التوابع والخواص: فكائن منه يجيب لنداء party كما يجيب الحزباني، لأن شيفرة party شيفرة واحدة موجودة في الأب. والعلاقة المعلنة علاقة is-a: كل CricketFan هو PartyAnimal — مشجع الكريكيت حزباني أيضًا يرقص ويحتفل، لكنه فوق ذلك يتابع الكريكيت ويحصي ضرباته.',
+          en: 'Inheritance builds a class on top of another: class CricketFan(PartyAnimal) — the new class name, then the parent\u2019s name in parentheses. The child CricketFan inherits every method and property from its parent: an object of it answers a party call exactly as a party animal does, because party is one piece of code living in the parent. The declared relationship is is-a: every CricketFan is a PartyAnimal — the cricket fan also dances and celebrates, but beyond that follows cricket and counts his sixes.',
+        },
+        {
+          ar: 'والمعاملات تنتقل كالشيفرة: الابن لم يعرّف __init__ فورث منشئ الأب كاملًا — PartyAnimal(\'Jim\') تبني كائن CricketFan وتخزن اسمه وعداده عبر شيفرة الأب نفسها. لذلك كائن الابن جاهز للاستخدام من لحظة بنائه بلا أي إعداد إضافي. ويمكن التحقق دائمًا: isinstance(j, PartyAnimal) تجيب True — فالابن صالح في كل موضع يُطلب فيه حزباني.',
+          en: "Parameters travel with the code: the child defined no __init__, so it inherited the parent's constructor whole — PartyAnimal('Jim') builds a CricketFan object and stores its name and count through the parent's own code. The child's object is therefore usable from the moment of construction with no extra setup. You can always verify: isinstance(j, PartyAnimal) answers True — the child is valid anywhere a party animal is asked for.",
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الإضافة والتجاوز وsuper()', en: 'Extending, overriding and super()' },
+      chunks: [
+        {
+          ar: 'الوراثة في اتجاهين: الإضافة extension — الابن يعرف توابعًا جديدة لا يملكها الأب مثل six() الذي يرفع points ستة ثم يستدعي self.party() الموروثة فترقص الأسرة كلها؛ والتجاوز overriding — الابن يعيد تعريف تابع باسم تابع الأب فتصبح نسخته هي التي تعمل لكائناته، بنفس الاسم وسلوك جديد. وإن احتجت سلوك الأب داخل نسختك فالتابع super() يستدعي النسخة العليا: super().__init__(nam) يمرر العمل للأب ثم تكمل أنت فوقه.',
+          en: 'Inheritance flows two ways: extension — the child defines new methods the parent lacks, like six() raising points by six then calling the inherited self.party() so the whole family dances; and overriding — the child redefines a method under the parent method\u2019s name, so its version is the one that runs for its objects, same name and new behavior. When you need the parent\u2019s behavior inside your version, super() summons the upper copy: super().__init__(nam) hands the work to the parent and you continue on top of it.',
+        },
+        {
+          ar: 'وبعد النداءات اسأل النوع: type(j) يجيب <class \'__main__.CricketFan\'> — الكائن من صنف الابن تحديدًا لا من الأب. وdir(j) يعرض قدرات مركبة: توابع الأب وpoints وsix الابن في قائمة واحدة. بهذا صار لديك عائلة أصناف: قالب أب وقوالب أبناء تتخصص فوقه — وكل ابن يحمل أهلَه معه حيثما ذهب.',
+          en: "After the calls, interrogate the type: type(j) answers <class '__main__.CricketFan'> — the object is from the child's class precisely, not the parent's. And dir(j) shows a merged capability sheet: the parent's methods, points, and the child's six in one list. You now own a family of classes: a parent mold and child molds specializing on top of it — and every child carries its kin wherever it goes.",
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'CricketFan: إرث الحزباني', en: 'CricketFan: the party animal\u2019s legacy' },
+      code: "class PartyAnimal:\n    def __init__(self, nam):\n        self.name = nam\n        self.x = 0\n        print(nam, 'constructed')\n\n    def party(self):\n        self.x = self.x + 1\n        print(self.name, 'party', self.x)\n\n\nclass CricketFan(PartyAnimal):\n    points = 0\n\n    def six(self):\n        self.points = self.points + 6\n        self.party()\n        print(self.name, 'points', self.points)\n\n\ns = PartyAnimal('Sally')\ns.party()\nj = CricketFan('Jim')\nj.party()\nj.six()\nprint(type(j))\nprint(isinstance(j, PartyAnimal))",
+      explanation: {
+        ar: 'سطران فقط يفرقان CricketFan عن أبيه: points وsix. كائن Sally حزباني صرف: نداء party واحد فصار العداد 1. وJim ابن: ورث المنشئ فطبع Jim constructed، ونداء party الأول الموروث رفع عداده إلى 1. ثم جاء six: أضاف ست نقاط، واستدعى self.party() — شيفرة الأب تعمل على كائن الابن — فصار العداد 2، ثم طبع Jim points 6. وtype(j) أكدت أن الكائن من صنف الابن، وisinstance أكدت أنه حزباني أيضًا. موروث ومضاف في كائن واحد.',
+        en: "Two lines only separate CricketFan from its parent: points and six. Sally's object is a pure party animal: one party call raised the count to 1. Jim is a child: he inherited the constructor which printed Jim constructed, and the first inherited party call raised his count to 1. Then six arrived: it added six points, called self.party() — the parent's code running on the child's object — raising the count to 2, then printed Jim points 6. type(j) confirmed the object is of the child's class, and isinstance confirmed it is a party animal too. Inherited and added, in one object.",
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.cricket-fan',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'أكمل الإرث: PartyAnimal معطى في المحرر. عرّف تحته صنفًا اسمه CricketFan يرث منه — class CricketFan(PartyAnimal): — بخاصية points = 0 وتابع six(self) يضيف 6 إلى self.points ثم يستدعي self.party() ثم يطبع self.name وpoints وself.points معًا. ثم ابنِ j = CricketFan(\'Jim\') واستدعِ j.six() مرة واحدة. المتوقع: Jim party 1 ثم Jim points 6.',
+        en: "Complete the inheritance: PartyAnimal is given in the editor. Below it define a class named CricketFan inheriting from it — class CricketFan(PartyAnimal): — with a property points = 0 and a method six(self) that adds 6 to self.points, then calls self.party(), then prints self.name, points and self.points together. Then build j = CricketFan('Jim') and call j.six() once. Expected: Jim party 1 then Jim points 6.",
+      },
+      starterCode: "class PartyAnimal:\n    def __init__(self, nam):\n        self.name = nam\n        self.x = 0\n\n    def party(self):\n        self.x = self.x + 1\n        print(self.name, 'party', self.x)\n\n# عرّف CricketFan(PartyAnimal) بخاصية points = 0 وتابع six(self)\n# يضيف 6 إلى self.points ثم يستدعي self.party() ثم يطبع self.name و'points' وself.points\n# ثم ابنِ j = CricketFan('Jim') واستدعِ j.six()\n# Define CricketFan(PartyAnimal) with points = 0 and a method six(self)\n# adding 6 to self.points, calling self.party(), then printing self.name, 'points', self.points\n# Then build j = CricketFan('Jim') and call j.six()\n",
+      solution: "class PartyAnimal:\n    def __init__(self, nam):\n        self.name = nam\n        self.x = 0\n\n    def party(self):\n        self.x = self.x + 1\n        print(self.name, 'party', self.x)\n\n\nclass CricketFan(PartyAnimal):\n    points = 0\n\n    def six(self):\n        self.points = self.points + 6\n        self.party()\n        print(self.name, 'points', self.points)\n\n\nj = CricketFan('Jim')\nj.six()",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'j من الابن ومن الأب معًا', en: 'j is of the child and of the parent too' },
+          code: "assert isinstance(j, CricketFan) and isinstance(j, PartyAnimal), 'expected: CricketFan and PartyAnimal | actual: %r' % (type(j),)",
+          expected: 'CricketFan and PartyAnimal',
+        },
+        {
+          id: 't2',
+          name: { ar: 'النقاط 6 بعد six واحدة', en: 'The points are 6 after one six' },
+          code: "assert j.points == 6, 'expected: 6 | actual: %r' % (j.points,)",
+          expected: '6',
+        },
+        {
+          id: 't3',
+          name: { ar: 'العدد الموروث رُفع إلى 1', en: 'The inherited count rose to 1' },
+          code: "assert j.x == 1, 'expected: 1 | actual: %r' % (j.x,)",
+          expected: '1',
+        },
+        {
+          id: 't4',
+          name: { ar: 'السطران مطبوعان', en: 'Both lines printed' },
+          code: "assert 'Jim party 1' in __learner_output__ and 'Jim points 6' in __learner_output__, 'expected: Jim party 1 / Jim points 6 | actual: %r' % __learner_output__",
+          expected: 'Jim party 1 / Jim points 6',
+        },
+      ],
+      hints: [
+        { ar: 'التوقيع: class CricketFan(PartyAnimal): — الأب بين القوسين هو الإعلان عن الوراثة.', en: 'The signature: class CricketFan(PartyAnimal): — the parent in parentheses is the inheritance declaration.' },
+        { ar: 'six يفعل ثلاثة أشياء بالترتيب: يرفع self.points بستة، ثم self.party()، ثم يطبع السطر المنسق.', en: 'six does three things in order: raise self.points by six, then self.party(), then print the formatted line.' },
+        { ar: 'الهيكل:\nclass CricketFan(PartyAnimal):\n    points = 0\n\n    def six(self):\n        self.points = self.points + 6\n        self.party()\n        print(self.name, \'points\', self.points)\n\nj = CricketFan(\'Jim\')\nj.six()', en: "The skeleton:\nclass CricketFan(PartyAnimal):\n    points = 0\n\n    def six(self):\n        self.points = self.points + 6\n        self.party()\n        print(self.name, 'points', self.points)\n\nj = CricketFan('Jim')\nj.six()" },
+        { ar: "class CricketFan(PartyAnimal):\n    points = 0\n\n    def six(self):\n        self.points = self.points + 6\n        self.party()\n        print(self.name, 'points', self.points)\n\n\nj = CricketFan('Jim')\nj.six()", en: "class CricketFan(PartyAnimal):\n    points = 0\n\n    def six(self):\n        self.points = self.points + 6\n        self.party()\n        print(self.name, 'points', self.points)\n\n\nj = CricketFan('Jim')\nj.six()" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-override',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرْجه بالضبط — سطرًا لكل طباعة — دون تشغيله. الابن هنا يعيد تعريف تابع الأب باسمه نفسه.',
+        en: 'Read the code and predict its exact output — one line per print — without running it. The child here redefines the parent\u2019s method under the very same name.',
+      },
+      code: "class A:\n    def hi(self):\n        print('hello from A')\n\nclass B(A):\n    def hi(self):\n        print('hello from B')\n\nx = A()\ny = B()\nx.hi()\ny.hi()",
+      solution: 'hello from A\nhello from B',
+      answer: 'hello from A\nhello from B',
+      hints: [
+        { ar: 'x كائن من الأب — فيجيب بنسخة الأب.', en: 'x is a parent object — so it answers with the parent version.' },
+        { ar: 'y كائن من الابن — ونسخة الابن المجاوزة هي التي تصل أولاً له.', en: 'y is a child object — and the child\u2019s overriding version is what it finds first.' },
+        { ar: 'التجاوز يخص كائنات الابن — شيفرة الأب باقية كما هي لمن يسألها.', en: 'Overriding concerns the child\u2019s objects — the parent\u2019s code stays intact for whoever asks it.' },
+        { ar: 'الخرْج:\nhello from A\nhello from B', en: 'The output:\nhello from A\nhello from B' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-is-a',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'ماذا تعلن class CricketFan(PartyAnimal):؟',
+        en: 'What does class CricketFan(PartyAnimal): declare?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'كل مشجع كريكيت هو حزباني — علاقة is-a يرث بها الابن توابع الأب وخواصه', en: 'Every cricket fan is a party animal — an is-a relationship by which the child inherits the parent\u2019s methods and properties' } },
+        { id: 'b', text: { ar: 'PartyAnimal هو ابن CricketFan — العلاقة معكوسة', en: 'PartyAnimal is the child of CricketFan — the relationship is reversed' } },
+        { id: 'c', text: { ar: 'الصنفان يستبدل أحدهما الآخر في الذاكرة', en: 'The two classes replace each other in memory' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'اسأل isinstance(j, PartyAnimal) — الجواب يكشف اتجاه العلاقة.', en: 'Ask isinstance(j, PartyAnimal) — the answer reveals the relationship\u2019s direction.' },
+        { ar: 'الابن يفعل كل ما يفعله الأب وفوقه شيء إضافي — هذا معنى is-a.', en: 'The child does everything the parent does, plus something extra — that is is-a.' },
+        { ar: 'وdir(j) ستجد توابع الأب في قائمة قدرات الابن.', en: 'And dir(j) will find the parent\u2019s methods inside the child\u2019s capability list.' },
+        { ar: 'الجواب: أ — الابن يرث الأب: كل CricketFan هو PartyAnimal.', en: 'Answer: a — the child inherits the parent: every CricketFan is a PartyAnimal.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-super',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'التابع الذي يستدعي نسخة الأب داخل صنف الابن — مثل ____. __init__(nam) في منشئ الابن — اسمه ____',
+        en: 'The construct that calls the parent\u2019s version from inside the child class — like ____. __init__(nam) in a child constructor — is named ____',
+      },
+      answer: 'super',
+      solution: 'super',
+      hints: [
+        { ar: 'اسمه بالإنجليزية يعني «الأعلى في السلسلة».', en: 'Its English name means the one above in the chain.' },
+        { ar: 'تستخدمه حين تجاوزت تابعًا وتحتاج سلوك الأب الأصلي داخله.', en: 'You use it when you overrode a method and still need the parent\u2019s original behavior inside.' },
+        { ar: 'صيغته: super().__init__(nam) — بلا تمرير self إليها.', en: 'Its form: super().__init__(nam) — no self passed to it.' },
+        { ar: 'الجواب: super', en: 'Answer: super' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "# ملعبك الحرّ — عائلة الأصناف\n# Your playground — the class family\n\nclass PartyAnimal:\n    def __init__(self, nam):\n        self.name = nam\n        self.x = 0\n\n    def party(self):\n        self.x = self.x + 1\n        print(self.name, 'party', self.x)\n\nclass CricketFan(PartyAnimal):\n    points = 0\n\n    def six(self):\n        self.points = self.points + 6\n        self.party()\n        print(self.name, 'points', self.points)\n\nj = CricketFan('Jim')\nj.party()\nj.six()\n\nprint(type(j))\nprint(isinstance(j, PartyAnimal))\nprint(issubclass(CricketFan, PartyAnimal))\n\n# جرّب: أضف تابع dribble(self) يرفع النقاط واحدًا ويستدعي party\n# try: add a dribble(self) method raising points by one and calling party\n# جرّب: ابنِ p = PartyAnimal('Sally') ثم p.six() — ماذا يرمي؟ ولماذا؟\n# try: build p = PartyAnimal('Sally') then p.six() — what does it throw and why?",
+      prompt: {
+        ar: 'جرّب بنفسك: أضف تابع dribble للابن واطبع type وisinstance وissubclass للتأكد من اتجاه العلاقة. ثم جرب استدعاء six على كائن من الأب — الوراثة اتجاه واحد، والخطأ الذي يظهر هو الدرس. لا اختبار هنا — فضولك فقط.',
+        en: 'Try it yourself: add a dribble method to the child and print type, isinstance and issubclass to verify the relationship\u2019s direction. Then try calling six on a parent object — inheritance is one-directional, and the error you see is the lesson. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ومن الفصل الثالث عشر: استدعينا توابع كائنات جاهزة من json لم نرَ داخلها أبدًا. ما علاقة ذلك بدرس اليوم؟',
+            en: 'From chapter 13: we called methods on ready-made json objects without ever seeing inside them. How does that connect to today?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'المبدأ نفسه: كائن بوجهين — مطوره يرى الشيفرة ومستخدمه يرى التوابع فقط، واليوم تنتقل من مستخدم إلى مطور', en: 'The same principle: an object with two faces — its developer sees the code, its user sees only the methods; today you move from user to maker' } },
+            { id: 'b', text: { ar: 'لأن json يعيد أصنافًا موروثة من أصنافنا', en: 'Because json returns classes inherited from our classes' } },
+            { id: 'c', text: { ar: 'لا علاقة — JSON عالم منفصل تمامًا', en: 'No connection — JSON is a wholly separate world' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'في الفصل الثالث عشر كنت مستخدم كائنات صنعها غيرك ولم تسمع عن داخليها — واليوم تصنع كائنًا يقدمه لغيرك بوجه واحد: توابعه. إخفاء التعقيد يخدم الطرفين، وهو نفسه الذي مكنك من urllib وBeautifulSoup.',
+            en: 'In chapter 13 you were the user of objects made by others, deaf to their internals — today you make an object offering others a single face: its methods. Hiding complexity serves both sides; it is the same thing that carried you through urllib and BeautifulSoup.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: "j = CricketFan('Jim') — أي التوابع يجيب لها j؟",
+            en: "j = CricketFan('Jim') — which methods answer to j?",
+          },
+          options: [
+            { id: 'a', text: { ar: 'party الموروثة من الأب وsix التي أضافها الابن — القدرتان معًا', en: 'party inherited from the parent and six added by the child — both at once' } },
+            { id: 'b', text: { ar: 'six فقط لأنه من صنف الابن', en: 'six only, because it is of the child class' } },
+            { id: 'c', text: { ar: 'party فقط لأن six لم ترث', en: 'party only, because six was never inherited' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'dir(j) سيعرض المزيج الكامل: الموروث من الأب والمضاف في الابن — وكائن الابن يجيب للاثنين من أول لحظة، حتى المنشئ ورثه فخزن الاسم والعداد.',
+            en: 'dir(j) shows the full mix: what the parent passed down and what the child added — the child object answers to both from its first moment; even the constructor was inherited, storing name and count.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'ماذا يطبع type(j) حيث j = CricketFan(\'Jim\')؟',
+            en: "What does type(j) print, where j = CricketFan('Jim')?",
+          },
+          options: [
+            { id: 'a', text: { ar: "<class '__main__.CricketFan'> — صنف الابن تحديدًا حتى لو ورث كل شيء", en: "<class '__main__.CricketFan'> — precisely the child class, even though it inherited everything" } },
+            { id: 'b', text: { ar: "<class '__main__.PartyAnimal'> — لأنه حزباني أيضًا", en: "<class '__main__.PartyAnimal'> — because it is a party animal too" } },
+            { id: 'c', text: { ar: "<class 'object'> — الجد الأعلى للجميع", en: "<class 'object'> — everyone's topmost ancestor" } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'type يجيب بنوع الكائن الأدق: الكائن بُني من CricketFan — وisinstance تبقى صادقة عن الأب كذلك. النوعان صحيحان في آن: الأدق هو جواب type.',
+            en: 'type answers with the most precise type: the object was built from CricketFan — while isinstance stays truthful about the parent too. Both are true at once; the more precise one is what type reports.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'super().__init__(nam) داخل منشئ الابن تفعل ماذا؟',
+            en: 'What does super().__init__(nam) do inside a child constructor?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'تستدعي منشئ الأب على الكائن نفسه ثم يكمل الابن إضافته — دون إعادة كتابة شيفرة الأب', en: 'It calls the parent constructor on the same object, then the child continues its additions — without rewriting the parent code' } },
+            { id: 'b', text: { ar: 'تبني كائنًا ثانيًا من الأب وتنسخ قيمه', en: 'It builds a second object from the parent and copies its values' } },
+            { id: 'c', text: { ar: 'تحذف خواص الأب من الكائن', en: 'It deletes the parent properties from the object' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'super هي جسر التجاوز الذكي: حين تجاوزت __init__ وتريد ما يفعله الأب أيضًا تستدعيه عبر super ثم تضيف فوقه — بلا تكرار ولا تفاوت بين النسختين.',
+            en: 'super is the smart-override bridge: when you overrode __init__ and still want the parent\u2019s work, summon it via super and add on top — no duplication, no drift between the two versions.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: "class CricketFan(PartyAnimal):\n    def party(self):\n        print('cricket only')  # تجاوز غير مقصود",
+          right: "class CricketFan(PartyAnimal):\n    def six(self):\n        self.party()  # تابع جديد — والموروث باقٍ",
+          note: {
+            ar: 'اسم مطابق لاسم تابع الأب هو تجاوز يخفي السلوك الموروث لكائنات الابن — إن أردت الإضافة فاختر اسمًا جديدًا، وإن أردت التجاوز فاعلم أنك تستبدل، واستعن بـ super إن احتجت الأصل.',
+            en: 'A name matching a parent method is an override that hides the inherited behavior for child objects — if you meant to extend, pick a new name; if you meant to override, know that you are replacing, and lean on super if you need the original.',
+          },
+        },
+        {
+          wrong: "p = PartyAnimal('Sally')\np.six()  # six أين؟",
+          right: "j = CricketFan('Jim')\nj.six()",
+          note: {
+            ar: 'الوراثة اتجاه واحد: الابن يرث الأب — والأب لا يعرف توابع الابن. six تعيش على CricketFan فقط، ونداؤها على PartyAnimal يرمي AttributeError.',
+            en: 'Inheritance is one-directional: the child inherits the parent — the parent knows no child methods. six lives on CricketFan only, and calling it on a PartyAnimal throws AttributeError.',
+          },
+        },
+        {
+          wrong: 'super().__init__(self, nam)',
+          right: 'super().__init__(nam)',
+          note: {
+            ar: 'super تعرف الكائن من السياق فلا تمرر self إليها — إضافته تجعل بايثون ترى معاملين حيث توقع واحدًا فيرمي TypeError.',
+            en: 'super knows the object from context, so never pass self to it — adding it makes Python see two arguments where it expected one, throwing TypeError.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'class CricketFan(PartyAnimal) تعلن is-a: الابن يرث كل توابع الأب وخواصه — وisinstance(j, PartyAnimal) تصدق ذلك.', en: 'class CricketFan(PartyAnimal) declares is-a: the child inherits every parent method and property — and isinstance(j, PartyAnimal) attests to it.' },
+        { ar: 'اتجاهان: إضافة توابع جديدة مثل six، وتجاوز تابع الأب باسمه نفسه — وsuper() يستدعي نسخة الأب حين تريد الجمع بينهما.', en: 'Two directions: adding new methods like six, and overriding a parent method under its own name — while super() summons the parent version when you want both.' },
+        { ar: "type(j) تبقى اسم الابن الدقيق وdir(j) تعرض المزيج الكامل: الموروث والمضاف.", en: 'type(j) stays the child\u2019s precise name and dir(j) shows the full mix: inherited and added.' },
+      ],
+      reflectPrompt: {
+        ar: 'في الملعب: أضف إلى CricketFan تابع dribble(self) يرفع النقاط واحدًا ويستدعي party أيضًا. ثم ابنِ صنفًا ثالثًا LoudFan(PartyAnimal) يجاوز party ليطبع رسالة أعلى صوتًا. متى اخترت الإضافة ومتى التجاوز — وما الذي جعل كل قرار أوضح من الآخر؟',
+        en: 'In the sandbox: add a dribble(self) method to CricketFan raising points by one and calling party too. Then build a third class LoudFan(PartyAnimal) overriding party to print a louder message. When did you choose extension and when override — and what made each decision clearer than the other?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'PY4E', section: 'py4e.ch14.s10', pages: 'ص247 / pp.247' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'PY4E', section: 'py4e.ch14.s10', pages: 'ص247 / pp.247' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

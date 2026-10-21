@@ -1,0 +1,231 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch12.l1",
+   "id": "ex1.metric-reading",
+   "code": "releases = {'r1': 4, 'r2': 8, 'r3': 12}\ntotal = sum(releases.values())\nprint('releases: %d' % len(releases))\nprint('total: %d' % total)\nprint('mean: %.1f' % (total / len(releases)))",
+   "answer": "releases: 3\ntotal: 24\nmean: 8.0"
+  },
+  {
+   "lesson": "swe.ch12.l2",
+   "id": "ex1.bar-trace",
+   "code": "def bar(n):\n    return '#' * n\n\nfor name, n in [('ui', 2), ('logic', 5)]:\n    print('%s %s' % (name, bar(n)))",
+   "answer": "ui ##\nlogic #####"
+  },
+  {
+   "lesson": "swe.ch12.l3",
+   "id": "ex1.severity-mode",
+   "code": "counts = {'S1': 5, 'S2': 18, 'S3': 42, 'S4': 15}\nbest = ''\nbest_n = 0\nfor k in counts:\n    if counts[k] > best_n:\n        best = k\n        best_n = counts[k]\nprint('mode: %s' % best)\nprint('total: %d' % sum(counts.values()))",
+   "answer": "mode: S3\ntotal: 80"
+  },
+  {
+   "lesson": "swe.ch12.l4",
+   "id": "ex1.stats-trace",
+   "code": "import statistics\nxs = [2, 4, 5, 5, 7]\nprint(statistics.mean(xs))\nprint(statistics.median(xs))",
+   "answer": "4.6\n5"
+  },
+  {
+   "lesson": "swe.ch12.l5",
+   "id": "ex1.z-trace",
+   "code": "n = 36\nmean = 45.0\nse = 12.0 / n ** 0.5\nprint('SE: %.2f' % se)\nprint('CI: (%.2f, %.2f)' % (mean - 1.96 * se, mean + 1.96 * se))",
+   "answer": "SE: 2.00\nCI: (41.08, 48.92)"
+  },
+  {
+   "lesson": "swe.ch12.l6",
+   "id": "ex1.trace-bars",
+   "code": "data = {'a': 3, 'b': 1, 'c': 4}\nfor k in sorted(data):\n    print('%s |%s %d' % (k, '#' * data[k], data[k]))",
+   "answer": "a |### 3\nb |# 1\nc |#### 4"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch12.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "defects = [1, 2, 3, 4, 20]\nprint('mean: %.1f' % (sum(defects) / len(defects)))\nprint('median: %.1f' % sorted(defects)[2])"
+  },
+  {
+   "lesson": "swe.ch12.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "releases = {'r1': 2, 'r2': 4, 'r3': 5, 'r4': 5, 'r5': 7, 'r6': 8,\n            'r7': 9, 'r8': 10, 'r9': 12, 'r10': 14, 'r11': 23}\ntotal = sum(releases.values())\nmean = total / len(releases)\nworst = 'r1'\nfor k in releases:\n    if releases[k] > releases[worst]:\n        worst = k\nprint('total: %d' % total)\nprint('mean: %.1f' % mean)\nprint('worst: %s (%d)' % (worst, releases[worst]))\nprint('worst is %.1f x the mean' % (releases[worst] / mean))"
+  },
+  {
+   "lesson": "swe.ch12.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "releases = {'r1': 2, 'r2': 4, 'r3': 5, 'r4': 5, 'r5': 7, 'r6': 8,\n            'r7': 9, 'r8': 10, 'r9': 12, 'r10': 14, 'r11': 23}\n\ntotal = sum(releases.values())\nmean = total / len(releases)\nprint('total: %d' % total)\nprint('mean: %.1f' % mean)\n\nfor k in releases:\n    print('%s share: %.1f%%' % (k, 100.0 * releases[k] / total))\n\n# جرّب: أي إصدار يأكل النصيب الأكبر؟ كم مرة ضعف متوسطه؟\n# try: which release eats the biggest share? how many times the mean is it?\n# جرّب: احذف r11 من القاموس وأعد الحساب — كم ينزاح المتوسط؟ أي رقم مات؟\n# try: delete r11 from the dict and recompute — how far does the mean slide? which reading dies?\n# جرّب: أضف مقياسًا مضادًا — لو كان قياسنا «أسوأ إصدار» فما الذي يكشف أنه تلاعب؟\n# try: add a counter-metric — if our metric were “worst release”, what would expose gaming of it?"
+  },
+  {
+   "lesson": "swe.ch12.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "count = 42\nscale = 3\nprint('Medium | %s %d' % ('#' * (count // scale), count))"
+  },
+  {
+   "lesson": "swe.ch12.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "def draw_bars(pairs, scale):\n    for name, value in pairs:\n        ticks = value // scale\n        print('%-8s | %s %d' % (name, '#' * ticks, value))\n\ndraw_bars([('Critical', 5), ('High', 18), ('Medium', 42), ('Low', 15)], 3)"
+  },
+  {
+   "lesson": "swe.ch12.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "def draw_bars(pairs, scale):\n    for name, value in pairs:\n        ticks = value // scale\n        print('%-8s | %s %d' % (name, '#' * ticks, value))\n\ndef spark(xs, threshold):\n    line = ''\n    for v in xs:\n        if v > threshold:\n            line = line + '#'\n        else:\n            line = line + '.'\n    return line\n\nseverity = [('Critical', 5), ('High', 18), ('Medium', 42), ('Low', 15)]\ndraw_bars(severity, 3)\nprint('spark: ' + spark([2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23], 9))\n\n# جرّب: غيّر scale من 3 إلى 1 ثم إلى 10 — متى يختفي شريط Critical؟ متى تتساوى الأشرطة كلها؟\n# try: change scale from 3 to 1 then to 10 — when does the Critical bar vanish? when do all bars look equal?\n# جرّب: ارسم الأصناف بترتيب مختلف — هل يتغير شيء في البيانات؟ وهل يتغير الحكم؟\n# try: draw the categories in a different order — does the data change? does the verdict?\n# جرّب: خفّض threshold إلى 6 — كم نقطة اشتعالت؟ هذا sparkline ميزانية من نوع آخر.\n# try: lower threshold to 6 — how many points ignite? a sparkline is a budget hill chart of sorts."
+  },
+  {
+   "lesson": "swe.ch12.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "before = 720\nafter = 80\nprint('caught: %d of %d' % (before, before + after))"
+  },
+  {
+   "lesson": "swe.ch12.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "d_before = 720\nd_after = 80\ndre = 100.0 * d_before / (d_before + d_after)\nprint('D_before: %d' % d_before)\nprint('D_after: %d' % d_after)\nprint('DRE: %.1f%%' % dre)\nprint('escape rate: %.1f%%' % (100.0 - dre))"
+  },
+  {
+   "lesson": "swe.ch12.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "releases = {'r1': {'before': 720, 'prod': 80}, 'r2': {'before': 465, 'prod': 35}}\nsum_before = 0\nsum_prod = 0\nfor k in releases:\n    d = releases[k]\n    dre = 100.0 * d['before'] / (d['before'] + d['prod'])\n    print('%s DRE: %.1f%%' % (k, dre))\n    sum_before += d['before']\n    sum_prod += d['prod']\nescape = 100.0 * sum_prod / (sum_before + sum_prod)\nprint('pooled escape: %.1f%%' % escape)\n\ninstalls = {'r1': 200, 'r2': 5000}\nfor k in releases:\n    print('%s CFD per 1k installs: %.2f' % (k, 1000.0 * releases[k]['prod'] / installs[k]))\n\n# جرّب: ضاعف تنصيبتات r1 خمس مرات وأعد الحساب — أي سطر تغيّر وأي سطر ثابت؟\n# try: quintuple r1's installs and recompute — which line moved and which stayed?\n# جرّب: أزل التطبيع واقرأ العمودين كجودة — أي نسخة تخدع؟\n# try: drop the normalization and read the two columns as quality — which version lies?\n# جرّب: أضف r3 بـbefore = 0 — ماذا يفعل المقام الصفري بصيغة DRE؟ متى تنفجر الصيغة؟\n# try: add r3 with before = 0 — what does a zero numerator do to DRE? when does the formula blow up?"
+  },
+  {
+   "lesson": "swe.ch12.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "xs = [2, 4, 5, 5, 23]\nprint('mean: %.1f' % (sum(xs) / len(xs)))\nprint('median: %.1f' % xs[2])"
+  },
+  {
+   "lesson": "swe.ch12.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import statistics\ncfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nprint('mean: %.1f' % statistics.mean(cfds))\nprint('median: %s' % statistics.median(cfds))\ns = statistics.stdev(cfds)\nsigma = statistics.pstdev(cfds)\nprint('stdev: %.2f (sample, n-1)' % s)\nprint('pstdev: %.2f (population, n)' % sigma)"
+  },
+  {
+   "lesson": "swe.ch12.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "import statistics\ncfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nprint('s: %.2f' % statistics.stdev(cfds))\nprint('sigma: %.2f' % statistics.pstdev(cfds))\nq = statistics.quantiles(cfds, n=4)\nprint('IQR: %.2f' % (q[2] - q[0]))\n\ndef draw_box(lo, med, hi, lo_f, hi_f, xs):\n    line = ''\n    for v in range(0, 25):\n        if v == lo or v == med or v == hi:\n            line = line + '|'\n        elif lo < v < hi:\n            line = line + '='\n        elif v == round(hi_f) or v == round(lo_f):\n            line = line + '!'\n        else:\n            line = line + '.'\n    print(line)\n    print('Q1=%s med=%s Q3=%s fences=%s %s' % (lo, med, hi, lo_f, hi_f))\n\ndraw_box(5, 8, 12, -5.5, 22.5, cfds)\n\n# جرّب: احذف 23 من القائمة وأعد الطباعة — كم صار s؟ وأين ذهب الشاذ؟\n# try: delete 23 from the list and reprint — what is s now? where did the outlier go?\n# جرّب: قارن s وsigma قبل وبعد حذف 23 — أيهما تحرك أكثر ولماذا؟\n# try: compare s and sigma before and after deleting 23 — which moved more and why?\n# جرّب: غيّر بياناتك إلى [7, 8, 9, 10, 11] — ما الشكل الجديد للسطر النصي؟\n# try: swap your data to [7, 8, 9, 10, 11] — what is the new shape of the text line?"
+  },
+  {
+   "lesson": "swe.ch12.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import statistics\na = [7, 8, 9, 10, 11]\nb = [1, 2, 9, 16, 17]\nprint('a mean: %.1f s: %.2f' % (statistics.mean(a), statistics.stdev(a)))\nprint('b mean: %.1f s: %.2f' % (statistics.mean(b), statistics.stdev(b)))"
+  },
+  {
+   "lesson": "swe.ch12.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "cfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nn = len(cfds)\nsx = 0\nfor v in cfds:\n    sx = sx + v\nmean = sx / n\nss = 0\nfor v in cfds:\n    ss = ss + (v - mean) ** 2\ns = (ss / (n - 1)) ** 0.5\nse = s / n ** 0.5\nprint('n: %d mean: %.2f s: %.2f' % (n, mean, s))\nprint('SE: %.2f' % se)\nprint('z 95%% CI: (%.2f, %.2f)' % (mean - 1.96 * se, mean + 1.96 * se))\nprint('t 95%% CI: (%.2f, %.2f)' % (mean - 2.228 * se, mean + 2.228 * se))"
+  },
+  {
+   "lesson": "swe.ch12.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "import statistics\ncfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nn = len(cfds)\nmean = statistics.mean(cfds)\ns = statistics.stdev(cfds)\nse = s / n ** 0.5\nprint('z 95%% CI: (%.2f, %.2f)' % (mean - 1.96 * se, mean + 1.96 * se))\nprint('t 95%% CI: (%.2f, %.2f)' % (mean - 2.228 * se, mean + 2.228 * se))\n\nx = [2, 4, 6, 8, 10]\ny = [5, 9, 10, 13, 18]\nm = len(x)\nsx = sy = sxy = sxx = 0\nfor i in range(m):\n    sx += x[i]\n    sy += y[i]\n    sxy += x[i] * y[i]\n    sxx += x[i] ** 2\nb1 = (m * sxy - sx * sy) / (m * sxx - sx ** 2)\nb0 = (sy - b1 * sx) / m\nprint('fit: yhat = %.2f + %.2f x' % (b0, b1))\nprint('predict x=12 (inside range): %.2f' % (b0 + b1 * 12))\nprint('predict x=40 (outside range): %.2f' % (b0 + b1 * 40))\n\n# جرّب: احذف 23 من cfds وأعد الفاصلين — أيهما انقبض أكثر ولماذا؟\n# try: delete 23 from cfds and rebuild both intervals — which shrank more, and why?\n# جرّب: احسب البواقي e = y - (b0 + b1*x) ومجموعها — كم يساوي دائمًا مع تقاطع؟\n# try: compute the residuals e = y - (b0 + b1*x) and their sum — what is it always with an intercept?\n# جرّب: عامل ثالث يسرّع التسليم ويكبّر الوحدات — لماذا لا يثبت R2 العالي السببية؟\n# try: a third factor speeds delivery and inflates size — why does a high R2 not prove causation?"
+  },
+  {
+   "lesson": "swe.ch12.l6",
+   "kind": "predict",
+   "id": "predict",
+   "code": "releases = {'r1': 2, 'r2': 4, 'r3': 5}\ntotal = sum(releases.values())\nprint('releases: %d / mean: %.1f' % (len(releases), total / len(releases)))"
+  },
+  {
+   "lesson": "swe.ch12.l6",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import statistics\nreleases = {'r1': 2, 'r2': 4, 'r3': 5}\nn = len(releases)\nmean = sum(releases.values()) / n\ns = statistics.stdev(releases.values())\nfor k in releases:\n    print('%-3s |%s %d' % (k, '#' * releases[k], releases[k]))\nworst = 'r1'\nfor k in releases:\n    if releases[k] > releases[worst]:\n        worst = k\nfor k in releases:\n    if releases[k] > mean + s:\n        print('flag: %s (%d > mean+s %.2f)' % (k, releases[k], mean + s))\nprint('releases: %d / mean defects: %.1f / worst: %s' % (n, mean, worst))"
+  },
+  {
+   "lesson": "swe.ch12.l6",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "import statistics\nreleases = {'r1': 2, 'r2': 4, 'r3': 5, 'r4': 5, 'r5': 7, 'r6': 8,\n            'r7': 9, 'r8': 10, 'r9': 12, 'r10': 14, 'r11': 23}\nn = len(releases)\nmean = sum(releases.values()) / n\ns = statistics.stdev(releases.values())\nse = s / n ** 0.5\nworst = 'r1'\nfor k in releases:\n    if releases[k] > releases[worst]:\n        worst = k\nfor k in releases:\n    print('%-4s |%s %d' % (k, '#' * releases[k], releases[k]))\nfor k in releases:\n    if releases[k] > mean + s:\n        print('flag: %s (%d > mean+s %.2f)' % (k, releases[k], mean + s))\nprint('t 95%% CI: (%.2f, %.2f)' % (mean - 2.228 * se, mean + 2.228 * se))\nprint('releases: %d / mean defects: %.1f / worst: %s' % (n, mean, worst))\n\n# جرّب: احذف r11 من القاموس — إلى أين ينزاح mean وs والراية وسطر الملخص؟\n# try: delete r11 from the dict — where do mean, s, the flag and the summary slide?\n# جرّب: بدّل statistics.stdev بـstatistics.pstdev وراقب الراية والفاصل — أيهما الصادق لمستقبل مفتوح؟\n# try: swap statistics.stdev for statistics.pstdev and watch the flag and interval — which is honest for an open future?\n# جرّب: اخفض عتبة الراية إلى mean + s / 2 — كم إصدارًا يشتعل؟ ومتى تصير الراية ضجيجًا؟\n# try: lower the flag threshold to mean + s / 2 — how many releases flare? when does flagging become noise?"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch12.l1",
+   "id": "ex3.goodhart",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch12.l2",
+   "id": "ex3.axis-honesty",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch12.l3",
+   "id": "ex3.cfd-normalize",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch12.l3",
+   "id": "ex4.dre-numeric",
+   "answer": "93",
+   "solution": "93"
+  },
+  {
+   "lesson": "swe.ch12.l4",
+   "id": "ex3.bessel-mcq",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch12.l4",
+   "id": "ex4.variance-numeric",
+   "answer": "34.2",
+   "solution": "34.2"
+  },
+  {
+   "lesson": "swe.ch12.l5",
+   "id": "ex3.ci-meaning",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch12.l5",
+   "id": "ex4.sqrt-n",
+   "answer": "44",
+   "solution": "44"
+  },
+  {
+   "lesson": "swe.ch12.l6",
+   "id": "ex3.mcq-dashboard",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch12.l6",
+   "id": "ex4.t-margin",
+   "answer": "3.93",
+   "solution": "3.93"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch12.l1",
+   "id": "ex4.gqm-order",
+   "answer": "Metric"
+  },
+  {
+   "lesson": "swe.ch12.l2",
+   "id": "ex4.ordinal-statistic",
+   "answer": "median"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch12.l6",
+   "id": "ex5.debug-ci",
+   "brokenCode": "import statistics\ncfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nn = len(cfds)\nmean = sum(cfds) / n\ns = statistics.pstdev(cfds)\nse = s / n ** 0.5\nt = 2.228\nprint('mean: %.2f s: %.2f' % (mean, s))\nprint('SE: %.2f' % se)\nprint('t 95%% CI: (%.2f, %.2f)' % (mean - t * se, mean + t * se))"
+  }
+ ]
+}

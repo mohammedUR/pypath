@@ -1,0 +1,337 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch14.l3 — "Packaging a Service, and Reaching Users
+ * حزم الخدمات وتشغيلها، والوصول إلى المستخدمين"
+ * Aligned with SWE ch14 s4 (14.4 Packaging and Running a Service: Docker and
+ * Compose, pp.389-393) + s5 (14.5 Reaching Users: DNS, TLS, and the Edge,
+ * pp.393-396), keeping the book's crc32 checksum idea for layer verification.
+ * All expression is original — a paraphrase of the CC BY-SA 4.0 source, never
+ * a verbatim translation.
+ * SIMULATED-PLATFORM PATTERN: no Docker daemon, no network, no real DNS in the
+ * sandbox — images are dicts of layers verified with zlib.crc32, and the DNS
+ * resolver is a dict lookup with a TTL cache keyed on datetime objects.
+ * Deterministic only.
+ */
+
+const lesson = {
+  id: 'swe.ch14.l3',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 14,
+  title: { ar: 'حزم الخدمات وتشغيلها، والوصول إلى المستخدمين', en: 'Packaging a Service, and Reaching Users' },
+  estimatedMinutes: 30,
+  prerequisites: ['swe.ch14.l2'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'عندك برنامج يعمل على حاسوبك — والفجوة بينه وبين «خدمة يصلها أي أحد بأمان على clinic.example.com» فيها طبقتان: التغليف ثم الوصول. الأولى: حاوية تحمل تطبيقك وكل ما يحتاجه، وتبنى مرة واحدة فتصير الأثر نفسه حرفيًّا على حاسوبك وفي الاختبار وفي الإنتاج — فيُقضى على اعتذار «على جهازي يعمل»؛ ومعها Compose يرفع حزمة كاملة: تطبيق وقاعدة بيانات وذاكرة مؤقتة، بمعرّفات خارجية وشبكة خاصة وأقراص تدوم بعد موت الحاويات. والثانية: نظام أسماء النطاقات يحوّل الاسم إلى عنوان عبر سلسلة مخزَّنة بزمن حياة، وTLS يشفر الوصلة ويثبت أنك أنت لا منتحل، والحافة تمتص الهجمات وتقرّب المحتوى. بيئتك لا تشغّل عفريت Docker ولا شبكة — فسنصوّر الصورة قاموس طبقات نتحقق منه بـ crc32 (بصمات الكتاب نفسها)، ونكتب حلَّال DNS مصغّرًا بذاكرة TTL حقيقية الدلالة. بنهاية الدرس ستكون قادرًا على شرح الطبقات والبناء مرة واحدة، وتركيب حزمة Compose، وتتبع استعلام DNS عبر الطبقات والذاكرة.',
+        en: 'You have a program running on your laptop — and the gap to \u201canyone can safely reach clinic.example.com\u201d has two layers: packaging, then reachability. First: a container carries your app plus everything it needs, built exactly once so the same byte-for-byte artifact runs on your laptop, in test, and in production — retiring \u201cworks on my machine\u201d; with Compose bringing up a whole stack — app, database, cache — with externalized configuration, a private network, and volumes that outlive containers. Second: DNS turns a name into an address through a cached, TTL-scoped hierarchy; TLS encrypts the connection and proves you are you; the edge absorbs attacks and moves content closer. Your sandbox runs no Docker daemon and no network — so we picture the image as a dict of layers verified with crc32 (the book\u2019s own checksum idea) and write a miniature DNS resolver with a genuinely TTL-scoped cache over datetime objects. By the end you can explain layers and build-once, compose a stack, and trace a DNS lookup through its caches.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "changed = {'src': True, 'deps': False, 'base': False}\nrebuilt = 0\nfor layer in ['base', 'deps', 'src']:\n    if changed[layer]:\n        rebuilt += 1\n        print('rebuild: %s' % layer)\n    else:\n        print('cached: %s' % layer)\nprint('rebuilt layers: %d' % rebuilt)",
+      question: {
+        ar: 'ثلاث طبقات، وتغيير واحد فقط. لماذا يهتم كاتب Dockerfile بترتيب الطبقات هذه بهذا الترتيب بالذات — قاعدة أولًا واعتماديات ثانيًا ومصدر أخيرًا؟ وماذا سيصير زمن البناء لو قُلبت الرتبة؟',
+        en: 'Three layers, one change. Why does a Dockerfile author care about exactly this order — base first, dependencies second, source last? And what happens to build time if the order flips?',
+      },
+      reveal: {
+        ar: 'الطباعة: cached: base ثم cached: deps ثم rebuild: src ثم rebuilt layers: 1. الطبقة هي فرق ملفات مخزَّن مؤقتًا: ما لم يتغير فوقه لا يُعاد بناؤه — لذلك تُنسخ اعتماديات المشروع وتُثبَّت قبل نسخ المصدر: تعديل سطر واحد في كودك لا يُبطل طبقة التثبيت، ومعظم إعادة البناء تنتهي في ثوانٍ. ولو قُلبت الرتبة فكل تعديل مصدر سيُعيد تثبيت الاعتماديات من الصفر. والقاعدة نفسها تُثبَّت بوسم دقيق مثل python:3.12-slim لا latest — فالأخير هدف متحرك قد يغيّر البيئة تحت قدميك بين بنائين.',
+        en: 'It prints cached: base, cached: deps, rebuild: src, rebuilt layers: 1. A layer is a cached filesystem diff: nothing above an unchanged layer rebuilds — so dependencies are copied and installed before the source: editing one line does not invalidate the install layer, and most rebuilds finish in seconds. Flip the order and every source edit reinstalls dependencies from scratch. The base itself is pinned to an exact tag like python:3.12-slim, never latest — a moving target that can change the runtime under you between two builds.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'من Dockerfile إلى صورة غير قابلة للتغيير', en: 'From Dockerfile to an immutable image' },
+      chunks: [
+        {
+          ar: 'الصورة عبوة فيها تطبيقك وكل ما يحتاجه: بيئة اللغة والمكتبات والإعداد — معزولة عن جيرانها على الجهاز نفسه مع مشاركة نواة النظام، فتبدأ في ثوانٍ لا دقائق. تُبنى من Dockerfile: نص من تعليمات مرتبة، وكل تعليمة تضيف طبقة — فرقًا مخزَّنًا يعاد استعماله ما دام ما فوقه لم يتغير؛ لذلك تُنسخ قائمة الاعتماديات وتُثبَّت قبل المصدر الذي يتغير كثيرًا، ويُثبَّت وسم الأساس بدل latest، ويحصر .dockerignore ما يُنسخ فتبقى الأسرار ومجلدات المستودع خارج الطبقات. والمبدأ الحاكم: ابنِ مرة، شغّل في أي مكان — الصورة التي بناها خط CI هي حرفيًّا الأثر نفسه الذي يجري في الاختبار والإنتاج، وخطأ رأيته في الإنتاج تعيد إنتاجه على حاسوبك بتشغيل الصورة الموسومة نفسها. ولغة مترجمة ترتقي إلى بناء متعدد المراحل: تُترجم في صورة سمينة ثم يُنسخ الثنائي الجاهز فقط إلى صورة تشغيل نحيفة.',
+          en: 'An image is a package holding your app and everything it needs — runtime, libraries, configuration — isolated from neighbors on the same host while sharing the OS kernel, so it starts in seconds. It is built from a Dockerfile: ordered instructions, each adding a layer — a cached diff reused while nothing above it changes; so the dependency manifest is copied and installed before the frequently changing source, the base tag is pinned instead of latest, and .dockerignore keeps secrets and repository folders out of the layers. The governing principle: build once, run anywhere — the image your CI pipeline builds is literally the artifact running in test and production, and a bug seen in production reproduces on your laptop with the same tagged image. Compiled languages escalate to multi-stage builds: compile in a fat builder image, copy only the finished binary into a slim runtime image.',
+        },
+        {
+          ar: 'الخدمة الحقيقية نادرًا حاوية واحدة: تطبيق وقاعدة بيانات وذاكرة مؤقتة على الأقل. Compose يصف الحزمة كلها في ملف واحد تعريفي: شبكة خاصة تُنشأ تلقائيًّا فيصل التطبيق إلى قاعدته باسم الخدمة db لا بعنوان IP، وdepends_on بشرط الصحة يجعل التطبيق ينتظر جهوزية قاعدة البيانات لا مجرد بدئها — فيزول أصناف كاملة من سباقات الترتيب. والحالة هي حيث يصعب النشر: الحاوية زائلة ومحتويتها تذهب بموتها — وهذا مطلوب للتطبيق عديم الحالة وغير مطلوب للبيانات؛',
+          en: 'A real service is rarely one container: app, database, cache at least. Compose describes the whole stack in one declarative file: a private network is created so the app reaches its database by the service name db, not an IP, and depends_on with a health condition makes the app wait for the database to be ready, not merely started — erasing whole classes of start-order races. State is where deployment gets hard: a container is ephemeral and its contents die with it — exactly right for a stateless app, exactly wrong for data; the fix is a volume: storage living outside any container\\u2019s lifecycle and mounted into one, so Postgres survives deploys.',
+        },
+          {
+          ar: 'فالحل القرص volume: تخزين يعيش خارج دورة حياة أي حاوية ويُركَّب داخلها، فيصمد Postgres عبر عمليات النشر. وPostgres هو سجل الحقيقة: معاملات وقيود وديمومة، وRedis مخزن مؤقت في الذاكرة لأشياء تحتمل الفقد — طالما تستطيع إعادة بنائه من قاعدة البيانات؛ اللحظة التي يعجز فيها نظامك عن إعادة بناء الذاكرة المؤقتة تكون قد جعلت متجرًا هشًّا مصدر حقيقتك. أما كلمات المرور وسلاسل الاتصال فلا تُخبز في الصورة ولا تُلتزم: متغيرات بيئة من ملف .env غير مُتتبَّع — صورة واحدة تجري في كل البيئات، وما يختلف بينها إعداد من خارج الصورة.',
+          en: 'Postgres is the system of record — transactions, constraints, durability; Redis is an in-memory cache for loss-tolerant work — as long as you can rebuild it from the database; the moment your system cannot rebuild the cache, an in-memory store has quietly become your source of truth. And passwords and connection strings are never baked into an image or committed: environment variables from an untracked .env — one image runs everywhere, and what differs between environments lives outside the image.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'كيف يصل المستخدم: DNS وTLS والحافة', en: 'Reaching users: DNS, TLS, and the edge' },
+      chunks: [
+        {
+          ar: 'لا أحد يكتب عنوان IP، ولا متصفح يثق بخادم عارٍ من القفل. DNS دليل الإنترنت: قاعدة موزعة عالميًّا تحوّل الاسم إلى عنوان. تشتري النطاق من مسجِّل يحدد خوادم الأسماء الموثوقة لنطاقك؛ وعند زيارة موقعك يسأل حاسوب الزائر محلِّلًا (عادة لدى مزود الخدمة) فيمشي الهرم: خادم جذر من يتولى .com، فخادم TLD من يملك example.com، فخادمك الموثوق بالسجل المطلوب.',
+          en: 'Nobody types an IP address, and no browser trusts a padlock-less server. DNS is the internet\\u2019s directory: a globally distributed database mapping names to addresses. You buy a domain from a registrar, which records the authoritative nameservers for your domain; a visitor\\u2019s computer asks a resolver (usually the ISP\\u2019s), which walks the hierarchy: a root server for .com, the TLD server for example.com, then your authoritative nameserver for the record.',
+        },
+          {
+          ar: 'وكل جواب يُخزَّن في الطريق مدةً يحددها TTL — لذلك تغيير DNS ليس لحظيًّا: الأجواب القديمة تبقى حتى تنقضي مدة حياتها، والفخ الشهير أن تلوم الكود على ذلك؛ وقبل ترحيل مخطط له اخفض TTL مبكرًا ثم ارفعه بعد التحويل. والسجلات التي ستحتاجها قليلة: A لعنوان IPv4، وAAAA للسادس، وCNAME لاسم يعد إلى اسم آخر، وMX للبريد، وTXT لنصوص التحقق — كل سجل: اسم ونوع وقيمة وTTL.',
+          en: 'Every answer is cached along the way for the record\\u2019s TTL — which is why a DNS change is not instant: old answers linger until they expire, and the famous pitfall is blaming your code for it; before a planned migration, lower the TTL well ahead, then raise it after the cutover. The records you actually set: A maps to an IPv4 address, AAAA to IPv6, CNAME aliases a name to another name, MX routes mail, TXT carries verification text — each record: name, type, value, TTL.',
+        },
+        {
+          ar: 'وTLS يقوم بأمرين معًا: يشفّر الحركة فلا أحد على الطريق يقرأها أو يعدّلها، ويوثّق الخادم فيعرف المتصفح أنه يقول لـ clinic.example.com لا لمنتحل. التوثيق يقوم على شهادة: ملف تصدره جهة تصديق يربط اسم نطاقك بمفتاح تشفيري ويحمل توقيع جهة يثق بها المتصفح سلفًا — ولا يمكن لمنتحل أن يحصل على شهادة لاسم لا يملكه. وقد كانت الشهادات عملًا يدويًّا مدفوعًا حتى جاءت Let\\u2019s Encrypt: مجانية وتلقائية كليًّا عبر بروتوكول ACME، بعمر قصير متجدد آليًّا بحيث لا يسقط موقع منسي التجديد.',
+          en: 'TLS does two things at once: encrypts traffic so nobody on the path can read or alter it, and authenticates the server so the browser knows it is really talking to clinic.example.com. Authentication rests on a certificate: a file issued by a Certificate Authority binding your domain name to a cryptographic key, signed by an authority browsers already trust — an impostor cannot normally obtain a certificate for a name it does not control. Certificates were a paid manual chore until Let\\u2019s Encrypt: free, fully automatic over the ACME protocol, deliberately short-lived and auto-renewed so a forgotten renewal cannot take a site down.',
+        },
+          {
+          ar: 'عمليًّا لا تلمس الشهادة: وسيط عكسي مثل nginx أو Caddy أمام حاوية تطبيقك يحصل عليها ويتجدها ويُنهي TLS ويمرر HTTP العادي داخليًّا. والفكرة تعمم إلى الحافة: طبقة بين مستخدميك وخادمك تقرّب المحتوى المُخزَّن قربهم، وتنهي TLS عند الحافة، وتمتص هجمات الحرمان والتدفقات الخبيثة بجدار تطبيقات قبل أن تلمسك — لكن انتبه: الحافة تخفي وتحمي الأصل فقط إن لم يكن الأصل قابلًا للوصول بعنوانه الحقيقي مباشرة.',
+          en: 'In practice you never touch it: a reverse proxy like nginx or Caddy in front of your app container obtains and renews it, terminates TLS, and forwards plain HTTP internally. The idea generalizes into the edge: a layer between your users and your server that caches static content near them, terminates TLS, and absorbs DDoS floods and malicious requests with a WAF before they touch you — but note: the edge hides and protects your origin only if the origin is not also directly reachable at its real address.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'مانيفست صورة وتحقق طبقات بـ crc32', en: 'An image manifest with crc32 layer verification' },
+      code: "from zlib import crc32\n\nlayers = [\n    ('base', 'python:3.12-slim'),\n    ('deps', 'pip install -r requirements.txt'),\n    ('src', 'app.py v1.4.3'),\n]\nmanifest = {}\nfor name, content in layers:\n    manifest[name] = crc32(content.encode())\n\ndeployed = [\n    ('base', 'python:3.12-slim'),\n    ('deps', 'pip install -r requirements.txt'),\n    ('src', 'app.py v1.4.4'),\n]\n\nok = True\nfor name, content in deployed:\n    if crc32(content.encode()) != manifest[name]:\n        ok = False\n        print('layer drift: %s' % name)\nprint('same artifact: %s' % ok)",
+      explanation: {
+        ar: 'المشهد يحاكي «ابنِ مرة، شغّل في أي مكان» بميكانيكا الكتاب نفسها: عند البناء نحسب crc32 لمحتوى كل طبقة ونخزنه في manifest — بصمة الأثر المُختبَر. وعند النشر نعيد حساب بصمات الطبقات الجارية نشرها ونقارن: base وdeps متطابقتان بصمت، لكن src غيّر محتواه من v1.4.3 إلى v1.4.4 فتُطبع layer drift: src ويصير same artifact: False. هذه ليست أكاديمية: الأثر الذي اختبرته يجب أن يكون حرفيًّا الأثر الذي ينشر — وإعادة بناء «نفس الكود» لاحقًا قد تنتج شيئًا مختلفًا خفيًّا لأن مترجمًا أو اعتمادية تغيّرت. عند فشل التحقق لا تنشر: أعد البناء من الالتزام نفسه ووَسِمْ جديدًا.',
+        en: 'The scene simulates \u201cbuild once, run anywhere\u201d with the book\u2019s own mechanics: at build time we store crc32 of each layer\u2019s content in a manifest — the tested artifact\u2019s fingerprints. At deploy time we recompute the fingerprints of the layers being deployed and compare: base and deps match silently, but src changed from v1.4.3 to v1.4.4, so layer drift: src prints and same artifact: False. This is not academic: the artifact you tested must be literally the one you deploy — rebuilding \u201cthe same code\u201d later can produce something subtly different because a compiler or dependency moved. On a failed check, do not deploy: rebuild from the same commit and tag anew.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.dns-resolver',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفّذ محلِّل DNS مصغّرًا بدلالة TTL الحقيقية. المطلوب تنفيذ resolve(name, now) حيث now كائن datetime: إن كان الاسم في cache وnow أزال من تاريخ انتهائه فأعد الثنائي (القيمة، hit) من الذاكرة؛ وإلا فاقرأ السجل من dns وخزّنه في cache مع تاريخ انتهاء now + timedelta(seconds=ttl) وأعد (القيمة، miss). أبقِ قاموسي dns وcache وزمن البداية t0 والاستدعاءات الأربعة كما هي. المتوقع: miss ثم hit (ضمن 300 ثانية) ثم miss (بعد انقضاء TTL) ثم miss لسجل CNAME.',
+        en: 'Implement a miniature DNS resolver with real TTL semantics. Implement resolve(name, now) where now is a datetime: if the name is in cache and now is before its expiry, return the pair (value, hit) from the cache; otherwise read the record from dns, store it in cache with expiry now + timedelta(seconds=ttl), and return (value, miss). Keep the given dns and cache dicts, the t0 start time, and the four calls as is. Expected: miss, then hit (within 300 seconds), then miss (TTL expired), then a miss for the CNAME record.',
+      },
+      starterCode: "from datetime import datetime, timedelta\n\ndns = {\n    'clinic.example.com': {'value': '203.0.113.143', 'ttl': 300},\n    'www.example.com': {'value': 'clinic.example.com', 'ttl': 600},\n}\ncache = {}\n\ndef resolve(name, now):\n    # ذاكرة أولًا: إن كان الاسم فيها ولم تنقضِ مدته فأعد (القيمة, 'hit')\n    # cache first: if the name is cached and not expired, return (value, 'hit')\n    # وإلا: اقرأ من dns، خزّن (القيمة, now + timedelta(seconds=ttl))، أعد (القيمة, 'miss')\n    # else: read from dns, store (value, now + timedelta(seconds=ttl)), return (value, 'miss')\n    pass\n\nt0 = datetime(2025, 1, 1, 9, 0, 0)\nprint(resolve('clinic.example.com', t0))\nprint(resolve('clinic.example.com', t0 + timedelta(seconds=100)))\nprint(resolve('clinic.example.com', t0 + timedelta(seconds=500)))\nprint(resolve('www.example.com', t0))",
+      solution: "from datetime import datetime, timedelta\n\ndns = {\n    'clinic.example.com': {'value': '203.0.113.143', 'ttl': 300},\n    'www.example.com': {'value': 'clinic.example.com', 'ttl': 600},\n}\ncache = {}\n\ndef resolve(name, now):\n    if name in cache and now < cache[name][1]:\n        return (cache[name][0], 'hit')\n    rec = dns[name]\n    cache[name] = (rec['value'], now + timedelta(seconds=rec['ttl']))\n    return (rec['value'], 'miss')\n\nt0 = datetime(2025, 1, 1, 9, 0, 0)\nprint(resolve('clinic.example.com', t0))\nprint(resolve('clinic.example.com', t0 + timedelta(seconds=100)))\nprint(resolve('clinic.example.com', t0 + timedelta(seconds=500)))\nprint(resolve('www.example.com', t0))",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'أول استعلام miss ويطبع الثنائي', en: 'The first lookup is a miss, printed as the pair' },
+          code: "assert \"('203.0.113.143', 'miss')\" in __learner_output__, 'expected: (\\'203.0.113.143\\', \\'miss\\') | actual: %r' % __learner_output__",
+          expected: "('203.0.113.143', 'miss')",
+        },
+        {
+          id: 't2',
+          name: { ar: 'ضمن TTL الجواب من الذاكرة', en: 'Within the TTL the answer comes from cache' },
+          code: "assert \"('203.0.113.143', 'hit')\" in __learner_output__, 'expected: (\\'203.0.113.143\\', \\'hit\\') | actual: %r' % __learner_output__",
+          expected: "('203.0.113.143', 'hit')",
+        },
+        {
+          id: 't3',
+          name: { ar: 'ثلاث misses وhit واحدة بالضبط', en: 'Exactly three misses and one hit' },
+          code: "assert __learner_output__.count('miss') == 3 and __learner_output__.count('hit') == 1, 'expected: 3 misses and 1 hit | actual: %r' % __learner_output__",
+          expected: '3 misses and 1 hit',
+        },
+        {
+          id: 't4',
+          name: { ar: 'الذاكرة تخدم الاسم نفسه بعد الاستدعاءات', en: 'The cache still serves the name afterwards' },
+          code: "assert resolve('clinic.example.com', t0 + timedelta(seconds=100))[1] == 'hit', 'expected: hit | actual: %r' % (resolve('clinic.example.com', t0 + timedelta(seconds=100))[1],)",
+          expected: 'hit',
+        },
+      ],
+      hints: [
+        { ar: 'حالة الذاكرة شرطان: name in cache ثم now < cache[name][1] — الثنائي المخزَّن ترتيبه (القيمة، الانتهاء)، فالانتهاء هو العنصر رقم 1.', en: "The cache guard is two conditions: name in cache, then now < cache[name][1] — the stored pair is ordered (value, expiry), so expiry is element 1." },
+        { ar: 'قراءة السجل القاموسية: rec = dns[name] ثم rec[\'value\'] وrec[\'ttl\'] — وخزّن الثنائي الجديد cache[name] = (rec[\'value\'], now + timedelta(seconds=rec[\'ttl\'])).', en: "Record reads are dict reads: rec = dns[name], then rec['value'] and rec['ttl'] — store the fresh pair cache[name] = (rec['value'], now + timedelta(seconds=rec['ttl']))." },
+        { ar: 'الاستدعاء الثالث عند t0 + 500 ثانية: انتهاءُ الدخول المخزَّن t0 + 300 فقد مضى — فتُقرأ السجلة من جديد وتُخزَّن بانتهاء أحدث، ولهذا miss لا hit.', en: "The third call at t0 + 500 seconds: the stored entry expired at t0 + 300 — the record is looked up again and re-stored with a newer expiry, which is why it is a miss, not a hit." },
+        { ar: 'الحل الكامل:\ndef resolve(name, now):\n    if name in cache and now < cache[name][1]:\n        return (cache[name][0], \'hit\')\n    rec = dns[name]\n    cache[name] = (rec[\'value\'], now + timedelta(seconds=rec[\'ttl\']))\n    return (rec[\'value\'], \'miss\')', en: "Full solution:\ndef resolve(name, now):\n    if name in cache and now < cache[name][1]:\n        return (cache[name][0], 'hit')\n    rec = dns[name]\n    cache[name] = (rec['value'], now + timedelta(seconds=rec['ttl']))\n    return (rec['value'], 'miss')" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-records',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرجه بالضبط — سطرًا لكل سجل — دون تشغيله. لاحظ فكَّ الربط الثلاثي داخل الحلقة.',
+        en: 'Read the code and predict its exact output — one line per record — without running it. Notice the triple unpacking inside the loop.',
+      },
+      code: "records = {\n    'clinic.example.com': ('A', '203.0.113.143'),\n    'www.example.com': ('CNAME', 'clinic.example.com'),\n}\nfor name, (rtype, value) in records.items():\n    print('%s %s -> %s' % (rtype, name, value))",
+      solution: 'A clinic.example.com -> 203.0.113.143\nCNAME www.example.com -> clinic.example.com',
+      answer: 'A clinic.example.com -> 203.0.113.143\nCNAME www.example.com -> clinic.example.com',
+      hints: [
+        { ar: 'items() تعطي أزواج (المفتاح، القيمة) بترتيب الإدراج في القاموس: clinic.example.com أولًا ثم www.example.com.', en: 'items() yields (key, value) pairs in dict insertion order: clinic.example.com first, then www.example.com.' },
+        { ar: 'فك الربط المتداخل name, (rtype, value) يلتقط المفتاح في name ثم يفك الثلاثي الداخلي: rtype هو العنصر الأول وvalue الثاني.', en: 'Nested unpacking name, (rtype, value) binds the key to name, then unpacks the inner pair: rtype takes element 0 and value element 1.' },
+        { ar: 'المنسق \'%s %s -> %s\' يطبع: النوع ثم الاسم ثم سهمًا ثم القيمة — فسجل CNAME قيمته اسمٌ لا عنوان.', en: "The format '%s %s -> %s' prints: type, then name, then an arrow, then the value — a CNAME's value is a name, not an address." },
+        { ar: 'الخرج:\nA clinic.example.com -> 203.0.113.143\nCNAME www.example.com -> clinic.example.com', en: 'The output:\nA clinic.example.com -> 203.0.113.143\nCNAME www.example.com -> clinic.example.com' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-config',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'فريق يرقّي بناءه من التجريبي إلى الإنتاج بإعادة بنائه مع «إعدادات الإنتاج» مخبوزة داخله. أي قاعدة من هذا الدرس كسر هذا الفريق؟',
+        en: 'A team promotes its build from staging to production by rebuilding it with \u201cproduction settings\u201d baked in. Which rule from this lesson did the team break?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'الوسم الأساس يُثبَّت ولا يُستعمل latest', en: 'The base tag is pinned, never latest' } },
+        { id: 'b', text: { ar: 'الإعداد المُخارج: صورة واحدة لكل البيئات وما يختلف بينها من اعتمادات وأسماء مضيفين وعلامات يسكن خارج الصورة', en: 'Externalized configuration: one image for every environment, and what differs between them — credentials, hostnames, flags — lives outside the image' } },
+        { id: 'c', text: { ar: 'قاعدة البيانات تحتاج قرصًا دائمًا volume', en: 'The database needs a durable volume' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'إن كان ترقية البناء تتطلب إعادة بنائه فلم يكن البناء أثرًا حقيقيًّا — كان إعداده هو الأثر.', en: 'If promoting a build requires rebuilding it, the build was never really the artifact — its configuration was.' },
+        { ar: 'الصورة القابلة للترقية بلا إعادة بناء هي التي اختُبرت حرفيًّا كما تُشحن — ومتغيرات البيئة من ملف غير مُتتبَّع هي القناة الصحيحة لما يختلف.', en: 'An image promotable without a rebuild is literally the thing you tested — and environment variables from an untracked file are the right channel for what differs.' },
+        { ar: 'والبصمة الأخطر: الإعدادات المخبوزة غالبًا أسرار — وكلمة مرور ملتزمة في المستودع مكشوفة لحظة الدفع مهما حُذفت لاحقًا.', en: 'And the graver footprint: baked settings are usually secrets — a password committed to a repository is compromised the moment it lands, however soon it is deleted.' },
+        { ar: 'الجواب: b — صورة واحدة، بيئات كثيرة، والإعداد من خارج الصورة.', en: 'Answer: b — one image, many environments, configuration outside the image.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-volume',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'التخزين الذي يعيش خارج دورة حياة الحاوية ويُركَّب داخلها ليصمد بيانات Postgres عبر عمليات النشر وdocker compose down يسمى ____. (كلمة إنجليزية واحدة)',
+        en: 'Storage that lives outside any container\u2019s lifecycle and is mounted into one, so Postgres data survives deploys and docker compose down, is called a ____. (one English word)',
+      },
+      answer: 'volume',
+      solution: 'volume',
+      hints: [
+        { ar: 'الحاوية زائلة: كل ما كُتب داخل طبقتها القابلة للكتابة يموت معها — والبيانات تحتاج شيئًا يعيش خارجها.', en: 'A container is ephemeral: everything written inside its writable layer dies with it — data needs something living outside it.' },
+        { ar: 'في ملف Compose يظهر تحت مفتاح volumes بتركيب db-data:/var/lib/postgresql/data — اسم مسمَّى يديره Docker.', en: 'In the Compose file it appears under the volumes key as db-data:/var/lib/postgresql/data — a named store managed by Docker.' },
+        { ar: 'وهو سبب أن خدمة db لها مدخلات تخزين بينما Redis (الذاكرة المؤقتة القابلة لإعادة البناء) يمكنه الاستغناء عنها بأمان.', en: 'It is why the db service carries a storage entry while Redis — a rebuildable cache — can safely omit one.' },
+        { ar: 'الجواب: volume', en: 'Answer: volume' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "from datetime import datetime, timedelta\n\ndns = {\n    'clinic.example.com': {'value': '203.0.113.143', 'ttl': 300},\n    'www.example.com': {'value': 'clinic.example.com', 'ttl': 600},\n}\ncache = {}\n\ndef resolve(name, now):\n    if name in cache and now < cache[name][1]:\n        return (cache[name][0], 'hit')\n    rec = dns[name]\n    cache[name] = (rec['value'], now + timedelta(seconds=rec['ttl']))\n    return (rec['value'], 'miss')\n\nt0 = datetime(2025, 1, 1, 9, 0, 0)\nprint(resolve('clinic.example.com', t0))\nprint(resolve('clinic.example.com', t0 + timedelta(seconds=250)))\nprint(resolve('www.example.com', t0 + timedelta(seconds=700)))\n\n# جرّب: غيّر ttl في سجل clinic إلى 30 وأعد التشغيل — الاستعلام الثاني صار miss؟ هذه كلفة TTL القصيرة\n# try: change clinic's ttl to 30 and rerun — the second lookup became a miss? that is the cost of a short TTL\n# جرّب: قبل ترحيل مخطط له اخفض الـ TTL مبكرًا (لهذا) — وبعد التحويل ارفعه لتقليل حمل الاستعلامات\n# try: before a planned migration, lower the TTL early (this is why) — then raise it to cut lookup load\n# جرّب: أضف سجل MX أو TXT للنطاق واستعلمه — اسم ونوع وقيمة وTTL، هذا كل شيء\n# try: add an MX or TXT record and resolve it — name, type, value, TTL; that is all there is",
+      prompt: {
+        ar: 'الملعب محلِّلك المصغّر: قصّر الـ TTL وشاهد الذاكرة تفقد أجوبتها أسرع، وأطلها وشاهد الأجواب القديمة تعيش — وهذا حرفيًّا سبب «يعمل عندي ولا يعمل عندهم» بعد كل تحويل نطاق. لا اختبار هنا — فضولك فقط.',
+        en: 'The sandbox is your miniature resolver: shorten the TTL and watch the cache lose answers faster, lengthen it and watch stale answers linger — literally why \u201cworks for me, not for them\u201d follows every domain cutover. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ومن PY4E الفصل التاسع: في الحل خزّنا cache[name] = (value, expiry). أي تعبير يقرأ تاريخ الانتهاء لهذا الاسم؟',
+            en: 'From PY4E chapter 9: the solution stored cache[name] = (value, expiry). Which expression reads the expiry for that name?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'cache[name][1] — الثنائي مرتَّب فالانتهاء عنصره الثاني', en: 'cache[name][1] — the pair is ordered, so expiry is its second element' } },
+            { id: 'b', text: { ar: 'cache.expiry(name)', en: 'cache.expiry(name)' } },
+            { id: 'c', text: { ar: 'cache[name]{expiry}', en: 'cache[name]{expiry}' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الثلاثي في بايثون مفهرس بالمواضع: العنصر 0 هو القيمة والعنصر 1 هو الانتهاء. وهذا هو الثمن الخفي في الأزواج المرتبة: القراءة بالفهرس صامتة إن قلبتَ الترتيب — فعلّق على الترتيب بتعليق أو استخدم قاموسًا بمفاتيح مسمّاة إن خفت الالتباس.',
+            en: 'A tuple is indexed by position: element 0 is the value, element 1 the expiry. That is the hidden cost of ordered pairs: index reads go silently wrong if you flip the order — document the order, or use a dict with named keys when ambiguity scares you.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'لماذا يُثبَّت وسم صورة الأساس (postgres:16) ولا يُستعمل latest؟',
+            en: 'Why is the base image tag pinned (postgres:16) instead of using latest?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن latest أعلى ثمنًا في السجل', en: 'Because latest costs more on the registry' } },
+            { id: 'b', text: { ar: 'لأن latest هدف متحرك: قد يغيّر البيئة تحت قدميك بين بنائين أو يرقّي محرك قاعدتك دون إذن', en: 'Because latest is a moving target: it can change the runtime under you between two builds or upgrade your database engine uninvited' } },
+            { id: 'c', text: { ar: 'لأن Docker يرفض أسماء latest في الإنتاج', en: 'Because Docker rejects latest in production' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'التثبيت شرط إمكانية الإعادة: بناءان لنفس الملف يجب أن ينتجا الأثر نفسه، وسحب غير مراقب يجب ألا يرقّي قاعدة بياناتك تحتك — لذلك تُثبَّت الأساسات والأعتماديات بنفس المنطق.',
+            en: 'Pinning is what makes builds reproducible: the same input file must produce the same artifact, and an unattended pull must not upgrade your database engine underneath you — bases and dependencies are pinned by the same logic.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'أعدت توجيه سجل A إلى خادم جديد، وجربت من جهازك فنجحت — لكن المستخدمين يصلون الخادم القديم دقائق. السبب؟',
+            en: 'You repointed an A record to a new server, tested from your machine, and it worked — yet users keep reaching the old server for minutes. Why?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الخادم الجديد غير مهيأ بعد', en: 'The new server is not configured yet' } },
+            { id: 'b', text: { ar: 'محلِّلات المستخدمين خزَّنت الجواب القديم مدة TTL — الأخبار تصل الجميع متى انقضت مدة الحياة المخزَّنة', en: 'Users\u2019 resolvers cached the old answer for its TTL — everyone catches up as the cached lifetime expires' } } ,
+            { id: 'c', text: { ar: 'خطأ في إملاء اسم النطاق', en: 'A typo in the domain name' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'كل جواب DNS يُخزَّن في الطريق مدةً تُعلن في السجل — فتغييرُ السجل لا يمحو النسخ المخزَّنة. الدواء قبل الحدث: اخفض TTL قبل الترحيل بوقت كافٍ ثم ارفعه بعد التحويل لتقليل حمل الاستعلامات.',
+            en: 'Every DNS answer is cached along the way for the record\u2019s TTL — changing the record does not erase cached copies. The cure precedes the event: lower the TTL well before the migration, then raise it after the cutover to cut lookup load.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'أي الخدمتين في حزمة Compose سجل الحقيقة، وأيها قابل للتخلية وإعادة البناء؟',
+            en: 'Which service in a Compose stack is the system of record, and which is disposable and rebuildable?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'Redis سجل الحقيقة وPostgres قابل للتخلية', en: 'Redis is the system of record; Postgres is disposable' } },
+            { id: 'b', text: { ar: 'Postgres سجل الحقيقة (معاملات وديمومة وقرص دائم)، وRedis مخزن مؤقت يُرمى ويُعاد ملؤه من قاعدة البيانات', en: 'Postgres is the system of record (transactions, durability, a durable volume); Redis is a cache you can throw away and refill from the database' } },
+            { id: 'c', text: { ar: 'كلتاهما سجل حقيقة بمعمارية موزعة', en: 'Both are systems of record in a distributed architecture' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'الأمانة قاعدة: مخزنٌ لا تستطيع إعادة بنائه هو — بحكم الواقع — سجل حقيقة بلا ضمانات ديمومة. ألزِم البيانات المهمة بالمتجر الدائم واجعل الذاكرة المؤقتة شيئًا يُرمى بلا خوف.',
+            en: 'The honesty rule: a store you cannot rebuild is, in effect, a system of record with no durability guarantees. Keep what matters in the durable store and let the cache stay something you discard without fear.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: '«نستخدم python:latest لنكون دائمًا محدَّثين»',
+          right: 'ثبِّت الوسوم (python:3.12-slim وpostgres:16) — latest هدف متحرك يكسر قابلية الإعادة',
+          note: {
+            ar: 'البناءان لنفس الملف يجب أن ينتجا الأثر نفسه — وأي هدف متحرك في الأساس أو الاعتماديات يقضي على ذلك، وقد يرقّي محرك قاعدة بياناتك في سحب غير مراقب. الثبات ليس محافظة؛ إنه الشرط الذي يجعل «الأثر المُختبر هو الأثر المنشور» جملة صادقة.',
+            en: 'Two builds of the same file must produce the same artifact — any moving target in a base or dependency kills that, and an unattended pull can upgrade your database engine. Pinning is not conservatism; it is what makes \u201cthe tested artifact is the shipped artifact\u201d a true sentence.',
+          },
+        },
+        {
+          wrong: 'ملف .env بكلمات المرور ملتزم في المستودع، أو DB_PASSWORD مخبوزة في الصورة',
+          right: 'الإعداد المُخارج: متغيرات بيئة تُقرأ من ملف غير مُتتبَّع أو تُحقن من منصة النشر — والأسرار أبدًا خارج الصورة والتاريخ',
+          note: {
+            ar: '.env الملتزم من أشهر طرائق وصول اعتماد حية إلى مستودع عمومي — وتاريخ git أبدِي: الحذف لاحقًا لا يمحو التسريب. صورة واحدة تُرقّى بلا إعادة بناء تكسبك مرتين: أثرًا صادقًا وأسرارًا خارج السجل.',
+            en: 'A committed .env is one of the most common ways live credentials reach a public repository — and git history is forever: deleting later does not undo the leak. One image promoted without a rebuild wins twice: an honest artifact and secrets outside history.',
+          },
+        },
+        {
+          wrong: '«الحافة تضمن أمننا — نتجاهل إعداد الخادم الأصلي»',
+          right: 'أعد الأصل ألّا يقبل الاتصال إلا من الحافة — وإلا وجد مهاجمٌ العنوان الحقيقي وتخطّى كل شيء',
+          note: {
+            ar: 'الحافة تخفي وتحمي بشرط أن تكون الطريق الوحيد: إن كان الأصل مجيبًا على عنوانه الحقيقي فالحماية تُدار من حولها بخطوة واحدة. والمركزية نفسها ثمن: سقوط مزود يخدم خُمس الويب يسقط شريحة مرئية من الويب معه.',
+            en: 'The edge hides and protects on one condition: it must be the only route — an origin still answering at its real address lets an attacker step around everything. And concentration has a price: an outage at a provider fronting a fifth of the web takes a visible slice of the web down with it.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'الصورة طبقات مخزَّنة تُبنى بترتيب مدروس (اعتماديات قبل المصدر، ووسم مثبَّت) وتُبنى مرة واحدة فتصير الأثر المُختبر حرفيًّا الأثر المنشور — وcrc32 على محتوى الطبقات يكشف الانحراف قبل النشر.', en: 'An image is cached layers built in a deliberate order (dependencies before source, a pinned tag) and built exactly once, so the tested artifact is literally the shipped one — and crc32 over layer content exposes drift before deploying.' },
+        { ar: 'Compose يرفع حزمة كاملة بشبكة خاصة وأسماء خدمات وقرص دائم لسجل الحقيقة — والإعداد مُخارج: صورة واحدة لكل البيئات وأسرارٌ خارج الصورة والتاريخ.', en: 'Compose brings up a whole stack with a private network, service names, and a durable volume for the system of record — and configuration is externalized: one image for every environment, secrets outside the image and history.' },
+        { ar: 'الوصول ثلاث طبقات: DNS يحوّل الاسم إلى عنوان عبر ذاكرة TTL (فالتحويلات ليست لحظية)، وTLS يوثّق ويشفّر بشهادة متجددة آليًّا، والحافة تقرّب وتحمي — بشرط ألا يُدار الأصل من حولها.', en: 'Reachability has three layers: DNS maps a name to an address through TTL caches (so cutovers are not instant); TLS authenticates and encrypts with an auto-renewed certificate; the edge caches and protects — provided the origin cannot be reached around it.' },
+      ],
+      reflectPrompt: {
+        ar: 'افتح الملعب وقصّر TTL إلى 30 ثانية وأعد التشغيل: الاستعلام الثاني صار miss. اسأل نفسك: في أول خدمة ستنشرها — ماذا سيحمل maniffست طبقاتك (ثلاث طبقات تكفي)، وما السجل الأول الذي ستكتبه في DNS، ومن يملك قيمة TTL فيه؟',
+        en: 'Open the sandbox, shorten the TTL to 30 seconds, and rerun: the second lookup becomes a miss. Ask yourself: for the first service you deploy — what would your image manifest hold (three layers suffice), what is the first DNS record you would create, and who owns its TTL value?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch14.s4', pages: 'ص389-393 / pp.389-393' },
+        { book: 'SWE', section: 'swe.ch14.s5', pages: 'ص393-396 / pp.393-396' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch14.s4', pages: 'ص389-393 / pp.389-393' },
+    { book: 'SWE', section: 'swe.ch14.s5', pages: 'ص393-396 / pp.393-396' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

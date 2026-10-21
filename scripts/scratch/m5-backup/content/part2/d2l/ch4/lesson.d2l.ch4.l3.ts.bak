@@ -1,0 +1,218 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * d2l.ch4.l3 — "Concise Softmax, Test Sets, and Distribution Shift"
+ * softmax المختصر ومجموعات الاختبار وانزياح التوزيع
+ * Aligned with D2L ch4 s5 (Concise Implementation) + s6 (Generalization in
+ * Classification) + s7 (Environment and Distribution Shift). All expression is
+ * original — a paraphrase of the source's ideas, never a verbatim translation.
+ * Runnable design: test-set size from the asymptotic O(1/sqrt(n)) rule and the
+ * Hoeffding bound, plus an importance-weighted risk for covariate-shift
+ * correction. Every printed literal verified under CPython 3.
+ */
+const lesson = {
+  id: 'd2l.ch4.l3',
+  version: 1,
+  part: 'II',
+  track: 'A3',
+  book: 'D2L',
+  chapter: 4,
+  title: {
+    ar: 'softmax المختصر ومجموعات الاختبار وانزياح التوزيع',
+    en: 'Concise Softmax, Test Sets, and Distribution Shift',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['d2l.ch4.l2'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'دقّتك على التدريب 100% — فهل انتهت القصة؟ لا: السؤال الحقيقي كم مثالاً تحتاج لتثق بتقدير الخطأ، وماذا يحدث حين يتغير توزيع العالم الذي وُلد فيه نموذجك. في هذا الدرس نرى النسخة المختصرة من softmax، ثم نحسب بحساب مضمون كم عينة اختبار يفرضها حد Hoeffding، ونصلح انزياح التغطية بأوزان الأهمية.',
+        en: '100% training accuracy — so the story is over? No: the real questions are how many test examples it takes to trust an error estimate, and what happens when the world your model was born in shifts. In this lesson we see the concise softmax, then compute — with a guarantee — how many test samples Hoeffding demands, and repair coverage shift with importance weights.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'النسخة المختصرة ثم إحصاء الاختبار ثم أنواع الانزياح', en: 'Concise model, then test-set statistics, then shift types' },
+      chunks: [
+        {
+          ar: 'النسخة المختصرة تجمع كل شيء في `nn.Sequential(nn.Flatten(), nn.LazyLinear(num_outputs))` وتستدعي `F.cross_entropy` — وهي لا تأخذ احتمالات بل logits، لأنها تدمج softmax واللوغاريتم دفعة واحدة بخدعة LogSumExp فتتجنب الفيض والنضوب العدديين اللذين كنا نخافهما في s4. البساطة هنا خدعة ممتازة: الإطار يخفي الحدود الحادة، لكن عليك أن تعرف أنها موجودة.',
+          en: 'The concise version packs everything into `nn.Sequential(nn.Flatten(), nn.LazyLinear(num_outputs))` and calls `F.cross_entropy` — which takes logits, not probabilities, because it fuses softmax and the logarithm in one shot with the LogSumExp trick, dodging the overflow and underflow we feared in s4. This simplicity is a great deal: the framework hides the sharp edges, provided you know they exist.',
+        },
+        {
+          ar: 'خطأ المصنِّف الثابت على مجموعة اختبار هو نسبة المخالفة، وهو تقدير لمتوسط — فتنطبق قاعدة الجذر: الخطأ يقترب من الخطأ الحقيقي بمعدل O(1/√n)، وتباين متغير برنولي ε(1−ε) يساوي أقصاه 0.25، فانحراف التقدير ≤ √(0.25/n). لعشرة آلاف مثال تقريباً يصير ±0.01 ضمن انحرافين — لهذا اختبارات المعايير بهذا الحجم. وحد Hoeffding المحدود P(ε_D − ε ≥ t) < exp(−2nt²) يعطي حداً متحفظاً: نحو 15 ألفاً لنفس الدقة والثقة. وإعادة استخدام المجموعة نفسها لتقييم نماذج متتالية تسرب معلومة (adaptive overfitting)؛ ونظرية التعلم الإحصائي تؤطر المسألة ببعد VC الذي يقيس قدرة الصنف على مطابقة تسميات عشوائية.',
+          en: 'A fixed classifier error on a test set is the fraction of disagreements — an estimator of a mean, so the root-n rule applies: it approaches the true error at rate O(1/√n), and since Bernoulli variance ε(1−ε) peaks at 0.25, the estimate standard deviation is at most √(0.25/n). About ten thousand examples put ±0.01 within two standard deviations — the size of famous benchmarks. The finite-sample Hoeffding bound P(ε_D − ε ≥ t) < exp(−2nt²) is more conservative: roughly 15,000 for the same precision and confidence. Reusing one test set for successive models leaks information (adaptive overfitting); statistical learning theory frames the trade-off with the VC dimension, which measures a class ability to fit arbitrary labelings.',
+        },
+        {
+          ar: 'الانزياح أنواع: انزياح التغطية covariate shift يتغير فيه توزيع المدخلات P(x) وتبقى P(y|x) ثابتة — تُصحَّح بأوزان الأهمية βᵢ = p(xᵢ)/q(xᵢ) التي تعيد وزن الخسارة؛ وانزياح التسمية label shift يقلب الافتراض (تتغير شيوع الفئات وتبقى P(x|y)) ويُقدَّر بمصفوفة الالتباس ومعادلة خطية؛ وانزياح المفهوم concept shift يتغير فيه معنى الفئات نفسها ولا علاج منهجي سوى بيانات جديدة وتحديثات دورية. عواقب الإهمال حقيقية: كاشف سرطان دُرّب على طلاب شباب ضد مرضى مسنين تعلّم العمر لا المرض، وسيارة تعلمت «أرضية اللعبة» لا الطريق.',
+          en: 'Shift comes in kinds: covariate shift changes the input distribution P(x) while P(y|x) stays fixed — corrected by importance weights βᵢ = p(xᵢ)/q(xᵢ) that reweight the loss; label shift flips the assumption (class prevalence moves, P(x|y) fixed) and is estimated with a confusion matrix and a linear system; concept shift changes the meaning of the labels themselves, with no principled fix beyond fresh data and periodic updates. The costs are real: a cancer detector trained on young students versus old patients learned age, not disease; a self-driving stack learned the game engine ground, not roads.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: {
+        ar: 'حجم مجموعة الاختبار + أوزان الأهمية',
+        en: 'Test-set sizing + importance weights',
+      },
+      code: "import math\n\n# Part 1: how big must a test set be? (tolerance 0.01, 95% confidence)\nt, delta = 0.01, 0.05\nn_clt = (1.0 / t) ** 2                     # asymptotic: 2*sqrt(0.25/n) = t\nn_hoeff = math.ceil(math.log(1.0 / delta) / (2.0 * t * t))\nprint('asymptotic estimate: n = %.1f' % n_clt)\nprint('hoeffding guarantee: raw = %.4f -> n = %d'\n      % (math.log(1.0 / delta) / (2.0 * t * t), n_hoeff))\n\n# Part 2: correcting covariate shift with importance weights\nq = [0.5, 0.3, 0.2]    # training-time bin probabilities\ndst = [0.2, 0.3, 0.5]  # deployment-time bin probabilities (named dst: p is taken)\nbeta = [dst[i] / q[i] for i in range(3)]\nprint('importance weights:', beta)\nlosses = [1.0, 0.5, 0.2]\nr_un = sum(losses) / 3\nr_w = sum(beta[i] * losses[i] for i in range(3)) / 3\nprint('empirical risk: plain = %.4f | weighted = %.4f' % (r_un, r_w))",
+      explanation: {
+        ar: 'القاعدة التقاربية أعطت n = 10000.0 لتقدير الخطأ بهامش ±0.01 عند انحرافين — وهذا حجم معايير شهيرة بالفعل. حد Hoeffding أكثر تحفظاً: 14978.6614 يقبل لأعلى إلى 14979. وفي الجزء الثاني، الشريحة التي تندر أثناء التدريب (احتمالها 0.2 مقابل 0.5 في النشر) حصلت على وزن 2.5، فقفزت مساهمتها في الخسارة — هذا إعادة وزن تجعل التدريب يهمس بلسان التوزيع المستهدف. الخسارة الموزونة 0.4667 أدنى من غير الموزونة 0.5667 لأن بياناتنا مثالية بالفعل.',
+        en: 'The asymptotic rule gave n = 10000.0 for a ±0.01 margin at two standard deviations — literally the size of famous benchmarks. Hoeffding is more conservative: 14978.6614 rounds up to 14979. In part two, the bin that became rare at training time (0.2 vs 0.5 at deployment) earned weight 2.5, boosting its share of the loss — reweighting makes training listen in the target distribution tongue. The weighted risk 0.4667 sits below the plain 0.5667 on our illustrative numbers.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.hoeffding-and-weights',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفّذ دالتين: hoeffding_size(t, delta) تعيد أصغر عدد عينات يحقق P(ε_D − ε ≥ t) < delta وفق n > ln(1/delta)/(2t²) مُقرَّباً لأعلى؛ وimportance_weights(q, p) تعيد قائمة النسب p[i]/q[i].',
+        en: 'Implement two functions: hoeffding_size(t, delta) returns the smallest sample count satisfying P(ε_D − ε ≥ t) < delta via n > ln(1/delta)/(2t²) rounded up; and importance_weights(q, p) returns the list of ratios p[i]/q[i].',
+      },
+      starterCode: "import math\n\ndef hoeffding_size(t, delta):\n    ...  # TODO: n = log(1/delta) / (2*t*t), rounded up\n\ndef importance_weights(q, p):\n    ...  # TODO: target/source ratio per bin\n",
+      solution: "import math\n\ndef hoeffding_size(t, delta):\n    return math.ceil(math.log(1.0 / delta) / (2.0 * t * t))\n\ndef importance_weights(q, p):\n    return [p[i] / q[i] for i in range(len(q))]",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'حجم الاختبار لهامش 0.01', en: 'Test size for a 0.01 margin' },
+          code: "assert hoeffding_size(0.01, 0.05) == 14979, 'expected 14979 | actual: %r' % hoeffding_size(0.01, 0.05)",
+          expected: '14979',
+        },
+        {
+          id: 't2',
+          name: { ar: 'تخفيف الهامش يخفض العينة رباعياً', en: 'Looser margin cuts the count fourfold' },
+          code: "assert hoeffding_size(0.02, 0.05) == 3745, 'expected 3745 | actual: %r' % hoeffding_size(0.02, 0.05)",
+          expected: '3745',
+        },
+        {
+          id: 't3',
+          name: { ar: 'أوزان الأهمية للتوزيعين', en: 'Importance weights for the two distributions' },
+          code: "w = importance_weights([0.5, 0.3, 0.2], [0.2, 0.3, 0.5])\nassert all(abs(w[i] - [0.4, 1.0, 2.5][i]) < 1e-9 for i in range(3)), 'expected ~[0.4, 1.0, 2.5] | actual: %r' % (w,)",
+          expected: '[0.4, 1.0, 2.5]',
+        },
+      ],
+      hints: [
+        { ar: 'الحد: P ≥ exp(−2nt²) يصغر من delta إذا n > ln(1/delta)/(2t²) — وmath.ceil تعطي أصغر عدد صحيح محقق.', en: 'The bound P ≥ exp(−2nt²) drops below delta when n > ln(1/delta)/(2t²) — math.ceil gives the smallest qualifying integer.' },
+        { ar: 'ln(20) ≈ 2.995732، والقسمة على 2×0.0001 تعطي 14978.66 → 14979.', en: 'ln(20) ≈ 2.995732; dividing by 2×0.0001 gives 14978.66 → 14979.' },
+        { ar: 'ضاعف الهامش t فتقسم المقام على 4 — لهذا 3745.', en: 'Doubling t divides the denominator by 4 — hence 3745.' },
+        { ar: 'أوزان الأهمية نسبة بسيطة لكل شريحة: الندرة أثناء التدريب ترفع الوزن.', en: 'Importance weights are simple per-bin ratios: training-time rarity raises the weight.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.mcq-shift-type',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'نظام تشخيص طبي: تغيّرت شيوع الأمراض بين السنين (مرض ينتشر وآخر يتراجع) بينما توزيع الأعراض في ضوء المرض P(x|y) بقي كما هو. أي نوع انزياح هذا؟',
+        en: 'A medical diagnosis system: disease prevalence shifted over the years (one spreads, another recedes) while the symptom distribution given the disease P(x|y) stayed fixed. Which type of shift is this?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'انزياح تغطية covariate shift', en: 'Covariate shift' } },
+        { id: 'b', text: { ar: 'انزياح تسمية label shift', en: 'Label shift' } },
+        { id: 'c', text: { ar: 'انزياح مفهوم concept shift', en: 'Concept shift' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'القاعدة: إذا كنت تظن أن y يسبب x فالافتراض المناسب انزياح التسمية.', en: 'Rule of thumb: when you believe y causes x, label shift is the right assumption.' },
+        { ar: 'الأمراض تسبب الأعراض، لا العكس — وشيوع المرض تغيّر فقط.', en: 'Diseases cause symptoms, not the reverse — and only prevalence changed.' },
+        { ar: 'في انزياح التغطية تتغير P(x) وفي انزياح المفهوم تتغير معاني الفئات نفسها.', en: 'Covariate shift changes P(x); concept shift changes what the labels themselves mean.' },
+        { ar: 'الجواب: b — توزيع التسميات P(y) هو ما تحرك.', en: 'Answer: b — the label distribution P(y) is what moved.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "import math\n\n# error-estimate precision vs test-set size (root-n rule)\nprint('  n   | 2-sigma margin')\nfor n in (100, 1000, 2500, 10000, 1000000):\n    margin = 2.0 * math.sqrt(0.25 / n)\n    print('%7d | %.4f' % (n, margin))\n\n# importance weights sweep\nq = [0.5, 0.3, 0.2]\npT = [0.2, 0.3, 0.5]\nlosses = [1.0, 0.5, 0.2]\nfor tilt in (1.0, 1.5, 2.0, 3.0):\n    p2 = [min(1.0, v * tilt) for v in pT]\n    s = sum(p2)\n    p2 = [v / s for v in p2]\n    beta = [p2[i] / q[i] for i in range(3)]\n    r_w = sum(beta[i] * losses[i] for i in range(3)) / 3\n    print('tilt=%.1f p=%s weighted risk=%.4f' % (tilt, ['%.2f' % v for v in p2], r_w))\n\n# جرّب: كم مثالاً يحتاج تقدير بهامش 0.001 عند 95%؟ (فعّل hoeffding_size من التمرين)\n# try: how many examples for a 0.001 margin at 95%? (reuse hoeffding_size from the exercise)\n",
+      prompt: {
+        ar: 'الملعب يرسم علاقة هامش الخطأ بحجم الاختبار (المعدل 1/√n أمام عينك)، ثم يكثّف انزياح التوزيع تدريجياً ويراقب تضخم الأوزان.',
+        en: 'The playground plots the margin-vs-size trade (the 1/√n rate in front of you), then gradually intensifies the distribution shift and watches the weights inflate.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'لتضييق هامش تقدير خطأ الاختبار إلى النصف، كم تحتاج من عينات الاختبار تقريباً؟',
+            en: 'To halve the margin of your test-error estimate, roughly how many test samples do you need?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الضعف — المعدل خطي', en: 'Twice as many — the rate is linear' } },
+            { id: 'b', text: { ar: 'أربعة أضعاف — لأن الخطأ يقترب بمعدل O(1/√n)', en: 'Four times as many — the error approaches at rate O(1/√n)' } },
+            { id: 'c', text: { ar: 'النصف — الهامش يتحسن ذاتياً', en: 'Half as many — the margin improves on its own' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'انحراف التقدير يتناسب مع 1/√n: لخفض الهامش إلى النصف يلزم مضاعفة n أربعة مرات. ولهذا يتضخم مجموعات الاختبار بسرعة مقلقة كلما طلبنا دقة أعلى.',
+            en: 'The estimate standard deviation scales as 1/√n: halving the margin demands four times n. That is why test sets balloon as you demand tighter precision.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'قيمت نموذجك f1 على مجموعة الاختبار، ثم طوّرت f2 على ضوء النتيجة وأعدت القياس على المجموعة نفسها. ما المشكلة؟',
+            en: 'You evaluated model f1 on the test set, then designed f2 in light of the result and re-measured on the same set. What is the problem?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'انزياح تسمية كلاسيكي يجب تصحيحه بأوزان الأهمية', en: 'A classic label shift that importance weights must fix' } },
+            { id: 'b', text: { ar: 'تسرب تكيفي: المجموعة لم تعد اختباراً بعد أن تسرّبت معلومتها إلى اختيار النموذج', en: 'Adaptive overfitting: the set is no longer a true test once its information leaked into model selection' } },
+            { id: 'c', text: { ar: 'لا مشكلة طالما النموذجان مختلفان بنيوياً', en: 'No problem as long as the two models are architecturally different' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'حالما تُختار النماذج على ضوء نتائج المجموعة تفقد براءتها الإحصائية، وتتراكم مخاطر الاكتشاف الزائف مع كل نموذج إضافي. الممارسة السليمة: مجموعات اختبار حقيقية تُستشار أقل ما يمكن، أو عدة مجموعات تُخفض إحداها إلى تحقق بعد كل جولة.',
+            en: 'Once models are chosen in light of a set results, it loses statistical innocence and false-discovery risk accumulates with every extra model. Good practice: real test sets consulted as rarely as possible, or several sets with the old one demoted to validation after each round.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'مصنّف مشروبات غازية دُرّب في منطقة يقولون فيها pop ثم نُشر في منطقة يقولون فيها soda. أي انزياح؟',
+            en: 'A soft-drink classifier trained where people say pop, deployed where people say soda. Which shift?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'انزياح تغطية — تغيرت صور الزجاجات', en: 'Covariate shift — bottle photos changed' } },
+            { id: 'b', text: { ar: 'انزياح تسمية — تغيرت شيوع المشروبات', en: 'Label shift — drink prevalence changed' } },
+            { id: 'c', text: { ar: 'انزياح مفهوم — معنى الفئة نفسه تغير جغرافياً', en: 'Concept shift — the very meaning of the label changed geographically' } },
+          ],
+          answer: 'c',
+          explanation: {
+            ar: 'الكلمة والفئة تغيرتا لا الصور ولا الشيوع: هذا انزياح المفهوم الذي يصعب تصحيحه آلياً، وعلاجه الوحيد بيانات جديدة من السياق الجديد أو تحديثات دورية على بيانات حديثة.',
+            en: 'The word — and thus the category — changed, not the images or prevalence: that is concept shift, the hardest to correct automatically; the remedy is fresh data from the new context or periodic updates on recent data.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'النسخة المختصرة تسلّم logits إلى `F.cross_entropy` التي تدمج softmax واللوغاريتم بخدعة LogSumExp فتصون الثبات العددي (الهدف من s5 التنفيذ المختصر).', en: 'The concise version hands logits to `F.cross_entropy`, which fuses softmax and the logarithm via LogSumExp to keep numerics safe (goal of s5 Concise Implementation).' },
+        { ar: 'خطأ الاختبار تقدير متوسط يقترب بمعدل O(1/√n): ~10 آلاف مثال لهامش ±0.01 تقاربياً و~15 ألفاً بحد Hoeffding؛ وإعادة الاستخدام تسرب معلومة وبعد VC يؤطر تعقيد الصنف (الهدف من s6 التعميم في التصنيف).', en: 'Test error is a mean estimate converging at O(1/√n): ~10k examples for a ±0.01 margin asymptotically and ~15k under Hoeffding; reuse leaks information and VC dimension frames class complexity (goal of s6 Generalization in Classification).' },
+        { ar: 'الانزياح ثلاثة أنواع: تغطية (تتغير P(x) وتُصحح بأوزان الأهمية p/q)، تسمية (تتغير P(y) وتُقدر بمصفوفة الالتباس)، ومفهوم (يتغير معنى الفئات والعلاج بيانات جديدة) (الهدف من s7 البيئة وانزياح التوزيع).', en: 'Shift comes in three kinds: covariate (P(x) moves, fixed with p/q importance weights), label (P(y) moves, estimated via a confusion matrix), and concept (label meaning moves; the fix is fresh data) (goal of s7 Environment and Distribution Shift).' },
+      ],
+      reflectPrompt: {
+        ar: 'نموذجك يعمل بدقة 99% على المعايير وينهار عند أول نشر. أي نوع انزياح تفتش عنه أولاً، وما البيانات الوحيدة التي تكشفه قبل الضرر؟',
+        en: 'Your model scores 99% on benchmarks and collapses at first deployment. Which shift do you hunt first, and what is the only data that would have exposed it before the damage?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'D2L', section: 'd2l.ch4.s5' },
+        { book: 'D2L', section: 'd2l.ch4.s6' },
+        { book: 'D2L', section: 'd2l.ch4.s7' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'D2L', section: 'd2l.ch4.s5' },
+    { book: 'D2L', section: 'd2l.ch4.s6' },
+    { book: 'D2L', section: 'd2l.ch4.s7' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

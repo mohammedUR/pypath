@@ -1,0 +1,347 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch8.l3 — "Working with Others and Merge Conflicts / العمل مع الآخرين وتعارضات الدمج"
+ * Aligned with SWE ch8 s4 (8.4 Working with Others, pp.214–217) +
+ * s5 (8.5 Merge Conflicts, pp.217–219).
+ * All expression is original (own-words paraphrase of the CC BY-SA 4.0 source).
+ * SIMULATED-GIT PATTERN: git commands appear ONLY in display-only concept/pitfall
+ * prose as labeled on-your-own-machine terminal simulations. All runnable fields
+ * are pure-Python mini-git models: shared-file edits as dicts (last-save-wins),
+ * conflict detection by comparing two branches' file dicts, the index as a dict
+ * of unmerged/resolved states. Deterministic, no randomness, no input().
+ */
+
+const lesson = {
+  id: 'swe.ch8.l3',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 8,
+  title: { ar: 'العمل مع الآخرين وتعارضات الدمج', en: 'Working with Others and Merge Conflicts' },
+  estimatedMinutes: 25,
+  prerequisites: ['swe.ch8.l2'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'تاريخك الآن مخطط لقطات والفروع عندك مؤشرات رخيصة تتحرك بيدك. لكن النموذج حتى الآن جهاز واحد: أنت. اليوم يُضاف الجهاز الثاني — remote — ويولد معه أربعة أوامر تحمل التزامات بينك وبين زملائك، ولحظة الرفض الشهيرة التي يصطدم بها كل مبتدئ: ! [rejected] main -> main (fetch first). ثم نصل إلى الحدث الذي يخيف الجميع بلا داعٍ: تعارض الدمج — حيث يتغيّر الملف نفسه بشكلين مختلفين على الفرعين فيتوقف Git ويقول: هذا قرار بشري، لا قرار حاسوب. سنفكك علاماته وسنحل تعارضًا خطوة بخطوة ونحاكي كل ذلك بنماذج قواميس بايثون حتمية. بنهاية الدرس ستكون قادرًا على: تسمية الأوامر الأربعة بينك وبين origin وشرح فرق fetch وpull، وشرح سبب رفض الدمج وماذا تفعل، وتحديد متى يتعارض الدمج فعلًا ومتى ينجح بصمت، وترتيب خطوات حل التعارض حتى الالتزام.',
+        en: 'Your history is now a snapshot graph and branches are cheap pointers under your hand. But the model so far has one machine: you. Today a second machine joins — the remote — bringing four commands that carry commits between you and your teammates, plus the famous moment every beginner hits: ! [rejected] main -> main (fetch first). Then we reach the event that scares everyone needlessly: the merge conflict — the same file changed two different ways on two branches, so Git stops and says: this is a human decision, not a computer one. We will take its markers apart, resolve a conflict step by step, and simulate all of it with deterministic Python dict models. By the end of this lesson you will be able to: name the four commands between you and origin and explain fetch versus pull, explain why a push gets rejected and what to do, decide when a merge truly conflicts versus merges silently, and order the conflict-resolution steps through to the commit.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "file_by_ana = {'price': 'subtotal * 1.08'}\nfile_by_omar = {'price': 'subtotal * 1.095'}\nshared = dict(file_by_ana)\nshared.update(file_by_omar)\nprint(shared['price'])",
+      question: {
+        ar: 'شخصان عدّلا السطر نفسه في الملف نفسه ثم «حفظا في المجلد المشترك». أي نسخة نجت في shared؟ وأين ذهب تعديل ana؟ وماذا كان ينبغي أن يحدث بدل ذلك؟',
+        en: 'Two people edited the same line of the same file, then both saved into the shared folder. Which version survived in shared? Where did ana\u2019s edit go? And what should have happened instead?',
+      },
+      reveal: {
+        ar: 'نجت نسخة عمر: update كتبت فوق قيمة ana بصمت — الناجي الأخير يكسب والمضيع لا يعرف حتى أنه ضاع. هذا حرفيًّا عالم المرفقات والمجلد المشترك، وهو ما صمم Git كي يمنعه: حين يغير اثنان السطر نفسه بشكلين مختلفين يتوقف Git عند الدمج ويعرض النسختين ويطلب منك الحسم بدل أن يمحو أحدهما خلف ظهرك. هذا التوقف هو التعارض الذي ندرسه اليوم.',
+        en: 'Omar\u2019s version survived: update stamped over ana\u2019s value silently — the last saver wins and the loser never even knows they lost. That is literally the world of email attachments and shared folders, and Git is designed to prevent it: when two people change the same line in different ways, Git stops the merge, shows both versions, and asks you to decide instead of quietly erasing one. That stop is today\u2019s subject: the merge conflict.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الجهاز الثاني: remotes ودورة الفريق اليومية', en: 'The second machine: remotes and the daily team loop' },
+      chunks: [
+        {
+          ar: 'الـ remote نسخة أخرى من المستودع — عادة النسخة المشتركة على GitHub — ويتفق الجميع على تسميتها origin. أربعة أوامر تحمل التزامات بينك وبينه: git clone تنسخه بتاريخه كله أول مرة؛ وgit fetch تنزل الالتزامات الجديدة دون أن تمس ملفات عملك — تحديث نظرة فقط إلى مواضع فروعه البعيدة origin/*؛ وgit pull هي fetch يليها دمج للجديد في فرعك الحالي؛ وgit push ترفع التزاماتك إليه.',
+          en: 'A remote is another copy of the repository — usually the shared one on GitHub — and by convention it is named origin. Four commands move commits between you and it: git clone copies it with its full history the first time; git fetch downloads new commits without touching your working files — just updating your view of the remote\\u2019s origin/* branches; git pull is fetch followed by merging that work into your current branch; git push uploads your commits.',
+        },
+          {
+          ar: 'ولحظة كل مبتدئ هي الرفض: ! [rejected] main -> main (fetch first) — وهذا ليس خطأ بل Git يحمي شغل زميلك: أحدٌ دفع إلى main بعد آخر pull لك، والكتابة العمياء كانت ستمحو التزاماته. العلاج واحد دائمًا: git pull لدمج شغله في شغلك ثم git push — ولا تفكر في git push --force على فرع مشترك فهذا حرفيًّا الكتابة فوق ما منعها Git.',
+          en: 'And the moment every beginner hits is the rejection: ! [rejected] main -> main (fetch first) — not an error but Git protecting a teammate\\u2019s work: someone pushed to main after your last pull, and blindly overwriting would discard their commits. The fix is always the same: git pull to integrate their work into yours, then git push — never reach for git push --force on a shared branch; that is precisely the overwrite Git was preventing.',
+        },
+        {
+          ar: 'يوم الفريق له إيقاع واحد يكاد يعمه كل عمل: ابدأ من main محدثة (git switch main ثم git pull)؛ افتح فرعًا باسم واصف للمهمة؛ اعمل في التزامات صغيرة وادفع الفرع مبكرًا للنسخ الاحتياطي وليراه الآخرون؛ افتح pull request واجعله يمر بالمراجعة وخط CI ثم ادمجه في main؛ احذف الفرع وعُد للخطوة الأولى. وطلب الدمج PR هو الطقس الذي يحول «غيّرت شيئًا» إلى «قبل الفريق هذا التغيير»: نقاش على الفرق، وتعليقات مراجعين، والتزامات إضافية على الفرع نفسه حتى القبول. ولماذا لا يُدفع إلى main مباشرة؟ لأن main فرع محمي: المستودع المضبوط جيدًا يرفض الدفع المباشر ويشترط مراجعة مقبولة وخط اختبار ناجح قبل كل دمج — إعداد واحد يحول «ينبغي أن نراجع شيفرةنا» من نية إلى قانون يفرضه النظام.',
+          en: 'A team\u2019s day has one rhythm covering almost every task: start from an up-to-date main (git switch main, then git pull); branch for the task with a descriptive name; work in small commits and push the branch early for backup and visibility; open a pull request, get it reviewed and past CI, merge it into main; delete the branch and return to step one. The pull request (PR) is the ritual turning I changed some code into the team accepted this change: a conversation on the diff, reviewer comments, more commits on the same branch until approval. And why not push straight to main? Because main is protected: a well-run repository rejects direct pushes and requires an approving review plus a passing pipeline before every merge — one setting turning we should review our code from an intention into a rule the system enforces.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'التعارض: سببه وعلاماته', en: 'Conflicts: their cause and their markers' },
+      chunks: [
+        {
+          ar: 'تعارض الدمج هو Git يعترف أنه لا يستطيع الجمع بأمان وحده، فيتوقف ويسلّمك القرار. يحدث حين غيّر الفرعان الأسطر نفسها من الملف نفسه بشكلين مختلفين — أو حين عدّل طرفٌ ملفًا حذفه الطرف الآخر. أما التغييرات التي تلمس مناطق مختلفة فيدمجها Git بصمت دون أن يسأل. وانتبه لما لا يلتقطه: هو يكشف تداخل النص لا عدم توافق المعنى — إن غيّرت اسم دالة في فرعك وأضاف زميلك استدعاءً للاسم القديم في ملف آخر، دمج Git الاثنين بلا شكوى وبُني المشروع مكسورًا. التعارضات الظاهرة حسمها اليدوي؛ والخفية هي سبب بقاء المراجعة والاختبارات مهمة بعد أنظف دمج.',
+          en: 'A merge conflict is Git admitting it cannot safely combine two changes on its own, so it stops and hands the decision to you. It happens when the two branches changed the same lines of the same file in different ways — or when one side edited a file the other deleted. Changes touching different regions merge silently, no questions asked. Mind what Git does not catch: it detects textual overlap, not semantic incompatibility — rename a function on your branch while a teammate adds a call to the old name in another file, and Git merges both without complaint and the build breaks. Visible conflicts get resolved by hand; the invisible ones are why review and tests still matter after the cleanest merge.',
+        },
+        {
+          ar: 'حين يقع التعارض يوقف Git الدمج ويعيد كتابة المنطقة المتعارضة بعلامات تعرض النسختين. جلسة على جهازك — محاكاة نصية تعليمية فقط (بيئة المتصفح تشغّل بايثون لا git):\n<<<<<<< HEAD\nprice = subtotal * 1.08          # تغييرنا: ضريبة 8%\n=======\nprice = subtotal * 1.095         # تغييرهم: ضريبة 9.5%\n>>>>>>> feature/tax-update\nاقرأها ثلاثة أجزاء: ما بين HEAD و======= «لنا» — نسخة الفرع الذي تقف عليه؛ وما بين ======= و>>>>>>> «لهم» — النسخة القادمة من الفرع الذي تدمجه، واسمه مكتوب بعد العلامة الأخيرة. واحذر: «لنا» و«لهم» نسبيان لما تقف عليه — ويتقلبان بين الدمج وإعادة الأساس، فعند الشك اقرأ المحتوى لا الوسم.',
+          en: 'When a conflict happens, Git pauses the merge and rewrites the conflicted region with markers showing both versions. A session on your own machine — text simulation for teaching only (your browser sandbox runs Python, not git):\n<<<<<<< HEAD\nprice = subtotal * 1.08          # our change: 8% tax\n=======\nprice = subtotal * 1.095         # their change: 9.5% tax\n>>>>>>> feature/tax-update\nRead it as three parts: everything between HEAD and ======= is ours — the branch you stand on; everything between ======= and >>>>>>> is theirs — the incoming branch, whose name sits after the last marker. Careful: ours and theirs are relative to what you have checked out and flip between a merge and a rebase — when in doubt, read the content, not the label.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الحل خطوة بخطوة والوقاية', en: 'Resolving step by step, and preventing' },
+      chunks: [
+        {
+          ar: 'الحل أقل غموضًا مما تبدو العلامات: شغّل git status فتظهر الملفات المتعارضة تحت Unmerged paths؛ افتح كل ملف وحرر المنطقة المتعارضة إلى النتيجة الوحيدة التي تريدها — لنا أو لهم أو مزيجًا أو شيئًا جديدًا — ومحِ سطور العلامات الثلاثة أثناء ذلك؛ ثم git add للملف — فالتجهيز هو إعلان الحل؛ وحين يجهز كل ملف أنهِ بـ git commit. وإذا ضاع بك الأمر فبابه المفتوح: git merge --abort يعيدك حيث بدأت بلا خسارة — الطرفان محفوظان طوال الوقت، ومعرفة هذا وحده تجعل التعارضات تفقد رعبها. واحذر «قبول الطرفين» في محرراتك: فهي تلصق النسختين متجاورتين وقد تنتج شيفرة مضاعفة تُترجم وهي خاطئة.',
+          en: 'The resolution is less mysterious than the markers look: run git status — conflicted files appear under Unmerged paths; open each file and edit the region into the single result you actually want — ours, theirs, a blend, or something new — deleting all three marker lines as you go; then git add the file — staging is how you tell Git it is resolved; when every file is staged, finish with git commit. And if it all goes sideways, the escape hatch is first-aid, not last resort: git merge --abort returns you exactly where you started with nothing lost — both sides were preserved the whole time, and merely knowing this drains conflicts of their dread. Treat your editor\u2019s Accept Both with suspicion: it concatenates the versions, often producing duplicated code that compiles and is still wrong.',
+        },
+        {
+          ar: 'لا يمكنك إلغاء التعارضات من الوجود، لكن الفريق يجعلها نادرة وصغيرة — والتقنيات كلها هجوم على متغيرَي السبب: مدى تباعد الفرعين ومدى تداخلهما. ادمج كثيرًا: اسحب main إلى شغلك يوميًّا على الأقل؛ أقصر عمر الفروع وصغّر طلبات الدمج: فرع يوم يتعارض أقل بكثير من فرع ثلاثة أسابيع؛ قسّم العمل بالوحدات: التصميم الجيد يعطي كل شخص وحدة متماسكة يملكها فيتحرر مختلف الملفات — فتواتر التعارض إشارة صامتة على الترابط؛ بلّغ الملكية: جملة «سأعيد بناء وحدة المصادقة العصر» تمنع تعارض يوم من التعديلات المتوازية الصامتة؛ واتفقوا على التنسيق الآلي حتى تحوي الفروقات تغييرات حقيقية لا إعادة لفّ أسطر تصنع تعارضات من لا شيء.',
+          en: 'You cannot eliminate conflicts, but a team makes them rare and small — and every technique attacks the two variables behind the cause: how long the branches diverge and how much they overlap. Integrate often: pull main into your work at least daily. Keep branches short-lived and pull requests small: a branch open for a day conflicts far less than one open three weeks. Divide work by module: good design hands each person a cohesive module so people edit different files — conflict frequency is a quiet signal about coupling. Communicate ownership: one line of I am refactoring the auth module this afternoon prevents a day of silent parallel edits. And agree on formatting: a shared auto-formatter keeps diffs real instead of manufacturing conflicts out of whitespace.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'كاشف تعارض مصغّر: أين يقع الدمج؟', en: 'A miniature conflict detector: where will the merge stop?' },
+      code: "mine = {'app.py': 'tax 1.08', 'main.py': 'loop fixed'}\ntheirs = {'app.py': 'tax 1.095', 'tests.py': 'new tests'}\n\ndef conflicting_files(mine, theirs):\n    result = []\n    for name in theirs:\n        if name in mine and mine[name] != theirs[name]:\n            result.append(name)\n    return result\n\nprint(conflicting_files(mine, theirs))",
+      explanation: {
+        ar: 'كل فرع هنا يمثله قاموس ملفاته ومحتواها. مررنا على ملفات «لهم»: من لم يذكره «لنا» فهو إضافة منهم — يُدمج بصمت؛ ومن ذكره «لنا» بالمحتوى نفسه فلم يغيّره أحد — يُدمج بصمت؛ ومن ذكره الطرفان بمحتويين مختلفين فسطران تغيرا في المكان نفسه — هذا تعارض، وطباعته أخرجت [\'app.py\']. لاحظ أن main.py تغير عندنا فقط وtests.py أضافوه هم فقط فلم يسألنا Git عنهما. لكن تذكر حد النموذج: هذا الكشف نصي — أن يمر الدمج بصمت لا يعني أن النتيجة صحيحة معنويًّا؛ المراجعة والاختبارات بعد الدمج النظيف يبقيان لزامًا.',
+        en: 'Each branch is represented by a dict of its files and contents. Walking theirs: a file absent from mine is their addition — merged silently; a file present in both with identical content changed on neither side — merged silently; a file both sides hold with different content is two edits on the same region — a conflict, and the print showed [\'app.py\']. Note main.py changed only on our side and tests.py only on theirs, so Git asks us about neither. Remember the model\u2019s limit: this detection is textual — a silently passing merge does not mean a semantically correct result; review and tests remain mandatory after a clean merge.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.detect-conflicts',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفّذ conflicting_files(mine, theirs) تعيد قائمة مرتبة sorted بأسماء الملفات التي غيّرها الطرفان بمحتويين مختلفين — أعلن الحل لأن تكرار التزامات الفريق يجب أن يكون حتميًّا. الأسطر المطبوعة تجري سيناريوهين: المتوقع [\'app.py\'] ثم [].',
+        en: 'Implement conflicting_files(mine, theirs) returning a sorted list of files changed by both sides with different content — sort the result so a team\u2019s repeated runs stay deterministic. The prints at the bottom run two scenarios: expected [\'app.py\'] then [].',
+      },
+      starterCode: "def conflicting_files(mine, theirs):\n    # اجمع الملفات الموجودة لدى الطرفين بمحتويين مختلفين ثم أعد مرتبة\n    # collect files present on both sides with different content, return sorted\n    pass\n\nmine1 = {'app.py': 'tax 1.08', 'util.py': 'helpers'}\ntheirs1 = {'app.py': 'tax 1.095', 'util.py': 'helpers'}\nmine2 = {'app.py': 'tax 1.08'}\ntheirs2 = {'app.py': 'tax 1.08', 'readme.md': 'docs'}\n\nprint(conflicting_files(mine1, theirs1))\nprint(conflicting_files(mine2, theirs2))",
+      solution: "def conflicting_files(mine, theirs):\n    result = []\n    for name in theirs:\n        if name in mine and mine[name] != theirs[name]:\n            result.append(name)\n    return sorted(result)\n\nmine1 = {'app.py': 'tax 1.08', 'util.py': 'helpers'}\ntheirs1 = {'app.py': 'tax 1.095', 'util.py': 'helpers'}\nmine2 = {'app.py': 'tax 1.08'}\ntheirs2 = {'app.py': 'tax 1.08', 'readme.md': 'docs'}\n\nprint(conflicting_files(mine1, theirs1))\nprint(conflicting_files(mine2, theirs2))",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'app.py تغيّر عند الطرفين بشكلين', en: 'app.py changed on both sides in two ways' },
+          code: "assert conflicting_files({'app.py': 'tax 1.08', 'util.py': 'helpers'}, {'app.py': 'tax 1.095', 'util.py': 'helpers'}) == ['app.py'], 'expected: [app.py] | actual: %r' % (conflicting_files({'app.py': 'tax 1.08', 'util.py': 'helpers'}, {'app.py': 'tax 1.095', 'util.py': 'helpers'}),)",
+          expected: "['app.py']",
+        },
+        {
+          id: 't2',
+          name: { ar: 'إضافتهم وتغييرنا لا يتعارضان', en: 'Their addition plus our change do not conflict' },
+          code: "assert conflicting_files({'app.py': 'tax 1.08'}, {'app.py': 'tax 1.08', 'readme.md': 'docs'}) == [], 'expected: [] | actual: %r' % (conflicting_files({'app.py': 'tax 1.08'}, {'app.py': 'tax 1.08', 'readme.md': 'docs'}),)",
+          expected: '[]',
+        },
+        {
+          id: 't3',
+          name: { ar: 'المحتوى المطابق لا يتعارض', en: 'Identical content does not conflict' },
+          code: "assert conflicting_files({'a.py': 'x'}, {'a.py': 'x'}) == [], 'expected: [] | actual: %r' % (conflicting_files({'a.py': 'x'}, {'a.py': 'x'}),)",
+          expected: '[]',
+        },
+        {
+          id: 't4',
+          name: { ar: 'التعارضات المتعددة تعاد مرتبة', en: 'Multiple conflicts come back sorted' },
+          code: "assert conflicting_files({'b.py': '1', 'a.py': '2'}, {'b.py': '3', 'a.py': '4'}) == ['a.py', 'b.py'], 'expected: [a.py, b.py] | actual: %r' % (conflicting_files({'b.py': '1', 'a.py': '2'}, {'b.py': '3', 'a.py': '4'}),)",
+          expected: "['a.py', 'b.py']",
+        },
+        {
+          id: 't5',
+          name: { ar: 'السطران المنسقان مطبوعان', en: 'The two formatted lines printed' },
+          code: "assert \"['app.py']\" in __learner_output__ and '[]' in __learner_output__, \"expected: ['app.py'] then [] | actual: %r\" % __learner_output__",
+          expected: "['app.py'] then []",
+        },
+      ],
+      hints: [
+        { ar: 'الشرط ثلاثي: الاسم موجود عند الطرفين و المحتويان مختلفان — وهذا تعريف التعارض النصي.', en: 'A three-part condition: the name exists on both sides and the contents differ — the definition of a textual conflict.' },
+        { ar: 'مرّ على theirs كما في worked، واجمع الأسماء في قائمة result.', en: 'Walk theirs as in the worked example, collecting names into a result list.' },
+        { ar: 'أعِد sorted(result) حتى يبقى الخرج حتميًّا أيًّا كان ترتيب الإدراج.', en: 'Return sorted(result) so the output stays deterministic regardless of insertion order.' },
+        { ar: 'الحل:\ndef conflicting_files(mine, theirs):\n    result = []\n    for name in theirs:\n        if name in mine and mine[name] != theirs[name]:\n            result.append(name)\n    return sorted(result)', en: "The solution:\ndef conflicting_files(mine, theirs):\n    result = []\n    for name in theirs:\n        if name in mine and mine[name] != theirs[name]:\n            result.append(name)\n    return sorted(result)" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-resolution',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقع خرجه بالضبط — سطرًا لكل طباعة — دون تشغيله. النموذج: index يحمل حالة كل ملف متعارض، و«الحل» هنا هو نقل الملف إلى resolved كما يفعل git add.',
+        en: 'Read the code and predict its exact output — one line per print — without running it. The model: index holds each conflicted file\u2019s state, and resolving means moving a file to resolved the way git add does.',
+      },
+      code: "index = {'app.py': 'unmerged', 'util.py': 'unmerged'}\nindex['app.py'] = 'resolved'\ncount = 0\nfor state in index.values():\n    if state == 'resolved':\n        count += 1\nprint(count)\nprint(index['util.py'])",
+      solution: '1\nunmerged',
+      answer: '1\nunmerged',
+      hints: [
+        { ar: 'سطر واحد فقط نُقل إلى resolved قبل العدّ.', en: 'Only one file was moved to resolved before the count.' },
+        { ar: 'العدّ حلقة على index.values() تفحص الحالة مقارنةً بـ resolved.', en: 'The count loops over index.values() comparing each state to resolved.' },
+        { ar: 'util.py لم نلمسه فبقيت حالته كما هي.', en: 'util.py was never touched, so its state is unchanged.' },
+        { ar: 'الخرج:\n1\nunmerged', en: 'The output:\n1\nunmerged' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-conflict-cause',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'متى يتوقف Git عن الدمج ويسلّمك القرار يدويًّا؟',
+        en: 'When does Git stop the merge and hand the decision to you?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'حين غيّر الفرعان الأسطر نفسها من الملف نفسه بشكلين مختلفين — أو عدّل أحدهما ملفًا حذفه الآخر', en: 'When the two branches changed the same lines of the same file in different ways — or one edited a file the other deleted' } },
+        { id: 'b', text: { ar: 'كلما لمس الفرعان أي ملفات ولو مختلفة', en: 'Whenever the two branches touched any files, even different ones' } },
+        { id: 'c', text: { ar: 'حين ينهار البناء بعد الدمج بسبب عدم توافق المعنى', en: 'When the build breaks after the merge due to semantic incompatibility' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'التعارض نصي: تداخل في المنطقة نفسها من الملف نفسه.', en: 'A conflict is textual: overlap in the same region of the same file.' },
+        { ar: 'الخيار c فخ: Git لا يلتقط عدم التوافق المعنوي — يمرّ بصمت ثم ينهار البناء، ولهذا تبقى المراجعة والاختبارات.', en: 'Option c is the trap: Git does not catch semantic incompatibility — it merges silently and the build breaks later; that is why review and tests remain.' },
+        { ar: 'وإن لمس الطرفان مناطق مختلفة من الملف نفسه فيدمج Git بلا سؤال.', en: 'And if the two sides touched different regions of the same file, Git merges without asking.' },
+        { ar: 'الجواب: أ — الأسطر نفسها تغيّرت بشكلين مختلفين.', en: 'Answer: a — the same lines changed in different ways.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-pull',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'الرفض ! [rejected] main -> main (fetch first) يعالجه دائمًا: git ______ لدمج عمل زميلك في شغلك ثم git push',
+        en: 'The rejection ! [rejected] main -> main (fetch first) is always fixed by: git ______ to integrate your teammate\u2019s work, then git push',
+      },
+      answer: 'pull',
+      solution: 'pull',
+      hints: [
+        { ar: 'هي fetch يليها دمج — تجلب الجديد وتدمجه في فرعك الحالي.', en: 'It is fetch followed by a merge — it brings the new work and merges it into your current branch.' },
+        { ar: 'الرفض يعني أن الفرع البعيد يحوي التزامات ليست عندك — فالأمر المطلوب يجلبها ويدمجها.', en: 'The rejection means the remote branch holds commits you do not have — the command fetches and integrates them.' },
+        { ar: 'عكسه push يرفع — وهذا يجلب ويدمج.', en: 'Its opposite push uploads — this one fetches and merges.' },
+        { ar: 'الجواب: pull', en: 'Answer: pull' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "# ملعبك الحرّ — ماذا يتعارض وماذا يمرّ بصمت؟\n# Your playground — what conflicts and what merges silently?\n\nmine = {'app.py': 'tax 1.08', 'auth.py': 'session v2'}\ntheirs = {'app.py': 'tax 1.095', 'auth.py': 'session v2', 'tests.py': 'new'}\n\nconflicts = []\nsilent = []\nfor name in theirs:\n    if name in mine and mine[name] != theirs[name]:\n        conflicts.append(name)\n    else:\n        silent.append(name)\nprint('conflicts: %s' % ', '.join(sorted(conflicts)))\nprint('silent: %s' % ', '.join(sorted(silent)))\n\n# جرّب: اجعل auth.py مختلفة لدى الطرفين — إلى أي قائمة تنتقل؟\n# try: make auth.py differ between the sides — which list does it move to?\n# جرّب: احذف app.py من mine (مثّل حذف ملف) وراقب نتيجة الكشف\n# try: drop app.py from mine (simulate a deletion) and watch the detector",
+      prompt: {
+        ar: 'جرّب بنفسك: اجعل auth.py مختلفة لدى الطرفين ولاحظ انتقالها إلى التعارضات، ثم مثّل حذف ملف بإزالته من mine وراقب الكشف — وتذكر أن الدمج الصامت لا يعني النتيجة الصحيحة معنويًّا. لا اختبار هنا — فضولك فقط.',
+        en: 'Try it yourself: make auth.py differ between the sides and watch it move to conflicts, then simulate a deletion by removing a file from mine and observe the detector — and remember a silent merge is not a semantically correct merge. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ومن الفصل التاسع (القواميس): في نماذج التعارض استخدمنا كلمات مثل in للفحص وقواميسًا للحالة، وعدّاد كلمات ch9 استخدم get بقيمة افتراضية. ما الذي يفعله get عند غياب المفتاح؟',
+            en: 'From chapter 9 (dictionaries): our conflict models used in for membership and dicts for state, while chapter 9\u2019s word counter used get with a default. What does get do when the key is missing?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'يعيد القيمة الافتراضية المعطاة بدل رمي خطأ KeyError', en: 'Returns the given default instead of raising a KeyError' } },
+            { id: 'b', text: { ar: 'يضيف المفتاح بقيمة فارغة', en: 'It adds the key with an empty value' } },
+            { id: 'c', text: { ar: 'يرتب القاموس قبل الجلب', en: 'It sorts the dict before fetching' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'get(name, default) سلاح الفصل التاسع للغياب الآمن: سنعيد استخدامه في مشروع الفصل للسؤال عن ملف لم يكن في اللقطة الأساسية — فغيابه يعني أن الطرفين أضافاه.',
+            en: 'get(name, default) is chapter 9\u2019s safe-absence tool: the chapter project reuses it to ask about a file missing from the base snapshot — meaning both sides added it.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ما الفرق بين git fetch وgit pull؟',
+            en: 'What is the difference between git fetch and git pull?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'fetch تنزل الالتزامات الجديدة دون تغيير ملفات عملك، وpull هي fetch يليها دمج في فرعك الحالي', en: 'fetch downloads new commits without changing your working files; pull is fetch followed by a merge into your current branch' } },
+            { id: 'b', text: { ar: 'هما اسمان لأمر واحد', en: 'They are two names for one command' } },
+            { id: 'c', text: { ar: 'fetch ترفع التزاماتك وpull تنزلها', en: 'fetch uploads your commits and pull downloads' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'fetch استطلاع آمن يحدث نظرك إلى origin/* فقط؛ وpull تدمج فعليًّا وقد تفتح تعارضًا في شجرة عملك — لهذا يفضل كثيرون fetch ثم النظر ثم الدمج بوعي.',
+            en: 'fetch is a safe reconnaissance that only updates your view of origin/*; pull actually merges and may open a conflict in your working tree — which is why many prefer fetch, a look, then a deliberate merge.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'لماذا يرفض Git دفعك push إلى main أحيانًا — وماذا يعني ذلك؟',
+            en: 'Why does Git sometimes reject your push to main — and what does that mean?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'أن الفرع البعيد يحوي التزامات ليست عندك، والدفع العمياء سيمحوها — فالرفض حماية لعمل زميلك وليس خطأ', en: 'The remote branch holds commits you do not have and a blind push would erase them — the rejection protects a teammate\u2019s work rather than being an error' } },
+            { id: 'b', text: { ar: 'أن كلمة مرورك انتهت ويجب إعادة المحاولة', en: 'That your password expired and you should retry' } },
+            { id: 'c', text: { ar: 'أن مستودعك المحلي ممتلئ', en: 'That your local repository is full' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الرفض Git يمسك بيدك قبل كارثة: حلّه pull ثم push — وتجنب الإغراء push --force على فرع مشترك فهو الكتابة فوق التي كان الرفض يمنعها.',
+            en: 'The rejection is Git grabbing your hand before a disaster: pull then push fixes it — and resist the temptation of push --force on a shared branch, which is exactly the overwrite the rejection was preventing.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'بعد أن حررت المنطقة المتعارضة ومحوت العلامات الثلاث — ما الإجراء الذي يخبر Git أن الملف حُلّ؟',
+            en: 'After editing the conflicted region and deleting the three markers — which action tells Git the file is resolved?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'git add للملف — فالتجهيز هو إعلان الحل، ثم الالتزام يختم الدمج', en: 'git add the file — staging announces the resolution, then a commit finishes the merge' } },
+            { id: 'b', text: { ar: 'git push للملف مباشرة', en: 'git push the file directly' } },
+            { id: 'c', text: { ar: 'git merge --abort للملف', en: 'git merge --abort the file' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'في الدمج المتوقف يعني التجهيز «هذا الملف انحسم» — وحين يجهز كل الملفات يختم commit الدمج. وmerge --abort باب هروب كامل لا خطوة حل لملف واحد.',
+            en: 'During a paused merge, staging a file means this one is settled — and once every file is staged, a commit seals the merge. merge --abort is a full escape hatch, not a per-file resolution step.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'git push --force  # ليتوقف هذا الإزعاج',
+          right: 'git pull ثم git push  # ادمج عمل زميلك أولًا',
+          note: {
+            ar: 'الرفض ليس عائقًا بل حارس: الفرع البعيد يحمل التزامات زملائك و--force تطمسها. قاعدة الفريق: لا قوة على فرع مشترك أبدًا — والاستثناءات النادرة تُعلن وتُنسق لا تُرتجل.',
+            en: 'The rejection is not a nuisance but a guard: the remote holds your teammates\u2019 commits and --force flattens them. Team rule: never force onto a shared branch — rare exceptions are announced and coordinated, never improvised.',
+          },
+        },
+        {
+          wrong: 'git add app.py  # والعلامات <<<<<<< ما تزال في الملف',
+          right: 'ابحث عن <<<<<<< و======= و>>>>>>> ثم أضِف الملف',
+          note: {
+            ar: 'git add يقبل الملف وفيه العلامات، فتنزلق الشيفرة المكسورة إلى الالتزام ثم إلى البناء. اجعل الفحص الأخير قبل الإضافة: بحث عن محارف العلامات الثلاثة.',
+            en: 'git add happily accepts a file still holding markers, sailing broken text into the commit and then the build. Make it the final check before staging: search for the three marker strings.',
+          },
+        },
+        {
+          wrong: 'فرع مفتوح ثلاثة أسابيع ثم دمج عملاق في موعد التسليم',
+          right: 'اسحب main يوميًّا وأبقِ الفروع قصيرة العمر والطلبات صغيرة',
+          note: {
+            ar: 'حجم الدمج وجعه يتدرجان مع طول تباعد الفرعين ومدى تداخلهما — الفرع الأسبوعي يراكم أسبوع تعارضات. أقصر الفروع وأكثر التكامل أضمن وصفة للوقاية، وتواتر التعارض إشارة صامتة على الترابط بين الوحدات.',
+            en: 'A merge\u2019s size and pain scale with how long the branches diverge and how much they overlap — a three-week branch accumulates three weeks of conflicts. Short branches and frequent integration are the most reliable prevention, and conflict frequency is a quiet signal about module coupling.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'remote نسخة أخرى من المستودع تسمى origin، وأربعة أوامر تحرك التزامات: clone ثم fetch ثم pull (جلب + دمج) ثم push — والرفض حماية لعمل الزملاء لا خطأ: pull ثم push.', en: 'A remote is another copy of the repository named origin; four commands move commits: clone, fetch, pull (fetch + merge) and push — and a rejected push is protection, not an error: pull then push.' },
+        { ar: 'التعارض نصي: الأسطر نفسها تغيّرت بشكلين مختلفين — علامات <<<<<<< و======= و>>>>>>> تعرض «لنا» و«لهم»، والحل: حرر ومحِ العلامات ثم git add (التجهيز = الحل) ثم commit، وmerge --abort باب الهروب.', en: 'A conflict is textual: the same lines changed differently — the <<<<<<< / ======= / >>>>>>> markers show ours and theirs; resolve by editing, deleting markers, git add (staging = resolved) then commit, with merge --abort as the escape hatch.' },
+        { ar: 'الوقاية هجوم على متغيرين: قِصر عمر الفروع وتواتر التكامل ومدى التداخل — قسّم العمل بالوحدات وبلّغ الملكية واتفقوا على التنسيق؛ والدمج الصامت لا يعني الصحة المعنوية: المراجعة والاختبارات باقية.', en: 'Prevention attacks two variables: branch lifetime, integration frequency and overlap — split work by module, communicate ownership, agree on formatting; and a silent merge is not semantic correctness: review and tests remain.' },
+      ],
+      reflectPrompt: {
+        ar: 'في الملعب: اجعل ملفًا ثالثًا يتعارض ثم أعد تشغيل الكشف ورتّب الناتج، واكتب في سطرين كيف ستنظم عمل فريقك الأسبوع القادم حتى يبقى التعارض الوحيد هو الذي يستحق النقاش.',
+        en: 'In the sandbox: make a third file conflict, rerun the detector, and sort the result — then write two lines on how your team will organize next week so the only conflicts left are the ones worth discussing.',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch8.s4', pages: 'ص214–217 / pp.214–217' },
+        { book: 'SWE', section: 'swe.ch8.s5', pages: 'ص217–219 / pp.217–219' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch8.s4', pages: 'ص214–217 / pp.214–217' },
+    { book: 'SWE', section: 'swe.ch8.s5', pages: 'ص217–219 / pp.217–219' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

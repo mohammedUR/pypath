@@ -1,0 +1,211 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * d2l.ch4.l1 — "Softmax Regression and the Image Dataset"
+ * انحدار softmax ومجموعة الصور
+ * Aligned with D2L ch4 s1 (Softmax Regression) + s2 (The Image Classification
+ * Dataset). All expression is original — a paraphrase of the source's ideas,
+ * never a verbatim translation. Runnable design: numerically stable softmax
+ * (max subtraction), one-hot encoding, cross-entropy by indexing, accuracy,
+ * and the softmax−y gradient identity. Every printed literal verified under
+ * CPython 3. Deterministic only.
+ */
+const lesson = {
+  id: 'd2l.ch4.l1',
+  version: 1,
+  part: 'II',
+  track: 'A3',
+  book: 'D2L',
+  chapter: 4,
+  title: {
+    ar: 'انحدار softmax ومجموعة الصور',
+    en: 'Softmax Regression and the Image Dataset',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['d2l.ch3.l3'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'الانحدار يجيب «كم؟» لكن التصنيف يجيب «أي فئة؟». لنقلب نموذجنا الخطي إلى مصنِّف: نخرج probabilitie لكل فئة عبر دالة softmax، ونقيس الخطأ بخسارة cross-entropy، ونتدرب على أشهر مجموعة تمهيدية: Fashion-MNIST بصور ملابس من 10 فئات. في هذا الدرس تنفذ softmax بثبات عددي، وترمّز التسميات one-hot، وتحسب الخسارة والدقة على أرقام ثابتة.',
+        en: 'Regression answers how much; classification answers which category. Let us turn the linear model into a classifier: output one probability per class through softmax, measure error with cross-entropy, and train on the classic starter dataset Fashion-MNIST with its 10 clothing categories. In this lesson you implement softmax with numerical stability, one-hot encode labels, and compute the loss and accuracy on fixed numbers.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'من logits إلى احتمالات ثم إلى مجموعة الصور', en: 'From logits to probabilities, then to the image dataset' },
+      chunks: [
+        {
+          ar: 'التصنيف قد يكون تعييناً صلباً (فئة واحدة) أو ليلاً (توزيع احتمالي)، ونمثل التسميات one-hot: متجه بطول عدد الفئات فيه 1 لموضع الفئة الصحيحة. النموذج الخطي ينتج logits: o = Wx + b بمخرج لكل فئة، ثم softmax يحوّلها احتمالات: ŷⱼ = exp(oⱼ) / Σₖ exp(oₖ) — موجبة دائماً ومجموعها 1، والأهم أن argmax يبقى كما هو لأن الدالة رتيبة. الخسارة هي cross-entropy: −Σⱼ yⱼ log ŷⱼ، وبما أن y واحد-ساخن فهي −log ŷ للفئة الصحيحة؛ تدرجها بالنسبة لكل logit هو softmax(o) − y أي الفرق بين التوقع وما جرى — مثل الانحدار تماماً. والمقصود اسمياً: kảnها تقيس كم bit/nat نحتاج لترميز الحقيقة إذا صدّقنا توزيعنا المتوقع.',
+          en: 'Classification may need a hard assignment (one category) or a soft one (a probability distribution), and labels are one-hot encoded: a vector as long as the class list with a 1 in the true slot. The linear model produces logits o = Wx + b, one per class, and softmax turns them into probabilities: ŷⱼ = exp(oⱼ) / Σₖ exp(oₖ) — always positive, summing to 1, and preserving argmax because it is monotonic. The loss is cross-entropy −Σⱼ yⱼ log ŷⱼ; with one-hot y it collapses to −log ŷ of the true class. Its gradient with respect to each logit is softmax(o) − y — the gap between prediction and reality, just like regression. The name has an information-theory meaning: the extra nats needed to encode the truth when you trust your predicted distribution.',
+        },
+        {
+          ar: 'مجموعة Fashion-MNIST: 60,000 صورة تدريب و10,000 اختبار موزعة على 10 فئات ملابس (t-shirt وtrouser و…) بدقة أصلية 28×28 بتدرج رمادي. نمثل كل صورة بموتّر الشكل c×h×w حيث c عدد القنوات (1 هنا)، ونمررها إلى محمّل دفعات يعطي دفعة بشكل (batch_size, 1, 28, 28). الكتاب يقرؤها عبر torchvision ثم يطبّع الأبعاد، ويحذر من أن MNIST نفسها صارت مجرد فحص صحي لأن دقة أي نموذج بسيط تتجاوز 95%.',
+          en: 'Fashion-MNIST: 60,000 training and 10,000 test images across 10 apparel categories (t-shirt, trouser, …) at native 28×28 grayscale resolution. Each image is stored as a c×h×w tensor, with c the channel count (1 here), and a batch loader yields batches of shape (batch_size, 1, 28, 28). The book reads it via torchvision and resizes as needed, noting that MNIST itself has degenerated into a sanity check since even simple models exceed 95% accuracy.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: {
+        ar: 'softmax مستقرة + one-hot + cross-entropy + دقة',
+        en: 'Stable softmax + one-hot + cross-entropy + accuracy',
+      },
+      code: "import math\n\ndef stable_softmax(row):\n    m = max(row)\n    exps = [math.exp(v - m) for v in row]\n    s = sum(exps)\n    return [e / s for e in exps]\n\nlogits = [[2.0, 1.0, 0.1], [1.0, 3.0, 0.5]]\nprobs = [stable_softmax(r) for r in logits]\nprint('probs row0:', ['%.4f' % p for p in probs[0]], 'sum=%.1f' % sum(probs[0]))\nprint('probs row1:', ['%.4f' % p for p in probs[1]], 'sum=%.1f' % sum(probs[1]))\nbig = [802.0, 801.0, 800.1]           # naive math.exp(802) would overflow\npb = stable_softmax(big)\nprint('shifted logits:', ['%.4f' % p for p in pb], 'sum=%.1f' % sum(pb))\n\ndef one_hot(label, k):\n    return [1.0 if j == label else 0.0 for j in range(k)]\n\ndef cross_entropy(y_hat, y):\n    return -sum(math.log(y_hat[i][y[i]]) for i in range(len(y))) / len(y)\n\ny = [0, 2]\ny_hat = [[0.1, 0.3, 0.6], [0.3, 0.2, 0.5]]\npicked = [y_hat[i][y[i]] for i in range(len(y))]\nprint('one-hot of y:', [one_hot(v, 3) for v in y])\nprint('picked probs:', picked, '| cross-entropy = %.4f' % cross_entropy(y_hat, y))\n\ndef argmax(row):\n    best = 0\n    for j in range(1, len(row)):\n        if row[j] > row[best]:\n            best = j\n    return best\n\npreds = [argmax(r) for r in y_hat]\nacc = sum(1 for i in range(len(y)) if preds[i] == y[i]) / len(y)\nprint('preds:', preds, 'labels:', y, '| accuracy = %.1f' % acc)\nd = [probs[0][j] - one_hot(y[0], 3)[j] for j in range(3)]\nprint('dL/do row0 = softmax - y:', ['%.4f' % v for v in d])",
+      explanation: {
+        ar: 'الصفان يعطيان توزيعات [0.6590, 0.2424, 0.0986] و[0.1112, 0.8214, 0.0674] مجموع كل منها 1.0. واللفتة العددية: الطرح الأقصى جعل logits المنزاحة [802, 801, 800.1] تعطي الاحتمالات نفسها تماماً — لأن softmax ثابتة تحت الإزاحة، بينما exp(802) مباشرة فاض عدد الفاصلة. الجمع والفهرسة أنتجا picked = [0.1, 0.5] وخسارة 1.4979، والدقة 0.5 لأن الصف الثاني أخطأ الفئة. وأخيراً تدرج الخسارة softmax(o) − y يطبع [−0.3410, 0.2424, 0.0986].',
+        en: 'The two rows produce [0.6590, 0.2424, 0.0986] and [0.1112, 0.8214, 0.0674], each summing to 1.0. The numerical trick: max-subtraction made the shifted logits [802, 801, 800.1] yield the identical probabilities — softmax is shift-invariant, while calling exp(802) directly would overflow the float range. Indexing produced picked = [0.1, 0.5] with loss 1.4979, and accuracy 0.5 because the second row missed its class. Finally the loss gradient softmax(o) − y prints [−0.3410, 0.2424, 0.0986].',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.softmax-and-ce',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفّذ دالتين: stable_softmax(row) تطبق softmax مع طرح الأقصى قبل الأس (ثبات عددي)؛ وcross_entropy(y_hat, y) تعيد −متوسط log ŷ للفئة الصحيحة عبر الفهرسة y_hat[i][y[i]].',
+        en: 'Implement two functions: stable_softmax(row) applies softmax with max subtraction before the exponential (numerical stability); and cross_entropy(y_hat, y) returns the mean of −log ŷ at the true class via indexing y_hat[i][y[i]].',
+      },
+      starterCode: "def stable_softmax(row):\n    ...  # TODO: subtract the max, exponentiate, normalize by the row sum\n\ndef cross_entropy(y_hat, y):\n    ...  # TODO: -mean of log(y_hat[i][y[i]])\n",
+      solution: "import math\n\ndef stable_softmax(row):\n    m = max(row)\n    exps = [math.exp(v - m) for v in row]\n    s = sum(exps)\n    return [e / s for e in exps]\n\ndef cross_entropy(y_hat, y):\n    return -sum(math.log(y_hat[i][y[i]]) for i in range(len(y))) / len(y)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'ثبات تحت logits عملاقة', en: 'Stability under huge logits' },
+          code: "p = stable_softmax([1000.0, 1000.0, 1000.0])\nassert all(abs(p[j] - 1.0 / 3.0) < 1e-9 for j in range(3)), 'expected uniform 1/3 | actual: %r' % (p,)",
+          expected: 'uniform [1/3, 1/3, 1/3]',
+        },
+        {
+          id: 't2',
+          name: { ar: 'قيمة cross-entropy المعروفة', en: 'Known cross-entropy value' },
+          code: "ce = cross_entropy([[0.1, 0.3, 0.6], [0.3, 0.2, 0.5]], [0, 2])\nassert abs(ce - 1.4978661367769954) < 1e-9, 'expected ~1.4979 | actual: %r' % ce",
+          expected: '1.4979',
+        },
+        {
+          id: 't3',
+          name: { ar: 'قيم softmax الدقيقة لـ [1, 0]', en: 'Exact softmax values for [1, 0]' },
+          code: "p = stable_softmax([1.0, 0.0])\nassert abs(p[0] - 0.7310585786300049) < 1e-9 and abs(p[1] - 0.2689414213699951) < 1e-9, 'expected [0.7311, 0.2689] | actual: %r' % (p,)",
+          expected: '[0.7311, 0.2689]',
+        },
+      ],
+      hints: [
+        { ar: 'طرح الأقصى لا يغير النتيجة الرياضية: exp(oⱼ−m)/Σ exp(oₖ−m) = exp(oⱼ)/Σ exp(oₖ).', en: 'Subtracting the max is mathematically neutral: exp(oⱼ−m)/Σ exp(oₖ−m) = exp(oⱼ)/Σ exp(oₖ).' },
+        { ar: 'الطبّيع قسمة كل عنصر على مجموع الأسs في الصف الواحد.', en: 'Normalization divides each entry by the row sum of exponentials.' },
+        { ar: 'في cross_entropy لا تحتاج one-hot صريحاً — الفهرسة المزدوجة y_hat[i][y[i]] تنتقي الاحتمال الصحيح مباشرة.', en: 'In cross_entropy you never need an explicit one-hot — double indexing y_hat[i][y[i]] picks the right probability directly.' },
+        { ar: 'قسمة على len(y) تعطي متوسط الخسارة على الأمثلة كما يفعل reduction=mean في `F.cross_entropy`.', en: 'Dividing by len(y) gives the mean loss over examples, like reduction=mean in `F.cross_entropy`.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.mcq-fashion',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'مجموعة Fashion-MNIST التي سيستخدمها الفصل: كم عدد الفئات وما دقة الصور الأصلية؟',
+        en: 'The Fashion-MNIST dataset used throughout this chapter: how many categories and what native image resolution?',
+      },
+      options: [
+        { id: 'a', text: { ar: '100 فئة بدقة 32×32 ملونة', en: '100 categories at 32×32 in color' } },
+        { id: 'b', text: { ar: '10 فئات ملابس بدقة 28×28 بتدرج رمادي', en: '10 apparel categories at 28×28 in grayscale' } },
+        { id: 'c', text: { ar: '10 فئات أرقام مكتوبة بخط اليد بدقة 64×64', en: '10 handwritten-digit categories at 64×64' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'الفئات ملابس: t-shirt وtrouser وpullover وdress وcoat وsandal وshirt وsneaker وbag وankle boot.', en: 'Categories are apparel: t-shirt, trouser, pullover, dress, coat, sandal, shirt, sneaker, bag, ankle boot.' },
+        { ar: 'الصور رمادية بقناة واحدة c=1، وتخزن بشكل c×h×w.', en: 'Images are single-channel grayscale, stored as c×h×w.' },
+        { ar: 'الأرقام المكتوبة هي MNIST الأصلية التي صارت فحصاً صحياً فقط.', en: 'Handwritten digits are the original MNIST, now only a sanity check.' },
+        { ar: 'الجواب: b — 60,000 تدريب و10,000 اختبار بحجم 28×28.', en: 'Answer: b — 60,000 training and 10,000 test images at 28×28.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "import math\n\ndef stable_softmax(row):\n    m = max(row)\n    exps = [math.exp(v - m) for v in row]\n    return [e / sum(exps) for e in exps]\n\n# temperature scaling: divide logits by T before the softmax\nlogits = [2.0, 1.0, 0.1]\nfor T in (0.5, 1.0, 2.0, 10.0):\n    scaled = [v / T for v in logits]\n    print('T=%4.1f ->' % T, ['%.4f' % p for p in stable_softmax(scaled)])\n\n# جرّب: T صغيرة جداً تقرب التوزيع من one-hot (ثقة زائدة)، وT كبيرة تسطحه نحو المنتظم.\n# try: very small T approaches one-hot (overconfident); large T flattens toward uniform.\n# جرّب: احسب cross-entropy للتوزيع المنتظم مع التسميات [0, 2] وقارنه بـ 1.4979.\n# try: compute cross-entropy of the uniform distribution with labels [0, 2] and compare with 1.4979.\n",
+      prompt: {
+        ar: 'الملعب يستكشف درجة الحرارة: قسمة logits على T قبل softmax تشد أو تُرخي التوزيع — ظاهرة نفسها التي تذكرها الكيمياء الإحصائية في الكتاب.',
+        en: 'The sandbox explores temperature: dividing logits by T before softmax sharpens or flattens the distribution — the same statistical-physics knob the book mentions.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ما الخصائص التي تفرقها softmax في مخرجات النموذج قبل تدريبها كاحتمالات؟',
+            en: 'What does softmax guarantee about model outputs before they can be treated as probabilities?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'أن تكون أعداداً صحيحة موجبة', en: 'That they are positive integers' } },
+            { id: 'b', text: { ar: 'أن تكون موجبة ومجموعها 1 مع الحفاظ على ترتيب logits', en: 'That they are positive, sum to 1, and preserve the ordering of the logits' } },
+            { id: 'c', text: { ar: 'أن تكون بين −1 و1', en: 'That they lie between −1 and 1' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'الأس موجب دائماً، والقسمة على المجموع تجعل المجموع 1 بالضبط، والرتابة تحفظ الترتيب فأكبر logit يظل الفئة الأرجح. logits الخام لا يضمنون شيئاً من ذلك.',
+            en: 'The exponential is always positive, division by the sum forces total 1, and monotonicity preserves ranking so the largest logit stays the most likely class. Raw logits guarantee none of this.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'لماذا يمكننا إعلان الفئة الأرجح من logits مباشرة دون حساب softmax؟',
+            en: 'Why can we pick the most likely class straight from the logits without computing softmax?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن softmax رتيبة — تحفظ الترتيب فيكفي argmax على o', en: 'Because softmax is monotonic — it preserves order, so argmax on o suffices' } },
+            { id: 'b', text: { ar: 'لأن القسمة على المجموع لا تغير شيئاً', en: 'Because dividing by the sum changes nothing at all' } },
+            { id: 'c', text: { ar: 'لأن logits دائماً بين 0 و1 أصلاً', en: 'Because logits are already between 0 and 1' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الأس رتيب تزايدياً والقسمة على ثابت موجب لا تعيد الترتيب — إذن argmax(ŷ) = argmax(o). لذلك في التنبؤ نكتفي بالمقارنة قبل الأس لتوفير الحساب.',
+            en: 'exp is strictly increasing and dividing by a positive constant keeps ranking — hence argmax(ŷ) = argmax(o). At prediction time frameworks skip the exponential for exactly this reason.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'خسارة cross-entropy −log ŷ_صحيحة: هل يمكن أن تصبح صفراً فعلياً؟',
+            en: 'For cross-entropy −log ŷ_true: can the loss actually reach zero?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'نعم، بعد عصرين من التدريب عادة', en: 'Yes, usually after a couple of epochs' } },
+            { id: 'b', text: { ar: 'لا يمكن أن تتجاوز 1', en: 'It can never exceed 1' } },
+            { id: 'c', text: { ar: 'لا — الصفر يتطلب احتمال 1 تماماً أي logit لا نهائي، فالخسارة محدودة من الأسفل دون بلوغه', en: 'No — zero needs probability exactly 1, an infinite logit, so the loss is bounded below without reaching it' } },
+          ],
+          answer: 'c',
+          explanation: {
+            ar: 'log(1) = 0 لكن softmax لا تبلغ 1 إلا في اللانهاية؛ لذلك الخسارة تتناقص بلا سقف وإن لم تلمس الصفر — ومقابل ذلك، الثقة الزائدة الخاطئة عقوبتها لانهائية لأن −log 0 = ∞.',
+            en: 'log(1) = 0 but softmax reaches 1 only at infinity; the loss keeps shrinking without ever touching zero. Symmetrically, wrongly assigning probability 0 costs infinitely — −log 0 = ∞.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'softmax يحول logits إلى توزيع احتمالي موجب مجموعه 1 ويحفظ argmax، والتصنيف يحتاج مخرجاً لكل فئة وتمثيل one-hot للتسميات (الهدف من s1 انحدار softmax).', en: 'Softmax turns logits into a positive probability distribution summing to 1 while preserving argmax; classification needs one output per class and one-hot labels (goal of s1 Softmax Regression).' },
+        { ar: 'الخسارة cross-entropy هي −log احتمال الفئة الصحيحة وتدرجها softmax(o) − y؛ وFashion-MNIST (60 ألف تدريب و10 آلاف اختبار، 10 فئات، 28×28 رمادي) هي ساحة الفصل (الهدف من s2 مجموعة تصنيف الصور).', en: 'Cross-entropy is −log of the true-class probability with gradient softmax(o) − y; Fashion-MNIST (60k train, 10k test, 10 classes, 28×28 grayscale) is the chapter arena (goal of s2 The Image Classification Dataset).' },
+      ],
+      reflectPrompt: {
+        ar: 'الطرح الأقصى أنقذنا من exp(802). اذكر حالة أخرى في التعلم العميق تنتج فيها عملية رياضية صحيحة نظرياً فيضاً أو نضوباً عددياً، وكيف نحيّدها؟',
+        en: 'Max-subtraction saved us from exp(802). Name another deep-learning computation that is mathematically fine yet overflows or underflows in floating point — and how to defuse it.',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'D2L', section: 'd2l.ch4.s1' },
+        { book: 'D2L', section: 'd2l.ch4.s2' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'D2L', section: 'd2l.ch4.s1' },
+    { book: 'D2L', section: 'd2l.ch4.s2' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

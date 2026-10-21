@@ -1,0 +1,321 @@
+[
+ {
+  "lesson": "py4e.ch12.l1",
+  "id": "ex1.parse-404",
+  "solution": "response = 'HTTP/1.1 404 Not Found\\nDate: Wed, 11 Apr 2018 18:52:55 GMT\\nServer: Apache\\nContent-Type: text/plain\\n\\nSorry, the page was not found'\nhead, body = response.split('\\n\\n', 1)\nstatus = head.split('\\n')[0].split()\nprint('status: %s' % status[1])\nprint('headers: %d' % (len(head.split('\\n')) - 1))\nprint('words: %d' % len(body.split()))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "رمز الحالة 404 مطبوع",
+     "en": "The status code 404 is printed"
+    },
+    "code": "assert 'status: 404' in __learner_output__, ('expected: status: 404 | actual: %r' % __learner_output__)",
+    "expected": "status: 404"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "عدد الترويسات 3 مطبوع",
+     "en": "The header count 3 is printed"
+    },
+    "code": "assert 'headers: 3' in __learner_output__, ('expected: headers: 3 | actual: %r' % __learner_output__)",
+    "expected": "headers: 3"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "عدد كلمات المتن 6 مطبوع",
+     "en": "The body word count 6 is printed"
+    },
+    "code": "assert 'words: 6' in __learner_output__, ('expected: words: 6 | actual: %r' % __learner_output__)",
+    "expected": "words: 6"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "التحليل نفسه صحيح: body كامل وstatus[2] عبارة الرد",
+     "en": "The parsing itself is right: full body and status[2] is the phrase"
+    },
+    "code": "assert body == 'Sorry, the page was not found' and status[2] == 'Not', ('expected: body intact and status[2] Not | actual: %r %r' % (body, status[2]))",
+    "expected": "body intact / status[2] Not"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch12.l2",
+  "id": "ex1.romeo-browser",
+  "solution": "response = 'HTTP/1.1 200 OK\\nServer: Apache\\nContent-Type: text/plain\\nContent-Length: 166\\n\\nBut soft what light through yonder window breaks\\nIt is the east and Juliet is the sun\\nArise fair sun and kill the envious moon\\nWho is already sick and pale with grief'\nhead, body = response.split('\\n\\n', 1)\nprint('status: %s' % head.split('\\n')[0].split()[1])\nprint('headers: %d' % (len(head.split('\\n')) - 1))\nprint('lines: %d' % len(body.split('\\n')))\nprint('words: %d' % len(body.split()))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "رمز الحالة 200 مطبوع",
+     "en": "The status code 200 is printed"
+    },
+    "code": "assert 'status: 200' in __learner_output__, ('expected: status: 200 | actual: %r' % __learner_output__)",
+    "expected": "status: 200"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "عدد الترويسات 3 مطبوع",
+     "en": "The header count 3 is printed"
+    },
+    "code": "assert 'headers: 3' in __learner_output__, ('expected: headers: 3 | actual: %r' % __learner_output__)",
+    "expected": "headers: 3"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "أسطر المتن 4 مطبوعة",
+     "en": "The body line count 4 is printed"
+    },
+    "code": "assert 'lines: 4' in __learner_output__, ('expected: lines: 4 | actual: %r' % __learner_output__)",
+    "expected": "lines: 4"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "كلمات المتن 33 مطبوعة",
+     "en": "The body word count 33 is printed"
+    },
+    "code": "assert 'words: 33' in __learner_output__, ('expected: words: 33 | actual: %r' % __learner_output__)",
+    "expected": "words: 33"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "التقسيم نفسه صحيح: head أربعة أسطر والمتن الأبيات الأربعة",
+     "en": "The split itself is right: head of four lines and the four verse lines"
+    },
+    "code": "assert len(head.split('\\n')) == 4 and body.split('\\n')[1] == 'It is the east and Juliet is the sun', ('expected: head 4 lines and verse line 2 intact | actual: %r' % (body,))",
+    "expected": "head 4 lines / verse line 2 intact"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch12.l3",
+  "id": "ex1.binary-parse",
+  "solution": "response = b'HTTP/1.1 200 OK\\r\\nServer: Apache\\r\\nContent-Type: image/jpeg\\r\\n\\r\\nFAKEDATA99'\npos = response.find(b'\\r\\n\\r\\n')\nhead = response[:pos].decode()\nbody = response[pos + 4:]\nprint('pos: %d' % pos)\nprint('type: %s' % head.split('\\r\\n')[2].split(': ')[1])\nprint('bytes: %d' % len(body))\nprint(body.decode())",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "طول الترويسة 57 مطبوع",
+     "en": "The header length 57 is printed"
+    },
+    "code": "assert 'pos: 57' in __learner_output__, ('expected: pos: 57 | actual: %r' % __learner_output__)",
+    "expected": "pos: 57"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "نوع المحتوى image/jpeg مطبوع",
+     "en": "The content type image/jpeg is printed"
+    },
+    "code": "assert 'type: image/jpeg' in __learner_output__, ('expected: type: image/jpeg | actual: %r' % __learner_output__)",
+    "expected": "type: image/jpeg"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "طول المتن 10 بايتات مطبوع",
+     "en": "The body length 10 bytes is printed"
+    },
+    "code": "assert 'bytes: 10' in __learner_output__, ('expected: bytes: 10 | actual: %r' % __learner_output__)",
+    "expected": "bytes: 10"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "التشريح نفسه صحيح: المتن بايتات في القفزة الصحيحة",
+     "en": "The dissection itself is right: body is bytes at the correct skip"
+    },
+    "code": "assert body == b'FAKEDATA99' and isinstance(body, bytes) and pos == 57, ('expected: body b FAKEDATA99 bytes and pos 57 | actual: %r %r' % (body, pos))",
+    "expected": "body b FAKEDATA99 / pos 57"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch12.l4",
+  "id": "ex1.urlparse-write",
+  "solution": "from urllib.parse import urlparse\nu = 'http://data.pr4e.org/cover3.jpg'\nparts = urlparse(u)\nprint('scheme: %s' % parts.scheme)\nprint('host: %s' % parts.netloc)\nprint('path: %s' % parts.path)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "التخصائص الثلاث صحيحة كقيم",
+     "en": "The three attributes are correct as values"
+    },
+    "code": "assert parts.scheme == 'http' and parts.netloc == 'data.pr4e.org' and parts.path == '/cover3.jpg', ('expected: http data.pr4e.org /cover3.jpg | actual: %r %r %r' % (parts.scheme, parts.netloc, parts.path))",
+    "expected": "http / data.pr4e.org / /cover3.jpg"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "scheme: http مطبوع",
+     "en": "scheme: http is printed"
+    },
+    "code": "assert 'scheme: http' in __learner_output__, ('expected: scheme: http | actual: %r' % __learner_output__)",
+    "expected": "scheme: http"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "host: data.pr4e.org مطبوع",
+     "en": "host: data.pr4e.org is printed"
+    },
+    "code": "assert 'host: data.pr4e.org' in __learner_output__, ('expected: host: data.pr4e.org | actual: %r' % __learner_output__)",
+    "expected": "host: data.pr4e.org"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "path: /cover3.jpg مطبوع",
+     "en": "path: /cover3.jpg is printed"
+    },
+    "code": "assert 'path: /cover3.jpg' in __learner_output__, ('expected: path: /cover3.jpg | actual: %r' % __learner_output__)",
+    "expected": "path: /cover3.jpg"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch12.l5",
+  "id": "ex1.extract-links",
+  "solution": "import re\nhtml = '<p>Read the <a href=\"https://docs.python.org\">docs</a>\\nand visit <a href=\"http://www.python.org\">the site</a>.</p>'\nlinks = re.findall('href=\"(http[s]?://.+?)\"', html)\nprint('links: %d' % len(links))\nfor link in links:\n    print('link: %s' % link)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "عدد الروابط 2 مطبوع",
+     "en": "The link count 2 is printed"
+    },
+    "code": "assert 'links: 2' in __learner_output__, ('expected: links: 2 | actual: %r' % __learner_output__)",
+    "expected": "links: 2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "القائمة المستخرجة هي الرابطان بالترتيب",
+     "en": "The extracted list is the two links in order"
+    },
+    "code": "assert links == ['https://docs.python.org', 'http://www.python.org'], ('expected: the two bare links in order | actual: %r' % (links,))",
+    "expected": "['https://docs.python.org', 'http://www.python.org']"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الرابط الأول مطبوع بصيغة link:",
+     "en": "The first link printed in link: form"
+    },
+    "code": "assert 'link: https://docs.python.org' in __learner_output__, ('expected: link: https://docs.python.org | actual: %r' % __learner_output__)",
+    "expected": "link: https://docs.python.org"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الرابط الثاني مطبوع بصيغة link:",
+     "en": "The second link printed in link: form"
+    },
+    "code": "assert 'link: http://www.python.org' in __learner_output__, ('expected: link: http://www.python.org | actual: %r' % __learner_output__)",
+    "expected": "link: http://www.python.org"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch12.l6",
+  "id": "ex2.mini-browser",
+  "solution": "import re\nresponse = 'HTTP/1.1 200 OK\\nDate: Mon, 01 Jan 2024 00:00:00 GMT\\nServer: Apache\\nContent-Type: text/html\\nContent-Length: 97\\n\\nArise fair sun\\n<a href=\"http://www.py4e.com\">book</a>\\n<a href=\"http://www.dr-chuck.com\">chuck</a>'\nhead, body = response.split('\\n\\n', 1)\nstatus = head.split('\\n')[0].split()\nprint('%s %s' % (status[1], status[2]))\nprint('headers: %d' % (len(head.split('\\n')) - 1))\nprint('lines: %d' % len(body.split('\\n')))\nprint('words: %d' % len(body.split()))\nlinks = re.findall('href=\"([^\"]+)\"', body)\nprint('links: %d' % len(links))\nfor link in links:\n    print('link: %s' % link)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "سطر الحالة 200 OK مطبوع",
+     "en": "The status line 200 OK is printed"
+    },
+    "code": "assert '200 OK' in __learner_output__ and '404' not in __learner_output__, ('expected: 200 OK without 404 | actual: %r' % __learner_output__)",
+    "expected": "200 OK"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "عدد الترويسات 4 مطبوع",
+     "en": "The header count 4 is printed"
+    },
+    "code": "assert 'headers: 4' in __learner_output__, ('expected: headers: 4 | actual: %r' % __learner_output__)",
+    "expected": "headers: 4"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "أسطر المتن 3 وكلماته 7 مطبوعان",
+     "en": "Body lines 3 and words 7 are printed"
+    },
+    "code": "assert 'lines: 3' in __learner_output__ and 'words: 7' in __learner_output__, ('expected: lines: 3 and words: 7 | actual: %r' % __learner_output__)",
+    "expected": "lines: 3 / words: 7"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "عدد الروابط 2 مطبوع",
+     "en": "The link count 2 is printed"
+    },
+    "code": "assert 'links: 2' in __learner_output__, ('expected: links: 2 | actual: %r' % __learner_output__)",
+    "expected": "links: 2"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "الرابطان مطبوعان بصيغة link: بالترتيب",
+     "en": "Both links printed in link: form, in order"
+    },
+    "code": "assert 'link: http://www.py4e.com' in __learner_output__ and 'link: http://www.dr-chuck.com' in __learner_output__, ('expected: link: http://www.py4e.com and link: http://www.dr-chuck.com | actual: %r' % __learner_output__)",
+    "expected": "link: http://www.py4e.com / link: http://www.dr-chuck.com"
+   },
+   {
+    "id": "t6",
+    "name": {
+     "ar": "التحليل نفسه سليم: قائمة الروابط نظيفة بالترتيب",
+     "en": "The parsing itself is sound: a clean ordered link list"
+    },
+    "code": "assert links == ['http://www.py4e.com', 'http://www.dr-chuck.com'] and len(body.split('\\n')) == 3, ('expected: two bare links in order and 3 body lines | actual: %r' % (links,))",
+    "expected": "two bare links in order / 3 body lines"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch12.l6",
+  "id": "ex5.debug-boundary",
+  "solution": "import re\nresponse = 'HTTP/1.1 200 OK\\nDate: Mon, 01 Jan 2024 00:00:00 GMT\\nServer: Apache\\nContent-Type: text/html\\nContent-Length: 97\\n\\nArise fair sun\\n<a href=\"http://www.py4e.com\">book</a>\\n<a href=\"http://www.dr-chuck.com\">chuck</a>'\nhead, body = response.split('\\n\\n', 1)\nstatus = head.split('\\n')[0].split()\nprint('%s %s' % (status[1], status[2]))\nprint('headers: %d' % (len(head.split('\\n')) - 1))\nprint('lines: %d' % len(body.split('\\n')))\nprint('words: %d' % len(body.split()))\nlinks = re.findall('href=\"([^\"]+)\"', body)\nprint('links: %d' % len(links))\nfor link in links:\n    print('link: %s' % link)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الترويسات 4 لا 7",
+     "en": "Headers are 4, not 7"
+    },
+    "code": "assert 'headers: 4' in __learner_output__ and 'headers: 7' not in __learner_output__, ('expected: headers: 4 without headers: 7 | actual: %r' % __learner_output__)",
+    "expected": "headers: 4"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الكلمات 7 لا 21",
+     "en": "Words are 7, not 21"
+    },
+    "code": "assert 'words: 7' in __learner_output__ and 'words: 20' not in __learner_output__, ('expected: words: 7 without words: 20 | actual: %r' % __learner_output__)",
+    "expected": "words: 7"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "اللوحة كاملة: الحالة والروابط سليمة",
+     "en": "The full board: status and links intact"
+    },
+    "code": "assert '200 OK' in __learner_output__ and 'links: 2' in __learner_output__ and 'link: http://www.py4e.com' in __learner_output__, ('expected: 200 OK, links: 2, link lines | actual: %r' % __learner_output__)",
+    "expected": "200 OK / links: 2 / link lines"
+   }
+  ]
+ }
+]

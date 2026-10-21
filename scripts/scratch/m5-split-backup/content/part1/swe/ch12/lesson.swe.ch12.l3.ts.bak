@@ -1,0 +1,327 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch12.l3 — "Measuring Defects and an Ops Quality Case Study
+ * قياس العيوب وتحسين جودة العمليات: دراسة حالة"
+ * Aligned with SWE ch12 s4 (12.4 Product Quality: Measuring Defects,
+ * pp.321-323) + s5 (12.5 Ops Quality Improvement: A Case Study, pp.323-325).
+ * All expression is original — a paraphrase of the CC BY-SA 4.0 source, never
+ * a verbatim translation.
+ * RUNNABLE-STATS design: defect pipeline counts (found internally vs escaped
+ * to production) over a fixed dict; DRE, escape rate and pooled ratios are
+ * plain loop arithmetic. Deterministic only.
+ */
+const lesson = {
+  id: 'swe.ch12.l3',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 12,
+  title: { ar: 'قياس العيوب وتحسين جودة العمليات: دراسة حالة', en: 'Measuring Defects and an Ops Quality Case Study' },
+  estimatedMinutes: 30,
+  prerequisites: ['swe.ch12.l2'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'العيوب هي الوجه الأكثر قابلية للقياس في الجودة، ولهذا تُسند عليها برامج القياس كلها — لكن العدّ الخام يخدع مرتين: مرة لأن ليس كل العيوب يساوي (فقدان بيانات ليس شكلًا في الواجهة)، ومرة لأن عدد ما يصل العملاء يتضخم مع عدد المنصّات لا مع سوء الكود وحده. لذا الدرس يبني سلسلة القياس طبقة طبقة: شدة تصنّف الأثر بمقياس ترتيبي يلخَّص بالأعداد والوسيط، وكفاءة إزالة العيوب DRE تقيس حصة شباكك الداخلية من كل ما وُجد يومًا، وعيوب العملاء CFD تُطبَّع بالتعرض — لكل ألف تنصيب — حتى تقيس الجودة لا الشعبية. ثم نطبّق الحلقة كاملة على شركة استضافة تسمى Northwind: هدف GQM واحد يترجم إلى مقياس عميل واحد، وهدفان فرعيان (منتج وإجراء)، وتحسين حقيقي — إضافة اختبارات تكامل وتشديد المراجعة — ثم السؤال الخطير: هل ارتفع DRE من 84% إلى 91% لأن العملية تحسنت، أم لأن الحظ يتفاوت من ربع لربع؟ بنهاية الدرس ستكون قادرًا على: حساب DRE ومعدل الإفلات من خط أنابيب عيوب، وتطبيق CFD بالتعرض، وتفسير مقارنة قبل/بعد بفاصل ثقة لا بإحساس.',
+        en: 'Defects are the most measurable face of quality, so most quality programs anchor on them — but raw counts deceive twice: not all defects matter equally (data loss is not a typo), and the number reaching customers scales with install count, not just code badness. So the lesson builds the measurement chain layer by layer: severity classifies impact on an ordinal scale summarized by counts and the median; defect-removal efficiency (DRE) measures your internal nets\u2019 share of every defect that ever existed; and customer-found defects (CFD) are normalized by exposure — per thousand installs — so they measure quality, not popularity. Then we run the full loop on a hosting company called Northwind: one GQM goal translated into one customer metric, two subgoals (product and process), a real improvement — integration tests plus stronger review — and then the dangerous question: did DRE rise from 84% to 91% because the process got better, or because quarter-to-quarter luck bounces? By the end you will be able to: compute DRE and escape rate from a defect pipeline, apply CFD normalization by exposure, and read a before/after comparison with a confidence interval instead of a feeling.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "before = 720\nafter = 80\nprint('caught: %d of %d' % (before, before + after))",
+      question: {
+        ar: 'ما حصة الشباك الداخلية من إجمالي العيوب التي وُجدت يومًا؟ وكم عيبًا أفلت إلى العملاء من كل عشرة؟ ولماذا يقيس المقام كل شيء لا الشباك وحدها؟',
+        en: 'What share of all defects that ever existed did the internal nets catch? And how many of every ten escaped to customers? Why must the denominator count everything, not just the nets\u2019 catch?',
+      },
+      reveal: {
+        ar: 'الطباعة: caught: 720 of 800. الحصة 720÷800 = 90% — أي أفلت واحد من كل عشرة، وهذا معدل الإفلات escape rate. لو كان المقام 720 وحدها لصارت النسبة 100% دائمًا مهما كثر الهاربون: كفاءة إزالة العيوب تُعرَّف D_before ÷ (D_before + D_after) × 100 لأن المقام هو كل العيوب التي وُجدت يومًا — الداخلية والهاربة معًا. و80 هنا ليست نهاية القصة: الأنبوب الجاري في هذا الفصل يقيّمها إصدارًا بعد إصدار.',
+        en: 'It prints caught: 720 of 800. The share is 720/800 = 90% — one of every ten escaped, and that is the escape rate. With a denominator of 720 alone the ratio would be 100% forever no matter how many escaped: DRE is defined as D_before / (D_before + D_after) x 100 because the denominator is every defect that ever existed — internal catches plus escapes. And the 80 is not the end of the story: the pipeline in this lesson\u2019s exercise grades it release by release.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الشدة، وكفاءة الإزالة، والتطبيع بالتعرض', en: 'Severity, removal efficiency, and normalizing by exposure' },
+      chunks: [
+        {
+          ar: 'الشدة تصنّف أثر الفشل على سلم ترتيبي من أربع درجات: حرجة S1 — فقد بيانات أو اختراق أو انقطاع كامل بلا بديل؛ عالية S2 — ميزة رئيسة مكسورة مع بديل مؤلم ربما؛ متوسطة S3 — خلل سلوك لكن المستخدم يواصل؛ منخفضة S4 — شكلية تزعج فقط. والشدة شيء والأولوية شيء آخر: الأولوية قرار عمل متى نُصلح — خطأ شكلي في صفحة الدخول قد يكون أولوية عالية لأن الجميع يراه، وعيب حرج في ميزة لا يستعملها أحد أولوية منخفضة. ولأن السلم ترتيبي: لخّصه بأعداد لكل مستوى وبالوسيط لا بالمتوسط — إصدار بعيب حرج واحد وخمسة منخفضة قد يكون أسوأ من إصدار بعشرة متوسطة رغم أن العدد الكلي يقول العكس؛ توزيع الشدة يلتقط ما يدمّره العدد.',
+          en: 'Severity classifies failure impact on a four-step ordinal ladder: Critical (S1) — data loss, breach, or full outage with no workaround; High (S2) — a major feature broken, a painful workaround maybe; Medium (S3) — a misbehaving feature but the user proceeds; Low (S4) — cosmetic annoyance. Severity is not priority: priority is the business decision of when to fix — a low-severity typo on the login page can be high-priority because everyone sees it, and a critical bug in a feature nobody uses can be low-priority. Because the scale is ordinal: summarize with per-level counts and a median, never a mean — a release with one Critical and five Lows can be worse than one with ten Mediums even though the raw count says otherwise; the severity distribution captures what the count destroys.',
+        },
+        {
+          ar: 'المقياس المركزي لجودة المنتج هو كفاءة إزالة العيوب DRE: من كل العيوب التي وُجدت، ما الكسر الذي أمسكته قبل أن يصل العميل؟ DRE = D_before ÷ (D_before + D_after) × 100، حيث D_before ما وجدته وأزلته مراجعات وتحليل ساكن واختبار قبل الإصدار، وD_after ما وجده العميل بعده. مثال الكتاب: 720 قبل و80 بعد → 90% — تسعة من كل عشرة؛ وبعض المنظمات تستهدف 95%. احترسَان يحميان DRE: أولهما أن D_after لا يُعرف إلا بعد مرور الوقت — فقيمة أي إصدار مؤقتة حتى تنقضي نافذة القياس (ستة أشهر عادة)؛ وثانيهما أن DRE يكافئ العثور على عيوبك بنفسك، فقاوم التلاعب الذي يدعوه «عدد العيوب» الخام: تضخيم D_before ببلاغات تافهة لا يحرك النسبة إلا إذا انخفض الهاربون فعلًا.',
+          en: 'The central product-quality metric is defect-removal efficiency (DRE): of all defects that ever existed, what fraction did you catch before reaching the customer? DRE = D_before / (D_before + D_after) x 100, where D_before is what reviews, static analysis and testing found and removed pre-release, and D_after is what customers find after. The book\u2019s worked example: 720 before and 80 after gives 90% — nine of every ten; some organizations target 95%. Two cautions keep DRE trustworthy: first, D_after is only known after time passes — a release\u2019s DRE stays provisional until a fixed measurement window elapses (often six months); second, DRE rewards finding your own bugs, so it resists the gaming raw \u201cbugs found\u201d invites: inflating D_before with trivial finds barely moves the ratio unless real escapes drop too.',
+        },
+        {
+          ar: 'وعيب العملاء CFD هو D_after حرفيًا: عيب أبلغ عنه عميل أولًا في الإنتاج — كل واحد منهما ألم حقيقي عبر كل شباك بنيتَه، ولذلك عدده وخليط شدته أنصح مقاييس الجودة الهاربة. لكن العدّ الخام يقيس الاستخدام بقدر ما يقيس الجودة: إصدار على عشرة آلاف تنصيب سيولد أعطالًا أكثر من إصدار مطابق عليه عشرة تنصيطات ببساطة لأن مستخدمين أكثر يجربون مسارات أكثر. الحل التطبيع: اقسم على التعرض — CFD لكل ألف تنصيب نشط، أو لكل مليون معاملة، أو لكل شهر مستخدم. مبدأ جامع: كل عدد لأحداث الإنتاج — عيوب أو انهيارات أو تذاكر — يجب تطبيعه بالتعرض قبل المقارنة عبر الإصدارات؛ العدد الخام يقيس التنصيبتات، والمطبَّع يقيس الجودة.',
+          en: 'And a customer-found defect (CFD) is literally D_after: a defect first reported by a customer in production — each one real pain that survived every net you built, which makes the count, and especially its severity mix, the most honest escaped-quality signal. But the raw count measures usage as much as quality: a release on ten thousand installs will generate more failures than an identical one on ten, simply because more users exercise more paths. The fix is normalization: divide by exposure — CFDs per 1,000 active installs, per million transactions, or per user-month. The blanket principle: any count of production events — defects, crashes, tickets — must be normalized by exposure before you compare across releases; raw counts measure installs, normalized ones measure quality.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'دراسة حالة Northwind: قياس ثم تحسين ثم إعادة قياس', en: 'The Northwind case: measure, improve, re-measure' },
+      chunks: [
+        {
+          ar: 'تُحسّن ما تقيسه، وتقيس مقابل هدف، وتنفّذ، وتعيد القياس — حلقة قياس/تحليل/تحسين/تحقق وهي المنهج العلمي بخوذة. Northwind تستضيف خدمة مستندات وقلقها تصاعد شكاوى الدعم؛ و«جودة أفضل» كلام بلا معنى حتى يُستعمل GQM: الهدف — تقليل ألم الموثوقية الذي يشعر به العملاء في الإنتاج؛ السؤال — كم ألمًا يصل للعملاء لكل وحدة استخدام؟ والمقياس الأعلى Qcust = العيوب الموزونة بالشدة في الربع ÷ التنصيبتات النشطة بالألف (الحرجة ×10 والعالية ×5 والمتوسطة ×2 والمنخفضة ×1). ثم هدفان فرعيان لأن المقياس الأعلى يقول هل تفوز لا كيف تفوز: تحسين المنتج — كل إصدار أنظف، مقياسه DRE؛ وتحسين الإجراء — طريقة البناء تصبح فعالة قابلة للتكرار، ومقاييسه معدل حقن العيوب لكل KLOC وتغطية المراجعة وخليط الأسباب الجذرية للهاربين. الهرم سببي: إصلاح الإجراء يُنتج إصلاح المنتج، وإصلاح المنتج يُنزل مقياس العميل.',
+          en: 'You improve what you measure, measure against a target, act, and re-measure — the measure/analyze/improve/verify loop, the scientific method in a hard hat. Northwind hosts a document service alarmed by rising support load; \u201cbetter quality\u201d means nothing until GQM operationalizes it: the goal — reduce the reliability pain customers feel in production; the question — how much pain reaches customers per unit of usage? The top-line metric Qcust = severity-weighted CFDs in the quarter / active installs in thousands (Critical x10, High x5, Medium x2, Low x1). Then two subgoals, because a top-line metric says whether you win, not how: product improvement — each release intrinsically cleaner, metric DRE; and process improvement — the way releases are built made effective and repeatable, metrics: defect-injection rate per KLOC, review coverage, and the root-cause mix of escapes. The hierarchy is causal: process gains cause product gains, and product gains lower the customer metric.',
+        },
+        {
+          ar: 'طبّقت Northwind التحسين: اختبارات تكامل إضافية ومراجعة أشد. قبل التغيير DRE = 84% وQcust = 7.5؛ وبعد ربع DRE = 91% وQcust = 4.8. يبدو نصرًا — لكن هو انخفاض حقيقي أم ضجيج مقياس يتقافز طبيعيًا بين الأرباع؟ زوج قبل/بعد واحد لا يستطيع الجواب: تحتاج تشتت المقياس — كم يتأرجح بلا أي تغيير — وفاصل ثقة حول التحسين نفسه. ولهذا بالضبط تُبنى الآلة الإحصائية في الدرسين القادمين: بلا تشتت وفواصل يبقى «تحسنت الجودة» أملًا لا نتيجة. خذها كقاعدة مهنية الآن: لا تعلن تحسنًا قبل/بعد بلا فاصل ثقة أو اختبار يعادله — الفاصل هو ما يفرّق تحسنًا حقيقيًا عن ربع محظوظ، وإن عجزت بياناتك عن فاصل فقل ذلك: أرقام وصفية بحدودها المعلنة صدق، وفاصل من بيانات لا تستوفي افتراضاته دقة زائفة.',
+          en: 'Northwind acts: more integration tests, stronger review. Before: DRE 84%, Qcust 7.5. A quarter later: DRE 91%, Qcust 4.8. That looks like a win — but is the drop real, or just the noise of a metric that bounces quarter to quarter with no change at all? A single before/after pair cannot answer: you need the metric\u2019s dispersion — how much it swings with nothing changing — and a confidence interval around the improvement itself. That is exactly why the next two lessons build the statistical machinery: without it, \u201cquality improved\u201d is a hope, not a finding. Take the professional rule now: never report a before/after change without a confidence interval or an equivalent test — the interval separates a real improvement from a lucky quarter, and when your data cannot support one, say so: descriptive numbers with stated limits are honest; an interval on data violating its assumptions is pseudo-precision.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'من خط أنابيب واحد إلى DRE ومعدل الإفلات', en: 'One pipeline to DRE and the escape rate' },
+      code: "d_before = 720\nd_after = 80\ndre = 100.0 * d_before / (d_before + d_after)\nprint('D_before: %d' % d_before)\nprint('D_after: %d' % d_after)\nprint('DRE: %.1f%%' % dre)\nprint('escape rate: %.1f%%' % (100.0 - dre))",
+      explanation: {
+        ar: 'أربعة أسطر تلخّص مقياس المنتج كله: D_before = 720 ما مسحته شباكك قبل الشحن (مراجعة + تحليل ساكن + اختبار)، وD_after = 80 ما وجده العملاء في ستة أشهر. الصيغة في السطر الثالث: 100.0 × 720 ÷ 800 = 90.0 — لاحظ الضرب في 100.0 العائم قبل القسمة حتى لا تنزلق النسبة. وrate الإفلات في السطر الرابع هو الوجه المكمل: 100 − DRE = 10% — كسر ما عبر الشباك. الاثنان وجهان لعملة واحدة، لكن DRE هو الذي يُعلن هدفًا (95% طموح شائع) لأن رفعه يعني أن تضخيم البحث عن العيوب وحده لا يكفي — يجب أن ينخفض الهاربون فعلًا. وآخر تحذير: هذه القيمة مؤقتة حتى تنقضي نافذة الأشهر الستة؛ عيب العميل رقم 81 قد يصل غدًا.',
+        en: 'Four lines summarize the whole product metric: D_before = 720 is what your nets swept before shipping (review + static analysis + testing), D_after = 80 what customers found in six months. The formula lives in line three: 100.0 x 720 / 800 = 90.0 — note multiplying by the float 100.0 before dividing so the ratio never collapses. The escape rate on line four is the complementary face: 100 - DRE = 10% — the fraction that got through. Two faces of one coin, but DRE is the one you set as a target (95% is a common aspiration) because raising it means inflating your finds alone is not enough — real escapes must fall. And the last caution: this value stays provisional until the six-month window closes; customer defect number 81 may arrive tomorrow.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.severity-mode',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرجه بالضبط — سطرًا لكل طباعة — دون تشغيله. مراجعة سريعة: الحلقة تمشي على مفاتيح القاموس بترتيب إدراجها، والشرط يبقي أول الأكبر.',
+        en: 'Read the code and predict its exact output — one line per print — without running it. A quick refresher: the loop walks dict keys in insertion order, and the condition keeps the strictly-largest so far.',
+      },
+      code: "counts = {'S1': 5, 'S2': 18, 'S3': 42, 'S4': 15}\nbest = ''\nbest_n = 0\nfor k in counts:\n    if counts[k] > best_n:\n        best = k\n        best_n = counts[k]\nprint('mode: %s' % best)\nprint('total: %d' % sum(counts.values()))",
+      solution: 'mode: S3\ntotal: 80',
+      answer: 'mode: S3\ntotal: 80',
+      hints: [
+        { ar: 'المسار: S1 (5 > 0) ثم S2 (18 > 5) ثم S3 (42 > 18) ثم S4 (15 > 42 كاذب) — فيبقى best = S3.', en: 'The walk: S1 (5 > 0), then S2 (18 > 5), then S3 (42 > 18), then S4 fails (15 > 42 is false) — best stays S3.' },
+        { ar: 'هذا mode على سلم ترتيبي — الإحصاء القانوني الوحيد مع العدّ؛ متوسط S1..S4 كان سيكون غير شرعي.', en: 'This is the mode over an ordinal ladder — the only legal statistic alongside counts; an average of S1..S4 would be illegal.' },
+        { ar: 'المجموع 5 + 18 + 42 + 15 = 80 — هو نفسه مقام الشارح: ثمانون عيبًا هربت للعملاء.', en: 'The total 5 + 18 + 42 + 15 = 80 — the same denominator as the worked example: eighty defects that escaped.' },
+        { ar: 'الخرج:\nmode: S3\ntotal: 80', en: 'The output:\nmode: S3\ntotal: 80' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.pipeline-dre',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'خط أنابيب إصدارين (releases جاهز): كل إصدار فيه before (ما أزالته الشباك الداخلية) وprod (ما وجده العملاء). داخل الحلقة: احسب DRE للإصدار واطبعه بصيغة %s DRE: %.1f%%، واجمع before في sum_before وprod في sum_prod (معرّفان جاهزان). بعد الحلقة السطر المطبوع جاهز: pooled escape: %.1f%% — معدل إفلات مجمّع = 100 × مجموع prod ÷ (مجموع before + مجموع prod). المتوقع: r1 DRE: 90.0% ثم r2 DRE: 93.0% ثم pooled escape: 8.8%.',
+        en: 'A two-release pipeline (releases is given): each release holds before (removed by your internal nets) and prod (found by customers). Inside the loop: compute the release\u2019s DRE and print it as %s DRE: %.1f%%, and accumulate before into sum_before and prod into sum_prod (both pre-defined). After the loop the print is already written: pooled escape: %.1f%% — the pooled escape rate = 100 x sum of prod / (sum of before + sum of prod). Expected: r1 DRE: 90.0%, then r2 DRE: 93.0%, then pooled escape: 8.8%.',
+      },
+      starterCode: "releases = {'r1': {'before': 720, 'prod': 80}, 'r2': {'before': 465, 'prod': 35}}\nsum_before = 0\nsum_prod = 0\n\nfor k in releases:\n    d = releases[k]\n    # احسب DRE وأطبعه، وجمع القيم في sum_before وsum_prod\n    # compute and print DRE; accumulate sum_before and sum_prod\n    pass\n\nescape = 100.0 * sum_prod / (sum_before + sum_prod)\nprint('pooled escape: %.1f%%' % escape)",
+      solution: "releases = {'r1': {'before': 720, 'prod': 80}, 'r2': {'before': 465, 'prod': 35}}\nsum_before = 0\nsum_prod = 0\nfor k in releases:\n    d = releases[k]\n    dre = 100.0 * d['before'] / (d['before'] + d['prod'])\n    print('%s DRE: %.1f%%' % (k, dre))\n    sum_before += d['before']\n    sum_prod += d['prod']\nescape = 100.0 * sum_prod / (sum_before + sum_prod)\nprint('pooled escape: %.1f%%' % escape)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'DRE الإصدارين مطبوعان صحيحًا', en: 'Both releases\u2019 DRE printed correctly' },
+          code: "assert 'r1 DRE: 90.0%' in __learner_output__ and 'r2 DRE: 93.0%' in __learner_output__, 'expected: r1 DRE: 90.0% then r2 DRE: 93.0% | actual: %r' % __learner_output__",
+          expected: 'r1 DRE: 90.0% then r2 DRE: 93.0%',
+        },
+        {
+          id: 't2',
+          name: { ar: 'معدل الإفلات المجمع 8.8%', en: 'The pooled escape rate is 8.8%' },
+          code: "assert 'pooled escape: 8.8%' in __learner_output__, 'expected: pooled escape: 8.8% | actual: %r' % __learner_output__",
+          expected: 'pooled escape: 8.8%',
+        },
+        {
+          id: 't3',
+          name: { ar: 'التجميع تمّ داخل الحلقة', en: 'The sums were accumulated inside the loop' },
+          code: "assert sum_before == 1185 and sum_prod == 115, 'expected: sum_before == 1185 and sum_prod == 115 | actual: %r' % ((sum_before, sum_prod),)",
+          expected: 'sum_before == 1185 and sum_prod == 115',
+        },
+        {
+          id: 't4',
+          name: { ar: 'قيمة escape المجمعة مطابقة للصيغة', en: 'The pooled escape matches the formula' },
+          code: "assert abs(escape - 100.0 * 115 / 1300) < 1e-9, 'expected: escape == 100*115/1300 (8.846...) | actual: %r' % (escape,)",
+          expected: 'escape == 100*115/1300 (8.846...)',
+        },
+      ],
+      hints: [
+        { ar: 'داخل الحلقة d = releases[k] قاموس صغير — الدخول بمفاتيح السلاسل: d[\'before\'] وd[\'prod\'].', en: "Inside the loop d = releases[k] is a small dict — access it with string keys: d['before'] and d['prod']." },
+        { ar: 'صيغة DRE كما في الشارح: 100.0 * d[\'before\'] / (d[\'before\'] + d[\'prod\']) — المقام مجموع الاثنين لا before وحدها.', en: "The DRE formula from the worked example: 100.0 * d['before'] / (d['before'] + d['prod']) — the denominator is the sum of both, not before alone." },
+        { ar: 'لا تنسَ التجزئة داخل الحلقة: sum_before += d[\'before\'] وsum_prod += d[\'prod\'] — وإلا صار pooled escape: 0.0%.', en: "Do not forget accumulation inside the loop: sum_before += d['before'] and sum_prod += d['prod'] — otherwise the line reads pooled escape: 0.0%." },
+        { ar: 'الحل:\nfor k in releases:\n    d = releases[k]\n    dre = 100.0 * d[\'before\'] / (d[\'before\'] + d[\'prod\'])\n    print(\'%s DRE: %.1f%%\' % (k, dre))\n    sum_before += d[\'before\']\n    sum_prod += d[\'prod\']', en: "The fix:\nfor k in releases:\n    d = releases[k]\n    dre = 100.0 * d['before'] / (d['before'] + d['prod'])\n    print('%s DRE: %.1f%%' % (k, dre))\n    sum_before += d['before']\n    sum_prod += d['prod']" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.cfd-normalize',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'إصداران، كل منهما بـ30 عيبًا وجدها العملاء. الإصدار P يعمل على 5,000 تنصيب، والإصدار Q على 500,000. أي استنتاج يطابق مبدأ التطبيع؟',
+        en: 'Two releases each report exactly 30 customer-found defects. Release P runs on 5,000 installs; release Q on 500,000. Which conclusion matches the normalization principle?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'الجودة متساوية — العدد نفسه 30 في كليهما', en: 'Quality is equal — both count exactly 30' } },
+        { id: 'b', text: { ar: 'P أنظف مئة ضعف: 6.0 عيوب لكل ألف تنصيب مقابل 0.06 لـQ — العدد الخام يقيس التنصيبتات لا الجودة', en: 'P is a hundred times dirtier: 6.0 defects per thousand installs vs 0.06 for Q — the raw count measures installs, not quality' } },
+        { id: 'c', text: { ar: 'Q أنظف مئة ضعف — قاعدة الـ30 الثابتة تعني ثبات الجودة', en: 'Q is a hundred times cleaner — the constant 30 means constant quality' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'طبّع أولًا: 30 ÷ 5 = 6.0 لكل ألف تنصيب لـP، و30 ÷ 500 = 0.06 لـQ — نفس العدد الخام، تفوق جودة مختلف كليًا.', en: 'Normalize first: 30/5 = 6.0 per thousand installs for P, and 30/500 = 0.06 for Q — identical raw counts, wildly different per-user quality.' },
+        { ar: 'الاستخدام نفسه يولّد عيوبًا: مستخدمون أكثر يجربون مسارات أكثر على بيانات أكثر — فالعدد الخام يصعد مع التنصيبتات حتى لو تحسن الكود.', en: 'Usage itself manufactures defects: more users exercise more paths on more data — the raw count climbs with installs even while the code improves.' },
+        { ar: 'والقاعدة الجامعة: كل عدد لأحداث الإنتاج — عيوب أو انهيارات أو تذاكر — يُطبَّع بالتعرض قبل المقارنة عبر الإصدارات أو الزمن.', en: 'And the blanket rule: any count of production events — defects, crashes, tickets — is normalized by exposure before comparing across releases or time.' },
+        { ar: 'الجواب: b — العدد الخام 30 يخدع، والمطبَّع 6.0 مقابل 0.06 يكشف الفرق الحقيقي.', en: 'Answer: b — the raw 30 deceives; the normalized 6.0 versus 0.06 reveals the real gap.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.dre-numeric',
+      exKind: 'numeric',
+      required: true,
+      prompt: {
+        ar: 'خلال تطوير إصدار أزالت المراجعات والاختبارات 465 عيبًا، وأبلغ العملاء عن 35 في أول ستة أشهر. كم تبلغ كفاءة إزالة العيوب DRE بالنسبة المئوية؟ (رقم فقط، مقرَّب لعدد صحيح)',
+        en: 'During development, reviews and testing removed 465 defects; customers reported 35 more in the first six months. What is the DRE percentage? (number only, rounded to an integer)',
+      },
+      answer: '93',
+      solution: '93',
+      tolerance: 0,
+      hints: [
+        { ar: 'DRE = 100 × D_before ÷ (D_before + D_after) — المقام كل ما وُجد يومًا: 465 + 35 = 500.', en: 'DRE = 100 x D_before / (D_before + D_after) — the denominator is everything that ever existed: 465 + 35 = 500.' },
+        { ar: '465 ÷ 500 = 0.93 — والضرب في 100 يحول الكسر إلى نسبة.', en: '465 / 500 = 0.93 — multiplying by 100 turns the fraction into a percentage.' },
+        { ar: 'ومعدل الإفلات المكمّل 7% — سبعة عيوب من كل مئة عبرت الشباك.', en: 'The complementary escape rate is 7% — seven of every hundred defects got through.' },
+        { ar: 'الجواب: 93', en: 'Answer: 93' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "releases = {'r1': {'before': 720, 'prod': 80}, 'r2': {'before': 465, 'prod': 35}}\nsum_before = 0\nsum_prod = 0\nfor k in releases:\n    d = releases[k]\n    dre = 100.0 * d['before'] / (d['before'] + d['prod'])\n    print('%s DRE: %.1f%%' % (k, dre))\n    sum_before += d['before']\n    sum_prod += d['prod']\nescape = 100.0 * sum_prod / (sum_before + sum_prod)\nprint('pooled escape: %.1f%%' % escape)\n\ninstalls = {'r1': 200, 'r2': 5000}\nfor k in releases:\n    print('%s CFD per 1k installs: %.2f' % (k, 1000.0 * releases[k]['prod'] / installs[k]))\n\n# جرّب: ضاعف تنصيبتات r1 خمس مرات وأعد الحساب — أي سطر تغيّر وأي سطر ثابت؟\n# try: quintuple r1's installs and recompute — which line moved and which stayed?\n# جرّب: أزل التطبيع واقرأ العمودين كجودة — أي نسخة تخدع؟\n# try: drop the normalization and read the two columns as quality — which version lies?\n# جرّب: أضف r3 بـbefore = 0 — ماذا يفعل المقام الصفري بصيغة DRE؟ متى تنفجر الصيغة؟\n# try: add r3 with before = 0 — what does a zero numerator do to DRE? when does the formula blow up?",
+      prompt: {
+        ar: 'الملعب خط أنابيب الفصل: DRE لكل إصدار ومعدل الإفلات المجمع، ثم عمود CFD مطبَّع لكل ألف تنصيب. ضاعف الاستخدام وراقب أي عمود يتحرك — هذه هي العدوى التي يشفيها التطبيع. لا اختبار هنا — فضولك فقط.',
+        en: 'The sandbox is the chapter\u2019s pipeline: per-release DRE and the pooled escape rate, then a CFD column normalized per thousand installs. Multiply usage and watch which column moves — that is the contamination normalization cures. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ومن SWE الفصل العاشر: أي الأنشطة تغذي D_before في صيغة DRE؟',
+            en: 'From SWE chapter 10: which activities feed D_before in the DRE formula?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'تذاكر الدعم بعد الإصدار فقط — هي مصدر العيوب الأصيل', en: 'Only post-release support tickets — the purest defect source' } },
+            { id: 'b', text: { ar: 'كل شباكك الداخلية قبل الشحن: المراجعة، التحليل الساكن، والاختبار — وما وجدوه وأزالوه هو D_before', en: 'All your internal nets before shipping: review, static analysis and testing — what they find and remove is D_before' } },
+            { id: 'c', text: { ar: 'عدد سطور الاختبارات المكتوبة — مؤشر الجهد الأول', en: 'The number of test lines written — the first effort proxy' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'D_before هو كل ما وجدته وأزلته قبل الإصدار — وحزم اختبار الفصل العاشر هي واحدة من الشباك الثلاث. لهذا الدرسان يتلاقيان: حزمة صادقة ترفع D_before فترفع DRE، بينما تضخيم البلاغات التافهة لا يحرك النسبة إلا بانخفاض الهاربين فعليًا.',
+            en: 'D_before is everything found and removed pre-release — and chapter ten\u2019s test suites are one of those three nets. This is where the chapters meet: an honest suite raises D_before and thus DRE, while inflating trivial filings moves the ratio only if real escapes actually fall.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'عيب فقدان بيانات (S1) في ميزة لا يستعملها أحد، وخطأ إملائي (S4) في صفحة الدخول. أي جملة تفصل الشدة عن الأولوية صحيحًا؟',
+            en: 'A data-loss defect (S1) in a feature nobody uses, and a typo (S4) on the login page. Which statement correctly separates severity from priority?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الشدة أثر الفشل، والأولوية قرار عمل متى نُصلح — فالشكلي الجماهيري قد يسبق الحرج المهجور', en: 'Severity is the failure\u2019s impact; priority is the business decision of when to fix — a mass-visible typo can outrank an unseen critical' } },
+            { id: 'b', text: { ar: 'هما الاسم نفسه — S1 تعني أولوية 1 دائمًا', en: 'They are the same thing — S1 always means priority 1' } },
+            { id: 'c', text: { ar: 'الأولوية تُحسب من الشدة بقسمة على عدد المستخدمين', en: 'Priority is computed from severity by dividing by user count' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الشدة خاصية تقنية للعيب على سلم ترتيبي؛ والأولوية ترتيب إصلاح في قائمة عمل حقيقية. القاعدة العملية من الدرس: لخّص الشدة بأعداد لكل مستوى والوسيط — وقرر الأولوية بعينين مفتوحتين على الأثر والمخاطرة لا برقم واحد.',
+            en: 'Severity is the defect\u2019s technical impact on an ordinal ladder; priority is fix-ordering in a real backlog. The practical rule from the lesson: summarize severity with per-level counts and a median — and set priority with open eyes on reach and risk, not one number.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'ما الخطأ في حساب DRE هكذا: DRE = 100 × D_before ÷ D_after؟',
+            en: 'What is wrong with computing DRE as DRE = 100 x D_before / D_after?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لا شيء — الصيغة مكافئة', en: 'Nothing — the formula is equivalent' } },
+            { id: 'b', text: { ar: 'المقام خاطئ: يجب أن يكون كل ما وُجد يومًا D_before + D_after — وإلا صارت النسبة تنفجر فوق 100% كلما قلّ الهاربون', en: 'The denominator is wrong: it must be everything that ever existed, D_before + D_after — otherwise the ratio explodes past 100% whenever escapes shrink' } },
+            { id: 'c', text: { ar: 'الخطأ أنه لم تضرب في 1000 بدل 100', en: 'The error is multiplying by 1000 instead of 100' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'DRE حصة من كل العيوب التي وُجدت يومًا — فيجب أن يظل أقل من 100% دائمًا وتنطبق عليه كتلة الإفلات 100 − DRE. المقام الغلط يجعلها سهمًا يرتفع بلا سقف كلما نجحتَ: كتلة إزالة تبلغ 900% معنى لا يحمله أي مقياس. سترى هذا العيب نفسه في كتلة التصحيح اليوم.',
+            en: 'DRE is a share of all defects that ever existed — it must stay under 100% and complement the escape rate to 100 - DRE. The wrong denominator makes it a rocket with no ceiling the better you get: a removal efficiency of 900% is a number no metric can carry. You will meet this exact defect in today\u2019s debug block.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'مقياس Northwind الأعلى Qcust يوزن العيوب بالشدة ويقسم على التنصيبتات بالألف. أي خصلتين من مبادئ الدرس يجمعها هذا المقياس؟',
+            en: 'Northwind\u2019s top-line Qcust weights defects by severity and divides by thousands of installs. Which two lesson principles does it fuse?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الترتيبية تُلخَّص بالأوزان لا بالمتوسط، والتطبيع بالتعرض قبل المقارنة', en: 'Ordinal data gets weights instead of a mean, and counts are normalized by exposure before comparison' } },
+            { id: 'b', text: { ar: 'الأوزان تخفي التوزيع، والقسمة تلغي الفروق بين الإصدارات', en: 'Weights hide the distribution, and division cancels differences between releases' } },
+            { id: 'c', text: { ar: 'لا شيء — هي فقط متوسط بغلاف جديد', en: 'Neither — it is just a mean in new packaging' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الوزن (10/5/2/1) يقر بأن العيوب غير متكافئة دون أن يدّعي مسافات متساوية، والقسمة على ألف تنصيب تطبّق مبدأ «العدد الخام يقيس التنصيبتات». والمقياس يُقاس من النتائج لا من نشاط الفريق — فلا يمكن تحسينه بالعمل الخاطئ أكثر.',
+            en: 'The weights (10/5/2/1) acknowledge defects are unequal without pretending equal gaps, and dividing by thousand-install exposure applies \u201craw counts measure installs\u201d. And the metric reads outcomes, not team activity — so it cannot be improved by doing more of the wrong work.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'متوسط الشدة أو أولوية معدلة بالمتوسط — «2.7 حرج تقريبًا»',
+          right: 'أعداد لكل مستوى + وسيط؛ والأولوية قرار عمل منفصل عن الشدة',
+          note: {
+            ar: 'الشدة ترتيبية: عيب حرج ليس ثلاثة عيوب متوسطة، والجمع يفترض العكس. والإصدار بعيب حرج وخمسة منخفضة قد يقاتل إصدار بعشرة متوسطة رغم فوارق العدد — توزيع الشدة هو القصة، والوسيط يقرأها بلا افتراض مسافات.',
+            en: 'Severity is ordinal: one critical defect is not three mediums, and averaging assumes it is. A release with one Critical and five Lows can fight a release with ten Mediums regardless of totals — the severity distribution is the story, and the median reads it without pretending equal gaps.',
+          },
+        },
+        {
+          wrong: 'قراءة عدّ CFD الخام كمقياس جودة بين إصدارين',
+          right: 'طبّع بالتعرض أصلًا: عيوب لكل ألف تنصيب (أو مليون معاملة) ثم قارن',
+          note: {
+            ar: 'CFD الهابط قد يعني تحسن الكود — أو نزوح المستخدمين؛ والصاعد قد يعني تدهورًا — أو ميزة ناجحة ضاعفت التنصيبتات. العدد الخام يقيس الشعبية بقدر الجودة؛ وبعد التطبيع يصبح إصدار الـ23 الشاذ أنظف للفرد إذا كان تنصيبتاته أعشر.',
+            en: 'A falling CFD count may mean better code — or users fleeing; a rising one, decay — or a hit feature tripling installs. The raw count measures popularity as much as quality; after normalization the outlier release with 23 may be the cleanest per user if its exposure was tenfold.',
+          },
+        },
+        {
+          wrong: 'الاحتفال بـ84% ← 91% من زوج قبل/بعد واحد',
+          right: 'اسأل عن التشتت وفاصل الثقة حول التحسين — أو قل «لا نستطيع التمييز بعد»',
+          note: {
+            ar: 'المقاييس تتقافز بين الأرباع بلا أي تغيير حقيقي، وزوج واحد لا يميّز التحسن من الحظ. القاعدة: لا إعلان بلا فاصل ثقة — والدرسان القادمان يبنيانه. وإن كانت بياناتك أقل من افتراضاته فالأمانة: أرقام وصفية بحدودها المعلنة.',
+            en: 'Metrics bounce between quarters with nothing real changing, and one pair cannot tell improvement from luck. The rule: no announcement without a confidence interval — the next two lessons build it. And when your data cannot meet its assumptions, honesty is descriptive numbers with stated limits.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'الشدة سلم ترتيبي S1–S4 يلخَّص بالأعداد والوسيط لا بالمتوسط، وهي غير الأولوية — القرار متى نُصلح. توزيع الشدة يلتقط ما يدمّره العدد الكلي.', en: 'Severity is an ordinal S1-S4 ladder summarized by per-level counts and a median, never a mean — and it is distinct from priority, the business call of when to fix. The severity distribution captures what a raw count destroys.' },
+        { ar: 'DRE = 100 × D_before ÷ (D_before + D_after): حصة شباكك من كل ما وُجد يومًا؛ مؤقتة حتى نهاية نافذة القياس، ومقاومة للتلاعب لأنها تكافئ العثور على عيوبك. ومعدل الإفلات وجهها المكمّل: 100 − DRE.', en: 'DRE = 100 x D_before / (D_before + D_after): your nets\u2019 share of everything that ever existed; provisional until the window closes, and gaming-resistant because it rewards finding your own bugs. The escape rate is its complement: 100 - DRE.' },
+        { ar: 'CFD يقاس بالتعرض: لكل ألف تنصيب — العدد الخام يقيس التنصيبتات. ودراسة Northwind: Qcust موزون ومطبَّع، وهدفان فرعيان (DRE للمنتج وحقن/تغطية/جذور للإجراء)، و84% ← 91% تبقى أملًا حتى يحيط بها فاصل ثقة.', en: 'CFD is read per exposure: per thousand installs — raw counts measure installs. Northwind: Qcust weighted and normalized, two subgoals (DRE for product; injection, coverage and root-cause mix for process), and 84% → 91% stays a hope until a confidence interval brackets it.' },
+      ],
+      reflectPrompt: {
+        ar: 'افتح الملعب وضاعف تنصيبتات r1. اسأل نفسك: في مشروعك القادم، أي شبكة داخلية سترفع D_before فعلًا؟ وأي مقياس على لوحتك يخدع اليوم لأنه لم يُطبَّع بالتعرض — وما النافذة التي بعدها تصبح DRE صادقة؟',
+        en: 'Open the sandbox and quintuple r1\u2019s installs. Ask yourself: in your next project, which internal net will genuinely raise D_before? And which number on your board lies today because it was never normalized by exposure — after what window does your DRE become honest?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch12.s4', pages: 'ص321-323 / pp.321-323' },
+        { book: 'SWE', section: 'swe.ch12.s5', pages: 'ص323-325 / pp.323-325' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch12.s4', pages: 'ص321-323 / pp.321-323' },
+    { book: 'SWE', section: 'swe.ch12.s5', pages: 'ص323-325 / pp.323-325' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

@@ -1,0 +1,331 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch12.l4 — "Data Dispersion: Boxplots, Histograms, and Statistics
+ * تشتت البيانات: الصناديق والمدرجات والإحصاء"
+ * Aligned with SWE ch12 s6 (12.6 Data Dispersion: Boxplots and Histograms,
+ * pp.325-326) + s7 (12.7 Data Dispersion: Statistics, pp.326-329).
+ * All expression is original — a paraphrase of the CC BY-SA 4.0 source, never
+ * a verbatim translation.
+ * RUNNABLE-STATS design: the book's own `import statistics` anchor (stdev vs
+ * pstdev) plus a pure-Python five-number summary and fixed-bin histogram over
+ * the running CFD dataset. Deterministic only.
+ */
+const lesson = {
+  id: 'swe.ch12.l4',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 12,
+  title: { ar: 'تشتت البيانات: الصناديق والمدرجات والإحصاء', en: 'Data Dispersion: Boxplots, Histograms, and Statistics' },
+  estimatedMinutes: 35,
+  prerequisites: ['swe.ch12.l3'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'الرقم الواحد — المتوسط — يخفي كم البيانات متباعدة وأي شكل تحمل: سلسلتان تتشاركان متوسط 9 عيوب، إحداهما تتكتل حول 9 والأخرى تتأرجح من 0 إلى 30 — والتشتت غالبًا هو القصة الأهم لأنه يقول مدى قابلية عمليتك للتنبؤ. هذا الدرس يحول «متباعدة» إلى أرقام ورسوم: الوسيط والأرباع يقسمون البيانات أرباعًا تقاوم الشواذ، وصندوق القمم الخمس يرسم الحدبة والذيل ويحرس الأسوار التي خلفها يظهر الشاذ، والمدرج بصناديق ثابتة يكشف الحدبات والفراغات التي يلملمها الصندوق، والتباين والانحراف المعياري يلخصان المربعات — بمقام n−1 الذي يكلفك درجة حرية واحدة لأنك قدّرت المتوسط من البيانات نفسها. وكله على مجموعتنا الثابتة: أحد عشر عددًا متوسطها 9 بالضبط، وشاذ واحد عند 23 سيطاردنا حتى نهاية الفصل. بنهاية الدرس ستكون قادرًا على: حساب ملخص القمم الخمس والـIQR والأسوار بلغة بايثون خالصة، واستعمال statistics لقراءة s مقابل σ، ورسم مدرج نصي بصناديق ثابتة، وتفسير أيهما يقول الصدق عن إصدارك.',
+        en: 'A single number — the mean — hides how spread out and how shaped the data are: two release series can share a mean of 9 defects while one clusters around 9 and the other swings from 0 to 30 — and dispersion is often the more important story because it says how predictable your process is. This lesson turns \u201cspread out\u201d into numbers and pictures: median and quartiles split the data into outlier-resistant quarters, the five-number boxplot draws the hump and the tail and guards the fences beyond which an outlier shows itself, a fixed-bin histogram reveals humps and gaps a boxplot smooths over, and variance and standard deviation summarize the squares — divided by n-1, the one degree of freedom you pay because you estimated the mean from the same data. All of it on our fixed dataset: eleven values with a mean of exactly 9, and one outlier at 23 that will haunt us to the end of the chapter. By the end you will be able to: compute the five-number summary, IQR and fences in pure Python, use statistics to read s vs sigma, render a fixed-bin text histogram, and tell which summary is honest about your release.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "xs = [2, 4, 5, 5, 23]\nprint('mean: %.1f' % (sum(xs) / len(xs)))\nprint('median: %.1f' % xs[2])",
+      question: {
+        ar: 'القيمة 23 قفزت فوق قائمة هادئة. أي القراءتين انتُزعت من مكانها؟ وكم ستتحرك الوسيط لو صارت 230؟',
+        en: 'The value 23 leapt over a quiet list. Which reading got dragged off its place? And how far would the median move if it became 230?',
+      },
+      reveal: {
+        ar: 'الطباعة: mean: 7.8 ثم median: 5.0. المتوسط انتقل من 4 (متوسط الأربعة الأولى تقريبًا) إلى 7.8 بفعل قيمة واحدة؛ والوسيط لم يتحرك — نصف البيانات تحته لا يزال نصفها. لو صارت 230 لبقي الوسيط 5 تمامًا بينما قفز المتوسط إلى 49.2! هذه مقاومة الوسيط للشواذ، وهي أول درس في التشتت: قبل المتوسط اسأل من يسحبه.',
+        en: 'It prints mean: 7.8 then median: 5.0. One value dragged the mean from about 4 (the level of the first four) to 7.8; the median did not move — half the data still sits below it. Make it 230 and the median stays exactly 5 while the mean leaps to 49.2! That is the median\u2019s resistance to outliers, and it is dispersion lesson one: before trusting a mean, ask who is pulling it.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الأرباع والصندوق: القمم الخمس والأسوار', en: 'Quartiles and the box: five numbers and fences' },
+      chunks: [
+        {
+          ar: 'بياناتنا مرتبة: 2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23 — وأحد عشر قيمة فردية فالوسيط هو السادسة: 8. الأرباع تقسم الباقي: Q1 وسيط النصف الأدنى بعد استبعاد الوسيط نفسه — 2, 4, 5, 5, 7 فQ1 = 5؛ وQ3 وسيط النصف الأعلى — 9, 10, 12, 14, 23 فQ3 = 12. والمدى الربيعي IQR = Q3 − Q1 = 7 يقيس انتشار الـ50% الوسطى من البيانات — ولهذا يقاوم الشواذ مثل الوسيط: القيمة 23 لا تدخل الحساب أصلًا.',
+          en: 'Our sorted data: 2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23 — eleven values, odd, so the median is the sixth: 8. Quartiles split the rest: Q1 is the median of the lower half after excluding the overall median — 2, 4, 5, 5, 7 gives Q1 = 5; Q3 the median of the upper half — 9, 10, 12, 14, 23 gives Q3 = 12. The interquartile range IQR = Q3 - Q1 = 7 measures the spread of the middle 50% — which is why, like the median, it resists outliers: the 23 never enters the computation.',
+        },
+        {
+          ar: 'الصندوق يرسم ملخص القمم الخمس: صندوق من Q1 إلى Q3 بخط عند الوسيط، وشاربان تصلان أقصى قيمة غير شاذة. الأسوار القياسية: أدنى = Q1 − 1.5 × IQR = 5 − 10.5 = −5.5، وأعلى = Q3 + 1.5 × IQR = 12 + 10.5 = 22.5. لا شيء تحت السقف الأدنى، لكن 23 تتخطى 22.5 — فهي شاذة رسمية والشارب الأعلى يتوقف عند 14. القراءة بمحة: الصندوق (5 إلى 12) يحمل نصف الإصدارات، والوسيط 8 يقع يسار مركز الصندوق قليلًا — ميل يميني خفيف (ذيل أطول نحو الأعداد العالية)، والإصدار 23 يستحق تحقيقًا مستقلًا: طفرة تنصيبتات أم إصدار فاشل؟ وضعي صندوقين جنبًا إلى جنب — قبل التحسين وبعده — فيريان هل نزعت التوزيعة كلها نزولًا وكيف تغيّر انتشارها، وما لا يظهره المتوسط أبدًا.',
+          en: 'The boxplot draws the five-number summary: a box from Q1 to Q3 with a line at the median, and whiskers reaching the most extreme non-outlier values. Standard fences: lower = Q1 - 1.5 x IQR = 5 - 10.5 = -5.5; upper = Q3 + 1.5 x IQR = 12 + 10.5 = 22.5. Nothing falls below -5.5, but 23 exceeds 22.5 — an official outlier, and the upper whisker stops at 14. Read at a glance: the box (5 to 12) holds half the releases; the median 8 sits a little left of the box center — mild right skew (a longer tail toward high counts); and the release at 23 deserves its own investigation: an installs spike or a botched release? Two boxplots side by side — before the improvement and after — show whether the whole distribution moved down and how its spread changed; the mean can never show either.',
+        },
+        {
+          ar: 'والمدرج يكمّل الصندوق: صناديق متساوية العرض على محور متصل وارتفاع كل عمود عدد القيم فيه — بعرض 5 تسقط بياناتنا هكذا: [0,5) فيها 2، و[5,10) فيها 5، و[10,15) فيها 3، و[15,20) فارغ، و[20,25) فيها 1. الشكل يؤكد الصندوق: حدبة في الآحاد وذيل يميني وقيمة معزولة عند 23 — لكنه يكشف أيضًا الفراغ الكامل بين 14 و23 وهو ما يلمله الصندوق. الاثنان معًا قبل الثقة بأي متوسط: الصندوق يعطي ملخصًا حادًا ويرفع راية الشاذ، والمدرج يري الشكل الكامل والتعددية والفجوات.',
+          en: 'And the histogram completes the boxplot: equal-width bins on a continuous axis, each bar\u2019s height a count — at width 5 our data fall as: [0,5) holds 2, [5,10) holds 5, [10,15) holds 3, [15,20) is empty, [20,25) holds 1. The shape confirms the boxplot: a hump in the single digits, a right tail, one isolated value at 23 — but it also exposes the complete gap between 14 and 23, which the boxplot smooths over. Use both before trusting any mean: the boxplot gives a crisp summary and flags the outlier; the histogram shows the full shape, modality and gaps.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'التباين والانحراف: المربعات وn−1', en: 'Variance and standard deviation: squares and n-1' },
+      chunks: [
+        {
+          ar: 'التباين يقيس متوسط مربع البعد عن المتوسط. لعينة — بيانات مرسومة من مجتمع أكبر نريد الاستدلال عنه — نقسم على n−1 لا n: s² = Σ(xᵢ − x̄)² ÷ (n−1). جدول الانحرافات لبياناتنا: 2 يبعد −7 فيساهم 49، و4 يساهم 25، و5 و5 يساهمان 16 و16، و7 يساهم 4، و8 يساهم 1، و9 صفر، و10 يساهم 1، و12 يساهم 9، و14 يساهم 25، و23 يبعد 14 فيساهم 196 — والمجموع 342 (والانحرافات نفسها تجمع صفرًا: فحص مفيد دائمًا). إذن s² = 342 ÷ 10 = 34.2، وs = √34.2 ≈ 5.85 — بوحدات أصلية (عيوب): إصدار نمطي يهبط على بعد نحو 5.85 عيبًا من المتوسط 9.',
+          en: 'Variance measures the average squared distance from the mean. For a sample — data drawn from a larger population you want to infer about — divide by n-1, not n: s² = Σ(xᵢ - x̄)² / (n-1). The deviation table for our data: 2 sits -7 away contributing 49; 4 contributes 25; the two 5s contribute 16 each; 7 gives 4; 8 gives 1; 9 gives 0; 10 gives 1; 12 gives 9; 14 gives 25; and 23 sits 14 away contributing 196 — total 342 (and the deviations themselves sum to zero: a handy check, always). So s² = 342/10 = 34.2 and s = √34.2 ≈ 5.85 — in original units (defects): a typical release lands about 5.85 defects from the mean of 9.',
+        },
+        {
+          ar: 'لماذا n−1؟ لأنك قدّرت المتوسط من البيانات نفسها فاستهلكت درجة حرية واحدة، والقسمة على n تعطي تباينًا أصغر systematically — وهذا تصحيح Bessel. ولاحظ من الذي يحكم: مساهمة الشاذ 23 وحدها 196 — أكثر من نصف مجموع المربعات كله! الانحراف المعياري غير مقاوم للشواذ، وهذه سبب إضافي لقراءة IQR الصندوقي بجانبه. ولو كانت قيمنا الأحد عشر المجتمع كله لا عينة، لقسمنا على n=11: σ² = 342/11 ≈ 31.1 وσ ≈ 5.58.',
+          en: 'Why n-1? You estimated the mean from the same data, spending one degree of freedom, and dividing by n makes the variance systematically too small — Bessel\u2019s correction. And notice who rules: the outlier 23 alone contributes 196 — more than half the entire sum of squares! Standard deviation is not resistant to outliers, one more reason to read the boxplot\u2019s IQR beside it. Had our eleven values been the whole population rather than a sample, we would divide by n=11: sigma² = 342/11 ≈ 31.1 and sigma ≈ 5.58.',
+        },
+        {
+          ar: 'ومكتبة statistics تحمل الوجهين بأسماء صريحة: stdev تقسم على n−1 (العينة) وpstdev تقسم على n (المجتمع) — وهذا ما ستراه في الشارح: 5.85 مقابل 5.58 على بياناتنا نفسها. التحذير الذي يختم به الكتاب: المكتبات تختلف في المقام الافتراضي — مكتبات أخرى مثل NumPy تنقسم على n بصمت (ddof=0) فتعطي نسخة المجتمع 5.58 وهي تظنها العينة؛ قبل أن تثق بمخرجات أي مكتبة، تحقق أي نسخة تحسب. على المؤشر الفاصل بين عينة ومجتمع: إن كنت ستستدل عن مستقبل بلا نهاية من إصدارات محدودة فأنت عينة — استعمل stdev.',
+          en: 'And the statistics module carries both faces under explicit names: stdev divides by n-1 (sample) and pstdev by n (population) — what you will see in the worked example: 5.85 vs 5.58 on the very same data. The book\u2019s closing warning: libraries differ on the default divisor — others, like NumPy, silently divide by n (ddof=0), handing you the population 5.58 while you believe you have the sample. Before trusting any library\u2019s output, check which version it computes. The dividing question between sample and population: if you will infer about an unbounded future from limited releases, you have a sample — use stdev.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'statistics على بياناتنا: s مقابل σ', en: 'statistics on our data: s vs sigma' },
+      code: "import statistics\ncfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nprint('mean: %.1f' % statistics.mean(cfds))\nprint('median: %s' % statistics.median(cfds))\ns = statistics.stdev(cfds)\nsigma = statistics.pstdev(cfds)\nprint('stdev: %.2f (sample, n-1)' % s)\nprint('pstdev: %.2f (population, n)' % sigma)",
+      explanation: {
+        ar: 'هذا حرفيًّا نمط الكتاب — تحقق حسابي بالكود. المتوسط 9.0 يطابق جدول الانحرافات، والوسيط 8 يطابق القيمة السادسة. ثم السطران الحاسمان: stdev = 5.85 يقسم على 10 (n−1) فيطابق s² = 342/10 المكتوبة بيدك، وpstdev = 5.58 يقسم على 11 فيطابق σ² = 342/11. البيانات نفسها، والفرق كله في المقام — وهذا بالضبط ما يعنيه «تحقق أي نسخة تحسبها المكتبة». لاحظ أيضًا أن statistics.median أعادت 8 عددًا صحيحًا لأنها اختارت قيمة موجودة، بينما المتوسط 9.0 عائم: الطباعة تكشف نوع الإرجاع فلا تندهش في اختبار تطابق نصي.',
+        en: 'This is the book\u2019s own pattern — arithmetic verified in code. The mean 9.0 matches the deviation table and the median 8 matches the sixth value. Then the two decisive lines: stdev = 5.85 divides by 10 (n-1), matching the hand-written s² = 342/10; pstdev = 5.58 divides by 11, matching sigma² = 342/11. Same data, the whole difference in the divisor — exactly what \u201ccheck which version the library computes\u201d means. Notice also that statistics.median returned the integer 8 (it picks an existing value) while the mean is the float 9.0: the printed form reveals the return type, so a string comparison never surprises you.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.stats-trace',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرجه بالضبط — سطرًا لكل طباعة — دون تشغيله. مراجعة سريعة: statistics.mean يجمع ويقسم، وstatistics.median يختار الوسط بعد الترتيب.',
+        en: 'Read the code and predict its exact output — one line per print — without running it. A quick refresher: statistics.mean adds and divides; statistics.median picks the middle after sorting.',
+      },
+      code: "import statistics\nxs = [2, 4, 5, 5, 7]\nprint(statistics.mean(xs))\nprint(statistics.median(xs))",
+      solution: '4.6\n5',
+      answer: '4.6\n5',
+      hints: [
+        { ar: 'المجموع 2 + 4 + 5 + 5 + 7 = 23، والقسمة على 5 تعطي 4.6 — يطبع كما هو لأنه عائم غير صحيح.', en: 'The sum 2 + 4 + 5 + 5 + 7 = 23, divided by 5 gives 4.6 — printed as-is because it is a non-integral float.' },
+        { ar: 'القائمة مرتبة أصلًا والعدد فردي (5) — الوسيط هو الثالثة: 5. لأنها قيمة موجودة في البيانات يعيدها المكتبة عددًا صحيحًا فيطبع 5 بلا منزلة عشرية.', en: 'The list is already sorted with odd length (5) — the median is the third value: 5. Because it is an existing data point the module returns an integer, printed as 5 with no decimal.' },
+        { ar: 'لاحظ التباين: mean أعاد 4.6 (كسر حتمًا) وmedian أعاد 5 (عدد صحيح) — نفس المكتبة، سلوك إرجاع مختلف بحسب القيمة.', en: 'Note the asymmetry: mean returned 4.6 (necessarily a fraction) while median returned 5 (an integer) — one library, different return types by value.' },
+        { ar: 'الخرج:\n4.6\n5', en: 'The output:\n4.6\n5' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.five-number',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'ملخص القمم الخمس بلغة بايثون خالصة (cfds وmedian_of جاهزان): احسب lo = وسيط النصف الأدنى cfds[:n//2]، وmed = وسيط الكل، وhi = وسيط النصف الأعلى cfds[n//2+1:] (لأن n فردي)، ثم iqr = hi − lo، والسورين lo − 1.5×iqr وhi + 1.5×iqr، وقائمة outliers بالقيم خارج السورين. اطبع ثمانية أسطر بهذه الصيغ حرفيًا: min: %d وQ1: %s وmedian: %s وQ3: %s وmax: %d وIQR: %s وfence: %s %s وoutliers: %s. المتوقع: min: 2 / Q1: 5 / median: 8 / Q3: 12 / max: 23 / IQR: 7 / fence: -5.5 22.5 / outliers: [23].',
+        en: 'The five-number summary in pure Python (cfds and median_of are given): compute lo = median of the lower half cfds[:n//2], med = median of everything, hi = median of the upper half cfds[n//2+1:] (n is odd), then iqr = hi - lo, the two fences lo - 1.5*iqr and hi + 1.5*iqr, and an outliers list of values beyond the fences. Print exactly eight lines: min: %d, Q1: %s, median: %s, Q3: %s, max: %d, IQR: %s, fence: %s %s, outliers: %s. Expected: min: 2 / Q1: 5 / median: 8 / Q3: 12 / max: 23 / IQR: 7 / fence: -5.5 22.5 / outliers: [23].',
+      },
+      starterCode: "def median_of(xs):\n    s = sorted(xs)\n    n = len(s)\n    mid = n // 2\n    if n % 2 == 1:\n        return s[mid]\n    return (s[mid - 1] + s[mid]) / 2\n\ncfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nn = len(cfds)\n\n# lo وmed وhi ثم iqr والسورين ثم outliers\n# lo, med, hi, then iqr, both fences, then outliers\n",
+      solution: "def median_of(xs):\n    s = sorted(xs)\n    n = len(s)\n    mid = n // 2\n    if n % 2 == 1:\n        return s[mid]\n    return (s[mid - 1] + s[mid]) / 2\n\ncfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nn = len(cfds)\nlo = median_of(cfds[:n // 2])\nmed = median_of(cfds)\nhi = median_of(cfds[n // 2 + 1:])\niqr = hi - lo\nlower_fence = lo - 1.5 * iqr\nupper_fence = hi + 1.5 * iqr\noutliers = []\nfor v in cfds:\n    if v < lower_fence or v > upper_fence:\n        outliers.append(v)\nprint('min: %d' % cfds[0])\nprint('Q1: %s' % lo)\nprint('median: %s' % med)\nprint('Q3: %s' % hi)\nprint('max: %d' % cfds[-1])\nprint('IQR: %s' % iqr)\nprint('fence: %s %s' % (lower_fence, upper_fence))\nprint('outliers: %s' % outliers)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'الأرباع والوسيط صحيحة', en: 'Quartiles and median are correct' },
+          code: "assert 'Q1: 5' in __learner_output__ and 'median: 8' in __learner_output__ and 'Q3: 12' in __learner_output__, 'expected: Q1: 5 / median: 8 / Q3: 12 | actual: %r' % __learner_output__",
+          expected: 'Q1: 5 / median: 8 / Q3: 12',
+        },
+        {
+          id: 't2',
+          name: { ar: 'IQR والأسوار صحيحة', en: 'IQR and fences are correct' },
+          code: "assert 'IQR: 7' in __learner_output__ and 'fence: -5.5 22.5' in __learner_output__, 'expected: IQR: 7 then fence: -5.5 22.5 | actual: %r' % __learner_output__",
+          expected: 'IQR: 7 then fence: -5.5 22.5',
+        },
+        {
+          id: 't3',
+          name: { ar: 'الشاذ الوحيد 23', en: 'The sole outlier is 23' },
+          code: "assert 'outliers: [23]' in __learner_output__, 'expected: outliers: [23] | actual: %r' % __learner_output__",
+          expected: 'outliers: [23]',
+        },
+        {
+          id: 't4',
+          name: { ar: 'السور الأعلى والقائمة محسوبان بالصيغة', en: 'Upper fence and list match the formula' },
+          code: "assert abs(upper_fence - 22.5) < 1e-9 and outliers == [23], 'expected: upper fence 22.5 and outliers [23] | actual: %r' % ((upper_fence, outliers),)",
+          expected: 'upper fence 22.5 and outliers [23]',
+        },
+      ],
+      hints: [
+        { ar: 'الشرائح: cfds[:n // 2] تعطي الخمس الأولى [2, 4, 5, 5, 7]، وcfds[n // 2 + 1:] تعطي الخمس الأخيرة [9, 10, 12, 14, 23] — القيمة الوسطى cfds[5] = 8 خارج النصفين.', en: 'The slices: cfds[:n // 2] is the first five [2, 4, 5, 5, 7]; cfds[n // 2 + 1:] is the last five [9, 10, 12, 14, 23] — the middle value cfds[5] = 8 belongs to neither half.' },
+        { ar: 'الأسيار: lower_fence = lo - 1.5 * iqr وupper_fence = hi + 1.5 * iqr — الناتجان عائمان فيظهر -5.5 و22.5.', en: 'The fences: lower_fence = lo - 1.5 * iqr and upper_fence = hi + 1.5 * iqr — both come out floats: -5.5 and 22.5.' },
+        { ar: 'الشواذ حلقة تجمع ما يخالف: if v < lower_fence or v > upper_fence: outliers.append(v) — لا تنسَ الاشتراط بالاتجاهين.', en: 'Outliers are collected by a loop: if v < lower_fence or v > upper_fence: outliers.append(v) — do not forget both directions.' },
+        { ar: 'لو ظهر Q3: 11.0 فراجع شرائحك — من أدخل الوسيط 8 في النصف الأعلى حصل على [8, 9, 10, 12, 14, 23] ووسيطها 11.0: هذا خطأ اليوم الأشهر.', en: 'If you see Q3: 11.0 audit your slices — including the median 8 in the upper half yields [8, 9, 10, 12, 14, 23] with median 11.0: the classic mistake.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.bessel-mcq',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'لماذا نقسم مجموع مربعات الانحرافات على n−1 عند حساب تباين عينة، لا على n؟',
+        en: 'Why does sample variance divide the sum of squared deviations by n-1 rather than n?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'لأن n−1 يجعل الناتج أصغر دائمًا فنبقى متحفظين', en: 'Because n-1 always makes the result smaller, keeping us conservative' } },
+        { id: 'b', text: { ar: 'لأنك قدّرت المتوسط من البيانات نفسها فاستهلكت درجة حرية — والقسمة على n تعطي تباينًا أصغر systematically (تصحيح Bessel)', en: 'Because the mean was estimated from the same data, spending one degree of freedom — dividing by n is systematically too small (Bessel\u2019s correction)' } },
+        { id: 'c', text: { ar: 'لتجنب القسمة على صفر حين تكون العينة فردية', en: 'To avoid division by zero when the sample size is odd' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'الانحرافات عن متوسط العينة تجمع صفرًا حتمًا — فعرفًا منها بأخرى تنقص حرية واحدة: n−1 قيَم مستقلة فعلًا.', en: 'Deviations from the sample mean sum to zero by construction — knowing n-1 of them determines the last: only n-1 values are truly free.' },
+        { ar: 'الأثر عددي على بياناتنا: 342 ÷ 10 = 34.2 عينة، و342 ÷ 11 = 31.1 مجتمع — القسمة على n تبالغ في الثقة.', en: 'The numeric effect on our data: 342/10 = 34.2 sample, 342/11 = 31.1 population — dividing by n overstates confidence.' },
+        { ar: 'ولهذاstatistics تسمّي الوجهين: stdev (عينة) وpstdev (مجتمع) — وبعض المكتبات الأخرى تنقسم على n بصمت.', en: 'Which is why statistics names both faces: stdev (sample) and pstdev (population) — while some other libraries silently divide by n.' },
+        { ar: 'الجواب: b — Bessel\u2019s correction for the estimated mean.', en: 'Answer: b — Bessel\u2019s correction for the estimated mean.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.variance-numeric',
+      exKind: 'numeric',
+      required: true,
+      prompt: {
+        ar: 'بيانات العيوب: 2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23 — مجموع مربعات الانحرافات عن المتوسط 9 هو 342. كم تباين العينة s² (قسّم على n−1)؟ (رقم بم منزلة عشرية واحدة)',
+        en: 'The defect data: 2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23 — the sum of squared deviations from the mean of 9 is 342. What is the sample variance s² (divide by n-1)? (one decimal place)',
+      },
+      answer: '34.2',
+      solution: '34.2',
+      tolerance: 0.1,
+      hints: [
+        { ar: 'n = 11 فالمقام n − 1 = 10 — عينة لا مجتمع.', en: 'n = 11, so the denominator is n - 1 = 10 — a sample, not the population.' },
+        { ar: 's² = 342 ÷ 10 — والانحراف الأكبر كان للقيمة 23: بعد 14 فيساهم 196.', en: 's² = 342 / 10 — the biggest deviation belonged to 23: 14 away, contributing 196.' },
+        { ar: 'والانحراف المعياري جذر الناتج: √34.2 ≈ 5.85 — بوحدات العيوب نفسها.', en: 'The standard deviation is its square root: √34.2 ≈ 5.85 — back in defect units.' },
+        { ar: 'الجواب: 34.2', en: 'Answer: 34.2' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "import statistics\ncfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nprint('s: %.2f' % statistics.stdev(cfds))\nprint('sigma: %.2f' % statistics.pstdev(cfds))\nq = statistics.quantiles(cfds, n=4)\nprint('IQR: %.2f' % (q[2] - q[0]))\n\ndef draw_box(lo, med, hi, lo_f, hi_f, xs):\n    line = ''\n    for v in range(0, 25):\n        if v == lo or v == med or v == hi:\n            line = line + '|'\n        elif lo < v < hi:\n            line = line + '='\n        elif v == round(hi_f) or v == round(lo_f):\n            line = line + '!'\n        else:\n            line = line + '.'\n    print(line)\n    print('Q1=%s med=%s Q3=%s fences=%s %s' % (lo, med, hi, lo_f, hi_f))\n\ndraw_box(5, 8, 12, -5.5, 22.5, cfds)\n\n# جرّب: احذف 23 من القائمة وأعد الطباعة — كم صار s؟ وأين ذهب الشاذ؟\n# try: delete 23 from the list and reprint — what is s now? where did the outlier go?\n# جرّب: قارن s وsigma قبل وبعد حذف 23 — أيهما تحرك أكثر ولماذا؟\n# try: compare s and sigma before and after deleting 23 — which moved more and why?\n# جرّب: غيّر بياناتك إلى [7, 8, 9, 10, 11] — ما الشكل الجديد للسطر النصي؟\n# try: swap your data to [7, 8, 9, 10, 11] — what is the new shape of the text line?",
+      prompt: {
+        ar: 'الملعب يقرأ التشتت بأداتين: أرقام s وsigma وفاصل IQR من المكتبة، ورسم صندوق نصي محرفًا محرفًا. احذف الشاذ وراقب أي الأرقام يتحرك أكثر، وبدّل البيانات بتوزيعة متماثلة وراقب السطر يمتدّ متناظرًا. لا اختبار هنا — فضولك فقط.',
+        en: 'The sandbox reads dispersion two ways: library numbers s, sigma and the IQR span, and a character-by-character text boxplot. Delete the outlier and watch which number moves more; swap in a symmetric dataset and watch the line stretch evenly. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ومن PY4E الفصل الثامن: الشرائح تقص القوائم — xs[:k] وxs[k:]. في حساب الأرباع لبياناتنا (n = 11) لماذا كان النصف الأدنى cfds[:5] والأعلى cfds[6:] لا cfds[5:]؟',
+            en: 'From PY4E chapter 8: slices cut lists — xs[:k] and xs[k:]. Computing quartiles on our data (n = 11), why is the lower half cfds[:5] and the upper cfds[6:], not cfds[5:]?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن الشرائح لا تشمل العنصر الأخير أبدًا', en: 'Because slices never include the last element' } },
+            { id: 'b', text: { ar: 'لأن cfds[5] = 8 هو الوسيط الكلي — يدخل ولا النصفين حسب طريقة الكتاب، وإلا انحرف Q3 إلى 11.0', en: 'Because cfds[5] = 8 is the overall median — excluded from both halves by the book\u2019s method, otherwise Q3 drifts to 11.0' } },
+            { id: 'c', text: { ar: 'لأن القوائم مفهرسة من 1 في بايثون', en: 'Because Python lists are indexed from 1' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'طريقة الكتاب تستبعد الوسيط الكلي من النصفين حين يكون n فرديًا — فالنصفان خمسة وخمسة وQ1 = 5 وQ3 = 12. لو أدخلتَ 8 في النصف الأعلى لحصلت على وسطه 11.0 وIQR = 6 وسور أعلى 20.0 — فجوة قرار حقيقية في الإحصاء الوصفي تعلمناها لأننا نبني كل شيء بأيدينا.',
+            en: 'The book\u2019s method excludes the overall median from both halves when n is odd — halves of five and five, Q1 = 5, Q3 = 12. Fold 8 into the upper half and its median becomes 11.0, IQR = 6, upper fence 20.0 — a genuine definitional fork in descriptive statistics we only learned because we build everything by hand.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'سلسلتان متوسطهما 9: إحداهما 7-11 والأخرى 0-30. أي أداة من درس اليوم تميّزهما فورًا وماذا تقول؟',
+            en: 'Two series share a mean of 9: one spans 7-11, the other 0-30. Which tool from today separates them instantly, and what does it say?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لا شيء — المتوسط نفسه يعني السلوك نفسه', en: 'Nothing — the same mean means the same behavior' } },
+            { id: 'b', text: { ar: 'الصندوق/IQR: الأولى IQR صغير وصندوق ضيق وقابلية تنبؤ عالية؛ والثانية صندوق عريض وشاربان طويلان وعمليتك تتنفس عشوائيًا', en: 'The boxplot/IQR: the first has a tight box and high predictability; the second a wide box, long whiskers — a process breathing wildly' } },
+            { id: 'c', text: { ar: 'الmode — الأكثر تكرارًا يكفي', en: 'The mode — the most frequent value suffices' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'التشتت هو القصة الثانية التي يخفيها المتوسط: IQR يقيس عرض الـ50% الوسطى والشاربان يريان الذيل. عمليتنا القابلة للتنبؤ تُخفّض مخاطر الإصدار حتى لو بقي متوسطها نفسه — وهذا سبب رسم صندوقين جنبًا إلى جنب قبل التحسين وبعده.',
+            en: 'Dispersion is the second story the mean hides: the IQR measures the middle 50%\u2019s width and the whiskers show the tail. A predictable process devalues release risk even at an identical mean — which is why two boxplots, before and after, are drawn side by side.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'على بياناتنا نفسها: statistics.stdev أعطت 5.85 وstatistics.pstdev أعطت 5.58. متى تستعمل الأولى؟',
+            en: 'On the very same data: statistics.stdev gives 5.85 and statistics.pstdev gives 5.58. When do you use the first?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'حين تكون قيمك عينة تريد الاستدلال بها عن مجتمع أكبر — إصدارات محدودة تمثل مستقبلًا مفتوحًا', en: 'When your values are a sample you will infer from about a larger population — limited releases standing for an open future' } },
+            { id: 'b', text: { ar: 'حين تريد رقمًا أكبر يبهر الإدارة', en: 'When you want the bigger number to impress management' } },
+            { id: 'c', text: { ar: 'عندما تكون البيانات مرتبة', en: 'When the data are sorted' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'stdev تقسم على n−1 (تصحيح Bessel لعينة قدّرت متوسطها) وpstdev على n (المجتمع كله بين يديك). والقرار العملي: إن كانت إصداراتك الحادية عشر عينة من عملية مستمرة فstdev؛ وإن كانت كل الإصدارات التي شُيّدت يومًا فpstdev. وتذكر تحذير الكتاب: مكتبات أخرى تنقسم على n بصمت.',
+            en: 'stdev divides by n-1 (Bessel\u2019s correction for a sample whose mean you estimated); pstdev by n (the whole population in hand). The practical call: eleven releases from an ongoing process — stdev; every release ever shipped — pstdev. And recall the book\u2019s warning: some other libraries silently divide by n.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'ما الذي يكشفه المدرج التكراري ولا يكشفه الصندوق مهما دقّت؟',
+            en: 'What does the histogram reveal that no boxplot, however careful, can?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الفجوات والتعددية — مثل الفراغ الكامل بين 14 و23 في بياناتنا', en: 'Gaps and modality — like the complete void between 14 and 23 in our data' } },
+            { id: 'b', text: { ar: 'الوسيط — المحور الأفقي يشير إليه', en: 'The median — the horizontal axis points at it' } },
+            { id: 'c', text: { ar: 'الشواذ — أعلى عمود دائمًا هو الشاذ', en: 'Outliers — the tallest bar is always the outlier' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الصندوق يلملم كل ما بين القمم الخمس: لا يرى فراغًا ولا قمتين. المدرج بصناديقه المرتبة يري الحدبة والحدبتين والفجوة التي فيها صفر إصدارات — ومعرفة أن 23 معزولة وليست جزء ذيل كثيف تغيّر سؤال التحقيق كله: إصدار واحد فاشل لا موجة سوء.',
+            en: 'The boxplot folds everything between the five numbers: it cannot see a gap or two humps. The histogram, bins ordered, shows the hump, a possible second mode, and the zero-release void — and knowing 23 is isolated rather than a dense tail changes the investigation entirely: one botched release, not a wave of badness.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'الإبلاغ بالمتوسط وحده — «متوسط عيوبنا 9 فالوضع مستقر»',
+          right: 'أرفق التشتت: IQR وصندوق وs — وراقب الشاذ قبل أن يتكلم عنك',
+          note: {
+            ar: 'سلسلتان بمتوسط 9: واحدة تتنبأ والأخرى تقامر. المتوسط لا يفرّقهما — والصندوق يفرّقهما بمحة. القاعدة من خلاصة الكتاب: المتوسط بلا تشتت يخدع، والصندوق والمدرج يريان الشكل والشواذ التي يخفيها.',
+            en: 'Two series at mean 9: one predictable, one gambling. The mean cannot tell them apart — the boxplot does at a glance. The book\u2019s verdict applies: a mean without spread misleads; boxplot and histogram reveal the shape and outliers it hides.',
+          },
+        },
+        {
+          wrong: 'الاعتماد على s كأنه حصين — «الانحراف 5.85 فلا شيء يفلت»',
+          right: 's غير مقاوم للشواذ: مساهمة 23 وحدها 196 من أصل 342 — اقرأ IQR بجانبه',
+          note: {
+            ar: 'مربع البعد يضخّم القيم المتطرفة أسّيًا: قيمة واحدة فوق السور حكمت على أكثر من نصف التباين. لهذا يجلس الصندوق بجانب s: الأول يقاوم بالترتيب والثاني يقيس بالقوة — ووجود فرق كبير بينهما بتّان علامة على ذيل خطر.',
+            en: 'Squaring distances amplifies extremes: a single value beyond the fence owned over half the variance. That is why the boxplot sits beside s: one resists by order, the other measures by force — a wide disagreement between them is itself the alarm for a dangerous tail.',
+          },
+        },
+        {
+          wrong: 'ثقة عمياء بمخرجات المكتبة — كل stdev واحدة',
+          right: 'تحقق أي مقام تحسب: n أم n−1 — في هذه المكتبة stdev/pstdev صريحان، وفي غيرها قد يكون الافتراضي صامتًا',
+          note: {
+            ar: 'كتب الكتاب التحذير حرفيًّا: المكتبات تختلف في المقام الافتراضي — نسخة المجتمع (5.58) قد تصلك وأنت تظنها العينة (5.85). على بيانات صغيرة الفرق مرئي؛ وعلى فاصل ثقة (الدرس القادم) الفرق يمسّ القرار. اقرأ التوثيق وجرّب على عينة يعرف جوابها.',
+            en: 'The book warns verbatim: libraries differ on the default divisor — the population version (5.58) may reach you labeled as the sample (5.85). On small data the gap is visible; on a confidence interval (next lesson) it touches decisions. Read the docs and test on a dataset whose answer you know.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'التشتت القصة الثانية: على بياناتنا — وسيط 8 وQ1 = 5 وQ3 = 12 وIQR = 7، والصندوق يرسم القمم الخمس بأسوار −5.5 و22.5، والقيمة 23 شاذ رسمي والشارب يتوقف عند 14، والميل يميني خفيف.', en: 'Dispersion is the second story: on our data — median 8, Q1 = 5, Q3 = 12, IQR = 7; the boxplot draws the five-number summary with fences at -5.5 and 22.5; 23 is an official outlier, the whisker stops at 14, and the skew is mildly right.' },
+        { ar: 'المدرج بصناديق ثابتة يكمّل الصندوق: حدبة في الآحاد وفراغ بين 14 و23 وشاذ معزول — والاثنان معًا قبل أي متوسط.', en: 'The fixed-bin histogram completes the boxplot: a hump in the single digits, a void between 14 and 23, an isolated outlier — read both before any mean.' },
+        { ar: 'التباين بمربعات وn−1 (تصحيح Bessel): s² = 342/10 = 34.2 وs ≈ 5.85 عينة، وσ² = 342/11 ≈ 31.1 وσ ≈ 5.58 مجتمع — وstatistics تسميهما stdev/pstdev، والشاذ 23 يساهم وحده بأكثر من نصف مجموع المربعات.', en: 'Variance squares distances and divides by n-1 (Bessel): s² = 342/10 = 34.2 with s ≈ 5.85 for a sample; sigma² = 342/11 ≈ 31.1 with sigma ≈ 5.58 for a population — statistics names them stdev/pstdev, and the outlier 23 alone contributes over half the sum of squares.' },
+      ],
+      reflectPrompt: {
+        ar: 'افتح الملعب واحذف 23 ثم أعد s وsigma والرسم. اسأل نفسك: آخر مرة أُبلغ فيها بمتوسط — هل رافقته قراءة تشتت؟ وماذا ستفعل غدًا حين يعرض عليك تقرير رقمًا واحدًا عن إصدار يعيش ذيلًا ثقيلًا؟',
+        en: 'Open the sandbox, delete 23, and recompute s, sigma and the drawing. Ask yourself: the last time someone reported you a mean — did it come with a dispersion reading? And what will you demand tomorrow when a report offers one number for a release living with a heavy tail?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch12.s6', pages: 'ص325-326 / pp.325-326' },
+        { book: 'SWE', section: 'swe.ch12.s7', pages: 'ص326-329 / pp.326-329' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch12.s6', pages: 'ص325-326 / pp.325-326' },
+    { book: 'SWE', section: 'swe.ch12.s7', pages: 'ص326-329 / pp.326-329' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

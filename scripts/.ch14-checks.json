@@ -1,0 +1,217 @@
+{
+ "traces": [
+  {
+   "lesson": "py4e.ch14.l1",
+   "id": "ex2.trace-string-methods",
+   "code": "word = 'python'\ncaps = word.upper()\nprint(caps)\nprint(word.find('th'))\nprint(word.replace('py', 'mi'))",
+   "answer": "PYTHON\n2\nmithon"
+  },
+  {
+   "lesson": "py4e.ch14.l2",
+   "id": "ex2.trace-two-forms",
+   "code": "class Echo:\n    def say(self):\n        print('echo')\n\ne = Echo()\ne.say()\nEcho.say(e)",
+   "answer": "echo\necho"
+  },
+  {
+   "lesson": "py4e.ch14.l3",
+   "id": "ex2.trace-timer",
+   "code": "class Timer:\n    def __init__(self):\n        self.count = 0\n        print('built')\n\n    def bump(self):\n        self.count = self.count + 1\n\nt = Timer()\nt.bump()\nt.bump()\nprint(t.count)\nprint(type(t.count))",
+   "answer": "built\n2\n<class 'int'>"
+  },
+  {
+   "lesson": "py4e.ch14.l4",
+   "id": "ex2.trace-construction-order",
+   "code": "class Logger:\n    def __init__(self, name):\n        self.name = name\n        print(name, 'ready')\n\n    def ping(self):\n        print('ping', self.name)\n\np = Logger('one')\nq = Logger('two')\np.ping()",
+   "answer": "one ready\ntwo ready\nping one"
+  },
+  {
+   "lesson": "py4e.ch14.l5",
+   "id": "ex2.trace-override",
+   "code": "class A:\n    def hi(self):\n        print('hello from A')\n\nclass B(A):\n    def hi(self):\n        print('hello from B')\n\nx = A()\ny = B()\nx.hi()\ny.hi()",
+   "answer": "hello from A\nhello from B"
+  },
+  {
+   "lesson": "py4e.ch14.l6",
+   "id": "ex1.trace-lifecycle",
+   "code": "class Counter:\n    def __init__(self, tag):\n        self.tag = tag\n        self.n = 0\n        print(tag, 'built')\n\n    def tick(self):\n        self.n = self.n + 1\n        print(self.tag, self.n)\n\na = Counter('x')\nb = Counter('y')\na.tick()\nb.tick()\na.tick()",
+   "answer": "x built\ny built\nx 1\ny 1\nx 2"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "py4e.ch14.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "stuff = list()\nstuff.append('python')\nstuff.append('chuck')\nstuff.sort()\nprint(stuff[0])"
+  },
+  {
+   "lesson": "py4e.ch14.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "stuff = list()\nstuff.append('python')\nstuff.append('chuck')\nstuff.sort()\n\nprint(stuff[0])\nprint(stuff.__getitem__(0))\nprint(list.__getitem__(stuff, 0))\n\nprint('append' in dir(stuff))\nprint('sort' in dir(stuff))"
+  },
+  {
+   "lesson": "py4e.ch14.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — اسأل الكائنات عن قدراتها\n# Your playground — ask objects about their capabilities\n\nstuff = list()\nstuff.append('python')\nstuff.append('chuck')\nstuff.sort()\n\nprint(stuff[0])\nprint(stuff.__getitem__(0))\nprint(list.__getitem__(stuff, 0))\n\nprint('append' in dir(stuff))\nprint('sort' in dir(stuff))\n\n# جرّب: 'upper' in dir(stuff) ثم 'upper' in dir('hi') ثم 'append' in dir({})\n# try: 'upper' in dir(stuff) then 'upper' in dir('hi') then 'append' in dir({})\n# جرّب: اطبع len(dir('hi')) وقارنها مع len(dir([1]))\n# try: print len(dir('hi')) and compare with len(dir([1]))"
+  },
+  {
+   "lesson": "py4e.ch14.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "class PartyAnimal:\n    x = 0\n\n    def party(self):\n        self.x = self.x + 1\n        print('So far', self.x)\n\nan = PartyAnimal()\nan.party()\nan.party()"
+  },
+  {
+   "lesson": "py4e.ch14.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "class PartyAnimal:\n    x = 0\n\n    def party(self):\n        self.x = self.x + 1\n        print('So far', self.x)\n\nan = PartyAnimal()\nan.party()\nan.party()\nan.party()\nPartyAnimal.party(an)"
+  },
+  {
+   "lesson": "py4e.ch14.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — صنفك الأول بين يديك\n# Your playground — your first class in hand\n\nclass PartyAnimal:\n    x = 0\n\n    def party(self):\n        self.x = self.x + 1\n        print('So far', self.x)\n\nan = PartyAnimal()\nan.party()\nan.party()\n\n# الصيغة المفصلة — الاثنان متكافئان / the long form — both equivalent\nPartyAnimal.party(an)\n\n# جرّب: ابنِ كائنًا ثانيًا b = PartyAnimal() واستدعِ party عليه — هل يبدأ من صفر؟\n# try: build a second object b = PartyAnimal() and call party on it — does it start at zero?\n# جرّب: اطبع type(an) وtype(PartyAnimal.party)\n# try: print type(an) and type(PartyAnimal.party)"
+  },
+  {
+   "lesson": "py4e.ch14.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "class Greeter:\n    def __init__(self, word):\n        self.word = word\n\n    def shout(self):\n        print(self.word.upper())\n\ng = Greeter('hey')\ng.shout()"
+  },
+  {
+   "lesson": "py4e.ch14.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "class PartyAnimal:\n    x = 0\n\n    def __init__(self, nam):\n        self.name = nam\n\n    def party(self):\n        self.x = self.x + 1\n        print(self.name, 'party', self.x)\n\ns = PartyAnimal('Sally')\ns.party()\ns.party()\nprint(type(s))\nprint(type(s.x))\nprint('party' in dir(s))\nprint('name' in dir(s))"
+  },
+  {
+   "lesson": "py4e.ch14.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — افحص نوعك الجديد\n# Your playground — examine your new type\n\nclass PartyAnimal:\n    x = 0\n\n    def __init__(self, nam):\n        self.name = nam\n\n    def party(self):\n        self.x = self.x + 1\n        print(self.name, 'party', self.x)\n\ns = PartyAnimal('Sally')\ns.party()\n\nprint(type(s))\nprint(type(s.x))\nprint(type(s.party))\nprint('name' in dir(s))\nprint('party' in dir(s))\n\n# جرّب: اطبع dir(s) كاملًا وابحث عن أسماء لم تكتبها — من أين جاءت؟\n# try: print the full dir(s) and hunt for names you never wrote — where did they come from?\n# جرّب: ابنِ j = PartyAnimal('Jim') واطبع s.name وj.name\n# try: build j = PartyAnimal('Jim') and print s.name and j.name"
+  },
+  {
+   "lesson": "py4e.ch14.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "class PartyAnimal:\n    def __init__(self):\n        print('I am constructed')\n        self.x = 0\n\nan = PartyAnimal()\nprint('an built')\nan = 42\nprint('an contains', an)"
+  },
+  {
+   "lesson": "py4e.ch14.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "class PartyAnimal:\n    def __init__(self, nam):\n        self.x = 0\n        self.name = nam\n        print(nam, 'constructed')\n\n    def party(self):\n        self.x = self.x + 1\n        print(self.name, 'party count', self.x)\n\ns = PartyAnimal('Sally')\nj = PartyAnimal('Jim')\ns.party()\nj.party()\ns.party()"
+  },
+  {
+   "lesson": "py4e.ch14.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — عالم مستقل لكل كائن\n# Your playground — an independent world per object\n\nclass PartyAnimal:\n    def __init__(self, nam):\n        self.x = 0\n        self.name = nam\n        print(nam, 'constructed')\n\n    def party(self):\n        self.x = self.x + 1\n        print(self.name, 'party count', self.x)\n\ns = PartyAnimal('Sally')\nj = PartyAnimal('Jim')\nz = PartyAnimal('Zoe')\n\ns.party()\nj.party()\ns.party()\nz.party()\nz.party()\n\n# جرّب: اطبع s.x وj.x وz.x — عدّ النداءات يدويًّا أولًا ثم قارن\n# try: print s.x, j.x, z.x — count the calls by hand first, then compare\n# جرّب: أعد إسناد j إلى 42 ثم اطبع s.x — هل تأثر عالم Sally؟\n# try: reassign j to 42 then print s.x — did Sally's world change?"
+  },
+  {
+   "lesson": "py4e.ch14.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "class PartyAnimal:\n    def __init__(self, nam):\n        self.name = nam\n        self.x = 0\n\n    def party(self):\n        self.x = self.x + 1\n        print(self.name, 'party', self.x)\n\nclass CricketFan(PartyAnimal):\n    points = 0\n\nj = CricketFan('Jim')\nj.party()\nprint('points' in dir(j))"
+  },
+  {
+   "lesson": "py4e.ch14.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "class PartyAnimal:\n    def __init__(self, nam):\n        self.name = nam\n        self.x = 0\n        print(nam, 'constructed')\n\n    def party(self):\n        self.x = self.x + 1\n        print(self.name, 'party', self.x)\n\n\nclass CricketFan(PartyAnimal):\n    points = 0\n\n    def six(self):\n        self.points = self.points + 6\n        self.party()\n        print(self.name, 'points', self.points)\n\n\ns = PartyAnimal('Sally')\ns.party()\nj = CricketFan('Jim')\nj.party()\nj.six()\nprint(type(j))\nprint(isinstance(j, PartyAnimal))"
+  },
+  {
+   "lesson": "py4e.ch14.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — عائلة الأصناف\n# Your playground — the class family\n\nclass PartyAnimal:\n    def __init__(self, nam):\n        self.name = nam\n        self.x = 0\n\n    def party(self):\n        self.x = self.x + 1\n        print(self.name, 'party', self.x)\n\nclass CricketFan(PartyAnimal):\n    points = 0\n\n    def six(self):\n        self.points = self.points + 6\n        self.party()\n        print(self.name, 'points', self.points)\n\nj = CricketFan('Jim')\nj.party()\nj.six()\n\nprint(type(j))\nprint(isinstance(j, PartyAnimal))\nprint(issubclass(CricketFan, PartyAnimal))\n\n# جرّب: أضف تابع dribble(self) يرفع النقاط واحدًا ويستدعي party\n# try: add a dribble(self) method raising points by one and calling party\n# جرّب: ابنِ p = PartyAnimal('Sally') ثم p.six() — ماذا يرمي؟ ولماذا؟\n# try: build p = PartyAnimal('Sally') then p.six() — what does it throw and why?"
+  },
+  {
+   "lesson": "py4e.ch14.l6",
+   "kind": "predict",
+   "id": "predict",
+   "code": "class Team:\n    def __init__(self, nam):\n        self.name = nam\n        self.players = list()\n\n    def add_player(self, player):\n        self.players.append(player)\n\nred = Team('red')\nred.add_player('ana')\nred.add_player('bo')\nprint('team: %s' % red.name)\nprint('players: %d' % len(red.players))"
+  },
+  {
+   "lesson": "py4e.ch14.l6",
+   "kind": "worked",
+   "id": "worked",
+   "code": "class Team:\n    def __init__(self, nam):\n        self.name = nam\n        self.players = list()\n\n    def add_player(self, player):\n        self.players.append(player)\n\n    def describe(self):\n        print('team: %s' % self.name)\n        print('players: %d' % len(self.players))\n\n\nclass LoudTeam(Team):\n    def describe(self):\n        print('LOUD team: %s' % self.name.upper())\n        print('players: %d' % len(self.players))\n\n\ngreen = Team('green')\ngreen.add_player('ana')\ngreen.add_player('bo')\ngreen.describe()\n\ngold = LoudTeam('gold')\ngold.add_player('cy')\ngold.describe()\nprint(isinstance(gold, Team))"
+  },
+  {
+   "lesson": "py4e.ch14.l6",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — عائلة الفرق\n# Your playground — the team family\n\nclass Team:\n    def __init__(self, nam):\n        self.name = nam\n        self.players = list()\n\n    def add_player(self, player):\n        self.players.append(player)\n\n    def describe(self):\n        print(\"team: %s\" % self.name)\n        print(\"players: %d\" % len(self.players))\n\nred = Team(\"red\")\nred.add_player(\"ana\")\nred.add_player(\"bo\")\n\ngold = Team(\"gold\")\ngold.add_player(\"cy\")\n\nred.describe()\ngold.describe()\n\n# جرّب: أضف تابع remove_player(self, player) يستخدم players.remove\n# try: add a remove_player(self, player) method using players.remove\n# جرّب: ابنِ فريقًا ثالثًا بثلاثة لاعبين واطبع أطوال الفرق الثلاثة\n# try: build a third team with three players and print all three lengths"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "py4e.ch14.l1",
+   "id": "ex3.mcq-dir",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch14.l2",
+   "id": "ex3.mcq-class-keyword",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch14.l3",
+   "id": "ex3.mcq-type",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch14.l4",
+   "id": "ex3.mcq-reassign",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch14.l5",
+   "id": "ex3.mcq-is-a",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch14.l6",
+   "id": "ex3.mcq-instance-state",
+   "answer": "a",
+   "solution": "a"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "py4e.ch14.l1",
+   "id": "ex4.fill-append",
+   "answer": "append"
+  },
+  {
+   "lesson": "py4e.ch14.l2",
+   "id": "ex4.fill-self",
+   "answer": "self"
+  },
+  {
+   "lesson": "py4e.ch14.l4",
+   "id": "ex4.fill-init",
+   "answer": "init"
+  },
+  {
+   "lesson": "py4e.ch14.l5",
+   "id": "ex4.fill-super",
+   "answer": "super"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "py4e.ch14.l6",
+   "id": "ex5.debug-shared-list",
+   "brokenCode": "class Team:\n    players = []  # قائمة واحدة على الصنف للجميع / one list on the class for everyone\n\n    def __init__(self, nam):\n        self.name = nam\n\n    def add_player(self, player):\n        self.players.append(player)\n\n    def describe(self):\n        print('team: %s' % self.name)\n        print('players: %d' % len(self.players))\n\nred = Team('red')\nred.add_player('ana')\nblue = Team('blue')\nblue.add_player('bo')\nred.describe()\nblue.describe()"
+  }
+ ]
+}

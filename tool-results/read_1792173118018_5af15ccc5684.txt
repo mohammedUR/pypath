@@ -1,0 +1,264 @@
+     1→     1→# Worklog — shared multi-agent log (append-only)
+     2→     2→
+     3→     3→---
+     4→     4→Task ID: 1-4
+     5→     5→Agent: main (Z.ai)
+     6→     6→Task: M0 foundations — env init, source ingestion (4 books), docs, ADRs, coverage system
+     7→     7→
+     8→     8→Work Log:
+     9→     9→- Initialized fullstack env (Next.js 16 + Tailwind 4 + shadcn/ui, TS strict). Port 3000 dev auto-runs.
+    10→    10→- Extracted TOCs from the 4 PDFs with PyMuPDF: curriculum/sources/{PY4E,SWE,MLS,D2L}.toc.json
+    11→    11→  (PY4E 16ch/181sec · SWE 16ch/117sec · MLS 8ch/33sec · D2L 21ch/145sec = 61ch/476sec).
+    12→    12→- Verified PY4E TOC visually (PDF p11 rasterized) — titles + book page numbers match.
+    13→    13→- License pages verified: PY4E AR = CC BY-NC-SA 3.0 (PDF p3/p7); SWE = CC BY-SA 4.0 + code MIT (PDF p17);
+    14→    14→  MLS = NO license stated (PDF p109 "© 2020" only) → OQ-2; D2L = none printed in PDF → OQ-3.
+    15→    15→- Extracted PY4E ch1–3 full Arabic text → curriculum/sources/PY4E/ch{1,2,3}.txt (authoring inputs).
+    16→    16→- Wrote docs/{PLAN,PROGRESS,OPEN-QUESTIONS,LICENSES}.md + docs/adr/0001..0007 (stack, pyodide runtime,
+    17→    17→  FSRS, IndexedDB storage, content pipeline, P3 ordering, single-route routing).
+    18→    18→- Built content/manifest.json (18 M1 lessons, PY4E ch1–3, AR/EN) mapping all 40 sections.
+    19→    19→- scripts/gen_coverage.py + scripts/check_coverage.py wired as npm run check:coverage / gen:coverage.
+    20→    20→- Fixed section-id double numbering bug in tocs (s1.1 → s1).
+    21→    21→
+    22→    22→Stage Summary:
+    23→    23→- M0 GATE: check:coverage runs and reports a TRUE number (PY4E 22.1% published; total 8.4%).
+    24→    24→- Key decisions: Pyodide 0.28 pinned in Web Worker (ADR-0002); FSRS (ADR-0003); IndexedDB via idb-keyval
+    25→    25→  (ADR-0004); content as typed TS data + Zod (ADR-0005); hash routing because sandbox serves only `/` (ADR-0007, OQ-5).
+    26→    26→- Licensing constraint surfaced: PY4E-AR non-commercial → platform must stay non-commercial (OQ-1).
+    27→    27→- NEXT: Task 5 = platform shell + runtime (fullstack agent); Task 6 = lesson content authoring.
+    28→    28→
+    29→    29→---
+    30→    30→Task ID: 6-a
+    31→    31→Agent: content-author (lesson content authoring)
+    32→    32→Task: Author 11 lesson files (py4e ch1 l2–l6, ch2 l1–l6) + register them
+    33→    33→
+    34→    34→Files created:
+    35→    35→- content/part1/py4e/ch1/lesson.ch1.l2.ts — بنية الحاسوب (s2: CPU/RAM/secondary/IO/network, "programmer inside the box")
+    36→    36→- content/part1/py4e/ch1/lesson.ch1.l3.ts — بايثون والمفسِّر (s4–s6: reserved words, >>> conversation, interpreter vs compiler, interactive vs script)
+    37→    37→- content/part1/py4e/ch1/lesson.ch1.l4.ts — أول برنامج لك (s7–s8: print as call, quotes, paren bugs, first multi-line program)
+    38→    38→- content/part1/py4e/ch1/lesson.ch1.l5.ts — مكوّنات البرامج والأخطاء (s9–s10: input/output/sequence/conditional/repetition/reuse + syntax/logic/semantic errors)
+    39→    39→- content/part1/py4e/ch1/lesson.ch1.l6.ts — مراجعة الفصل 1 ومشروع مصغّر (s11/s13/s14: recap + 5-line self-intro card project + debug block + heavier quiz)
+    40→    40→- content/part1/py4e/ch2/lesson.ch2.l1.ts — القيم والأنواع (s1: int/float/str, type() informally, 1,000,000 semantic trap)
+    41→    41→- content/part1/py4e/ch2/lesson.ch2.l2.ts — المتغيّرات وأسماؤها (s2/s3/s12: assignment, legal/illegal names, keywords, Pro Habit descriptive names)
+    42→    42→- content/part1/py4e/ch2/lesson.ch2.l3.ts — التعليمات والتعابير وترتيب العمليات (s4/s6/s7: statement vs expression, PEMDAS, parentheses)
+    43→    43→- content/part1/py4e/ch2/lesson.ch2.l4.ts — العوامل الحسابية وباقي القسمة (s5/s8/s9: / vs //, % even/odd + digit slicing + time conversion, string + and *)
+    44→    44→- content/part1/py4e/ch2/lesson.ch2.l5.ts — إدخال المستخدم والتعليقات (s10/s11: input() returns str, int() conversion (simulated "typed" var — no keyboard in sandbox), # comments)
+    45→    45→- content/part1/py4e/ch2/lesson.ch2.l6.ts — مراجعة الفصل 2 ومشروع محوّل الحرارة (s13–s15: recap + F=9/5C+32 project + silent-semantic debug + heavier quiz)
+    46→    46→- src/lib/content/registry.ts — added 11 lazy loaders to the `loaders` map (ch1.l1 untouched).
+    47→    47→
+    48→    48→Anatomy per master spec §6.1: hook → predict → 2–3 concepts → worked → 2–4 exercises (every lesson: ≥1 write_code with assert tests + ≥1 mcq/trace_output/fill_blank/numeric; both l6 reviews add a debug block) → sandbox → quiz (3–4 items, ≥1 revisits an earlier lesson) → pitfalls (2–3 pairs) → summary+reflect → sources. Sources use manifest section ids + PY4E.toc.json book pages ("صX / pp.X").
+    49→    49→
+    50→    50→Verification evidence:
+    51→    51→- `bun run lint` → clean (no output).
+    52→    52→- `bunx tsc --noEmit` → 0 errors in the 11 new content files and registry.ts. Repo-wide there are 280 PRE-EXISTING errors in files I did not touch (examples/, skills/, src/lib/i18n/en.ts literal-key quirk, ExerciseCard.tsx, grading.ts es2018-flag) — baseline unchanged by this task.
+    53→    53→- Zod validation of all 12 lessons (reference + 11 new) via `bun run` script importing schema: all `safeParse` OK; exercise-kind mix printed per lesson.
+    54→    54→- Python harness check (replicating pyodide-worker __pypath_run_tests: stdout→__learner_output__, tests exec'd in same env): all 13 write_code+debug solutions PASS their own test suites; broken debug code fails as intended.
+    55→    55→- Browser (agent-browser, dev server): /#/ar/lesson/py4e.{ch1.l2..l6, ch2.l1..l6} all render h1 title, no "درس غير متوفر" state. Exercise Check works end-to-end (Pyodide worker ran): ch1.l2 ex1 (print CPU/RAM) → "أحسنت! نجحت كل الاختبارات." and ch2.l6 ex2 (converter, round() test) → "أحسنت! نجحت كل الاختبارات." EN locale verified via persisted i18n store: ch2.l6 h1 renders English.
+    56→    56→- dev.log tail after visits: only 200s + compiles, zero error lines.
+    57→    57→
+    58→    58→Notes / friction observed (for future agents):
+    59→    59→- Test harness convention confirmed: print-checks use __learner_output__ (e.g. assert 'X' in __learner_output__, 'expected: X | actual: %r' % __learner_output__); variable checks see learner globals. The "expected: X | actual: Y" message format feeds the UI's expected/actual row (parseExpectedActual).
+    60→    60→- Sandbox has NO keyboard: input() would EOFError — ch2.l5 teaches input() via a simulated `typed` variable (pattern documented in-lesson). A future platform enhancement could stub input().
+    61→    61→- fill_blank grading is exact-after-normalization (looseNormalize) — Arabic answers must be unambiguous single forms (I chose textbook terms, e.g. الثانوية/التسلسلي/المحجوزة).
+    62→    62→- trace_output grading is whitespace-normalized exact match — keep expected output lines short and unambiguous.
+    63→    63→- i18n gap noticed: hash locale (#/en/…) does not drive the locale store; locale lives in localStorage (pypath.i18n). Pre-existing platform behavior, not content-side.
+    64→    64→- Minor pre-existing tsc noise: tsconfig include covers examples/ and skills/; a future cleanup could exclude them.
+    65→    65→
+    66→    66→Status: 11/11 lessons COMPLETE (no partials). ch3 lessons remain unauthored (out of this task's scope).
+    67→    67→
+    68→    68→---
+    69→    69→Task ID: 6-b
+    70→    70→Agent: content-author (lesson content authoring, continuation)
+    71→    71→Task: Author 6 lesson files (py4e ch3 l1–l6) + register them
+    72→    72→
+    73→    73→Files created:
+    74→    74→- content/part1/py4e/ch3/lesson.ch3.l1.ts — التعابير المنطقية (s1/s2: True/False as class bool, comparison family == != > < >= <=, = vs ==, "5"==5 False / 1<'2' TypeError, and/or/not first pass, 17 and True leniency warning)
+    75→    75→- content/part1/py4e/ch3/lesson.ch3.l2.ts — الشرط if والتنفيذ البديل (s3/s4: condition + colon + 4-space indented block, compound statements, pass placeholder, indentation as grammar, if/else branches, always-one-branch rule)
+    76→    76→- content/part1/py4e/ch3/lesson.ch3.l3.ts — السلاسل الشرطية والشرط المتداخل (s5/s6: elif chains, first-true-wins + chain ends, no limit on elif, optional else, ordering = meaning (specific→general, silent semantic bug), nested conditionals + flattening with and)
+    77→    77→- content/part1/py4e/ch3/lesson.ch3.l4.ts — معالجة الأخطاء بـ try و except (s7: traceback read bottom-up, try/except as insurance policy, catching an exception, fix/retry/graceful-exit framing, scope try to the risky lines, book's fahren2 converter with simulated `typed` input)
+    78→    78→- content/part1/py4e/ch3/lesson.ch3.l5.ts — التقييم قصير الدارة (s8: and stops at first False / or at first True, book's x>=2 and (x/y)>2 three-case progression incl. passing-guard crash, guardian pattern with y != 0 and len(s) > 0 guards, sandbox True or 10 / 0 demo)
+    79→    79→- content/part1/py4e/ch3/lesson.ch3.l6.ts — مراجعة الفصل 3 ومشروع: الآلة الحاسبة الآمنة (s9/s10/s11: chapter map + Safe Calculator project — typed_a/typed_b simulated inputs, try-wrapped int conversions, prints a > b, a + b, a / b (True/12/3.0), أرقام فقط in except; debug block: unprotected int('خمسة') crash → guard it; heavier quiz 4 items incl. ch1/ch2 revisits)
+    80→    80→- src/lib/content/registry.ts — added 6 lazy loaders 'py4e.ch3.l1'..'py4e.ch3.l6' to the loaders map (no other platform code touched).
+    81→    81→
+    82→    82→Verification scripts kept for future content agents (all under scripts/):
+    83→    83→- scripts/validate-ch3.ts (Zod safeParse + per-lesson exercise-kind mix report)
+    84→    84→- scripts/dump-ch3-solutions.ts + scripts/replay-ch3-solutions.py (dump write_code/debug solutions+tests to JSON, replay with python3 replicating public/pyodide-worker.js __pypath_run_tests semantics: stdout→__learner_output__, tests exec'd in learner env)
+    85→    85→
+    86→    86→Anatomy per master spec §6.1 (identical to 6-a): hook → predict → 2–3 concepts (≤150 words/chunk) → worked (runnable) → 2–4 exercises (every lesson: ≥1 write_code with assert tests + ≥1 of mcq/trace_output/fill_blank/numeric; l6 adds 1 debug block) → sandbox → quiz (4 items each; ≥1 item revisits ch1/ch2) → pitfalls (2–3 wrong/right pairs) → summary+reflect → sources. Sources use manifest section ids + PY4E.toc.json book pages ("صX / pp.X": s1 ص39, s2 ص40, s3 ص40-42, s4 ص42-43, s5 ص43-45, s6 ص45-46, s7 ص46-48, s8 ص49-50, s9 ص51, s10 ص51-52, s11 ص53-54). input() never used anywhere (tests included) — ch3.l4/l6 use the documented simulated `typed` pattern from ch2.l5. fill_blank answers kept unambiguous single forms; ':' avoided as a fill answer because looseNormalize strips trailing punctuation (used 'المركبة' instead).
+    87→    87→
+    88→    88→Verification evidence:
+    89→    89→- `bun run lint` → clean (no output).
+    90→    90→- `bunx tsc --noEmit` → 280 errors repo-wide = exactly the 6-a pre-existing baseline; ZERO errors in the 6 new content files, registry.ts, or the new verification scripts. (Initial dump script had 1 self-inflicted error — fixed; re-verified.)
+    91→    91→- Zod validation: scripts/validate-ch3.ts → "ALL 6 LESSONS VALID" (block/exercise-kind mix printed per lesson; every lesson write_code + ≥1 pattern kind; l6 debug=1; quizItems=4).
+    92→    92→- Python harness replay: scripts/replay-ch3-solutions.py → 7/7 suites PASS (all 6 write_code solutions + l6 debug solution pass their own tests; print-checks via __learner_output__, variable checks in learner env).
+    93→    93→- Browser (agent-browser, dev server):
+    94→    94→  - /#/ar/lesson/py4e.{ch3.l1..l6} all render correct h1 Arabic titles (matching manifest titles verbatim), zero "درس غير متوفر" states.
+    95→    95→  - Check flow E2E (Pyodide worker ran): ch3.l6 project ex2 with reference solution → "أحسنت! نجحت كل الاختبارات." (outputs True/12/3.0 present).
+    96→    96→  - EN spot-check via header English toggle: ch3.l6 h1 → "Chapter 3 Review and Project: The Safe Calculator"; AR success message absent after flip.
+    97→    97→- dev.log tail after all visits: 200s + compiles only, zero error/warn/404/500 lines.
+    98→    98→
+    99→    99→Status: 6/6 lessons COMPLETE (no partials). All 18 M1 manifest lessons now authored and registered (ch1 6, ch2 6, ch3 6). M1 PY4E Part I content complete.
+   100→   100→
+   101→   101→---
+   102→   102→Task ID: 7-b
+   103→   103→Agent: content-author (ch5 iteration)
+   104→   104→Task: Author 6 lesson FILES (py4e ch5 l1–l6) for التكرار / Iteration — no registration (parallel/main agent owns registry.ts + manifest.json)
+   105→   105→
+   106→   106→Files created (content only; registry.ts and manifest.json NOT touched):
+   107→   107→- content/part1/py4e/ch5/lesson.ch5.l1.ts — تحديث المتغيرات وحلقة while (s1+s2: x=x+1 read-then-store, increment/decrement, NameError before init, while 3-step evaluation, n=5 countdown + Blastoff, iteration variable, 5 iterations)
+   108→   108→- content/part1/py4e/ch5/lesson.ch5.l2.ts — الحلقات اللانهائية وcontinue (s3+s4: shampoo joke, missing iteration variable, while True, break escape (simulated "> done" loop — NO input(), fixed lines list pattern from ch2.l5), continue skipping '#' lines, continue-before-update infinite trap)
+   109→   109→- content/part1/py4e/ch5/lesson.ch5.l3.ts — حلقة for (s5: definite vs indefinite, list literal intro, header/body/iteration variable, for+in reserved words, string iteration, light range() helper)
+   110→   110→- content/part1/py4e/ch5/lesson.ch5.l4.ts — أنماط الحلقات: العدّ والمجموع (s6 first half: 3-step loop recipe, counter pattern, accumulator pattern, average = total/count with round; book list [3,41,12,9,74,15] → 6/154/25.67)
+   111→   111→- content/part1/py4e/ch5/lesson.ch5.l5.ts — أنماط الحلقات: التصفية والأكبر والأصغر (s6 second half: filter pattern, max/min None idiom with `is`, short-circuit or-guard (ch3.l5 echo), built-in max()/min() as fruitful functions tie to ch4)
+   112→   112→- content/part1/py4e/ch5/lesson.ch5.l6.ts — مراجعة الفصل 5 ومشروع: تقرير الدرجات (s7 التنقيح: traceback bottom-up, shrink data/lines, temporary print inside body, bisection + timeout-message tie-in; s8 glossary reflected in review; s9 exercises; project = grade report over scores=[82,95,67,74,91] → count 5/total 409/avg 81.8/max 95/min 67 with 5 labeled lines; debug block: re-init inside loop bug (total=0 in body) + fixed reference; heavier 6-item quiz incl. ch2/ch3/ch4 revisits)
+   113→   113→- Verification scripts: scripts/validate-ch5.ts, scripts/dump-ch5-solutions.ts, scripts/replay-ch5-solutions.py (adapted from the ch3 pair)
+   114→   114→
+   115→   115→Anatomy per master spec §6.1 (identical to 6-a/6-b): hook (embeds measurable learning objectives — the schema has no separate objectives block, so objectives live in the hook text, consistent with existing lessons) → predict → 2–3 concepts (≤150 words/chunk, AR+EN) → worked (runnable) → 4 exercises each (every lesson: ≥1 write_code with assert tests + ≥1 of mcq/trace_output/fill_blank/numeric; kind mixes: l1 2×write_code+mcq+trace, l2 write_code+mcq+trace+fill, l3 write_code+trace+mcq+fill, l4 write_code+trace+numeric+mcq, l5 2×write_code+mcq+trace, l6 trace+write_code+mcq+numeric) → sandbox → quiz (4 items ×5 lessons, 6 items in l6; ≥1 revisit per lesson: ch1/ch2/ch3/ch4) → pitfalls (3 pairs each) → summary+reflect → sources. Sources pages from PY4E.toc.json: s1 ص74, s2 ص74, s3 ص75, s4 ص77, s5 ص78, s6 ص79, s7 ص83, s8 ص83, s9 ص84 ("صX / pp.X" format). prerequisites: l1→["py4e.ch4.l6"], then chained l2..l6. input() never used anywhere — l2 teaches the book's "> done" loop via simulated fixed lines list (documented in-lesson). No random anywhere — all exercises deterministic. fill_blank answers unambiguous single forms ('continue', 'التكرار'); no ':' answers. Test messages follow the 'expected: X | actual: %r' convention feeding parseExpectedActual.
+   116→   116→
+   117→   117→Verification evidence:
+   118→   118→- Zod validation: bun run scripts/validate-ch5.ts → "ALL 6 LESSONS VALID" (kind mix + debug=1 + quizItems=6 for l6 printed per lesson).
+   119→   119→- Python harness replay (replicates public/pyodide-worker.js __pypath_run_tests: stdout→__learner_output__, tests exec'd in learner env): bun run scripts/dump-ch5-solutions.ts → 9 suites dumped (8 write_code + 1 debug); python3 scripts/replay-ch5-solutions.py → 9/9 suites PASS (l6 project prints العدد: 5 / المجموع: 409 / المعدل: 81.8 / الأعلى: 95 / الأدنى: 67).
+   120→   120→- Extra rigor: ran every trace_output exercise's shown code under python3 and whitespace-normalized-compared to its answer → 6/6 match; mcq answer==solution checked.
+   121→   121→- `bun run lint` → clean.
+   122→   122→- `bunx tsc --noEmit` → 280 errors repo-wide = exactly the 6-b baseline; ZERO errors in the 6 new content files or the 3 new scripts. (Ran while parallel agent 7-a was mid-edit on ch4/registry — count unaffected.)
+   123→   123→- Registry check not possible for this task (parallel agent owns registry.ts/manifest.json); tsconfig include covers the new files — zero tsc errors in them confirmed. Browser/E2E testing deliberately left to the main agent at registration time.
+   124→   124→
+   125→   125→Notes / friction observed (for future agents):
+   126→   126→- Schema has no 'objectives' block: measurable learning objectives are embedded in each hook text ("بنهاية الدرس ستكون قادرًا على: …") — matches existing ch1–3 anatomy.
+   127→   127→- curriculum/sources/PY4E/ch5.txt extraction stops mid-s6 (book p.79): s6 examples/​s7/s8/s9 were authored against PY4E.toc.json titles + the known PY4E ch5 content (counting/summing lists [3,41,12,9,74,15], None idiom, min/max built-ins, bisection debugging) — terminology cross-checked against extracted s1–s6 text and TOC.
+   128→   128→- There is a 10s platform watchdog (DEFAULT_RUN_TIMEOUT_MS) that shows the infinite-loop message — referenced it in l2/l6 pedagogy; still avoided infinite loops in all runnable/shown-broken code.
+   129→   129→- Parallel agent 7-a was live during this task: registry.ts/manifest.json mtimes changed under us (ch4 loaders) — no conflict; my files are separate and untouched by them.
+   130→   130→
+   131→   131→Status: 6/6 lesson FILES COMPLETE (awaiting registration)
+   132→   132→
+   133→   133→---
+   134→   134→Task ID: 7-a
+   135→   135→Agent: content-author (ch4 functions)
+   136→   136→Task: Author 6 lesson files (py4e ch4 l1–l6, functions chapter) + register them
+   137→   137→
+   138→   138→Files created:
+   139→   139→- content/part1/py4e/ch4/lesson.ch4.l1.ts — استدعاء التوابع والتوابع الجاهزة (s1/s2: call anatomy, argument/return value, max/min/len, built-in names as reserved, nested calls, min('Hello world') invisible-space teachable moment)
+   140→   140→- content/part1/py4e/ch4/lesson.ch4.l2.ts — توابع تحويل النوع والتوابع الرياضية (s3/s4: int truncates-never-rounds, int('3.14159') ValueError trap, float/str, import math + dot notation, log10/sqrt/sin/pi, compound-interest app via math.pow + round)
+   141→   141→- content/part1/py4e/ch4/lesson.ch4.l3.ts — الأعداد العشوائية (s5: determinism, pseudorandom, random()/randint(inclusive both)/choice, other distributions one-liner, seed concept for stable tests, book's loop shown as sandbox preview of ch5)
+   142→   142→- content/part1/py4e/ch4/lesson.ch4.l4.ts — تعريف توابع جديدة: def وتسلسل التنفيذ (s6/s7/s8: def header+colon+4-space body, naming rules, function object type, definition executes but body waits, define-before-first-call (book NameError experiment), reorder-definitions-still-works experiment, flow of execution with jumps and functions-calling-functions)
+   143→   143→- content/part1/py4e/ch4/lesson.ch4.l5.ts — المعاملات والوسائط والتوابع المُنتجة (s9/s10/s11: parameter receives/argument sent, argument evaluated before call, value travels not the name, print_twice(bruce), fruitful vs void, None + NoneType, return + addtwo, why functions)
+   144→   144→- content/part1/py4e/ch4/lesson.ch4.l6.ts — مراجعة الفصل 4 ومشروع: مولّد كلمات المرور (s12/s13/s14: chapter map, password-generator project — def make_password() + random.choice glued with + + return + random.seed(4) → 'bca' deterministic, debugging (error points to detection place, whitespace traps), glossary pass, debug block: call-before-def NameError → reorder, heavier quiz 5 items incl. ch1/ch2/ch3 revisits)
+   145→   145→- src/lib/content/registry.ts — added 6 lazy loaders 'py4e.ch4.l1'..'py4e.ch4.l6' (no other platform code touched)
+   146→   146→- content/manifest.json — appended 6 entries, order 19–24, prerequisite chain ch3.l6→l1→…→l6, sources = all covered section ids
+   147→   147→
+   148→   148→Anatomy identical to 6-a/6-b: hook → predict → 2–3 concepts (≤150 words/chunk) → worked (runnable) → 2–4 exercises (every lesson ≥1 write_code with assert tests + ≥1 of mcq/trace_output/fill_blank/numeric; l6 adds 1 debug block) → sandbox → quiz (4 items, l6 5 items; ≥1 revisits ch1/ch2/ch3 in every quiz) → pitfalls (3 pairs) → summary+reflect → sources. Sources pages from PY4E.toc.json bookPages ("صX / pp.X"). input() never used (tests included); loops not used in graded code (l3 sandbox shows the book's loop as a ch5 preview); no ':' as a fill answer (answers: len, choice, def, return, import — all single unambiguous tokens). Seeded determinism: l3/l6 exercises and the l6 project use random.seed so Pyodide(MT19937)==python3 (verified: seed1→0.13436424411240122, seed2→1,2, seed3→2,5, seed4→'bca', seed1 8×choice→ev64/3cjd).
+   149→   149→
+   150→   150→Verification scripts kept for future content agents:
+   151→   151→- scripts/validate-ch4.ts (Zod safeParse + per-lesson exercise-kind mix report)
+   152→   152→- scripts/dump-ch4-solutions.ts + scripts/replay-ch4-solutions.py (dump write_code/debug solutions+tests → replay with python3 replicating pyodide-worker __pypath_run_tests semantics)
+   153→   153→
+   154→   154→Verification evidence:
+   155→   155→- `bun run lint` → clean (exit 0, no output).
+   156→   156→- `bunx tsc --noEmit` → 280 errors repo-wide = exactly the pre-existing baseline; ZERO errors in the 6 new content files, registry.ts, manifest, or the new verification scripts.
+   157→   157→- Zod validation: scripts/validate-ch4.ts → "ALL 6 LESSONS VALID" (exercise-kind mix printed; every lesson has write_code + ≥1 pattern kind; l6 debug=1 quizItems=5, others 4).
+   158→   158→- Python harness replay: scripts/replay-ch4-solutions.py → 7/7 suites PASS (6 write_code + 1 debug solutions all pass their own tests; seeded outputs 'bca'/0.13436424411240122 confirmed identical to CPython).
+   159→   159→- Browser (agent-browser, dev server NOT restarted): /#/ar/lesson/py4e.{ch4.l1..l6} all render correct h1 Arabic titles verbatim, zero "درس غير متوفر" states. Check flow E2E (Pyodide worker ran): ch4.l6 project ex2 with reference solution → "أحسنت! نجحت كل الاختبارات." and the 4 test rows rendered. EN spot-check via header English toggle: ch4.l6 h1 → "Chapter 4 Review and Project: Password Generator", Arabic success message absent after flip.
+   160→   160→- dev.log tail after all visits: 200s + compiles only; 0 lines of 404/500; no new error/warn lines (only the pre-existing allowedDevOrigins cross-origin notice from the preview proxy).
+   161→   161→
+   162→   162→Status: 6/6 lessons COMPLETE
+   163→   163→
+   164→   164→---
+   165→   165→Task ID: 7-main
+   166→   166→Agent: main (Z.ai)
+   167→   167→Task: Continue M2 — author PY4E ch4 (Functions) + ch5 (Iteration) via two parallel content agents, register ch5, validate all, update coverage
+   168→   168→
+   169→   169→Work Log:
+   170→   170→- Health check: lint clean, tsc = 280 (pre-existing baseline), dev server 200s.
+   171→   171→- Extracted PY4E ch4/ch5/ch6 source text from the Arabic PDF → curriculum/sources/PY4E/ch{4,5,6}.txt (script: scripts/extract_ch4_ch6.py, OFFSET=10).
+   172→   172→- Task 7-a (parallel agent): authored content/part1/py4e/ch4/lesson.ch4.l1..l6.ts (Functions: calls/built-ins, type conversion/math, random, def+flow, params/fruitful, review+password-generator project) AND registered ch4 in registry.ts + manifest.json (orders 19–24). Verified: Zod ALL VALID, replay 7/7 PASS, browser E2E incl. Pyodide Check success.
+   173→   173→- Task 7-b (parallel agent): authored content/part1/py4e/ch5/lesson.ch5.l1..l6.ts (Iteration: while, infinite/continue, for, count/sum patterns, filter/max/min idioms, review+grade-report project). Files only — no registry/manifest edits. Verified: Zod ALL VALID, replay 9/9 PASS.
+   174→   174→- Main registration: added 6 ch5 loaders to src/lib/content/registry.ts + 6 manifest entries (orders 25–30, prereq chain ch4.l6→ch5.l1→…→l6). Manifest: 30 lessons, orders sequential, no dup ids.
+   175→   175→- Validation: scripts/validate-ch5.ts → ALL 6 LESSONS VALID (exercise mix: every lesson write_code + ≥1 pattern kind; l6 debug=1, quiz=6). bunx tsc --noEmit → 280 (baseline unchanged). bun run check:coverage → report mode OK.
+   176→   176→- gen:coverage: PY4E 63/181 sections = 34.8% (was 40 = 22.1%); TOTAL 63/476 = 13.2%.
+   177→   177→- Browser E2E (dev server): /#/ar/lesson/py4e.ch5.l1..l6 all render correct h1; ch5.l6 project Check E2E with reference solution → "أحسنت! نجحت كل الاختبارات."; EN toggle → "Chapter 5 Review and Project: Grade Report" with #/en URL; ch4.l1/l6 re-verified post-edit.
+   178→   178→- Blank page-error markers investigated: identical on pre-existing ch3.l1 → pre-existing platform quirk (empty-message error events, console clean), NOT a regression.
+   179→   179→
+   180→   180→Stage Summary:
+   181→   181→- PY4E ch1–5 fully authored & registered: 30 lessons, all Zod-valid, grader E2E green in AR+EN.
+   182→   182→- Coverage: PY4E 34.8% / total 13.2%. Next: ch6 (السلاسل النصية) → ch7–10 to complete Part I foundations; then SWE P3.
+   183→   183→- Known notes: (1) ch4.txt/ch5.txt extractions end mid-chapter (visual-order PDF); s12–s14/s7–s9 authored from TOC titles + book structure — flagged for the Arabic proofread pass (M5). (2) Pre-existing blank page-error markers + localStorage-locale behavior unchanged.
+   184→   184→
+   185→   185→---
+   186→   186→Task ID: 8-a
+   187→   187→Agent: content-author (ch6 strings)
+   188→   188→Task: Author 6 lessons (py4e ch6 l1–l6, السلاسل النصية / Strings) AND register them (registry.ts + manifest.json orders 31–36)
+   189→   189→
+   190→   190→Files created:
+   191→   191→- content/part1/py4e/ch6/lesson.ch6.l1.ts — المحارف وفهرسة السلاسل (s1+s2: bracket operator, index from 0, fruit[1]→'a' surprise, int-only indices → TypeError, len, fruit[len]→IndexError trap, len-1 and negative indices, 3 roads to the last char)
+   192→   192→- content/part1/py4e/ch6/lesson.ch6.l2.ts — المرور على السلاسل والعدّ (s3+s6: traversal definition, while+index loop with index<len condition, for char in string, counting pattern (counter+conditional increment) counting 'a' in banana→3, ch5 recipe tie-in, def count() book-exercise mention)
+   193→   193→- content/part1/py4e/ch6/lesson.ch6.l3.ts — تجزئة السلاسل وثباتها (s4+s5: [n:m] includes-n-excludes-m, Monty Python example, defaults [:3]/[3:], first>=second → silent '' empty string, immutability greeting[0]='J' → TypeError, workaround 'J' + greeting[1:] → 'Jello, world!', fruit[:] book-exercise in sandbox)
+   194→   194→- content/part1/py4e/ch6/lesson.ch6.l4.ts — العامل in ومقارنة السلاسل (s7+s8: in as boolean substring test vs for..in iteration role, == equality + </> alphabetical ordering (book's banana if/elif/else), uppercase-before-lowercase trap 'Pineapple' < 'banana' → True, lower() normalization)
+   195→   195→- content/part1/py4e/ch6/lesson.ch6.l5.ts — توابع السلاسل وتحليلها (s9+s10: strings as objects, type/dir, dot notation word.upper() vs upper(word), find with optional start / silent -1, strip, startswith case-sensitivity, lower + left-to-right chaining line.lower().startswith('h'), parsing recipe find-@ → find-space → slice [atpos+1:sppos] → uct.ac.za from the book's mail log)
+   196→   196→- content/part1/py4e/ch6/lesson.ch6.l6.ts — عامل التنسيق ومراجعة الفصل 6 ومشروع: محلّل البريد (s11–s14: % format operator %d/%g + tuple for multiple values + mismatch TypeError, debugging recap (bisect + temporary prints for silent string errors), glossary chunks (index/slice/immutable/object/method/counter/traversal/substring/parsing/format operator), project: email analyzer over FIXED list ['ahmed@example.com','sara@pypath.io','omar@mail.eg','lina@pypath.io'] → find/slice username+domain per email, count=4, pypath_count=2, report lines '%s -> %s' + 'Total: %d' + 'pypath.io: %d'; debug block: off-by-one slice email[at:] keeps @ → fix email[at+1:]; 6-item quiz incl. ch1/ch2/ch3/ch4/ch5 revisits)
+   197→   197→- src/lib/content/registry.ts — added 6 lazy loaders 'py4e.ch6.l1'..'py4e.ch6.l6' after ch5 entries; comment updated to ch1–ch6
+   198→   198→- content/manifest.json — appended 6 entries, orders 31–36, prereq chain py4e.ch5.l6→l1→…→l6, sources = all covered section ids (s1-s14 distributed per task spec)
+   199→   199→- Verification scripts: scripts/validate-ch6.ts, scripts/dump-ch6-solutions.ts + scripts/replay-ch6-solutions.py (adapted from the ch3 pair)
+   200→   200→
+   201→   201→Anatomy identical to 6-a/6-b/7-a/7-b: hook (with embedded objectives) → predict → 2–3 concepts (≤150 words/chunk) → worked (runnable) → 4 exercises each (every lesson: write_code with assert tests + ≥1 of mcq/trace_output/fill_blank/numeric; kind mixes: l1 write+trace+mcq+numeric, l2–l5 write+trace+mcq+fill, l6 trace+2×write+mcq+numeric) → sandbox → quiz (4 items ×5 lessons, 6 items in l6; ≥1 earlier-chapter revisit per lesson) → pitfalls (3 pairs each) → summary+reflect → sources. Sources pages from PY4E.toc.json: s1 ص86, s2 ص87, s3 ص88, s4 ص89, s5 ص90, s6 ص90, s7 ص91, s8 ص91, s9 ص92, s10 ص95, s11 ص96, s12 ص97, s13 ص99, s14 ص100 ("صX / pp.X"). input() never used; no randomness in code (one mcq distractor mentions 'عشوائيًا' as a wrong option only). ch6.txt extraction ends mid-s10 (book p.95) — s10 tail–s14 authored from TOC titles + known PY4E ch6 content (format operator, bisect debugging, glossary, exercises), cross-checked with terminology; flagged for the Arabic proofread pass like ch4/ch5 before. fill_blank answers single unambiguous forms ('المرور', 'التعديل', 'in', 'strip'); no ':' answers. trace outputs kept ASCII/short ('h\ni', '2', 'bcd\ncdef', 'True\nFalse', '7\n2.5'). Print-check asserts follow the 'expected: X | actual: %r' convention; grader-visible expected substrings all ASCII ('ahmed -> example.com', 'Total: 4', 'pypath.io: 2').
+   202→   202→
+   203→   203→Verification evidence:
+   204→   204→- bun run lint → clean (exit 0).
+   205→   205→- bunx tsc --noEmit → 280 errors repo-wide = exactly the pre-existing baseline; ZERO errors in the 6 new content files, registry.ts, manifest.json, or the new scripts. (One mid-task fix: 5 exercise-level mcq 'explanation' fields were schema-unknown keys — folded into hint 4 and removed; count back to 280.)
+   206→   206→- Zod validation: scripts/validate-ch6.ts → "ALL 6 LESSONS VALID" (kind mix printed; every lesson write_code + ≥1 pattern kind; l6 debug=1 quizItems=6).
+   207→   207→- Python harness replay (replicates public/pyodide-worker.js __pypath_run_tests: stdout→__learner_output__, tests exec'd in learner env): scripts/replay-ch6-solutions.py → 8/8 suites PASS (6 write_code + l6 project + l6 debug all pass their own tests; l6 project stdout: ahmed -> example.com / sara -> pypath.io / omar -> mail.eg / lina -> pypath.io / Total: 4 / pypath.io: 2).
+   208→   208→- Extra rigor: every trace_output exercise's shown code executed under python3 and whitespace-normalized-compared to its answer → 6/6 match; all mcq answer==solution checked; numeric answers (6, 4) verified by actual computation.
+   209→   209→- Browser E2E (agent-browser, dev server NOT restarted): /#/ar/lesson/py4e.{ch6.l1..l6} all render correct Arabic h1 titles verbatim, zero "درس غير متوفر" states. Check flow E2E (Pyodide worker ran): ch6.l6 project ex5 with reference solution → "أحسنت! نجحت كل الاختبارات." EN toggle spot-check: ch6.l6 h1 → "The Format Operator, Chapter 6 Review, and Project: Email Analyzer".
+   210→   210→- dev.log tail after all visits: 200s + compiles only; zero new error/warn/404/500 lines (only the pre-existing allowedDevOrigins cross-origin notice).
+   211→   211→
+   212→   212→Notes / friction observed (for future agents):
+   213→   213→- Schema gotcha that bit me: the exercise block REQUIRES solution + exactly-4 hints even for mcq/trace/fill/numeric kinds, and does NOT accept an 'explanation' key at exercise level (explanation exists only on quiz items and worked blocks) — Zod silently strips unknown keys but tsc flags them under satisfies Lesson. Validate with BOTH before finishing.
+   214→   214→- The grader-visible expected/actual strings should stay ASCII even in Arabic lessons: Arabic strings live fine in code/prompts, but test messages assert on ASCII substrings so parseExpectedActual rows render cleanly under bidi.
+   215→   215→- Parallel agent 8-b (ch7) was mentioned as working on files but registry.ts/manifest.json were owned by this task; no conflicts observed during edits.
+   216→   216→- ch6 source extraction (curriculum/sources/PY4E/ch6.txt) ends mid-s10 at book p.95: the uct.ac.za parsing example IS present and was used verbatim (atpos 21, sppos 31); s11–s14 authored from structure as noted.
+   217→   217→
+   218→   218→Status: 6/6 lessons COMPLETE
+   219→   219→
+   220→   220→---
+   221→   221→Task ID: 8-b
+   222→   222→Agent: content-author (ch7 files)
+   223→   223→Task: Author 6 lesson FILES (py4e ch7 l1–l6, الملفات / Files) — no registration (main agent owns registry.ts + manifest.json)
+   224→   224→
+   225→   225→Files created (content only; registry.ts and manifest.json NOT touched — git shows their mods belong to the parallel ch6 task):
+   226→   226→- content/part1/py4e/ch7/lesson.ch7.l1.ts — فتح الملفات (s1+s2: الإصرار/secondary memory vs main RAM, open() → file handle not data, 'r' default mode, FileNotFoundError preview, \n as the one-character line splitter; predict prints the handle; worked: create mbox.txt in memory then open+read)
+   227→   227→- content/part1/py4e/ch7/lesson.ch7.l2.ts — قراءة الملفات (s3+s4: newline len('X\nY')==3, read() slurps all into one string + second read returns '', for line in fhand line-by-line counting, why open doesn't read huge files; worked: 39 chars / 3 lines both ways)
+   228→   228→- content/part1/py4e/ch7/lesson.ch7.l3.ts — البحث خلال ملف (s5: startswith filter, continue skip pattern, rstrip for the doubled-blank-line mystery, find(':')+slice pos+2, try/float guard; book's spam-confidence averaging adapted to self-created spamconf.txt → count: 2, average: 0.73265)
+   229→   229→- content/part1/py4e/ch7/lesson.ch7.l4.ts — اختيار الملف ومعالجة الأخطاء (s6+s7: simulated `typed` filename (no input()), Subject-line counter program on a chosen file, FileNotFoundError traceback, try/except + 'File cannot be opened:' + exit() taught-but-not-run (worker harness reports SystemExit as error) → platform-safe None-flag stand-in from ch5.l5; ex4 loops ['good.txt','missing.txt'] with try/except/continue)
+   230→   230→- content/part1/py4e/ch7/lesson.ch7.l5.ts — كتابة الملفات (s8: 'w' TRUNCATES at open, write() fruitful → char counts, no free newline vs print, buffer + close/flush, write→close→re-read verification cycle incl. truncation demo 21+19=40)
+   231→   231→- content/part1/py4e/ch7/lesson.ch7.l6.ts — مراجعة الفصل 7 ومشروع: دفتر الملفات (s9 التنقيح: wrong-name/missing-close/'w'-reopen trio + golden cycle; s10 glossary AR/EN; s11 exercises; PROJECT file notebook: write notes list → close → guarded reopen → count lines/chars/'files' keyword hits → % -formatted report 'lines: 4 / chars: 48 / keyword hits: 2' tying ch6 format operator + ch5 loops + ch3 try/except; debug block: second 'w' reopen wipes → chars: 0 fix → chars: 23; heavier quiz 6 items revisiting ch1–ch5)
+   232→   232→- Verification scripts: scripts/validate-ch7.ts, scripts/dump-ch7-solutions.ts, scripts/replay-ch7-solutions.py (tempdir MEMFS stand-in), plus extra scripts/dump-ch7-checks.ts + scripts/replay-ch7-checks.py (traces executed under python3, runnables crash-check, mcq answer==solution, fill ':'-free single tokens, brokenCode must run+show symptom)
+   233→   233→
+   234→   234→Anatomy per master spec §6.1 (identical to 6-a/6-b/7-b): hook (objectives embedded) → predict → 3 concepts (≤150 words/chunk, AR+EN) → worked → 4 exercises (every lesson ≥1 write_code with assert tests + ≥1 of mcq/trace_output/fill_blank/numeric; kind mixes: l1 write+trace+mcq+fill, l2 write+trace+numeric+mcq, l3 write+trace+mcq+fill, l4 2×write+trace+mcq, l5 write+trace+mcq+fill, l6 trace+write+mcq+numeric) → sandbox → quiz (4 items ×5 lessons, 6 in l6; ≥1 earlier-chapter revisit per lesson: ch1/ch5/ch3+ch6/ch3+ch2/ch4/ch1–ch5) → pitfalls (3 pairs each) → summary+reflect → sources. Sources ص102/ص103, ص104/ص105, ص107, ص110+ص111, ص113, ص114+ص115+ص116 ("صX / pp.X", section ids py4e.ch7.s1–s11 from PY4E.toc.json). prerequisites: l1→["py4e.ch6.l6"], then chained l2..l6. Determinism: every file exercise self-creates its file ('w' first) with per-exercise names (mbox-l1.txt, notes-l2.txt, spamconf.txt, inbox.txt/good.txt+missing.txt, letter.txt/abc.txt, notebook.txt/mybook.txt/tinybook.txt); no random anywhere; input() never executable (only prose/comments per ch2.l5 precedent); no exit() executed anywhere (taught as book pattern, platform caveat documented in-lesson); fill answers single ':'-free tokens (open/rstrip/close); trace answers ASCII short lines; test messages follow 'expected: X | actual: %r' convention.
+   235→   235→
+   236→   236→Verification evidence:
+   237→   237→- Zod: bun run scripts/validate-ch7.ts → "ALL 6 LESSONS VALID" (kind mix + debug=1 + quizItems=6 printed per lesson).
+   238→   238→- Harness replay: bun run scripts/dump-ch7-solutions.ts → 8 suites (7 write_code + 1 debug); python3 scripts/replay-ch7-solutions.py → 8/8 PASS (CPython file I/O in a fresh tempdir replicating Pyodide MEMFS single-run semantics; l3 prints count: 2 / average: 0.73265, l6 project prints lines: 4 / chars: 48 / keyword hits: 2).
+   239→   239→- Extra cross-check: scripts/replay-ch7-checks.py → ALL CHECKS PASS (6/6 traces whitespace-matched against CPython stdout, 18/18 predict/worked/sandbox snippets run crash-free, 6/6 mcq answer==solution, 3/3 fills single ':'-free tokens, broken debug code runs and shows the symptom chars: 0). One self-inflicted fix during authoring: l5 trace answer 8 → 7 ('AB\n'+'CDE\n' = 7 chars).
+   240→   240→- `bun run lint` → clean (exit 0).
+   241→   241→- `bunx tsc --noEmit` → 280 errors repo-wide = exactly the pre-existing baseline; ZERO errors in the 6 new content files or the 5 new scripts.
+   242→   242→- Manual file-exercise E2E-style check (l6 ex2.file-notebook) under CPython with worker semantics: stdout 'lines: 4\nchars: 48\nkeyword hits: 2\n', 5/5 tests PASS, notebook.txt on disk mirrors the notes list — browser E2E left to main agent at registration.
+   243→   243→- Registry check not possible (parallel agent 8-a owned registry.ts/manifest.json and was live during this task); tsconfig include covers the new files — confirmed via tsc. git status: ch7 dir + ch7 scripts are my only additions.
+   244→   244→
+   245→   245→Status: 6/6 lesson FILES COMPLETE (awaiting registration)
+   246→   246→
+   247→   247→---
+   248→   248→Task ID: 8-main
+   249→   249→Agent: main (Z.ai)
+   250→   250→Task: Continue M2 — PY4E ch6 (Strings) + ch7 (Files) via two parallel content agents; register ch7; validate; E2E
+   251→   251→
+   252→   252→Work Log:
+   253→   253→- Health: dev server 200s. Extracted PY4E ch7 text (scripts/extract_ch4_ch6.py now parameterized: `python3 scripts/extract_ch4_ch6.py 7`).
+   254→   254→- Task 8-a (parallel agent): authored ch6 l1–l6 (characters/indexing, traversal+counting, slicing+immutability, in+comparison, methods+parsing, %-format + email-analyzer project) AND registered ch6 (registry + manifest orders 31–36). Zod ALL VALID; replay 8/8; browser E2E green incl. Pyodide Check + EN toggle. Gotcha logged: exercise blocks require solution + exactly 4 hints, no `explanation` key (schema-unknown).
+   255→   255→- Task 8-b (parallel agent): authored ch7 l1–l6 (opening, reading, searching, choosing+try/except, writing, review + file-notebook project) — files only. Zod ALL VALID; replay 8/8; extra cross-check script for trace/predict/worked snippets. Note: book's exit() raises SystemExit in harness → taught in concept text, replaced by None-flag idiom in runnable code (documented in-lesson).
+   256→   256→- Main registration: 6 ch7 loaders in registry.ts + 6 manifest entries (orders 37–42, chain ch6.l6→ch7.l1→…→l6). Manifest: 42 lessons, sequential, no dup ids.
+   257→   257→- Validation: Zod ch7 ALL VALID; tsc = 280 (baseline unchanged); check:coverage report-mode OK; gen:coverage → PY4E 88/181 = 48.6% (was 34.8%); TOTAL 88/476 = 18.5%.
+   258→   258→- Browser E2E: ch7.l1–l6 render correct AR h1; ch7.l6 file-notebook project Check E2E with reference solution → "أحسنت! نجحت كل الاختبارات." — proves Pyodide MEMFS file I/O works end-to-end in the grader. ch6.l1/l6 re-verified post-edit. dev.log clean.
+   259→   259→- E2E friction (test-harness, not content): first fill inserted REAL newlines inside Python string literals → SyntaxError (expectedly). Fix: fill via file with literal \n escapes (scripts/e2e-notebook-solution.py kept as the E2E recipe for file exercises).
+   260→   260→
+   261→   261→Stage Summary:
+   262→   262→- PY4E ch1–7 complete: 42 lessons published, all Zod-valid, grader E2E green AR+EN, file-based lessons verified in the real worker.
+   263→   263→- Coverage: PY4E 48.6% / total 18.5%. Next: ch8 (القوائم/lists) → ch9 (القواميس/dicts) → ch10 (المجموعات/tuples) to complete P1 Foundations, then ch11–16.
+   264→   264→

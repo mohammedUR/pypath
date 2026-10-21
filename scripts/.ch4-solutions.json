@@ -1,0 +1,267 @@
+[
+ {
+  "lesson": "py4e.ch4.l1",
+  "id": "ex1.probe-word",
+  "solution": "word = 'python'\nprint(len(word))\nprint(max(word))\nprint(min(word))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "word يساوي python",
+     "en": "word equals python"
+    },
+    "code": "assert word == 'python', 'expected: python | actual: %r' % word",
+    "expected": "python"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع الطول 6",
+     "en": "The length 6 is printed"
+    },
+    "code": "assert '6' in __learner_output__, ('expected: 6 | actual: %r' % __learner_output__)",
+    "expected": "6"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "يُطبع الأكبر y",
+     "en": "The largest y is printed"
+    },
+    "code": "assert 'y' in __learner_output__, ('expected: y | actual: %r' % __learner_output__)",
+    "expected": "y"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "يُطبع الأصغر h",
+     "en": "The smallest h is printed"
+    },
+    "code": "assert 'h' in __learner_output__, ('expected: h | actual: %r' % __learner_output__)",
+    "expected": "h"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch4.l2",
+  "id": "ex1.convert-truncate",
+  "solution": "value = 7.9\nwhole = int(value)\nprint(whole)\nprint(float(7))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "whole تساوي 7 — اقتطاع لا تقريب",
+     "en": "whole equals 7 — truncated, not rounded"
+    },
+    "code": "assert whole == 7, 'expected: 7 | actual: %r' % whole",
+    "expected": "7"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "whole عدد صحيح int",
+     "en": "whole is an int"
+    },
+    "code": "assert type(whole) == int, 'expected: int | actual: %r' % type(whole).__name__",
+    "expected": "int"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "يُطبع 7.0 — float تضيف الفاصلة",
+     "en": "7.0 is printed — float adds the decimal"
+    },
+    "code": "assert '7.0' in __learner_output__, ('expected: 7.0 | actual: %r' % __learner_output__)",
+    "expected": "7.0"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch4.l3",
+  "id": "ex1.seeded-random",
+  "solution": "import random\n\nrandom.seed(1)\nx = random.random()\nprint(x)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "x عدد عشري float",
+     "en": "x is a float"
+    },
+    "code": "assert type(x) == float, 'expected: float | actual: %r' % type(x).__name__",
+    "expected": "float"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "x في النطاق من 0.0 متضمّنة إلى 1.0 غير متضمّنة",
+     "en": "x lies in 0.0 inclusive to 1.0 exclusive"
+    },
+    "code": "assert 0 <= x < 1, 'expected: 0.0 <= x < 1.0 | actual: %r' % x",
+    "expected": "0.13436424411240122"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "يُطبع العدد المتوقع من التسلسل المثبّت",
+     "en": "The expected value from the pinned sequence is printed"
+    },
+    "code": "assert '0.13436424411240122' in __learner_output__, ('expected: 0.13436424411240122 | actual: %r' % __learner_output__)",
+    "expected": "0.13436424411240122"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch4.l4",
+  "id": "ex1.define-greet",
+  "solution": "def greet():\n    print('أهلًا بكم')\n\ngreet()",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "greet كائن تابع قابل للاستدعاء",
+     "en": "greet is a callable function object"
+    },
+    "code": "assert callable(greet), 'expected: function | actual: %r' % type(greet).__name__",
+    "expected": "function"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "تُطبع رسالة الترحيب",
+     "en": "The greeting is printed"
+    },
+    "code": "assert 'أهلًا بكم' in __learner_output__, ('expected: أهلًا بكم | actual: %r' % __learner_output__)",
+    "expected": "أهلًا بكم"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الاستدعاء مرة واحدة فقط",
+     "en": "Called exactly once"
+    },
+    "code": "assert __learner_output__.count('أهلًا بكم') == 1, ('expected: once | actual: %r' % __learner_output__)",
+    "expected": "أهلًا بكم"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch4.l5",
+  "id": "ex1.write-double",
+  "solution": "def double(n):\n    return n * 2\n\nresult = double(21)\nprint(result)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "double كائن تابع قابل للاستدعاء",
+     "en": "double is a callable function object"
+    },
+    "code": "assert callable(double), 'expected: function | actual: %r' % type(double).__name__",
+    "expected": "function"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "double تُعيد القيمة — double(5) يساوي 10",
+     "en": "double returns a value — double(5) equals 10"
+    },
+    "code": "assert double(5) == 10, 'expected: 10 | actual: %r' % double(5)",
+    "expected": "10"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "result تساوي 42",
+     "en": "result equals 42"
+    },
+    "code": "assert result == 42, 'expected: 42 | actual: %r' % result",
+    "expected": "42"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "يُطبع 42",
+     "en": "42 is printed"
+    },
+    "code": "assert '42' in __learner_output__, ('expected: 42 | actual: %r' % __learner_output__)",
+    "expected": "42"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch4.l6",
+  "id": "ex2.password-project",
+  "solution": "import random\n\ndef make_password():\n    chars = 'abcdef'\n    p = random.choice(chars) + random.choice(chars) + random.choice(chars)\n    return p\n\nrandom.seed(4)\np = make_password()\nprint(p)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "make_password كائن تابع قابل للاستدعاء",
+     "en": "make_password is a callable function object"
+    },
+    "code": "assert callable(make_password), 'expected: function | actual: %r' % type(make_password).__name__",
+    "expected": "function"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "التابع يعيد نصًّا بطول 3",
+     "en": "The function returns a 3-character string"
+    },
+    "code": "p2 = make_password()\nassert type(p2) == str and len(p2) == 3, 'expected: 3-char str | actual: %r' % p2",
+    "expected": "bca"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "محارفها من abcdef فقط",
+     "en": "Its characters come from abcdef only"
+    },
+    "code": "p3 = make_password()\nassert set(p3) <= set('abcdef'), 'expected: chars from abcdef | actual: %r' % p3",
+    "expected": "abcdef"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "يُطبع bca — البذرة تثبّت الكلمة",
+     "en": "bca is printed — the seed pins the word"
+    },
+    "code": "assert 'bca' in __learner_output__, ('expected: bca | actual: %r' % __learner_output__)",
+    "expected": "bca"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch4.l6",
+  "id": "ex5.debug-order",
+  "solution": "def greet():\n    print('أهلًا!')\n\ngreet()",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "تُطبع رسالة الترحيب",
+     "en": "The greeting is printed"
+    },
+    "code": "assert 'أهلًا!' in __learner_output__, ('expected: أهلًا! | actual: %r' % __learner_output__)",
+    "expected": "أهلًا!"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "greet كائن تابع موجود",
+     "en": "greet exists as a function object"
+    },
+    "code": "assert callable(greet), 'expected: function | actual: %r' % type(greet).__name__",
+    "expected": "function"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الاستدعاء مرة واحدة — لا تكرار",
+     "en": "Called once — no duplication"
+    },
+    "code": "assert __learner_output__.count('أهلًا!') == 1, ('expected: once | actual: %r' % __learner_output__)",
+    "expected": "أهلًا!"
+   }
+  ]
+ }
+]

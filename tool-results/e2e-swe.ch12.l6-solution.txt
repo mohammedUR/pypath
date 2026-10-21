@@ -1,0 +1,27 @@
+import statistics
+releases = {'r1': 2, 'r2': 4, 'r3': 5, 'r4': 5, 'r5': 7, 'r6': 8,
+            'r7': 9, 'r8': 10, 'r9': 12, 'r10': 14, 'r11': 23}
+pipeline = {'r1': {'before': 720, 'prod': 80}, 'r2': {'before': 465, 'prod': 35}}
+n = len(releases)
+mean = sum(releases.values()) / n
+s = statistics.stdev(releases.values())
+worst = 'r1'
+for k in releases:
+    if releases[k] > releases[worst]:
+        worst = k
+for k in releases:
+    print('%-4s |%s %d' % (k, '#' * releases[k], releases[k]))
+for k in releases:
+    if releases[k] > mean + s:
+        print('flag: %s (%d > mean+s %.2f)' % (k, releases[k], mean + s))
+sum_before = 0
+sum_prod = 0
+for k in pipeline:
+    d = pipeline[k]
+    dre = 100.0 * d['before'] / (d['before'] + d['prod'])
+    print('%s DRE: %.1f%%' % (k, dre))
+    sum_before += d['before']
+    sum_prod += d['prod']
+escape = 100.0 * sum_prod / (sum_before + sum_prod)
+print('pooled escape: %.1f%%' % escape)
+print('releases: %d / mean defects: %.1f / worst: %s' % (n, mean, worst))

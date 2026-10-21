@@ -1,0 +1,197 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * mls.appendix.l2 — "Cross Validation"
+ * التحقق المتقاطع
+ * Aligned with the book's appendix (Cross Validation). K-fold on FIXED indices:
+ * k=4 over 8 rows with literal fold lists; two competing models (constant mean
+ * vs slope-through-origin line) compared by per-fold validation MSE + average.
+ * Pure Python, all literals verified under CPython 3.
+ */
+const lesson = {
+  id: 'mls.appendix.l2',
+  version: 1,
+  part: 'II',
+  track: 'A0',
+  book: 'MLS',
+  chapter: 8,
+  title: {
+    ar: 'التحقق المتقاطع',
+    en: 'Cross Validation',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['mls.appendix.l1'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'نموذجان مرشحان، وقرار واحد: أيهما نأخذ؟ إن قسنا الخطأ على بيانات التدريب نفسها فسنكافئ الحافظ الأمعى. التحقق المتقاطع K-Fold هو قرار الكتاب: قسّم البيانات K طيات، ودرّب على K-1 وقِس على الطية المحجوبة، ثم لخّص بمتوسط. هنا نشغّل المخطط كاملًا على 8 صفوف و4 طيات بأدوات بحتة: قوائم وحلقات.',
+        en: 'Two candidate models, one decision: which do we take? Scoring error on the training data itself rewards the model that memorized hardest. The book\u2019s answer is K-fold cross validation: split the data into K folds, train on K-1 and score on the held-out fold, then summarize with an average. Here we run the whole scheme on 8 rows and 4 folds with pure tools: lists and loops.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'طيات، ثم متوسط درجات التحقق', en: 'Folds, then averaged validation scores' },
+      chunks: [
+        {
+          ar: 'بعض الخصائص تُختار قبل التدريب أصلاً — hyperparameters — وقيمتها تحدد جودة الملاءمة. الحل الأبسط لتجربتها هو تقسيم البيانات إلى تدريب وتحقق وقياس كل نموذج على قسم التحقق؛ لكن هذا يحكم من أداء واحد على قطعة واحدة من البيانات. يقدم الكتاب التحقق المتقاطع بثلاث خطوات: قسّم البيانات إلى K طيات؛ ثم لكل طية k عاملها دور التحقق ودرّب النماذج المنافسة على الطيات K-1 الأخرى وقِسها عليها؛ وأخيراً اختر النموذج ذا أفضل متوسط أداء تحقق. هكذا يشارك كل صف في التحقق مرة واحدة وفي التدريب K-1 مرة، والحكم يصير متوسطًا لا عينة واحدة.',
+          en: 'Some settings are chosen before fitting even starts — hyperparameters — and their values decide fit quality. The simplest check is a train/validation split, judging each model on the validation part; but that rests on a single score over a single slice of data. The book lays out K-fold cross validation in three steps: split the data into K folds; for each fold k, treat it as the validation set while the competing models train on the other K-1 folds and get scored on it; finally select the model with the best average validation performance. Every row thus joins validation once and training K-1 times, and the verdict becomes an average rather than one sample.',
+        },
+        {
+          ar: 'في كود الكتاب تُختار قيمة عقوبة alpha لانحدار Ridge عبر sklearn على بيانات Boston، مع خلط الفهارس قبل تقطيعها. نحن في صندوق الرمل نمنع كل مصادر العشوائية لضمان تكرار النتائج، فنثبت الفهارس حرفياً: 8 صفوف وk=4 تعطي الطيات [[0,1], [2,3], [4,5], [6,7]]. ننافس بنموذجين صغيرين: مُنبئ ثابت بمتوسط y للتدريب، وخط يمر بالمبدأ بميل يُحسب صيغة مغلقة من صفوف التدريب. المقياس MSE على صفوف الطية المحجوبة، ثم متوسط الطيات الأربع لكل نموذج — والهيكل نفسه يصلح لأي عدد من النماذج أو الخصائص الفائقة.',
+          en: 'In the book\u2019s code a Ridge penalty alpha is chosen with sklearn over the Boston data, shuffling indices before slicing. Our sandbox forbids anything unpinned so results repeat exactly, so we fix the indices literally: 8 rows with k=4 give the folds [[0,1], [2,3], [4,5], [6,7]]. Two tiny models compete: a constant predictor at the training mean of y, and a line through the origin whose slope is computed in closed form from the training rows. The metric is MSE on the held-out fold\u2019s rows, then the average over the four folds per model — and the same skeleton serves any number of models or hyperparameters.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'K-fold كاملة على 8 صفوف: المتوسط الثابت مقابل خط المبدأ', en: 'Full K-fold on 8 rows: constant mean vs origin line' },
+      code: "xs = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]\nys = [2.2, 3.8, 6.1, 8.0, 10.3, 11.8, 14.2, 15.9]\nfolds = [[0, 1], [2, 3], [4, 5], [6, 7]]\n\ndef mean_metric(vals):\n    return sum(vals) / len(vals)\n\ndef val_errors_mean(train, val):\n    m = sum(ys[i] for i in train) / len(train)\n    return [(ys[i] - m) ** 2 for i in val]\n\ndef val_errors_slope(train, val):\n    b = sum(xs[i] * ys[i] for i in train) / sum(xs[i] * xs[i] for i in train)\n    return [(ys[i] - b * xs[i]) ** 2 for i in val]\n\nerrs_A, errs_B = [], []\nprint('fold  val-idx    mse_mean   mse_slope')\nfor k, fold in enumerate(folds):\n    train = [i for i in range(8) if i not in fold]\n    eA = mean_metric(val_errors_mean(train, fold))\n    eB = mean_metric(val_errors_slope(train, fold))\n    errs_A.append(eA)\n    errs_B.append(eB)\n    print('%d     %-10s %.6f   %.6f' % (k, str(fold), eA, eB))\n\navgA = mean_metric(errs_A)\navgB = mean_metric(errs_B)\nprint('average          %.6f   %.6f' % (avgA, avgB))\nprint('winner:', 'slope-through-origin' if avgB < avgA else 'constant mean')",
+      explanation: {
+        ar: 'كل طية تدخل دورَي التدريب والتحقق: في الطية 0 مثلاً يتدرب النموذجان على الصفوف 2..7 ويُقاسان على [0, 1]. نموذج المتوسط الثابت خاسر ساحقاً لأنه يتجاهل اتجاه x: أخطاؤه على الطيات 65.442500 و7.925000 و7.762778 و64.989444 بمتوسط 36.529931. خط المبدأ بميل يُقدَّر من كل قسم تدريب يعيد أخطاء ضئيلة 0.041297 و0.004018 و0.064262 و0.023454 بمتوسط 0.033258 — الفائز واضح بألف مرة. لاحظ أن الميل يتغير من طية لأخرى (تدريب مختلف كل مرة)، وأن القرار أخُذ من المتوسط لا من أفضل طية — هذا جوهر الطريقة.',
+        en: 'Every fold takes both roles: in fold 0, say, both models train on rows 2..7 and get scored on [0, 1]. The constant-mean model loses badly because it ignores the direction of x: fold errors 65.442500, 7.925000, 7.762778, 64.989444 averaging 36.529931. The origin line, whose slope is re-estimated from each training split, returns tiny errors 0.041297, 0.004018, 0.064262, 0.023454 averaging 0.033258 — a winner by three orders of magnitude. Note the slope changes from fold to fold (different training set each time), and the decision came from the average, not the best single fold — that is the heart of the method.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.folds-aggregator',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفّذ دالتين أساسيتين للتحقق المتقاطع: make_folds(n_rows, k) تعيد k طيات متجاورة متساوية الحجم كقوائم فهارس (لـ n_rows=8 وk=4: [[0,1], [2,3], [4,5], [6,7]])، وmean_metric(values) تعيد متوسط قائمة قياسات (مثل أخطاء MSE عبر الطيات). افترض أن k يقسم n_rows بالتساوي. بلا مكتبات.',
+        en: 'Implement the two workhorses of cross validation: make_folds(n_rows, k) returning k contiguous, equal-sized folds as lists of indices (for n_rows=8 and k=4: [[0,1], [2,3], [4,5], [6,7]]), and mean_metric(values) returning the mean of a list of measurements (such as per-fold MSEs). Assume k divides n_rows evenly. No libraries.',
+      },
+      starterCode: "def make_folds(n_rows, k):\n    ...  # TODO: k contiguous folds of size n_rows // k, as lists of indices\n\ndef mean_metric(values):\n    ...  # TODO: sum(values) / len(values)\n",
+      solution: "def make_folds(n_rows, k):\n    size = n_rows // k\n    return [list(range(f * size, (f + 1) * size)) for f in range(k)]\n\ndef mean_metric(values):\n    return sum(values) / len(values)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'الطيات الأربع على 8 صفوف مطابقة حرفياً', en: 'The four folds over 8 rows match literally' },
+          code: "assert make_folds(8, 4) == [[0, 1], [2, 3], [4, 5], [6, 7]], 'got %r' % make_folds(8, 4)",
+          expected: '[[0, 1], [2, 3], [4, 5], [6, 7]]',
+        },
+        {
+          id: 't2',
+          name: { ar: 'كل فهرس يظهر مرة واحدة بالضبط', en: 'Every index appears exactly once' },
+          code: "flat = sorted(sum(make_folds(8, 4), []))\nassert flat == list(range(8)), 'coverage broken: %r' % flat\nf2 = make_folds(6, 3)\nassert f2 == [[0, 1], [2, 3], [4, 5]], 'got %r' % f2",
+          expected: 'sorted coverage == range(8); make_folds(6, 3) == [[0,1],[2,3],[4,5]]',
+        },
+        {
+          id: 't3',
+          name: { ar: 'المجمع الحسابي صحيح', en: 'The aggregator is correct' },
+          code: "assert abs(mean_metric([2.0, 4.0, 6.0]) - 4.0) < 1e-9, 'got %r' % mean_metric([2.0, 4.0, 6.0])\nassert abs(mean_metric([65.4425, 7.925, 7.762778, 64.989444]) - 36.5299305) < 1e-6, 'got %r' % mean_metric([65.4425, 7.925, 7.762778, 64.989444])",
+          expected: 'mean([2,4,6]) == 4.0; per-fold mean == 36.5299305',
+        },
+      ],
+      hints: [
+        { ar: 'حجم الطية size = n_rows // k؛ ثم قائمة مركبة تعيد list(range(f*size, (f+1)*size)) لكل f من 0 إلى k-1.', en: 'Fold size is size = n_rows // k; a comprehension returns list(range(f*size, (f+1)*size)) for each f in 0..k-1.' },
+        { ar: 'الطيات متجاورة لا متداخلة: الطية f تبدأ عند f*size وتنتهي قبله (f+1)*size — لذلك [[0,1],[2,3],...] وليس قفزات.', en: 'Folds are contiguous, not interleaved: fold f spans f*size up to (f+1)*size — hence [[0,1],[2,3],...] rather than strides.' },
+        { ar: 'لمطابقة تغطية كاملة في اختبارك: sorted(sum(folds, [])) يسطح قائمة القوائم ثم يرتبها وقارنها بـ list(range(n_rows)).', en: 'To assert full coverage in your own check: sorted(sum(folds, [])) flattens the list of lists; compare with list(range(n_rows)).' },
+        { ar: 'mean_metric سطر واحد: sum(values) / len(values) — متوسط لا مجموع ولا وسط قيمتين.', en: 'mean_metric is one line: sum(values) / len(values) — a mean, not a sum and not a midpoint.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.heldout-why',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'لماذا نقيس النموذج على الطية المحجوبة بدل قياس خطأه على صفوف التدريب التي تعلم منها؟',
+        en: 'Why do we score the model on the held-out fold rather than on the training rows it learned from?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'لأن حساب الخطأ على التدريب أبطأ حسابياً من حسابه على طية صغيرة', en: 'Because computing error on training data is slower than on a small fold' } },
+        { id: 'b', text: { ar: 'لأن الخطأ داخل العينة يكافئ النموذج الذي حفظ بياناته، والطية المحجوبة تختبر التعميم على صفوف لم يرها', en: 'In-sample error rewards the model that memorized its own data, while the held-out fold tests generalization to rows the model never saw' } },
+        { id: 'c', text: { ar: 'لأن صفوف التدريب تحتوي قيماً ناقصة يجب إخفاؤها', en: 'Because training rows contain missing values that must be hidden' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'تخيل نموذجاً يسجل كل صف تدريب في جدول ويجيبه عنه حرفياً — خطأ تدريبه صفر لكنه عديم الفائدة.', en: 'Imagine a model that stores every training row and answers from the table — zero training error, yet useless.' },
+        { ar: 'مقياس داخل العينة متفائل دائماً: كلما ازداد تعقيد النموذج انخفض خطأ التدريب حتى مع سوء التعميم.', en: 'In-sample metrics are systematically optimistic: more complexity keeps lowering training error even as generalization worsens.' },
+        { ar: 'المحجوب يحاكي المستقبل: صفوف لم تشارك في التعلم، فدرجتها قياس صادق لما سيراه النموذج عملياً.', en: 'The held-out part simulates the future: rows that took no part in learning, so their score is an honest estimate of real-world behavior.' },
+        { ar: 'الجواب: b — والتحقق المتقاطع يكرر الفكرة K مرة ليقلل أثر حظ التقطيع الواحد.', en: 'Answer: b — and K-fold repeats the idea K times to dilute the luck of any single split.' },
+      ],
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'في التحقق المتقاطع من K طيات، كم مرة يشارك كل صف في التدريب وكم مرة في التحقق؟',
+            en: 'In K-fold cross validation, how many times does each row serve in training and how many times in validation?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'تدريب K-1 مرة وتحقق مرة واحدة', en: 'Training K-1 times, validation exactly once' } },
+            { id: 'b', text: { ar: 'تدريب مرة واحدة وتحقق K-1 مرة', en: 'Training once, validation K-1 times' } },
+            { id: 'c', text: { ar: 'تدريب وتحقق في كل دورة K مرات لكل منهما', en: 'Both training and validation in all K cycles' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'في كل دورة تُحجب طية واحدة للتحقق وتتدرب النماذج على البقية، فبعد اكتمال الدورات يكون كل صف قد تحقق مرة واحدة وتدرّب فيما عدا ذلك — K-1 مرة.',
+            en: 'Each cycle holds out one fold for validation while models train on the rest; after all cycles every row has been validated once and trained on the remaining K-1 times.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'بعد حساب درجة تحقق لكل طية، كيف نختار النموذج الفائز؟',
+            en: 'After computing a validation score per fold, how is the winning model chosen?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'بأفضل درجة في طية واحدة يختارها المصمم', en: 'By the best score on whichever single fold the modeler picks' } },
+            { id: 'b', text: { ar: 'بأفضل متوسط لدرجات التحقق عبر الطيات كلها', en: 'By the best average of validation scores across all folds' } },
+            { id: 'c', text: { ar: 'بأدنى خطأ تدريب على كامل البيانات', en: 'By the lowest training error on the full data' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'الخطوة الثالثة في نص الكتاب حرفياً: اختر النموذج بأفضل متوسط أداء تحقق. المتوسط يلغي حساسية التقطيع الواحد، وخطأ التدريب لا يقول شيئاً عن التعميم.',
+            en: 'The book\u2019s third step reads exactly that: select the model with the best average validation performance. Averaging cancels split-specific luck, and training error says nothing about generalization.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'في المثال المنفذ، ما السبب الأدق لفوز خط المبدأ على المتوسط الثابت بفارق 36.529931 مقابل 0.033258؟',
+            en: 'In the worked example, what is the most precise reason the origin line beats the constant mean (0.033258 vs 36.529931)?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن بياناتنا تنمو خطياً مع x تقريباً، والنموذج الثابت يتجاهل هذا الاتجاه فيبقى بعيداً عن أطراف البيانات', en: 'Our data grows nearly linearly with x, and the constant model ignores that trend, staying far from the data\u2019s edges' } },
+            { id: 'b', text: { ar: 'لأن نموذج المتوسط استخدم طيات أقل في التدريب', en: 'Because the mean model trained on fewer folds' } },
+            { id: 'c', text: { ar: 'لأن MSE يعاقب النموذج الثابت رياضياً بغض النظر عن البيانات', en: 'Because MSE penalizes constant models mathematically regardless of the data' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'كلا النموذجين تدرّب على نفس الأقسام بالضبط وبنفس المقياس، فالفارق من البيانات نفسها: y يقارب 2x، وأي مُنبئ يظل ثابتاً يخطئ بعشرات الوحدات عند الأطراف، بينما الميل المقدر من كل قسم تدريب يتبع الاتجاه بأخطاء مئات.',
+            en: 'Both models trained on identical splits with the identical metric, so the gap comes from the data: y tracks roughly 2x, any constant predictor misses by tens of units near the edges, while the per-split estimated slope follows the trend with errors in the hundredths.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'التحقق المتقاطع يجيب "أي نموذج نختار؟" بعدالة: K طيات، وفي كل دورة طية محجوبة للقياس والبقية للتدريب، ثم مقارنة متوسط درجات التحقق.', en: 'Cross validation answers "which model?" fairly: K folds, each cycle holding one fold out for scoring and training on the rest, then comparing averaged validation scores.' },
+        { ar: 'قياسنا على 8 صفوف وk=4 بطيات حرفية [[0,1],[2,3],[4,5],[6,7]]: متوسط ثابت خسر بمتوسط MSE 36.529931 مقابل 0.033258 لخط المبدأ — القرار من المتوسط لا من طية وحيدة.', en: 'Our run on 8 rows with literal k=4 folds [[0,1],[2,3],[4,5],[6,7]]: the constant mean lost with average MSE 36.529931 vs 0.033258 for the origin line — decided by the average, never one fold.' },
+        { ar: 'أداتا المخطط بسيطتان وقابلتان لإعادة الاستخدام: make_folds تقطع الفهارس طيات متجاورة، وmean_metric تلخص درجات الطيات — والكتاب يشغل الهيكل نفسه لاختيار alpha في Ridge عبر sklearn.', en: 'The two workhorses are simple and reusable: make_folds slices indices into contiguous folds, mean_metric summarizes fold scores — and the book runs the same skeleton to pick a Ridge alpha via sklearn.' },
+      ],
+      reflectPrompt: {
+        ar: 'ثبتنا الفهارس حرفياً بدل خلطها كما فعل الكتاب. ماذا تخسر بذلك وماذا تكسب؟ ولو كانت الصفوف مرتبة زمنياً، كيف قد يخدعك التقطيع المتجاور تحديداً؟',
+        en: 'We pinned the folds literally instead of shuffling like the book. What does that trade away and what does it buy? And if rows were ordered in time, how specifically could contiguous splitting mislead you?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.A.s2' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'MLS', section: 'mls.A.s2' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

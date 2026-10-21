@@ -1,0 +1,36 @@
+/**
+ * Task 8-a verification: dump write_code + debug solutions and their tests
+ * to JSON for the python harness replay (same semantics as pyodide-worker
+ * __pypath_run_tests). Run: bun run scripts/dump-ch6-solutions.ts
+ * (writes scripts/.ch6-solutions.json)
+ */
+import { writeFileSync } from 'node:fs';
+
+import l1 from '../content/part1/py4e/ch6/lesson.ch6.l1';
+import l2 from '../content/part1/py4e/ch6/lesson.ch6.l2';
+import l3 from '../content/part1/py4e/ch6/lesson.ch6.l3';
+import l4 from '../content/part1/py4e/ch6/lesson.ch6.l4';
+import l5 from '../content/part1/py4e/ch6/lesson.ch6.l5';
+import l6 from '../content/part1/py4e/ch6/lesson.ch6.l6';
+
+const lessons = [l1, l2, l3, l4, l5, l6] as unknown as {
+  id: string;
+  blocks: { kind: string; id?: string; solution?: string; tests?: { id: string; code: string }[] }[];
+}[];
+
+const out: { lesson: string; id: string; solution: string; tests: { id: string; code: string }[] }[] = [];
+for (const l of lessons) {
+  for (const b of l.blocks) {
+    if (b.kind === 'debug' && b.solution && b.tests) {
+      out.push({ lesson: l.id, id: b.id as string, solution: b.solution, tests: b.tests });
+    }
+    if (b.kind === 'exercise') {
+      const ex = b as { exKind?: string };
+      if (ex.exKind === 'write_code' && b.solution && b.tests) {
+        out.push({ lesson: l.id, id: b.id as string, solution: b.solution, tests: b.tests });
+      }
+    }
+  }
+}
+writeFileSync('scripts/.ch6-solutions.json', JSON.stringify(out, null, 1));
+console.log(`dumped ${out.length} solution/test suites`);

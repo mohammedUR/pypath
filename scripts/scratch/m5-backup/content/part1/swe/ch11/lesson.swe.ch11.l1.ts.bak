@@ -1,0 +1,370 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch11.l1 — "Security as a Lifecycle Property and the OWASP Top 10
+ * الأمن صفة عبر دورة الحياة وقائمة OWASP العشرة"
+ * Aligned with SWE ch11 s1 (Security Is a Lifecycle Property, pp.287-290) +
+ * s2 (The OWASP Top 10, pp.290-293).
+ * All expression is original — a paraphrase of the CC BY-SA 4.0 source, never
+ * a verbatim translation.
+ * Runnable design: a tiny salted-hash auth simulator — hashlib sha256 over
+ * (salt + password) with a FIXED salt table, hmac.compare_digest for the
+ * comparison, secrets used only to mint a fresh salt at registration time.
+ * Deterministic by construction: nothing interactive, nothing unpredictable,
+ * no process spawning, no network access.
+ */
+
+const lesson = {
+  id: 'swe.ch11.l1',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 11,
+  title: { ar: 'الأمن صفة عبر دورة الحياة وقائمة OWASP العشرة', en: 'Security as a Lifecycle Property and the OWASP Top 10' },
+  estimatedMinutes: 25,
+  prerequisites: ['swe.ch10.l5'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'الفصلان الماضيان كانا يعملان في الأمن من دون أن نسمي الأمر: التحليل الساكن تتبّع مدخلًا ملوثًا حتى استعلام، والاختبار مسّ مسارات الخطأ التي يعيش عليها المهاجم. الفصل أحد عشر يجمع الخيوط بإطار صريح: يفترض خصمًا ذكيًا يدرس نظامك باحثًا عن المدخل الواحد والاعتمادية المنسية والإعداد المهجور الذي يحوّل ميزتك إلى موطئ قدم له. لن يسأل الفصل «هل يعمل النظام؟» بل السؤال الأحد: هل يفعل ما ينبغي فقط، حتى وإن حاول أحدهم جعله يفعل غير ذلك؟ اليوم نبدأ بالنصف الأول: لماذا الأمن صفة تمتد عبر دورة الحياة كلها لا مرحلة تُختتم قبل الإطلاق، وكيف تسمّي ما تحميه بثلاثية CIA، وكيف تحوّل قائمة OWASP العشرة من وعظ إلى أشكال بايثون تعرفها بعينك — وأخذك العملي محاكاة تحقق مصغّرة: بصمات ملّحة ومقارنة آمنة زمنيًا وقائمة محاولات ثابتة. بنهاية الدرس ستكون قادرًا على: تسمية ما تحميه بثلاثية CIA وتمييز التهديد من الثغرة من الاستغلال، وقراءة فئات OWASP العشر كسلال لا قائمة شطب، وكتابة تحقق كلمة مرور ملّح بمقارنة آمنة زمنيًا.',
+        en: 'The last two chapters were doing security work without saying so: static analysis traced a tainted input into a query, and testing probed the error paths an attacker lives on. Chapter eleven gathers the threads under an explicit frame: it assumes an intelligent adversary studying your system for the one input, the one forgotten dependency, the one neglected default that turns your feature into their foothold. The chapter will not ask “does the system work?” but the sharper question: does it do only that, even when someone is actively trying to make it do something else? Today is the first half: why security is a property spanning the whole lifecycle rather than a phase that ends before launch, how to name what you protect with the CIA triad, and how to turn the OWASP Top 10 from a sermon into Python shapes you can recognize — with a hands-on anchor: a miniature verification simulator with salted digests, a timing-safe comparison, and a fixed attempt list. By the end of this lesson you will be able to: name what you protect with the CIA triad and distinguish threat, vulnerability and exploit, read the OWASP categories as buckets rather than a checklist, and write a salted password verification with a timing-safe comparison.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "import hashlib\n\ndef digest(password, salt):\n    return hashlib.sha256((salt + password).encode('utf-8')).hexdigest()\n\nprint(digest('s3cret', 'a1b2') == digest('s3cret', 'a1b2'))\nprint(digest('s3cret', 'a1b2') == digest('s3cret', '9c8d'))\nprint(len(digest('s3cret', 'a1b2')))",
+      question: {
+        ar: 'كلمة مرور واحدة وملحان مختلفان. أي مقارنة من الثلاث يجب أن يثق بها فحص تسجيل الدخول؟ ولماذا تغيّر الملح وحده البصمة كاملة رغم ثبات كلمة المرور؟',
+        en: 'One password, two different salts. Which of the three comparisons should a login check trust? And why does changing only the salt change the whole digest while the password stays the same?',
+      },
+      reveal: {
+        ar: 'الطباعة: True ثم False ثم 64. المقارنة الموثوقة هي الأولى: الملح نفسه مع كلمة المرور نفسها يعطي البصمة نفسها — وهذا عقد تسجيل الدخول كلّه. والثانية تكشف سرّ التمليح: غيّر الملح وحده فتتبدل البصمة بالكامل، فيخزّن مستخدمان تختاران كلمة المرور نفسها قيمتين مختلفتين لا يربح المهاجم منهما شيئًا. والسطر الثالث يقول إن البصمة 64 محرفًا سداسيًا — وقالب التخزين في محاكاة اليوم سيكون بالضبط: salt وdigest.',
+        en: 'It prints True, then False, then 64. The trustworthy comparison is the first: the same salt with the same password yields the same digest — that is the entire login contract. The second exposes the point of salting: change the salt alone and the digest changes completely, so two users who choose the same password store two different values, and an attacker gains nothing from either. The third line says the digest is 64 hex characters — and the storage shape in today\u2019s simulator will be exactly that: a salt and a digest.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الأمن صفة عبر دورة الحياة، وثلاثية CIA', en: 'Security as a lifecycle property, and the CIA triad' },
+      chunks: [
+        {
+          ar: 'الفرضية التي يقوم عليها الفصل: الأمن ليس مرحلة. ثغرة قد تُصمَّم في المتطلبات، وتُكتب في التنفيذ، وتُستورد مع اعتمادية، وتُدخلها عملية النشر — ولذلك كلّ تخصص سابق في هذا الكتاب هو أيضًا ضابط أمن. أرخص دفاع هو الذي جعلته مستحيلًا بالتصميم، وأغلاه هو الذي ترقّعه بعد الاختراق. ولهذا تنجذب ممارسات الفصل إلى اليسار: نمذجة تهديدات عند المتطلبات، ومراجعات تصميم آمنة قبل الكود، وفحوص ساكنة وعلى الاعتماديات عند كل التزام — بدل اختبار اختراق في أسبوع الإطلاق الأخير. بقية صفات الجودة تفترض عالمًا متعاونًا؛ الأمن وحده يفترض العكس: خصمًا يدرسك فعليًا.',
+          en: 'The chapter\u2019s founding premise: security is not a phase. A vulnerability can be designed in during requirements, coded in during implementation, imported through a dependency, or introduced by deployment — so every earlier discipline in this book is also a security control. The cheapest defense is the one you made impossible by design; the most expensive is the one you patch after a breach. That is why the chapter\u2019s practices pull left: threat modeling at requirements, secure design reviews before code, static and dependency checks on every commit — instead of a penetration test in the final launch week. Other quality attributes assume a cooperative world; security alone assumes the opposite: an adversary actively studying you.',
+        },
+        {
+          ar: 'ولكي يكون حديث «أمن» محددًا لا أمنية، تسمّي ثلاثية CIA ما تحميه: السرية confidentiality — الطرف المصرَّح له وحده يقرأ البيانات؛ والسلامة integrity — لا تغيير غير مصرَّح بالبيانات أو الكود، وكل تغيير كهذا قابل للاكتشاف؛ والتوافر availability — النظام مستجيب حين يحتاجه مستخدموه المشروعون. العدسة عملية: قائمة بريد مسرّبة فشلُ سرية، وتحديث برامج ثابت مشوَّه فشلُ سلامة، وفدية تقفل أنظمتك فشلُ توافر. مهاجم قد لا يقرأ سجل جرعة لكنه يغيّره صامتًا — فأذى حقيقي بلا سرقة: هذه سلامة، والخاصية المسمّاة تجعل السؤال «آمن ضد ماذا؟» قابلًا للقياس.',
+          en: 'To keep a security talk concrete instead of a wish, the CIA triad names what you protect: confidentiality — only authorized parties can read the data; integrity — data and code are not altered by unauthorized parties, and such changes are detectable; availability — the system responds when legitimate users need it. The lens is practical: a leaked mailing list is a confidentiality failure; a tampered firmware update is an integrity failure; a ransomware lockout is an availability failure. An attacker may never read a dosage record yet silently change it — real harm without theft: that is integrity. Naming the property makes “secure against what?” measurable.',
+        },
+        {
+          ar: 'ثلاث كلمات يخلطها الحديث العابر ويجب فصلهن هندسيًّا: الثغرة vulnerability ضعف في نظامك — فحص حدود ناقص أو استعلام غير مُعامَل أو حساب بامتيازات زائدة؛ والتهديد threat مصدر ضرر محتمل — فاعل أو حدث قد يضرك؛ والاستغلال exploit التقنية أو الشيفرة الملموسة التي تحوّل ثغرة بعينها إلى اختراق فعلي. أنت نادرًا ما تختار تهديداتك — الإنترنت يزوّدها باستمرار — لكنك تملك كل ثغراتك وتستطيع تقاعدها قبل وجود أي استغلال لها. والخطر حيث يلتقون: ثغرة لا يبلغها تهديد خطرٌ منخفض. ولأن لا ضابط كامل، تُرصَّن الأنظمة الجادة بطبقات مستقلة تفشل كلٌّ على حدة — الدفاع في العمق.',
+          en: 'Three words casual talk blurs and engineering must separate: a vulnerability is a weakness in your system — a missing bounds check, an unparameterized query, an over-privileged account; a threat is a potential source of harm — an actor or event that might act against you; an exploit is the concrete technique or code that turns a specific vulnerability into an actual compromise. You rarely choose your threats — the internet supplies them continuously — but you own every vulnerability and can retire one before any exploit exists. Risk is where they meet: a vulnerability no threat can reach is low risk. And since no control is perfect, serious systems stack independent layers that fail separately — defense in depth.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'OWASP العشرة: خريطة الأخطار كما تظهر في بايثون', en: 'The OWASP Top 10: the risk map as it looks in Python' },
+      chunks: [
+        {
+          ar: 'قائمة OWASP العشرة وثيقة توعية لا معيار اعتماد: ترتيب لأخطر عشر فئات مخاطر في تطبيقات الويب، مبني على مئات آلاف الثغرات المبلَّغة فعليًا مع مسح للممارسين، ويُحدَّث كل نحو أربع سنوات فكل نسخة صورة لتحوّل خريطة الخطر. نسخة 2025 تضع في الصدارة A01 ضوابط الوصول المكسورة، ثم A02 سوء الإعداد الأمني، ثم A03 فشل سلسلة التوريد البرمجية — فئة موسّعة جديدة صعدت إلى الثالثة إيذانًا بانتقال الانتباه إلى الاعتماديات (درسنا الثالث)، ثم A04 إخفاقات التعمية، وA05 الحقن، وA06 التصميم غير الآمن، وA07 إخفاقات المصادقة، وA08 إخفاقات سلامة البرمجيات أو البيانات، وA09 إخفاقات التسجيل والتنبيه الأمني، وA10 سوء معالجة الحالات الاستثنائية — فئة جديدة كليًّا تسمّي الأخطاء المختبئة في المعالجة السيئة للأخطاء.',
+          en: 'The OWASP Top 10 is an awareness document, not a certification: a ranked list of the ten most critical web-application risk categories, built from hundreds of thousands of really reported vulnerabilities plus a practitioner survey, revised roughly every four years — each edition a snapshot of how the risk map moved. The 2025 edition puts A01 Broken Access Control first, then A02 Security Misconfiguration, then A03 Software Supply Chain Failures — a broadened new category promoted to third, signaling the industry\u2019s move toward dependencies (our third lesson) — then A04 Cryptographic Failures, A05 Injection, A06 Insecure Design, A07 Authentication Failures, A08 Software or Data Integrity Failures, A09 Security Logging and Alerting Failures, and A10 Mishandling of Exceptional Conditions — an entirely new category naming the bugs that hide in bad error handling.',
+        },
+        {
+          ar: 'الفئات تظهر في بايثون بأشكال تحفظها بالعين. A01: واجهة تعيد سجل مريض آخر لأنها وثقت مُعرِّفًا في العنوان دون سؤال مَن يسأل — والعلاج موقف تصميم لا رقعة: الرفض افتراضيًا، والتخويل يُقرَّر على الخادم لكل طلب، والهوية من جلسة موثقة لا من قيمة يضعها العميل. A05: الحقن حين يُسلَّم نص غير موثوق إلى مفسّر فيُنفَّذ جزء منه كأمر — الاستعلام المركّب بالنص "SELECT * FROM t WHERE n = \'" + name + "\' يجعل حدّ الكود/البيانات سلسلة يستطيع المهاجم إعادة كتابتها، بينما العلامة ? في الاستعلام المُعامَل تثبّت نص SQL أولًا وتربط الاسم بعده بياناتٍ لا تغيّر البنية أبدًا — آلية الفصل نفسها في كل مفسّر.',
+          en: 'The categories appear in Python as shapes worth memorizing. A01: an API returning another patient\u2019s record because it trusted an ID in the URL without asking who is asking — the fix is a design stance, not a patch: deny by default, decide authorization on the server for every request, derive identity from an authenticated session rather than any client-set value. A05: injection when untrusted text reaches an interpreter and part of it executes as a command — the concatenated query "SELECT * FROM t WHERE n = \'" + name + "\' makes the code/data boundary a string the attacker can rewrite, while the ? placeholder of a parameterized query fixes the SQL text first and binds the name afterward as pure data that never changes the structure — the same separation in every interpreter.',
+        },
+        {
+          ar: 'وA04 إخفاقات التعمية هي موطن محاكاة اليوم: تخزين كلمة المرور نفسها أو بصمة غير ملّحة يعني أن تسريب الجدول يسرّب السلوك. الشكل الصحيح: sha256(salt + password) بملح فريد لكل مستخدم — فيختفي تشابه كلمات المرور — والمقارنة بـ hmac.compare_digest لا بـ == لأن المقارنة العادية تتنازل عن زمن يختلف بطول السابقة المشتركة فيمنح خصمًا صبورًا مقياسًا. وA07 إخفاقات المصادقة تُدار بجيران محاكاتنا: عدّاد إخفاقات لكل حساب وقفل بعد عتبة، لأن كلمة المرور الصحيحة لا تكفي إذا سُمح بملايين المحاولات. واحذر أن تحوّل القائمة إلى شطب: «عالجنا العشر» ليست دعوى أمن — فالفئات سلال مواطن ضعف لا خانة لكل علة.',
+          en: 'And A04 Cryptographic Failures is where today\u2019s simulator lives: storing the password itself, or an unsalted digest, means a leaked table leaks behavior. The right shape: sha256(salt + password) with a unique salt per user — erasing the sameness of equal passwords — and the comparison via hmac.compare_digest, not ==, because an ordinary comparison leaks timing that varies with the shared prefix and hands a patient adversary a measuring tool. A07 Authentication Failures is managed by our simulator\u2019s neighbors: a failed-attempt counter per account and a lock past a threshold, because a correct password is not enough if millions of guesses are allowed. And beware turning the list into checkboxes: “we handled all ten” is not a security claim — categories are buckets of weaknesses, not one slot per bug.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'محاكاة تحقق مصغّرة: ملح ومقارنة آمنة زمنيًا', en: 'A miniature verification simulator: salt and timing-safe compare' },
+      code: "import hashlib\nimport hmac\nimport secrets\n\ndef make_user(password):\n    salt = secrets.token_hex(8)\n    digest = hashlib.sha256((salt + password).encode('utf-8')).hexdigest()\n    return {'salt': salt, 'digest': digest}\n\ndef check(user, password):\n    attempt = hashlib.sha256((user['salt'] + password).encode('utf-8')).hexdigest()\n    return hmac.compare_digest(attempt, user['digest'])\n\nusers = {'ada': make_user('lovelace-1815')}\nattempts = [('ada', 'lovelace-1815'), ('ada', 'Lovelace-1815'), ('eve', 'lovelace-1815')]\nfor name, password in attempts:\n    if name in users and check(users[name], password):\n        print('%s: ok' % name)\n    else:\n        print('%s: denied' % name)",
+      explanation: {
+        ar: 'أربعة أشياء تلاحظها: make_user يسكّ ملحًا طازجًا بـ secrets.token_hex ثم يخزّن salt وdigest — كلمة المرور نفسها لا تُخزَّن إطلاقًا؛ وcheck يعيد حساب بصمة (الملح + المحاولة) بالدالة نفسها ثم يقارن بـ hmac.compare_digest — نفس العقد الذي رأيته في التنبؤ؛ واختبار العضوية name in users يجيب «هل المستخدم معروف؟» في خطوة واحدة قبل أي حساب — مراجعة من PY4E الفصل التاسع؛ وقائمة المحاولات ثابتة فالخرج حتمي: ada: ok للمطابقة التامة، وada: denied لأن حالة الأحرف جزء من البصمة، وeve: denied لأن المستخدم غير معروف أصلًا. تمارين اليوم تبني الشكل نفسه بجدول ملح ثابت حتى تكون الاختبارات محكومة.',
+        en: 'Four things to notice: make_user mints a fresh salt with secrets.token_hex then stores salt and digest — the password itself is never stored; check recomputes the (salt + attempt) digest with the same function and compares with hmac.compare_digest — the exact contract from the predict; the membership test name in users answers “is this user known?” in one step before any hashing — a nod to PY4E chapter nine; and the attempt list is fixed so the output is deterministic: ada: ok for the exact match, ada: denied because letter case is part of the digest, eve: denied because the user is not known at all. Today\u2019s exercises rebuild the same shape over a fixed salt table so the tests can judge it.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.write-verify',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'أكمل دالة verify(username, password, users) حتى تعمل محاكاة التحقق: المستخدم غير المعروف يعيد False فورًا؛ وإلا أعد حساب البصمة بـ digest(password, user[\'salt\']) وقارنها بالقيمة المخزّنة user[\'digest\'] عبر hmac.compare_digest وأعد النتيجة. المتوقع من الطبقات: ada: True ثم grace: True ثم eve: False.',
+        en: 'Complete verify(username, password, users) so the check simulator works: an unknown user returns False immediately; otherwise recompute the digest via digest(password, user[\'salt\']), compare it with the stored user[\'digest\'] using hmac.compare_digest, and return the result. Expected prints: ada: True then grace: True then eve: False.',
+      },
+      starterCode: "import hashlib\nimport hmac\n\nUSERS = {\n    'ada': {'salt': 'a1b2c3d4', 'digest': 'c8e20c85e7a92882cc4e2a10a2e2a6b5eddfb3a52ffed9dd699a7275efe16447'},\n    'grace': {'salt': 'e5f6a7b8', 'digest': '7adb665259691f8dbb956777897b9290429f409302d0a8680c80c1da23af829c'},\n}\n\ndef digest(password, salt):\n    return hashlib.sha256((salt + password).encode('utf-8')).hexdigest()\n\ndef verify(username, password, users):\n    # 1) مستخدم غير معروف → False فورًا\n    #    unknown user -> False immediately\n    # 2) أعد حساب البصمة: digest(password, user['salt'])\n    #    recompute: digest(password, user['salt'])\n    # 3) قارن بـ hmac.compare_digest مع user['digest'] وأعد النتيجة\n    #    compare with hmac.compare_digest against user['digest'] and return it\n    return False\n\nprint('ada:', verify('ada', 'lovelace-1815', USERS))\nprint('grace:', verify('grace', 'hopper-1906', USERS))\nprint('eve:', verify('eve', 'lovelace-1815', USERS))",
+      solution: "import hashlib\nimport hmac\n\nUSERS = {\n    'ada': {'salt': 'a1b2c3d4', 'digest': 'c8e20c85e7a92882cc4e2a10a2e2a6b5eddfb3a52ffed9dd699a7275efe16447'},\n    'grace': {'salt': 'e5f6a7b8', 'digest': '7adb665259691f8dbb956777897b9290429f409302d0a8680c80c1da23af829c'},\n}\n\ndef digest(password, salt):\n    return hashlib.sha256((salt + password).encode('utf-8')).hexdigest()\n\ndef verify(username, password, users):\n    user = users.get(username)\n    if user is None:\n        return False\n    attempt = digest(password, user['salt'])\n    return hmac.compare_digest(attempt, user['digest'])\n\nprint('ada:', verify('ada', 'lovelace-1815', USERS))\nprint('grace:', verify('grace', 'hopper-1906', USERS))\nprint('eve:', verify('eve', 'lovelace-1815', USERS))",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'كلمة المرور الصحيحة تُقبل', en: 'The correct password is accepted' },
+          code: "assert verify('ada', 'lovelace-1815', USERS) is True, 'expected: True | actual: %r' % verify('ada', 'lovelace-1815', USERS)",
+          expected: 'True',
+        },
+        {
+          id: 't2',
+          name: { ar: 'مستخدم ثانٍ يُقبل وحالة الأحرف المبدّلة تُرفض', en: 'A second user is accepted and a case-swapped attempt is denied' },
+          code: "assert verify('grace', 'hopper-1906', USERS) is True and verify('ada', 'Lovelace-1815', USERS) is False, 'expected: True/False | actual: %r' % ((verify('grace', 'hopper-1906', USERS), verify('ada', 'Lovelace-1815', USERS)),)",
+          expected: 'True for grace, False for the case-swapped attempt',
+        },
+        {
+          id: 't3',
+          name: { ar: 'المستخدم المجهول والكلمة الفارغة يُرفضان', en: 'Unknown user and empty password are denied' },
+          code: "assert verify('eve', 'lovelace-1815', USERS) is False and verify('ada', '', USERS) is False, 'expected: False/False | actual: %r' % ((verify('eve', 'lovelace-1815', USERS), verify('ada', '', USERS)),)",
+          expected: 'False for unknown user and empty password',
+        },
+        {
+          id: 't4',
+          name: { ar: 'القيمة المعادة bool حقيقي لا صادف صدفة', en: 'The return value is a real bool' },
+          code: "assert isinstance(verify('ada', 'lovelace-1815', USERS), bool), 'expected: a real bool | actual: %r' % type(verify('ada', 'lovelace-1815', USERS)).__name__",
+          expected: 'a real bool',
+        },
+      ],
+      hints: [
+        { ar: 'ابدأ ببوصلة القاموس من PY4E: users.get(username) يعيد None للمفتاح الغائب — افحصه أولًا وأعد False قبل أي حساب بصمات.', en: 'Start with the chapter-nine dict compass: users.get(username) returns None for a missing key — test it first and return False before any hashing.' },
+        { ar: 'أعد حساب المحاولة بالدالة الجاهزة نفسها وترتيبها نفسه: attempt = digest(password, user[\'salt\']) — قلب ترتيب المعاملات يغير البصمة كلها.', en: "Recompute the attempt with the provided function in its own order: attempt = digest(password, user['salt']) — swapping the argument order changes the whole digest." },
+        { ar: 'الهيكل:\nuser = users.get(username)\nif user is None:\n    return False\nattempt = digest(password, user[\'salt\'])\nreturn hmac.compare_digest(attempt, user[\'digest\'])', en: "The skeleton:\nuser = users.get(username)\nif user is None:\n    return False\nattempt = digest(password, user['salt'])\nreturn hmac.compare_digest(attempt, user['digest'])" },
+        { ar: 'الحل الكامل:\n\ndef verify(username, password, users):\n    user = users.get(username)\n    if user is None:\n        return False\n    attempt = digest(password, user[\'salt\'])\n    return hmac.compare_digest(attempt, user[\'digest\'])\n\nوالمطبوعات: ada: True وgrace: True وeve: False.', en: "Full solution:\n\ndef verify(username, password, users):\n    user = users.get(username)\n    if user is None:\n        return False\n    attempt = digest(password, user['salt'])\n    return hmac.compare_digest(attempt, user['digest'])\n\nand the prints: ada: True, grace: True, eve: False." },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-salted',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرجه بالضبط — سطرًا لكل طباعة — دون تشغيله. تذكّر عقد الملح من التنبؤ: البصمة تُحسب من (الملح + النص) بالترتيب نفسه.',
+        en: 'Read the code and predict its exact output — one line per print — without running it. Recall the salting contract from the predict: the digest is computed over (salt + text) in the same order.',
+      },
+      code: "import hashlib\n\ndef digest(password, salt):\n    return hashlib.sha256((salt + password).encode('utf-8')).hexdigest()\n\nstored = digest('open sesame', 'abcd')\nattempts = ['open sesame', 'Open Sesame', 'open  sesame']\nok = 0\nfor a in attempts:\n    if digest(a, 'abcd') == stored:\n        ok = ok + 1\nprint('ok: %d of %d' % (ok, len(attempts)))\nprint('digest length: %d' % len(stored))",
+      solution: 'ok: 1 of 3\ndigest length: 64',
+      answer: 'ok: 1 of 3\ndigest length: 64',
+      hints: [
+        { ar: 'المخزن stored بُني من الملح abcd والنص open sesame — فالمحاولة الأولى هي هو تمامًا فتتطابق البصمتان.', en: 'The stored digest was built from salt abcd and text open sesame — the first attempt is exactly that, so the digests match.' },
+        { ar: 'المحاولة الثانية تبدّل حالة الحرف الأول فتتغير البايتات المُدخلة للهاش — بصمة مختلفة كليًّا رغم التشابه البصري.', en: 'The second attempt swaps the first letter\u2019s case, changing the hashed bytes — a completely different digest despite looking similar.' },
+        { ar: 'المحاولة الثالثة تحمل مسافتين بين الكلمتين بدل واحدة — والمسافة بايت كالأحرف: البصمة لا تتطابق. فok يبقى 1 من 3، وطول البصمة السداسية 64 محرفًا دائمًا.', en: 'The third attempt carries two spaces between the words instead of one — a space is a byte like any letter, so no match. ok stays 1 of 3, and the hex digest length is always 64.' },
+        { ar: 'الخرج:\nok: 1 of 3\ndigest length: 64', en: 'The output:\nok: 1 of 3\ndigest length: 64' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-cia',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'مهاجم لم يقرأ سجل جرعة مريض ولا حاجته — لكنه غيّره صامتًا. أي خاصية من ثلاثية CIA انكسرت؟',
+        en: 'An attacker never read a patient\u2019s dosage record and did not need to — but silently changed it. Which property of the CIA triad broke?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'السرية confidentiality — لأن البيانات الطبية حساسة', en: 'Confidentiality — because medical data is sensitive' } },
+        { id: 'b', text: { ar: 'السلامة integrity — تغيير غير مصرَّح به، والمطلوب أن يكون قابلاً للاكتشاف حتى لو لم يُقرأ شيء', en: 'Integrity — an unauthorized change, which must be detectable even if nothing was read' } },
+        { id: 'c', text: { ar: 'التوافر availability — لأن السجل لم يعد صالحًا للاستخدام', en: 'Availability — because the record is no longer usable' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'السؤال يقول حرفيًّا: لم يقرأ المهاجم شيئًا — فالسرية لم تُمس أصلًا.', en: 'The question says it outright: the attacker read nothing — so confidentiality was never touched.' },
+        { ar: 'النظام بقي مستجيبًا والمستخدمون يقرأون ويكتبون — فالتوافر سليم أيضًا.', en: 'The system stayed responsive and users kept reading and writing — availability is intact too.' },
+        { ar: 'ثلاثية CIA تفرّق: من يقرأ (سرية)، وما تغيّر بلا إذن (سلامة)، وهل يستجيب النظام (توافر) — والتغيير الصامت بلا قراءة هو تعريف كسر السلامة.', en: 'The triad separates: who can read (confidentiality), what changed without authorization (integrity), whether the system responds (availability) — a silent unread change is the definition of an integrity break.' },
+        { ar: 'الجواب: b — السلامة، وهذا مثال الكتاب الحرفي على أن الأذى لا يشترط السرقة.', en: 'Answer: b — integrity, and this is the book\u2019s own example that harm does not require theft.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-injection',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'حين يُسلَّم نص غير موثوق إلى مفسّر فيُنفَّذ جزء منه كأمر لا كبيانات — كما في الاستعلام المركّب بالنص — تسمى هذه الفئة A05 في قائمة اليوم: ____. (كلمة إنجليزية واحدة)',
+        en: 'When untrusted text reaches an interpreter and part of it executes as a command rather than data — as in a concatenated query — category A05 in today\u2019s list calls this ____. (one English word)',
+      },
+      answer: 'injection',
+      solution: 'injection',
+      hints: [
+        { ar: 'الاسم من صورة الفعل: نص أجنبي يُحقن في مجرى يفترض أن يحمل أوامر فقط.', en: 'The name comes from the verb\u2019s image: foreign text is injected into a stream meant to carry commands only.' },
+        { ar: 'مثال الكتاب: اسم مثل Robert\'); DROP TABLE appointments; -- يُقفل الاقتباس ويضيف أمرًا — أي أن البيانات صارت أمرًا.', en: 'The book\u2019s example: a name like Robert\'); DROP TABLE appointments; -- closes the quote and appends a command — data became a command.' },
+        { ar: 'العلاج الذي يغلق الفئة كاملة: الاستعلام المُعامَل بالعلامة ? — النص مثبَّت أولًا والبيانات تُربط بعده.', en: 'The fix that closes the whole category: the parameterized query with the ? placeholder — text fixed first, data bound afterward.' },
+        { ar: 'الجواب: injection', en: 'Answer: injection' },
+      ],
+    },
+    {
+      kind: 'debug',
+      id: 'ex5.debug-salt',
+      required: true,
+      brokenCode: "import hashlib\nimport hmac\n\nBOB = {'salt': '99887766', 'digest': '958561749c9db531c92c40b272a85f926667ee1b58938d103dea619872648322'}\n\ndef digest(password):\n    return hashlib.sha256(password.encode('utf-8')).hexdigest()\n\ndef check(user, password):\n    return hmac.compare_digest(digest(password), user['digest'])\n\nattempts = [('bob', 'builder-2026'), ('bob', 'Builder-2026')]\nfor name, password in attempts:\n    if check(BOB, password):\n        print('%s: ok' % name)\n    else:\n        print('%s: denied' % name)",
+      prompt: {
+        ar: 'شغّل الكود المعطوب ولاحظ الفضيحة الصامتة: bob يُدخل كلمة المرور الصحيحة builder-2026 حرفًا بحرف — ومع ذلك يطبع السطران bob: denied وbob: denied! لا استثناء ولا انهيار: فشل بالإغلاق يطرد مستخدمًا مشروعًا. السبب فئة A04 بامتياز: المخزن BOB يحمل بصمة ملّحة (sha256 للملح 99887766 مع كلمة المرور)، لكن digest تحسبها من كلمة المرور وحدها — الملح ضاع من الحساب فلا يمكن لأي محاولة أن تطابق أبدًا. أعد الملح إلى موقعه: اجعل digest تأخذ (password, salt) واحسب (salt + password) ثم مرّر user[\'salt\'] في check فيصير السطران bob: ok ثم bob: denied.',
+        en: 'Run the broken code and witness the silent scandal: bob types the correct password builder-2026 character by character — yet both lines print bob: denied! No exception, no crash: a fail-closed rejection of a legitimate user. The cause is category A04 in full dress: the BOB store holds a salted digest (sha256 over the salt 99887766 together with the password), but digest computes it from the password alone — the salt dropped out of the computation, so no attempt can ever match. Put the salt back: make digest take (password, salt), hash (salt + password), pass user[\'salt\'] in check, and the lines become bob: ok then bob: denied.',
+      },
+      solution: "import hashlib\nimport hmac\n\nBOB = {'salt': '99887766', 'digest': '958561749c9db531c92c40b272a85f926667ee1b58938d103dea619872648322'}\n\ndef digest(password, salt):\n    return hashlib.sha256((salt + password).encode('utf-8')).hexdigest()\n\ndef check(user, password):\n    return hmac.compare_digest(digest(password, user['salt']), user['digest'])\n\nattempts = [('bob', 'builder-2026'), ('bob', 'Builder-2026')]\nfor name, password in attempts:\n    if check(BOB, password):\n        print('%s: ok' % name)\n    else:\n        print('%s: denied' % name)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'كلمة المرور الصحيحة تُقبل بعد إرجاع الملح', en: 'The correct password is accepted once the salt is back' },
+          code: "assert 'bob: ok' in __learner_output__, 'expected: bob: ok | actual: %r' % __learner_output__",
+          expected: 'bob: ok',
+        },
+        {
+          id: 't2',
+          name: { ar: 'كلمة المرور المبدّلة الحروف تبقى مرفوضة', en: 'The case-swapped password stays denied' },
+          code: "assert 'bob: denied' in __learner_output__, 'expected: bob: denied for the wrong case | actual: %r' % __learner_output__",
+          expected: 'bob: denied for the wrong case',
+        },
+        {
+          id: 't3',
+          name: { ar: 'العقد نفسه يشتغل على الدالة مباشرة', en: 'The contract works on the function directly' },
+          code: "assert check(BOB, 'builder-2026') is True and check(BOB, 'Builder-2026') is False, 'expected: True/False | actual: %r' % ((check(BOB, 'builder-2026'), check(BOB, 'Builder-2026')),)",
+          expected: 'True for the right password, False for the wrong one',
+        },
+      ],
+      hints: [
+        { ar: 'لا تمس المخزن إطلاقًا — بصمة BOB صحيحة ومطابقة للمواصفة. العيب في دالة الحساب وحدها.', en: 'Do not touch the store at all — the BOB digest is correct and matches the spec. The defect is in the hashing function alone.' },
+        { ar: 'قارن مدخلات sha256: المخزن بُني من (الملح + كلمة المرور) — أي 99887766builder-2026 — بينما دالتك تُدخل كلمة المرور فقط. الملح هو الفارق.', en: 'Compare what sha256 receives: the store was built over (salt + password) — 99887766builder-2026 — while your function hashes only the password. The salt is the difference.' },
+        { ar: 'الإصلاح سطران: def digest(password, salt): تعيد sha256((salt + password).encode(...)) — وفي check مرّر الملح: digest(password, user[\'salt\']).', en: "The fix is two lines: def digest(password, salt): returning sha256((salt + password).encode(...)) — and in check pass the salt: digest(password, user['salt'])." },
+        { ar: 'بعد الإصلاح يصير الخرج bob: ok ثم bob: denied — المستخدم الصحيح يعود، والمحاولة المبدّلة الحروف تُرفض كما يجب.', en: 'After the fix the output becomes bob: ok then bob: denied — the legitimate user returns and the case-swapped attempt is refused as it should be.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "import hashlib\nimport hmac\nimport secrets\n\nUSERS = {\n    'ada': {'salt': 'a1b2c3d4', 'digest': 'c8e20c85e7a92882cc4e2a10a2e2a6b5eddfb3a52ffed9dd699a7275efe16447'},\n    'grace': {'salt': 'e5f6a7b8', 'digest': '7adb665259691f8dbb956777897b9290429f409302d0a8680c80c1da23af829c'},\n}\n\ndef digest(password, salt):\n    return hashlib.sha256((salt + password).encode('utf-8')).hexdigest()\n\ndef verify(username, password, users):\n    user = users.get(username)\n    if user is None:\n        return False\n    return hmac.compare_digest(digest(password, user['salt']), user['digest'])\n\nattempts = [\n    ('ada', 'lovelace-1815'),\n    ('ada', 'Lovelace-1815'),\n    ('grace', 'hopper-1906'),\n    ('eve', 'lovelace-1815'),\n]\n\nfailed = {}\nfor username, password in attempts:\n    if verify(username, password, USERS):\n        print('%s: ok' % username)\n    else:\n        failed[username] = failed.get(username, 0) + 1\n        print('%s: denied (%d)' % (username, failed[username]))\n\n# جرّب: سجّل مستخدمًا جديدًا بملح طازج من secrets.token_hex(8) — لماذا يختلف مخزنه عن ada رغم كلمة مرور مطابقة؟\n# try: register a new user with a fresh salt from secrets.token_hex(8) — why does their store differ from ada's even with an identical password?\n# جرّب: أضف قفل الحساب بعد 3 إخفاقات — أي فئة من قائمة اليوم يخدم القفل؟\n# try: add an account lock after 3 failures — which category from today's list does locking serve?\n# جرّب: احذف الملح من استدعاء digest وشاهد ada تُرفض رغم كلمة المرور الصحيحة — ثم أرجعه.\n# try: drop the salt from the digest call and watch ada get denied despite the right password — then restore it.",
+      prompt: {
+        ar: 'الملعب محاكاتك المصغّرة كاملة: عدّاد الإخفاقات لكل حساب هو بذرة دفاع A07 — اطبع أسماء المحاولات الرفيصة وشاهد العدّاد يتصاعد. ثم سجّل مستخدمًا بملح طازج وقارن مخزنه بمخزن ada، ثم أضف القفل بعد عتبة، ثم أجرّب إسقاط الملح لترى فشل A04 بيديك. لا اختبار هنا — فضولك فقط.',
+        en: 'The sandbox is your miniature simulator, complete: the per-account failure counter is the seed of an A07 defense — print the failed attempts and watch the counter climb. Then register a user with a fresh salt and compare their store with ada\u2019s, add the lock after a threshold, and try dropping the salt to feel an A04 failure with your own hands. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ومن PY4E الفصل التاسع: القاموس يربط مفتاحًا بقيمة ويجيب بسرعة. في محاكاة اليوم، أي عملية تجيب في خطوة واحدة هل المستخدم معروف قبل أي حساب بصمات؟',
+            en: 'From PY4E chapter nine: a dict binds a key to a value and answers fast. In today\u2019s simulator, which operation answers “is this user known?” in one step before any hashing?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'username in users — اختبار العضوية على مفاتيح القاموس، كما استخدمناها في الحلقة والحل', en: 'username in users — a membership test on the dict\u2019s keys, as the loop and the solution used' } },
+            { id: 'b', text: { ar: 'len(users) — عدد المستخدمين يكشف وجودهم', en: 'len(users) — the user count reveals presence' } },
+            { id: 'c', text: { ar: 'sorted(users) — ترتيب الأسماء يظهر المجهول', en: 'sorted(users) — sorting the names exposes the stranger' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'العضوية على مفاتيح القاموس عملية سريعة ثابتة التكلفة تقريبًا — ولهذا بُنيت verify وcheck عليها: ارفض المجهول فورًا قبل إنفاق أي حساب هاش. len يعدّ الجميع لا يسأل عن واحد، والترتيب عرض لا فحص.',
+            en: 'Key membership on a dict is near-constant time — which is why verify and check are built on it: reject the stranger before spending any hashing. len counts everyone rather than asking about one, and sorting is presentation, not a check.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ومن فصل التحليل الساكن في هذا الكتاب (الفصل التاسع): المتعقّب على تدفق البيانات كان يصطاد مدخلًا ملوثًا يبلغ محبًّا خطِرًا. أي فئة من قائمة اليوم يجسّد العيب الذي يغلقه الاستعلام المُعامَل بالعلامة ?',
+            en: 'From this book\u2019s static-analysis chapter (chapter nine): the data-flow tracker caught tainted input reaching a dangerous sink. Which category from today\u2019s list names the defect that a ?-parameterized query closes?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'A01 ضوابط الوصول المكسورة — لأن الاستعلام يقرأ بيانات الآخرين', en: 'A01 Broken Access Control — because the query reads other people\u2019s data' } },
+            { id: 'b', text: { ar: 'A05 الحقن — بيانات المهاجم تعبر حدود النص إلى مفسر SQL، والعلامة ? تُبقيها بيانات', en: 'A05 Injection — attacker data crosses the text boundary into the SQL interpreter, and ? keeps it data' } },
+            { id: 'c', text: { ar: 'A03 فشل سلسلة التوريد — لأن قاعدة البيانات مكوّن خارجي', en: 'A03 Supply Chain Failures — because the database is an external component' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'نفس الفجوة بعينها: حدّ الكود/البيانات الذي يستطيع المهاجم إعادة كتابته بنص مركّب. الفصل التاسع كشفه بتتبع التلوث، والفصل الحادي عشر يقفله بالبناء — فصل الكود عن البيانات بالمعاملات لا بالتسنين.',
+            en: 'The very same gap: the code/data boundary an attacker rewrites through concatenation. Chapter nine exposed it via taint flow; chapter eleven closes it by construction — separating code from data with parameters, not escaping.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'تحديث برامج ثابت مشوَّه وصل إلى الأجهزة وقبِلته الأنظمة بثقة. أي خاصية من ثلاثية CIA تنكسر هنا؟',
+            en: 'A tampered firmware update reaches devices and the systems accept it in good faith. Which CIA property breaks here?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'السرية — لأن التحديث حُمّل عبر الشبكة', en: 'Confidentiality — because the update traveled the network' } },
+            { id: 'b', text: { ar: 'السلامة — كود تغيّر بلا إذن وقُبل، وهذا مثال الكتاب الحرفي', en: 'Integrity — code changed without authorization and accepted, the book\u2019s own example' } },
+            { id: 'c', text: { ar: 'التوافر — لأن التحديث بطيء التحميل', en: 'Availability — because the update downloads slowly' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'التحديث الثابت المزوَّر فشلُ سلامة نموذجي: لم يُسرَّب شيء ولم يتوقف النظام — لكن كودًا تغيّر بلا إذن. اربطها بدرسنا الثالث القادم: بصمة HMAC للقطع الأثرية أحد أقفال هذه الخاصية.',
+            en: 'A forged firmware update is the textbook integrity failure: nothing leaked and nothing went down — yet code changed without authorization. Link it to our third lesson ahead: an HMAC tag on artifacts is one of the locks for this property.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: '«مخترق متقاعد يراقب نظامك منذ شهور بحثًا عن نقطة ضعف واحدة» — في مصطلحات الدرس، هذا بحد ذاته يسمى:',
+            en: '“A skilled retired intruder watching your system for months, looking for one weakness” — in the lesson\u2019s terms, this on its own is called a:',
+          },
+          options: [
+            { id: 'a', text: { ar: 'ثغرة vulnerability — لأنه يبحث عن ضعف', en: 'vulnerability — because he is looking for a weakness' } },
+            { id: 'b', text: { ar: 'تهديد threat — مصدر ضرر محتمل، وأنت نادرًا ما تختاره', en: 'threat — a potential source of harm, which you rarely choose' } },
+            { id: 'c', text: { ar: 'استغلال exploit — لأنه متمكن تقنيًّا', en: 'exploit — because he is technically skilled' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'التهديد هو الفاعل أو الحدث المحتمل — الراصد نفسه. الثغرة ضعف في نظامك أنت تملكه وتستطيع تقاعده قبل أي استغلال، والاستغلال هو الشيفرة أو التقنية التي تحوّل الثغرة إلى اختراق. الخطر يكبر حيث يلتقي الثلاثة.',
+            en: 'The threat is the potential actor or event — the watcher himself. A vulnerability is a weakness in your system that you own and can retire before any exploit exists; the exploit is the code or technique turning the vulnerability into a compromise. Risk grows where the three meet.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'الأمن مرحلة اختبار قبل الإطلاق — «سنزيّنه لاحقًا»',
+          right: 'خاصية تمتد من المتطلبات: نمذجة تهديدات مبكرة، ومراجعة تصميم آمنة، وفحوص على كل التزام',
+          note: {
+            ar: 'مبدأ الفصل: ثغرة تُصمَّم في المتطلبات وتُكتب في التنفيذ وتُستورد من اعتمادية — فكل تخصص سابق ضابط أمن. أرخص دفاع جُعل مستحيلًا بالتصميم، وأغلاه رُقِّع بعد الاختراق؛ والإزاحة يسارًا ليست شعارًا بل اقتصاد كلفة عيوب الفصل التاسع بألوان أخطر.',
+            en: 'The chapter\u2019s principle: a vulnerability is designed in requirements, coded in implementation, imported from a dependency — so every earlier discipline is a security control. The cheapest defense is made impossible by design; the dearest is patched after a breach. Shifting left is not a slogan but chapter nine\u2019s defect-cost economics in a sharper costume.',
+          },
+        },
+        {
+          wrong: 'تخزين كلمة المرور نصًّا، أو بصمة بلا ملح، أو مقارنة البصمات بـ ==',
+          right: 'sha256(salt + password) بملح فريد لكل مستخدم، ومقارنة hmac.compare_digest، وقفل بعد عتبة إخفاقات',
+          note: {
+            ar: 'هذا حرفيًّا فئتا A04 وA07 في شكل بايثون: الملح الفريد يمحو تشابه كلمات المرور في المخزن المسروق، والمقارنة الآمنة زمنيًا ترفع مقياسًا كان ينسلّ من يد الخصم، والعتبة تحدّ من التخمين. كتلة التصحيح اليوم أظهرت علامة المرض: بلا ملح حتى الصحيح يُرفض.',
+            en: 'This is literally categories A04 and A07 in Python shape: a unique salt erases password sameness in a stolen store, the timing-safe comparison removes a gauge that slipped into an adversary\u2019s hands, and a threshold caps guessing. Today\u2019s debug block showed the symptom: without the salt even the right password is denied.',
+          },
+        },
+        {
+          wrong: 'إخفاء رابط الإدارة أو الاعتماد على فحص في المتصفح — «لا أحد يعرف العنوان»',
+          right: 'التخويل قرار خادم لكل طلب: هوية من جلسة موثقة، ورفض افتراضي، وسيناريوهات صريحة لأمثال ?userId=',
+          note: {
+            ar: 'A01 أول الفئات لأنها الأشيع والأخفى: النظام يبدو عاملًا تمامًا وهو يمنح غير المصرَّح لهم — ولذلك ذهبت الفئة إلى أن تخويلًا لا تراه اختبارات الميزات يحتاج مراجعة تصميم صريحة وسيناريوهات جودة مخصصة، وأن SSRF وCSRF كلاهما في جوهره نظام يُخدع ليعمل خارج سلطته.',
+            en: 'A01 ranks first because it is both common and invisible: the system looks perfectly healthy while granting unauthorized access — hence the category\u2019s insistence that authorization, unseen by feature tests, needs explicit design review and dedicated quality scenarios, and that SSRF and CSRF are both, at heart, a system tricked into acting outside its authority.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'الأمن صفة عبر دورة الحياة لا مرحلة: ثغرة تُصمَّم وتُكتب وتُستورد وتُنشر — والإزاحة يسارًا أرخص علاج. وثلاثية CIA تسمّي ما تحميه: سرية وسلامة وتوافر، مع تمييز تهديد (لا تختاره) من ثغرة (تملكها) من استغلال (يحول الأولى بالثانية).', en: 'Security is a lifecycle property, not a phase: designed in, coded in, imported, deployed — and shifting left is the cheapest cure. The CIA triad names what you protect — confidentiality, integrity, availability — while threat (rarely your choice), vulnerability (always yours), and exploit (the concrete technique) stay distinct.' },
+        { ar: 'قائمة OWASP العشرة وثيقة توعية تتغير كل نحو أربع سنوات — فئات سلال لا خانات شطب: A01 وصول مكسور (رفض افتراضي وتخويل على الخادم)، وA05 حقن (استعلام مُعامَل)، وA04 تعمية (ملح فريد ومقارنة آمنة زمنيًا)، وA07 مصادقة (عتبات وقفل).', en: 'The OWASP Top 10 is an awareness document revised roughly every four years — buckets of weaknesses, not checkboxes: A01 broken access control (deny by default, server-side authorization), A05 injection (parameterized queries), A04 cryptographic failures (unique salt, timing-safe compare), A07 authentication (thresholds and locks).' },
+        { ar: 'محاكاة اليوم: make_user يسكّ ملحًا فريدًا، وcheck يعيد الحساب ويقارن بـ hmac.compare_digest، وعضوية القاموس ترفض المجهول أولًا — والكتلة التصحيحية أظهرت أن بلا ملح يُرفض الصحيح. الدرس القادم: كيف تجد ثغراتك أنت — من المراجعة اليدوية إلى الوكلاء المستقلين.', en: 'Today\u2019s simulator: make_user mints a unique salt, check recomputes and compares with hmac.compare_digest, dict membership rejects the stranger first — and the debug block proved that without the salt even the right password is denied. Next lesson: how to find your own vulnerabilities — from manual review to autonomous agents.' },
+      ],
+      reflectPrompt: {
+        ar: 'افتح الملعب وسجّل مستخدمين اثنين بكلمة مرور واحدة بملحين مختلفين وقارن المخزنين، ثم أضف قفلًا بعد ثلاث إخفاقات. اسأل نفسك: في مشروعك القادم — أي خاصية CIA تخدمها كل ميزة تكتبها، وأين في دورة الحياة ستضع أول قرار أمني حتى لا يكون الرقعة الأخيرة قبل الإطلاق؟',
+        en: 'Open the sandbox, register two users with one password and two salts, compare the stores, then add a lock after three failures. Ask yourself: in your next project — which CIA property does every feature you write serve, and where in the lifecycle will your first security decision sit so it is not the last-minute patch before launch?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch11.s1', pages: 'ص287-290 / pp.287-290' },
+        { book: 'SWE', section: 'swe.ch11.s2', pages: 'ص290-293 / pp.290-293' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch11.s1', pages: 'ص287-290 / pp.287-290' },
+    { book: 'SWE', section: 'swe.ch11.s2', pages: 'ص290-293 / pp.290-293' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

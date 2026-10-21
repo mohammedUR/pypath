@@ -1,0 +1,2436 @@
+
+===== صفحة الكتاب 414 =====
+Chapter 15 — Maintenance and Evolution
+Where we are. Chapter 14 carried a verified change the last mile into production and taught you to keep it
+flowing — pipelines, progressive deployment, containers, names, certificates, and the DORA evidence that
+delivery performance matters. This chapter is about everything after the celebration: the years a successful
+system spends being fixed, adapted, extended, and refactored, usually by people who did not write it.
+Deployment begins the longest phase of a successful system’s life. Most professional effort goes into evolving
+systems that have been in production for years, not into building new ones — and this chapter is about the code
+you will inherit.
+The industry has names for that work. Corrective maintenance fixes defects. Adaptive maintenance responds to
+a changing environment — a new OS version, a deprecated API, a new regulation — where the code did nothing
+wrong but the world moved. Perfective maintenance adds the features and improvements users keep asking a
+living system for. And preventative maintenance — refactoring, debt paydown — improves structure now so
+that all the other kinds stay affordable later. A widely cited historical rule of thumb places maintenance, taken
+together, at roughly 60 percent of a system’s lifetime cost — the share varies substantially by system, by
+organization, and by what gets classified as maintenance, but the direction is not in doubt.1 Read that number
+again: the phase this book spent fourteen chapters preparing you for is the minority of the money, which is reason
+enough to treat evolving code as the main event of an engineering career rather than the cleanup after it.
+15.1 What Makes Code Legacy
+Colloquially, “legacy” means old. The working definition that matters is different: legacy code is code without
+tests — or, in its more visceral form, code you are afraid to change. Age is incidental. A module written last
+month with no tests, no documentation, and one departed author is legacy; a fifteen-year-old module with a
+thorough suite is not, because the suite makes change safe. The defining property is that the system’s actual
+behavior is not pinned down anywhere except in the code itself — so any change might break something, you
+cannot know what, and you cannot know cheaply. Fear sets in, fear breeds avoidance, avoidance means changes
+are bolted on in the least invasive (and least clean) way possible, and the code gets worse precisely because
+everyone is being careful. Breaking that spiral is a skill, and it starts with an inversion of the testing you learned in
+Chapter 10.
+The tests-first definition comes from Michael Feathers, whose Working Effectively with Legacy Code also names
+the only two ways there are to change legacy code.2 Edit and pray: study the code, make the change, look around
+manually for anything you broke, deploy, and hope. Cover and modify: first build tests that cover the code you
+must touch, then make the change and let the tests detect any behavior you altered without meaning to. This book
+
+===== صفحة الكتاب 415 =====
+has been teaching the second way all along; here it finally gets its name. Cover-and-modify starts with a search,
+not an edit: locate your change points — the specific places in the code where your change must actually land —
+because those are the places the test coverage has to grip before you touch anything. The next two sections are
+cover-and-modify in practice.
+15.2 Characterization Tests
+Chapter 10’s tests were built from a specification: the oracle (§10.1.4) told you what the right answer should be.
+Legacy code has no trustworthy spec — the comments lie, the documentation describes version 2, and the original
+requirements are three pivots old. So you flip the direction of inference. A characterization test documents what
+the code actually does now: you call the function with an input, observe the output, and write that observation
+down as the expected value. The running system itself becomes the oracle.
+This feels like cheating — you are asserting the code does whatever it does, bugs included. But the test’s job is to
+pin down current behavior, not to verify correctness, so that your upcoming changes cannot alter it
+unknowingly. Users, and other code, may well depend on the current behavior, strange corners and all. The
+practical loop: write a test with a deliberately wrong expected value, run it, read the actual value from the failure
+message, and promote that actual value into the assertion. Probe the edges — empty inputs, nulls, boundary values
+— until you have a net of pinned behavior around everything your change might disturb. When a characterization
+test exposes something that is plainly a bug, resist fixing it in the same breath: record it, finish building the net,
+and change behavior as its own deliberate, separately reviewed step. One commit should refactor or fix, never
+ambiguously both.
+Applied to a fee-code lookup inherited with the clinic scheduler, the loop leaves this trail:
+Characterizing assumes you can find your way around, and with an inherited codebase that takes a deliberate
+workflow. Read what the previous team left behind first — the tests above all: a passing test is executable
+def legacy_fee_code(visit_type):                    # inherited: no docs, no tests
+return {"exam": "E10", "lab": "L20", "vaccine": "V30"}.get(visit_type, "E10")
+def test_probe_unknown_type():
+assert legacy_fee_code("phone") == "XXX"
+# deliberately wrong
+# FAILED: AssertionError: assert 'E10' == 'XXX'
+def test_unknown_type_bills_as_exam():              # observed value, promoted
+assert legacy_fee_code("phone") == "E10"
+def test_empty_type_bills_as_exam():                # edge probe: pinned, bug or not
+assert legacy_fee_code("") == "E10"
+
+===== صفحة الكتاب 416 =====
+documentation that stays synchronized with the behavior it actually checks, though what it checks may be
+incomplete or no longer what anyone intends. Then read any design documents. On documentation, note the
+distinction: an architecture description (§6.5) is the formal design artifact, but tests, commit history, and mockups
+are living informal documentation, and agile teams weight the informal kind heavily because it stays closer to the
+code. Next, generate a class or dependency diagram — most languages have tools that extract one — to see the
+shape of the system before you dive into any single file. Then get the application and its test suite running locally,
+against a cloned or fixture copy of the database, before touching anything: a system you cannot run is a system
+you cannot characterize. Only then write characterization tests at your intended change points, and begin.
+Modern tooling has also shifted the comprehension half of legacy work. Understanding what a gnarly function
+actually does — the prerequisite for characterizing it — has always been the slowest, loneliest part of the job. AI
+assistants (§13.2) are genuinely strong here: summarizing an unfamiliar module, proposing what a function’s edge
+cases might be, drafting candidate characterization tests for you to verify against the running code. The
+verification discipline of Chapter 13 still governs — an AI’s account of legacy behavior is a hypothesis, and the
+running system remains the only oracle — but as a hypothesis generator for code no living person understands, it
+removes a real bottleneck.
+15.3 Refactoring Under Green Tests
+With behavior pinned, you can refactor. Chapter 2 introduced refactoring inside the red–green–refactor loop
+(§2.3.2): improving the design of existing code without changing its behavior, protected by green tests. Legacy
+work follows the same feedback loop, but it begins by building the green net around existing behavior first.
+Because the code is difficult to change safely, the team must apply the loop more cautiously. The craft is to move
+in steps so small that each one is obviously behavior-preserving — rename, extract a function, inline a variable,
+move a method — running the suite after every step. If the bar goes red, the last step is the culprit; undo it and
+take a smaller one. Named, cataloged refactoring moves (Fowler’s catalog is the standard reference) matter
+because each has known mechanics and known traps; a sequence of safe moves composes into a transformation
+you would never dare attempt as one leap.3
+Where should you aim the moves? Code smells are surface symptoms that suggest — not prove — a deeper
+design problem: a long method, a large class that does too many things, a stretch of duplicated code, magic
+numbers (unexplained literals like 65 scattered through the logic), deeply nested conditionals, a long parameter
+list. A smell is a prompt to look closer, not a verdict; sometimes the long method really is the clearest way to write
+that logic. For functions in particular, a compact health checklist is SOFA: keep each function Short, doing One
+thing, taking Few arguments, and written at a single level of Abstraction. Some smells can even be measured:
+cyclomatic complexity counts the independent decision paths through a function — built on the control-flow
+analysis of Chapter 10 — turning “this method feels tangled” into a number a pipeline can watch.
+The named moves map onto the smells. Beyond rename, extract, inline, and move: replace magic number with
+named constant (speed > SPEED_LIMIT explains itself; speed > 65 does not); introduce guard clauses — early
+
+===== صفحة الكتاب 417 =====
+returns for the exceptional cases — to flatten deeply nested conditionals; remove duplication, applying Chapter
+6’s DRY principle, while staying alert for code that merely looks similar but serves different purposes; decompose
+large class, splitting along clusters of fields and methods that change together; replace temp with query, turning
+a scattered computed variable into one well-named method; and introduce parameter object, bundling
+arguments that always travel together into a single type that can then attract the behavior that uses it.
+The clinic scheduler’s booking check shows two of those smells at once:
+Replace the magic 8 with a named constant, run the suite, flatten the nesting with guard clauses, run it again —
+the tests stay green after each move:
+Legacy code adds a chicken-and-egg problem the catalog alone cannot solve: the worst code cannot be tested
+without refactoring (dependencies are hard-wired, everything talks to the database) and cannot be safely
+refactored without tests. To break the cycle, make only the enabling changes required to add a test: introduce a
+parameter or extract an interface around a hard-wired dependency so a test double can replace it (Chapter 10).
+Stop once the behavior can be tested, then proceed under that protection.
+def can_book(patient, slot, booked_today):
+if patient is not None:
+if slot.open:
+if booked_today < 8:
+return True
+else:
+return False
+else:
+return False
+else:
+return False
+MAX_DAILY_BOOKINGS = 8
+def can_book(patient, slot, booked_today):
+if patient is None:
+return False
+if not slot.open:
+return False
+return booked_today < MAX_DAILY_BOOKINGS
+
+===== صفحة الكتاب 418 =====
+15.4 Repository Stewardship
+The habit of leaving a repository better than you found it is sometimes called the Boy Scout Rule.4 It does not
+mean perfecting every file you open or disguising a rewrite inside an ordinary change. Repository stewardship
+extends responsibility beyond the feature or defect named in the ticket to the condition of the surrounding system.
+Small improvements compound just as small shortcuts do. A clearer name reduces the cost of the next reading. A
+characterization test protects the next modification. Removing a stale comment prevents the next engineer from
+trusting a false explanation. Simplifying one tangled branch makes the next defect easier to isolate. None
+transforms the system alone, but repeated across a team and over years, they determine whether the repository
+becomes easier or harder to change.
+The guardrails are the same as the rest of this chapter: understand the behavior before changing it, protect it with
+tests, work in small steps, and keep each change coherent enough to review and reverse. Improve the code you
+already have reason to touch. Record larger problems instead of pretending they can be repaired safely on the side.
+This is the review-time principle of §9.3 turned into a daily working habit — deliver the change you were asked
+for, and leave the system better prepared for the change that comes next.
+15.5 Technical Debt
+The economics underneath all of this has a name. Technical debt is the metaphor for the future cost incurred
+when you take a shortcut today: like financial debt, it lets you move faster now in exchange for interest — and the
+interest is that every future change to that code costs more than it would have.5 The metaphor’s precision is its
+virtue. Debt is a deal, not simply “bad code” — and sometimes the deal is a good one. Deliberate debt is a
+conscious trade — “we hard-code the tax rule to make the pilot; we log a ticket to generalize it” — the
+engineering equivalent of a startup loan, rational whenever learning fast matters more than building clean,
+provided you track it and service it. Inadvertent debt is the interest you pay on shortcuts you never knew you
+took — from inexperience, from requirements that shifted under a once-correct design, or from Chapter 1’s crunch
+pitfall, where scope silently absorbed through overtime gets paid for later in weakened structure. Nobody chose it,
+so nobody tracks it, so it compounds.
+Unmanaged, debt’s interest payments consume a team’s entire capacity: each feature takes longer, which raises
+pressure, which invites new shortcuts, which raises interest again. The management is not “never borrow” — it is
+to borrow knowingly, keep the debts visible (a debt register in the backlog, reviewed like any other work), and pay
+down principal where you actually pay interest: the high-churn code you touch weekly, not the ugly module
+nobody has opened in years. Refactoring (§15.3) is the repayment mechanism, and the pipeline (§14.2) is what
+makes repayment safe enough to do continuously.
+
+===== صفحة الكتاب 419 =====
+15.6 Strangler Fig versus Big-Bang Rewrite
+What about a system so far gone that the team wants to start over? Chapter 2’s troubled browser rewrite (§2.6.3)
+showed how a big-bang rewrite concentrates risk: you discard the accumulated knowledge embedded in code
+that handles a thousand edge cases, you run two systems (one frozen, one imaginary) for the duration, and the new
+system’s first real validation comes at the end, all at once. The delivery-era alternative is the strangler fig pattern,
+named for the fig that grows around a host tree, roots itself, and gradually replaces the host it envelops.6 You place
+an interception layer — a routing facade — in front of the legacy system, then peel off one capability at a time:
+build the new implementation, route that slice of traffic to it, verify it in production (a canary, §14.3.2, at the
+granularity of a feature), and retire the old code path. At every moment, you have one working system — part old,
+part new — and every increment of the rewrite is validated by real use within weeks of being written. The rewrite
+becomes a sequence of small, reversible deployments instead of one giant irreversible bet: the whole argument of
+Chapter 14, applied to the biggest change a team ever makes.
+15.7 Conclusion
+Evolution is where Chapter 6’s “design for change” either pays its dividend or collects its debt: systems built with
+seams, interfaces, and tests bend under years of change; systems without them become the legacy code someone
+else must characterize, strangle, and replace. The chapter’s working sequence is practical: preserve current
+behavior with characterization tests, refactor while the tests remain green, address technical debt deliberately, and
+use incremental replacement when a rewrite is justified. Underneath all of it runs the habit of §15.4 — steward the
+repository, leaving it a little better prepared for the next change than you found it. Chapter 14’s compression was a
+rule about making change — keep it small, keep its path to users automatic; this chapter adds the long-run
+corollary: keep the code changeable — because the one certainty about a successful system is that it will have to
+change for longer than anyone who built it expects.
+Sources
+1 Robert L. Glass, Frequently Forgotten Fundamental Facts about Software Engineering (IEEE Software, 2001). doi.org.
+2 Michael Feathers, Working Effectively with Legacy Code (Prentice Hall, 2004). informit.com.
+3 Martin Fowler, Catalog of Refactorings. refactoring.com.
+4 Robert C. Martin, The Boy Scout Rule, in Kevlin Henney (ed.), 97 Things Every Programmer Should Know (O’Reilly, 2010) —
+the widely cited one-page statement of “leave the code cleaner than you found it.” The collection is released under a Creative
+Commons license. 97-things-every-x-should-know.gitbooks.io.
+5 Ward Cunningham, The WyCash Portfolio Management System (OOPSLA experience report, 1992). c2.com.
+6 Martin Fowler, StranglerFigApplication (2004). martinfowler.com.
+
+===== صفحة الكتاب 420 =====
+Key takeaways are summarized above in §15.7.
+Continue to the Exercises.
+Go deeper with the Open Resources for this chapter.
+
+===== صفحة الكتاب 421 =====
+
+===== صفحة الكتاب 422 =====
+Chapter 15 — Exercises
+Exercises are graded by depth: [warm‑up] checks understanding, [analysis] asks you to reason. Several require
+actual work — a real characterization suite, a real refactoring, a real repository — not just prose. Show the work,
+not only the answer.
+Concepts
+1. [warm‑up] Classify each of these as deliberate or inadvertent technical debt (§15.5), and justify: (a) hard-
+coding a single currency to make a demo deadline, with a backlog ticket to internationalize; (b) a data
+model that made sense before the requirements pivoted; (c) copy-pasting a function at 2 a.m. during crunch
+to avoid touching a shared module.
+Analysis
+2. [analysis] Write a characterization test. You inherit this undocumented, untested function, which
+production code calls from several places:
+(a) Following §15.2, write a suite of characterization tests, in your language’s test framework, that pins the
+current behavior for at least six input classes, including a missing value ( None, null, or nil, whichever
+your tab uses), empty string, whitespace-only, over-length, hyphenated, and a non-alphanumeric input
+under both strict values. (b) Identify one behavior your probing reveals that looks like a bug, and explain
+— citing §15.2 — why you should pin it rather than fix it in the same change. (c) State which single line
+you would be most afraid to “clean up” without this suite, and why.
+3. [analysis] Refactor under green. With the characterization suite from exercise 2 in place, refactor your
+language’s norm_code in small, named, behavior-preserving moves (§15.3): at minimum, extract the
+normalization steps (trim/uppercase/strip hyphens) into their own function, and remove the duplicated
+def norm_code(s, strict=False):
+if s is None:
+return "" if not strict else None
+s = s.strip().upper().replace("-", "")
+if len(s) > 8:
+s = s[:8]
+if strict and not s.isalnum():
+raise ValueError(s)
+return s or ("" if not strict else None)
+
+===== صفحة الكتاب 423 =====
+strict/empty handling so the “what counts as invalid” decision lives in exactly one place. Rules: one move
+at a time, suite green after every move, no behavior change (the suite is the referee — including any pinned
+bug). Report each move by its catalog name, and state after which move you would commit, and why there
+rather than at the end.
+4. [analysis] Build a technical-debt register. The clinic-app team’s codebase carries these known liabilities:
+(a) the authorization check is copy-pasted into three request handlers; (b) the ORM is two major versions
+behind and the old version stops receiving security patches next year; (c) a hand-rolled date parser has a
+known daylight-saving bug that two downstream call sites silently work around; (d) the billing module has
+no tests at all; (e) a feature flag from a promotion that ended last year still guards dead code in the checkout
+path. Build a debt register (§15.5): for each item, classify it (deliberate or inadvertent), name the interest it
+charges (what it costs the team per sprint, concretely) and the principal (what paying it off would take).
+Then order the five for paydown, justify the order — and identify the one item you would argue is not
+worth paying down this term, and why.
+5. [analysis] Your organization proposes a two-year big-bang rewrite of a ten-year-old billing system. Using
+§15.6 and the browser-rewrite case of §2.6.3, write a one-page counter-proposal for a strangler-fig
+migration: what the interception layer would be, which capability you would peel off first (and why that
+one), how each slice gets validated, and what the organization can do at month six under your plan that it
+cannot do under the rewrite.
+6. [analysis] Maintain, strangle, or rewrite? A regional insurer runs a 12-year-old policy-administration
+system: the domain rules change perhaps twice a year (regulatory updates), the last production incident was
+fourteen months ago, two of the original developers still maintain it, and test coverage is thin everywhere
+except the premium calculator — but one subsystem, the customer-facing quote portal, needs features the
+old architecture makes painful. Management is being pitched a full rewrite. Write a one-page
+recommendation that honestly weighs all three options — continued maintenance, a strangler migration
+(§15.6), and the rewrite — against criteria you state explicitly (rate of change, incident history, knowledge
+retention, test coverage, where the pain actually is). Note that in this scenario the cheapest option may be
+the right one for most of the system; your recommendation may differ by subsystem, and should say so.
+7. [analysis] Find the change points and seams in a real codebase. Pick a codebase you did not write — your
+team project’s oldest module, or an open-source project you use — and invent one plausible change request
+for it. Before touching anything, report: (a) the change points — the specific files and functions where the
+change must land (§15.1); (b) the seam you would use to get tests in place — the spot where you can alter
+or intercept behavior without editing the code you are about to change (a constructor parameter, an
+interface boundary, an environment hook); (c) the first characterization test you would write there (§15.2),
+with its actual input; and (d) one place you would refuse to modify until it had more coverage, and what
+that refusal would cost.
+
+===== صفحة الكتاب 424 =====
+8. [analysis] Repository stewardship. Choose one pull request from your team project or another repository.
+Identify one small improvement you made — or could safely make — beyond the requested behavior: a
+clearer name, a stronger test, a corrected document, a simplified branch, removed duplication, or an
+improved build check. Explain why the improvement is relevant to the change (not an unrelated detour),
+how you verified it preserved behavior (§15.2, §15.3), and name one larger cleanup you deliberately left
+for a separate issue because including it would have made the change harder to review or reverse (§15.4,
+§15.5).
+
+===== صفحة الكتاب 425 =====
+
+===== صفحة الكتاب 426 =====
+Chapter 15 — Open Resources
+Free, open-licensed, or freely accessible materials that reinforce this chapter. Types: 📘 open text · 🎓 course ·
+📄 primary source / standard · 🎥 video · 🛠 tool. Licenses vary and are noted where known. Each entry notes its
+license or access terms; when in doubt, check the linked page.
+Legacy code, refactoring, and technical debt
+📘 Martin Fowler — “StranglerFigApplication” —
+martinfowler.com/bliki/StranglerFigApplication.html. The original naming of §15.6’s incremental-
+replacement pattern, with the fig-tree metaphor from its source. Access: free to read.
+📘 Refactoring catalog — refactoring.com/catalog (Fowler’s official catalog of named moves and
+mechanics) and refactoring.guru (a free-to-read tutorial treatment with examples). The named, small,
+behavior-preserving steps of §15.3. Access: both free to read online; the full Refactoring book is
+commercial.
+📄 Ward Cunningham — “The WyCash Portfolio Management System” (OOPSLA 1992 experience
+report) — widely mirrored, e.g. via c2.com. The four-paragraph origin of the technical-debt metaphor
+(§15.5), worth reading to see how much the original meaning — debt as deliberate, to be repaid with
+refactoring — matches this chapter’s framing. Access: free on the author’s site.
+📄 Robert L. Glass — “Frequently Forgotten Fundamental Facts about Software Engineering”
+(IEEE Software, 2001) — doi.org. Source for the chapter intro’s maintenance-cost figure: maintenance
+typically consumes 40 to 80 percent (60 percent average) of software costs. Access: paywalled at IEEE;
+widely assigned in courses, and author copies circulate.
+📘 Michael Feathers — Working Effectively with Legacy Code (Prentice Hall, 2004) — informit.com.
+The source of §15.1’s tests-first definition of legacy code and the edit-and-pray/cover-and-modify
+distinction. Not openly licensed — listed here as the standard citation.
+📘 Robert C. Martin — “The Boy Scout Rule”, in 97 Things Every Programmer Should Know (ed.
+Kevlin Henney, O’Reilly, 2010) — 97-things-every-x-should-know.gitbooks.io. The one-page statement
+behind §15.4’s repository-stewardship habit — “leave the code cleaner than you found it.” Access: the
+collection is released under Creative Commons.
+License note
+Linked resources remain under their own licenses (noted above where known); this page is licensed CC BY-SA
+4.0.
+
+===== صفحة الكتاب 427 =====
+
+===== صفحة الكتاب 428 =====
+Appendix A — The Team Project
+Where we are. The chapters of this book each teach a discipline in isolation: process, requirements, design,
+testing, metrics. This appendix is where those disciplines stop being separate lessons and become one
+experience. Over a semester you and three or four teammates will build a working system for a real user.
+The project gives you repeated practice with the ideas introduced throughout the book. The project is the
+spine that the concepts hang from, and it is deliberately structured around four deliverables: a proposal, two
+status reports (a skeletal system, then a viable one), and a comprehensive final report.
+A course project is not a bigger homework assignment. Homework has a known answer, a solitary author, and a
+deadline measured in days. A project has an ambiguous goal, a shifting scope, several authors who must agree,
+and a horizon measured in months. These differences are intentional: they expose the coordination, changing
+requirements, and sustained complexity that a short individual assignment cannot reproduce. Everything that
+makes software engineering hard — coordination, changing requirements, complexity that outgrows any one head
+— only appears at team scale and project length. You cannot learn it from a problem set. You can only learn it by
+living through a small, safe version of the real thing, which is what this appendix is for.
+A.1 Overview
+A.1.1 Goals for a Project
+Before you choose what to build, be clear about why you are building it. The project has three goals, and they
+sometimes pull in different directions.
+The first goal is to ship something real. By the end of the term you should have a system that a genuine user can
+run and benefit from — not a demo that works only on your laptop with the right input typed carefully. “Real” is
+the standard because only a real system exposes the problems this book is about. A toy that no one depends on
+never forces you to handle bad input, never accumulates the kind of coupling that makes change expensive, and
+never generates the defect data you will analyze in Chapter 12.
+The second goal is to practice the disciplines deliberately. It is entirely possible to ship a working system by
+heroics — one strong programmer, many late nights, no tests, no design. Company A in Chapter 1 did exactly that,
+and it worked for three months. The project asks more of you: to write down requirements before coding them, to
+sketch an architecture before committing to it, to write tests that make change safe, and to measure your own
+process. You are being graded not only on the artifact but on the engineering that produced it.
+The third goal is to learn to work as a team — which is a skill, not a personality trait, and one that employers
+consistently rank among the attributes they most want to see in new graduates.1 A team that communicates well
+
+===== صفحة الكتاب 429 =====
+and distributes work fairly will usually out-build a team of stronger individuals who do not.
+Tip. Pick a project you can finish, not one you can imagine. A scheduling tool for a campus club that you
+complete, test, and measure teaches you more than an ambitious “social network for X” that stalls at 40
+percent. Scope is a design decision; make it early and make it small.
+Choose a problem with a real user you can talk to — a campus office, a club, a small nonprofit, a lab, even a
+specific classmate with a recurring annoyance. A reachable user is worth more than an exciting idea, because
+Chapters 3 through 5 all depend on being able to ask someone what they need and to show someone what you
+built.
+A.1.2 The Team Experience
+Most of the difficulty in a team project is not technical. It is human: who does what, how you keep each other
+informed, and what happens when someone does not deliver. Address these on purpose, in the first week, because
+the default — hoping it works out — reliably does not.
+Roles. A team of four or five does not need a rigid hierarchy, but it does need ownership so that every important
+responsibility has exactly one name attached to it. A lightweight set of roles that maps onto the process in Chapter
+2:
+A coordinator (or Scrum-style facilitator) who runs standups, keeps the board honest, and unblocks
+people. It is a servant job that rotates well, not a boss.
+A customer liaison who owns the relationship with your real user, schedules the conversations, and speaks
+for the user when the team debates priorities (Chapters 3–4).
+An architecture/integration owner who keeps the pieces fitting together and guards the module
+boundaries you agreed on (Chapters 6–7).
+A quality owner who sets up CI, keeps the test suite green, and watches the metrics (Chapters 9–12).
+Everyone writes code and everyone tests; roles say who worries about a concern, not who is allowed to touch it.
+Rotate at least once mid-semester so no one graduates having only ever done one thing.
+Communication. Agree on three channels and their purpose: a synchronous one for fast questions (chat), an
+asynchronous one of record for decisions (issues, a shared doc, or pull-request discussion), and a recurring
+meeting — even fifteen minutes twice a week — where each person answers the three standup questions: what I
+finished, what I am doing next, what is blocking me. Write decisions down where the whole team can find them
+later. An architecture chosen in a hallway and remembered by one person is a liability.
+
+===== صفحة الكتاب 430 =====
+Pitfall. The most common failure mode is silent divergence: two people build against different assumptions
+for a week because neither surfaced a question. Cheap, frequent communication is not overhead — it is how
+you keep a small mistake from compounding into a week of rework. Software is discrete (Chapter 1): a
+wrong assumption does not degrade gracefully, it just breaks.
+Psychological safety. Cheap communication only happens where people feel safe doing it. Psychological safety
+is the shared belief that you can raise a problem, admit a mistake, or ask a “basic” question without expecting
+punishment or embarrassment.2 Research on team performance identifies it as a major factor in effective
+collaboration. In Google’s Project Aristotle, a multi-year study of 180 internal teams, psychological safety was the
+most important team dynamic the researchers identified.3 Its absence appears in familiar ways: everyone reports
+being “fine” in standup, delays remain hidden until a deadline, or one teammate quietly redoes another’s work
+instead of discussing the problem. You build it with concrete habits, not slogans. Whoever is leading admits their
+own mistakes first, which licenses everyone else’s honesty. Thank people for surfacing bad news early — early is
+exactly when bad news is cheap, and the thanks is what makes it happen again. And critique the work, never the
+person: “this function needs tests” opens a discussion; “you never test anything” closes one. The trust these habits
+produce has a name — vulnerability-based trust, built by admitting what you do not know — and it is precisely
+what this appendix’s peer-feedback rituals (the visible board, the weekly log, the team reviews) are training you
+in.4
+Conflict and uneven contribution. Disagreement about technical direction is healthy and should be resolved
+with evidence: a spike, a small experiment, a look at the metrics. Make the call, write down why, and move on. Do
+not let a decision stay open because the team is avoiding the discomfort of choosing.
+Uneven contribution is the harder problem, and every team hits some version of it. Deal with it early, factually,
+and kindly. When someone is behind, the first assumption should be a fixable cause — they are blocked, over-
+committed in another course, or unclear on the task — not a character flaw. Make work visible (a board where
+every task has an owner and a status makes contribution impossible to fake or to overlook), so that “who is doing
+what” is a matter of record rather than resentment. If a genuine imbalance persists after you have raised it directly,
+escalate to your instructor early rather than absorbing it into a bitter final week. Most course rubrics — including
+the final report in this appendix — include an individual-contribution component so that fair effort is recognized
+and free-riding is not.
+Tip. Keep a shared, running log of who did what, updated weekly, not reconstructed from memory at the
+end. It makes the individual-contributions section of your final report honest and painless, and it turns a
+potential argument into a lookup.
+
+===== صفحة الكتاب 431 =====
+A.1.3 Coupling the Classroom and Project Experiences
+This course is designed as two parallel tracks — a concepts track (the chapters) and a project track (this
+appendix) — that are tightly coupled early and deliberately loosened later. Understanding that shape will help you
+plan your semester.
+For the first four weeks the tracks move in lockstep, because that is when a mistake is cheapest to correct and
+when you most need the theory to steer the project. In week 1 you form teams alongside Chapter 1. In week 2 you
+choose a process and stand up your repository and board alongside Chapter 2. In week 3 you write your proposal
+while Chapter 3 teaches user requirements, so the requirements you write are the real ones for your system, not
+exercises. In week 4 you build and estimate a backlog while Chapter 4 teaches analysis and prioritization. The
+lecture on Monday is the technique; the project on Friday is the practice. Learning and doing reinforce each other
+while the stakes are low.
+After the requirements are stable, the coupling loosens on purpose. The concepts track keeps advancing on its own
+schedule — design and patterns (Chapters 6–7), static checking and testing (Chapters 9–10), metrics (Chapter 12)
+— while your team iterates at whatever cadence fits your process and your lives. You will pull each concept into
+the project as you need it rather than exactly the week it is lectured, which is how real engineering works: you
+learn a technique when a problem demands it. The status reports in weeks 7 and 11 are the checkpoints that keep
+the loosely-coupled tracks from drifting too far apart, and the final report in week 14 is where everything
+reconverges.
+The full week-by-week mapping lives in the course plans; the timeline below shows how the four project
+deliverables sit on top of it. Courses that run the project on a sprint cadence should read Running the Project on
+Two-Week Sprints, which overlays these same four milestones on a two-week rhythm.
+
+===== صفحة الكتاب 432 =====
+A.2 Project Proposal
+The proposal (due around week 3) is where your team commits to a problem, a user, and a plausible scope. The
+proposal establishes that the team has identified a real problem and developed a plausible starting plan. It remains
+revisable as requirements change during the project (Chapter 1).
+A good proposal answers five questions concretely:
+1. What problem, for whom? A two-or-three-sentence problem statement and the specific user or
+stakeholders it serves. Name a real person or office you can talk to. Vague users (“students”) produce vague
+requirements; specific users (“the intramural sports coordinator in the rec center”) produce testable ones
+(Chapter 3).
+2. What will it do? A short list of the most important user stories or features, in the users’ language,
+prioritized (MoSCoW or must/should/could is enough this early). This is your first backlog, and Chapter 4
+will teach you to refine and estimate it.
+3. What will you build it with? Your intended architecture in broad strokes and your technology choices,
+with a sentence of why for each significant one. You are not committing forever; you are showing you have
+a feasible path (Chapter 6).
+4. How will you work? Your process (Scrum, XP, or a hybrid), your cadence, your tools (repo, board, CI),
+and your initial roles (Chapter 2, §A.1.2).
+5. What could go wrong? The two or three biggest risks — a hard integration, an unavailable data source, an
+unfamiliar framework — and how you will probe them early. A risk you name in week 3 is a task; a risk
+you ignore is a week-13 emergency.
+
+===== صفحة الكتاب 433 =====
+Keep it short — two to four pages. A proposal that is long is usually hiding uncertainty behind volume. Use the
+project proposal template as your starting form; copy it into your repository and fill it in.
+Pitfall. Proposing a scope you cannot finish is the single most common — and most punishing — mistake.
+When in doubt, halve the feature list. A smaller system built well, tested, and measured earns more than a
+larger one left broken. You can always add scope in a later iteration; you cannot recover the weeks a doomed
+scope will cost you.
+A.3 Skeletal System: Status Report 1
+By around week 7 your team delivers a skeletal system — a walking skeleton — and reports on it. A walking
+skeleton is a tiny implementation that exercises the system end to end: a real request enters through the real
+interface, flows through each architectural layer, touches the real database or service, and produces a real response
+— but does almost nothing useful yet.5 If your app is a web tool, the skeleton might let a user log in, create one
+empty record, and see it listed. That is all. At this milestone, the important result is that a request travels
+successfully through every layer and returns a response.
+The skeletal milestone exists because integration is where projects die. A team can build five beautiful
+components in isolation and discover in week 12 that they cannot be wired together — the assumptions do not
+match, the interfaces do not line up, the deployment does not deploy. Requiring the walking skeleton in week 7
+reveals integration problems while the team still has time to correct them. It also stands up the machinery you will
+rely on all term: the repository, the build, the test harness, and continuous integration (Chapter 14) so that every
+commit is checked. From this point on you are always looking at a running system and fleshing it out, never
+assembling a pile of parts at the end and praying.
+Your Status Report 1 should therefore demonstrate:
+A running, deployed (or trivially runnable) system a grader can exercise, however thin.
+The architecture made real: the modules and their interfaces from your Chapter 6–7 design, now visible in
+code, with a current diagram (note where reality diverged from the proposal, and why).
+Working CI that builds the system and runs at least one genuine end-to-end test.
+An honest status: what is done, what changed since the proposal, what is blocked, and your plan for the
+viable system.
+Use the status report template and mark it as report 1.
+
+===== صفحة الكتاب 434 =====
+Tip. Build the skeleton along the riskiest path first, not the easiest. If a third-party integration or an
+unfamiliar deployment worries you, make that the thread the skeleton walks. The whole point is to buy
+down risk early, so aim the skeleton at the thing most likely to hurt you. Deployment itself is usually that
+thing — Chapter 14 shows how to make it boring.
+A.4 Viable System: Status Report 2
+By around week 11 you deliver a viable system — a minimum viable product — and report on it again. “Viable”
+is the key word and a high bar: this is a system that a real user could actually use to accomplish the core task, end
+to end, even if it is missing polish, secondary features, and edge-case handling. Where the skeleton proved the
+structure works, the viable system proves the value is there: it does the one or two most important things a user
+came for, and does them correctly.
+Getting from skeleton to viable is the main building phase, and it is where the whole book comes together. You
+will flesh out the modules behind the interfaces the skeleton established. You will apply architectural patterns
+(Chapter 7) where they earn their keep — and resist them where they do not. Above all, you will now be testing
+in earnest (Chapter 10): the features a user depends on need black-box tests derived from their requirements and
+enough white-box coverage that you can change code without fear. A viable system without tests is just a demo
+that will break the first time you touch it.
+Your Status Report 2 should demonstrate:
+The must-have user stories from your backlog, working end to end for a real user.
+A test suite with a stated coverage target and the current numbers (Chapter 10), run automatically in CI.
+An architecture description updated to match what you actually built.
+Early metrics (Chapter 12): velocity across your iterations, open/closed defect counts, build health —
+whatever your process produces. You will analyze these more rigorously for the final report; start collecting
+now.
+A candid gap analysis: what is left for the remaining weeks, reprioritized in light of what you learned.
+Use the same status report template, marked as report 2.
+Pitfall. Do not confuse “viable” with “feature-complete.” The temptation at week 11 is to have many half-
+finished features. Resist it. One fully working, tested, user-usable path beats five stubs. Cut scope ruthlessly
+(the iron triangle from Chapter 1 is real: fix time and cost, flex scope) so that what you do ship is genuinely
+usable.
+
+===== صفحة الكتاب 435 =====
+A.5 Comprehensive Final Report
+The final report and demo (around week 14, with presentations in week 15) is where you deliver the finished
+system and step back to tell its whole story — as engineers, with evidence. It is both the capstone artifact and the
+primary thing you are assessed on, because it is where you demonstrate that you engineered the software rather
+than merely producing it.
+A comprehensive report ties the entire book together, with one section per major discipline. It should cover:
+The problem and users — what you set out to solve and for whom, and how that understanding evolved
+since the proposal (Chapters 1, 3).
+Requirements — the user stories and use cases you ultimately built, prioritized, with an honest note on
+what changed and why (Chapters 3–5).
+Architecture — the system’s structure with a current diagram, the key design decisions, and the trade-offs
+behind them, using the vocabulary of cohesion, coupling, and patterns (Chapters 6–7).
+Process — how you actually worked: your iterations, what your board and standups looked like, and where
+your process adapted (Chapter 2).
+Testing and quality metrics — your test strategy, coverage achieved, defect data, and what the numbers
+mean, analyzed with sound statistics rather than a single hand-picked figure (Chapters 10 and 12).
+Results — what works, what does not, and how you know; measured against the goals you set in the
+proposal.
+Retrospective — the honest lessons: what you would do differently, where estimates were wrong, what
+surprised you. Graders reward insight here, not spin.
+Individual contributions — a fair account of who did what, backed by your running log and your version-
+control history.
+How it is assessed: rubrics vary, but a strong report is judged on the quality of the shipped system (does it work,
+for a real user?), the engineering evidence (are the requirements, architecture, tests, and metrics real and
+coherent, or decorative?), and the honesty and depth of reflection (do you understand why things went as they
+did?). A modest system reported on with rigor and insight routinely outscores an ambitious one reported on with
+hand-waving. Use the final report template as your structure.
+Tip. Write the retrospective for the next team — yourselves in a future course, or the students who inherit
+your repo. The most valuable sentences in an engineering report are the ones that begin “if we did this again,
+we would…”. They prove you learned something the deliverable alone cannot show.
+
+===== صفحة الكتاب 436 =====
+A.6 Grading Your Own Repository
+All term, other people grade your work. This section is about doing it to yourself first — on the same axes this
+book teaches, while there is still time to act on the answer.
+This book’s repository ships a repository scorecard: instructions an AI coding agent follows to work with a
+codebase against the nine parts of this book that cover the software lifecycle — process and teamwork (Chapters
+1–2 and this appendix), requirements (3–5), design and architecture (6–7), version control (8), software quality
+(9–10), security (11), metrics (12), AI-assisted practice (13), and delivery and evolution (14–15). It has two
+modes, and you want them in this order.
+Adopt writes the book’s practices into your project’s AGENTS.md — the file your coding agent reads at the start of
+every session. Test-driven development, Given/When/Then acceptance scenarios, commit and review standards,
+secrets handling, the definition of done: each rule stated concretely and cited to the chapter that explains it. Run it
+on the day you create the repository, and the practices are in force from the first commit rather than retrofitted in
+week 14. It works just as well on a project already underway, and it tailors itself — it fills in your actual test and
+lint commands and flags practices it did not find, so the block reads as a backlog rather than a fiction.
+AGENTS.md is a tool-neutral convention (https://agents.md/): the same file is read by Claude Code, Cursor,
+Copilot, Codex, Gemini CLI, and others, so your team is not locked to whichever assistant you started with. If a
+tool insists on its own filename, keep AGENTS.md as the single source of truth and leave a one-line file pointing at it
+— two full copies drift apart within a sprint; a redirect cannot.
+Score then audits what the repository actually does, reporting a letter grade per area with specific findings. A
+grade you cannot trace to a chapter is not worth much; every finding cites the section that teaches the fix.
+You will find both under .claude/skills/repo-scorecard/ in the book’s repository, with setup instructions in that
+repository’s AGENTS.md. Copy the folder into your own project, then ask your agent to set the project up with the
+book’s principles, or to score the repository. It is plain Python and runs offline; nothing is uploaded.
+Principle. Adopt sets the standard; score measures against it. Writing the practices down before you need
+them is what makes the later grade meaningful — a team that agrees on what “done” means in week 2 is
+arguing about evidence in week 12, not about standards.
+Using it during the project, not after
+Run it at every checkpoint, starting with the skeletal system — not once, the night before the final report. Two
+reasons. First, most of what it finds is cheap to fix early and expensive to fix late: a test suite that never gated a
+merge is a twenty-minute pipeline change in week 6 and a rewrite of your team’s habits in week 14. Second, the
+interesting number is not any single grade but the delta between runs. A repository that moves from C to B−
+
+===== صفحة الكتاب 437 =====
+across two sprints is demonstrating engineering discipline, and the two scorecards are evidence you can put
+directly into your status report or retrospective — far stronger than asserting that quality improved.
+The findings are also a ready-made work queue. Each one names a concrete change and an effort estimate, which
+makes them straightforward to turn into backlog items and split across the team.
+What the grade is, and what it is not
+Treat the output as a structured second opinion, not a verdict. Its real value is that it makes disagreement concrete:
+when it reports that your project has no acceptance criteria and you can point to the twelve scenarios in your issue
+tracker, you have learned something about where your work is visible — which is most of what an outside
+reviewer, including your instructor, can actually assess. A finding you can refute with evidence is worth as
+much as one you fix.
+Be clear about its limits. It reads a repository, so it can see your tests, your commits, and your pipeline — but not
+whether the software is any good for the person using it, not whether your team is functioning, and not the
+judgment behind a design. Those are the things a demo and a retrospective are for. It is a floor, not a ceiling:
+passing every check it makes is the beginning of good engineering practice, not the whole of it.
+Pitfall. The letter it produces is not your course grade, and there is no rubric anywhere that maps one to the
+other. A team that optimizes for the scorecard — adding a linter nobody runs, a SECURITY.md nobody reads
+— will score better and be no better, which is Goodhart’s law from Chapter 12 arriving on schedule. Fix the
+underlying practice and let the grade follow.
+Practitioners can use it the same way on working code, with one adjustment: the tool offers a practitioner
+profile that shifts weight away from coursework process and toward quality, security, and delivery.
+A.7 Conclusion
+The team project is where this book stops being a set of ideas and becomes a way of working. Each of the four
+deliverables — proposal, skeletal system, viable system, final report — forces a specific engineering discipline at
+the moment it matters most: commit to a real problem, prove the structure integrates, prove the value is usable,
+and account for the whole with evidence. Do them honestly and you will finish the semester having done software
+engineering — on a team, under changing requirements, at a scale that would have defeated improvisation. That
+experience, more than any exam, is what makes an engineer.
+Sources
+1 National Association of Colleges and Employers, Job Outlook 2025 (2025). naceweb.org.
+
+===== صفحة الكتاب 438 =====
+2 Amy C. Edmondson, Psychological Safety and Learning Behavior in Work Teams, Administrative Science Quarterly 44(2)
+(1999). doi.org.
+3 Google re:Work, Guide: Understand Team Effectiveness (2016). rework.withgoogle.com.
+4 Patrick Lencioni, The Five Dysfunctions of a Team (2002). tablegroup.com.
+5 Alistair Cockburn, Crystal Clear: A Human-Powered Methodology for Small Teams (2004). alistair.cockburn.us, archived.
+Key takeaways are summarized above in §A.7.
+Continue to the Exercises.
+Go deeper with the Open Resources for this appendix.
+Running on sprints? See Running the Project on Two-Week Sprints.
+Templates: idea pitch · proposal · sprint report · status report · team review · final report · individual write-
+up.
+
+===== صفحة الكتاب 439 =====
+
+===== صفحة الكتاب 440 =====
+Running the Project on Two-Week Sprints
+Where we are. Appendix A structures the team project around four deliverables: a proposal (§A.2), a
+skeletal system (§A.3), a viable system (§A.4), and a comprehensive final report (§A.5). This page is an
+adaptation guide for courses that run the project on a two-week sprint cadence with a cross-team customer
+model — say, a 16-week semester with four build sprints. Nothing about the four milestones changes; they
+simply become checkpoints you reach via sprints rather than dates you aim at directly. If your course uses
+this variant, read Appendix A first, then use this page as your operating schedule.
+Dual hats: every team is both customer and developer
+The single hardest thing to make real in a classroom project is the gap between the customer and the
+developers. When a team builds its own idea, requirements work becomes theater: everyone already “knows”
+what the product should do, elicitation is a conversation with yourself, and acceptance means grading your own
+homework. Courses solve this in different ways — some recruit external or industrial customers,1 some rotate a
+customer role among students each sprint.2 This variant uses a swap:
+Every team authors a project pitch — and another team builds it.
+Every team is assigned a different team’s pitch — and builds that, all semester.
+You never build your own idea.
+So each team wears two hats for the whole term:
+The developer hat. For the project you were assigned, you are the engineering team: you elicit
+requirements from your customer, maintain the backlog, build, test, deploy, and demo — everything in the
+sprint tables below.
+The customer hat. For the idea you pitched, you are the customer: you answer the developers’ questions,
+help select and prioritize stories at sprint planning (§2.2.2 — you are, functionally, their product owner’s
+voice of the customer), attend their Demo Days, and give honest feedback on whether what shipped is what
+you meant.
+Principle. The swap makes Chapter 3 real. The developers genuinely do not know what the customer wants
+— the idea lives in another team’s heads. Tacit knowledge, the unstated obvious, solutions masquerading as
+needs (§3.1.2) stop being textbook warnings and start being Tuesday. And because the customer did not
+build the thing, their acceptance at Demo Day is honest in a way self-assessment never is.
+Practical mechanics that make the swap work:
+
+===== صفحة الكتاب 441 =====
+A standing channel per developer–customer pair (a shared chat channel works well). Developers post
+what shipped and the deployed URL each sprint; customers respond with feedback and priorities. Silence
+from the customer hat is a failure of that hat.
+A customer meeting inside every sprint planning (the cadence below): the developers bring candidate
+stories; the customer says which matter most and why.
+Customer feedback closes every demo. It goes on the record (the team review template has a section for
+it) and feeds the next sprint’s backlog.
+The cadence
+The semester has two phases.
+Sprint 0 — onboarding (about four weeks). Before a team can sprint, it needs a problem, a customer, a backlog,
+and a running skeleton. Sprint 0 is a sequence of four roughly one-week deliverables — pitches, the swap and
+selection, stories and sketches, and a first deployment — that ends with the walking skeleton of §A.3 live on a real
+URL. Sprint 0 is deliberately not a build sprint: its job is to make the first build sprint possible.
+Sprints 1–4 — building (eight weeks). Four two-week build cycles. Each sprint ends with two events:
+Demo Day — the sprint review of §2.2.3: the team demonstrates the deployed system to the class and to its
+customer, and the feedback goes straight into the next sprint’s backlog.3
+A team and customer review — the retrospective half of the cycle, recorded with the team review
+template, plus peer evaluations.
+The build sprints also carry a deliberate engineering-hardening arc: each sprint adds one layer of the delivery
+pipeline from Chapter 14, so that by the end of the term the team is operating a small but genuinely professional
+SaaS delivery process. The milestones overlay the cadence as before: Sprint 0-3 is the skeletal-system checkpoint
+(§A.3); the end of Sprint 2 should look like the viable system (§A.4); Sprint 4 rolls into the final report,
+presentations, and individual write-ups (§A.5).
+
+===== صفحة الكتاب 442 =====
+The exact weeks flex with a given calendar (breaks, exams); what does not flex is the order and the rule that every
+build sprint ends with a demo of deployed software.
+
+===== صفحة الكتاب 443 =====
+Sprint 0: from pitch to deployed skeleton
+Sprint
+Deliverable
+Read first
+Done means
+0-0
+Idea pitches — customer hat. Every member pitches
+at least one project idea in Shape Up pitch form:
+problem, appetite, rough solution, rabbit holes, no-
+gos.4 You are writing the pitch another team will
+build; you will be its customer.
+§2.8 on pitches
+and appetite
+Each idea pitch names a
+real, reachable user, fits
+on a page, and is clear
+enough for strangers to
+build from.
+0-1
+The swap + selection. Pitches are exchanged across
+teams (however your course assigns them). The
+developer team reads its assigned pitch, meets its
+customer, and records scope decisions — what the first
+version will and won’t attempt, and why (§4.4.3) —
+then completes the proposal (§A.2) with the customer’s
+sign-off.
+§3.1 — you are
+now on the far
+side of the
+requirements gap
+Project proposal +
+decision notes,
+acknowledged by the
+customer team.
+0-2
+User stories + lo-fi UI — elicited, not invented. The
+first backlog as INVEST-shaped stories with Gherkin
+acceptance criteria (§3.4.1), plus storyboards of the
+main flows (§3.5.3) — built from interviews with your
+customer team, and walked past them before it counts.
+§3.3 on
+elicitation; §§3.4–
+3.5
+Must-have stories are
+testable and customer-
+prioritized; a stranger
+can follow the sketched
+flow.
+0-3
+Initial view, DEPLOYED — through a pipeline.
+The walking skeleton of §A.3: one thin path, end to
+end, live on a real URL — “get one piece done”
+(§2.8).5 Stand up the CI skeleton in the same sprint: a
+pipeline that builds and deploys on every merge, even
+before there is much to test — wiring it around one
+thin path is far easier than retrofitting it later (§14.2).
+§A.3; Chapter 14
+on deployment
+and pipelines
+Status report 1; a grader
+can open the URL and
+exercise one real path.
+Sprints 1–4: build cycles with a hardening arc
+Every build sprint runs the same common cycle; each one also adds a permanent layer of engineering
+infrastructure. Once added, a layer stays: a Sprint 3 team is still running everything it set up in Sprints 1 and 2.
+
+===== صفحة الكتاب 444 =====
+Sprint
+New engineering focus
+Where the book teaches it
+Milestone
+1
+Test-driven features, coverage, CI, production
+deploy. Every feature lands with unit/integration tests
+(TDD, and BDD with executable Gherkin scenarios);
+the suite holds a coverage floor (~80%); a CI pipeline
+runs the tests and reports coverage on every commit
+and performs automated (e.g., AI-assisted) review on
+every pull request; the app is live in production.
+TDD/BDD: §2.3.2, §3.4.1,
+§10.2.3 · coverage: §10.3
+with the §10.1.3 pitfall · CI:
+§14.2 · review on PRs:
+§9.3, AI review §13.2.6
+Velocity
+established
+2
+Continuous deployment. Merging to main is the
+release: a CD pipeline automatically deploys every
+merged change to production. This is the sprint where
+the team feels why the pipeline’s checks exist — read
+the two §14.3 case studies before wiring it up.
+§14.3 — delivery vs.
+deployment, and the Knight
+Capital / CrowdStrike case
+studies
+≈ Viable
+system (§A.4)
+3
+Static analysis + supply-chain security. The pipeline
+gains linting with reports and dependency-
+vulnerability scanning (Dependabot-style); the
+deployment gets production polish (e.g., a real
+domain). Findings are triaged, not ignored — they
+become backlog items.
+linting & analyzers: §9.4 ·
+supply-chain security:
+§11.4, enforced as pipeline
+gates in §14.6 · triage &
+false positives: §9.4.2
+Quality data
+flowing
+4
+Pay the debt, ship the story. Close out: all open
+vulnerability and linter findings fixed — a real,
+bounded exercise in technical-debt paydown — plus a
+short marketing video that sells the product to its
+users, and the final demo path polished.
+debt paydown: §15.5 ·
+refactoring under green
+tests: §15.3 ·
+communicating value: §A.5
+Final report &
+presentations
+Why this order. It is the argument of Chapters 14 and 15 enacted: first make the checks automatic (CI), then
+make release boring (CD), then widen the net (lint, dependencies), then pay down what the net caught. A
+team that tries to bolt all four layers on in the last sprint learns the Knight Capital lesson the hard way.
+Every sprint: the common cycle
+These run every sprint, regardless of number — each is a book discipline in miniature:
+Backlog grooming and prioritization, MVP-first. Groom the backlog, mark the MVP stories, and
+prioritize — MVP marking is MoSCoW’s must-have line (§4.4.1); with only four build sprints, the appetite
+is fixed and scope is the variable (§4.2.4).
+
+===== صفحة الكتاب 445 =====
+Planning Poker for sizing (§4.3.1); split stories until they are small, testable, and assignable — INVEST
+(§3.4.1).
+A customer meeting to confirm which stories this sprint serves the customer’s goals (§2.2.3 sprint
+planning, with the dual-hat customer in the product-owner conversation).
+Every story has an owner and tests; features are built full-stack with unit and integration tests (§10.2),
+red–green–refactor (§2.3.2) — keeping the small tidy-as-you-go refactors of each red–green cycle every
+sprint, while large, structural refactoring is deliberately deferred to the end-of-term debt paydown (§15.5).
+Branches, protected main, reviewed merges (Chapter 8). Work on branches, merge to main frequently,
+and let branch protection force a review of every merge — modern code review as a gate (§9.3, §14.2).
+Acceptance criteria live on the cards as Gherkin scenarios (§3.4.1) and are demoed as passing behavior
+at Demo Day (§10.2.3).
+Release discipline. Tag the repository at each sprint boundary (and push the tags); the tag is the auditable
+“what shipped this sprint.”
+Document your AI use. Keep a running record (e.g., in the README) of where AI assisted the work, with
+links to the transcripts — provenance and honest verification are part of professional AI-assisted
+engineering (§13.2.10 and the AI-use-policy exercise in Chapter 13).
+Peer evaluations after every sprint — honest, specific, delivered to teammates (§A.1.2; recorded via the
+team review).
+Demo Day rules
+Demo Day is the sprint review, and four rules keep it honest:
+1. Demo deployed software from the main branch — not slides. Share the production URL first, so the
+audience can follow along; the demo runs against the same URL a grader can visit five minutes later. If it is
+not on main and deployed, it did not ship this sprint.
+2. Walk the work, then prove it. Say what the application is and why it exists, walk the completed stories on
+the board, demo each in production — and show the tests that back each one (§10.2.3: the Gherkin
+scenarios are the acceptance evidence).
+3. Anyone on the team can drive. If only one person can operate the system, that is a bus-factor problem the
+demo just exposed.
+4. End with customer feedback — and a failed demo is information, not shame. The customer’s reaction
+goes on the record and into the backlog. A demo that breaks in public tells the team exactly where the
+system is fragile, two weeks before it would have cost more. The only shameful demo is a staged one.
+Appetite per sprint
+Each sprint has a fixed two-week duration and a fixed team, leaving scope as the adjustable variable (§4.2.4).6
+Plan by asking, “what is the best version of this we can demo in two weeks?” — then select and trim the work to
+
+===== صفحة الكتاب 446 =====
+fit that appetite, rather than planning by estimate. When the box gets tight, practice scope hammering: shrink the
+task, not the deadline.7 Mark nice-to-haves with a ~ on your board when you write them down, so that cutting
+them at crunch time is a pre-authorized decision instead of a mid-sprint argument — and keep a few pre-groomed
+extras ready so a member who finishes early has a next story waiting. A team that ends every sprint with a
+working demo and a short list of consciously dropped ~ items is executing well; a team that ends with five
+features at 80 percent is not.
+Team and customer reviews
+Every cycle ends with a recorded review, using the team review template: a keep/change/try retrospective, peer
+contribution ratings with evidence, and the customer feedback captured from Demo Day — which, under the dual-
+hat model, your team also gives to another team wearing your customer hat. The mechanism that makes
+retrospectives compound rather than repeat is the one committed improvement: each review the team commits to
+exactly one checkable change, and the next review’s first question is whether it stuck. One improvement per cycle,
+actually carried out, beats five that evaporate.
+Graduate research track. Courses that attach a graduate research component to the project can align it to
+the same cadence: the research topic and thesis statement are due with Sprint 0-3, so the investigation runs
+alongside the build sprints instead of colliding with finals. For topics on AI and software engineering, the
+open resources for Chapter 13 — capability evaluations, delivery-performance research, coding benchmarks
+— make a solid starter bibliography.
+End of term
+The final two weeks reconverge on §A.5: teams give final presentations with a live demo of the deployed
+system, submit the comprehensive final report, and each member submits an individual write-up — what you
+built, what you learned, and an honest self-assessment. The marketing video from Sprint 4 doubles as the
+presentation’s opening exhibit. If you kept your sprint reports and review records current, the final report is an act
+of assembly, not archaeology: the velocity data, coverage and vulnerability trends, scope cuts, and retrospective
+insights are already written down, one sprint at a time.
+Sources
+1 Nayla Nasir, Muhammad Usman, Jürgen Börstler, and Nina Dzamashvili Fogelström, Software engineering team project
+courses with industrial customers: Students’ insights on challenges and lessons learned, Journal of Systems and Software
+(2025). sciencedirect.com.
+2 Austin Z. Henley, The design of software engineering course projects (2025). austinhenley.com.
+
+===== صفحة الكتاب 447 =====
+3 Ken Schwaber and Jeff Sutherland, The Scrum Guide (2020). scrumguides.org.
+4 Ryan Singer, Shape Up: Stop Running in Circles and Ship Work that Matters, ch. 6 “Write the Pitch” (2019).
+basecamp.com/shapeup.
+5 Ryan Singer, Shape Up, ch. 11 “Get One Piece Done” (2019). basecamp.com/shapeup.
+6 Ryan Singer, Shape Up, ch. 3 “Set Boundaries” (2019). basecamp.com/shapeup.
+7 Ryan Singer, Shape Up, ch. 14 “Decide When to Stop” (2019). basecamp.com/shapeup.
+Back to Appendix A — The Team Project.
+See the course plans for week-by-week schedules, including the two-week-sprint variant.
+
+===== صفحة الكتاب 448 =====
+
+===== صفحة الكتاب 449 =====
+Appendix A — Project Exercises
+Unlike the chapter exercises, these are checkpoints for a real team project. Work them with your team, in order,
+across the term. Each maps to a deliverable in the course plans. Checkpoints are tagged [team] (working
+agreements and people), [project] (deliverable artifacts), or [analysis] (reflection).
+Weeks 1–2 — Team and idea
+1. [team] Write a one-paragraph team charter: how you will communicate, how often you will meet, how you
+will make decisions, and how you will handle a member who falls behind. Commit it to your repository’s
+README.
+2. [team] Brainstorm five project ideas. For each, note the primary user and the one problem it solves. Pick
+one and write two sentences on why it is feasible in a term and worth doing.
+Weeks 3–4 — Proposal
+3. [project] Fill in the project proposal template. Your backlog must use MoSCoW (Chapter 4) and contain at
+least one Won’t-have-this-time item to prove you have scoped realistically.
+4. [analysis] Identify your project’s single riskiest assumption (technical, user, or team). Describe the
+cheapest experiment that would tell you within one week whether it holds.
+Weeks 5–7 — Skeletal system (Status Report 1)
+5. [project] Build a walking skeleton: a thin slice that runs end-to-end through every architectural layer
+(Chapters 6–7) even if each part is trivial. Submit Status Report 1.
+6. [analysis] Draw your system’s architecture as it actually is now (not as planned), using a class or
+component diagram from Chapter 6. Note one place where reality already diverged from the proposal, and
+why.
+Weeks 8–11 — Viable system (Status Report 2)
+7. [project] Reach a minimum viable product: the Must-haves work for a real user. Submit Status Report 2
+with a test-coverage number (Chapter 10) and your current defect count (Chapter 12).
+8. [team] Run one retrospective (Chapter 2). Record two things to keep doing and one concrete change. At the
+next checkpoint, report whether the change stuck.
+
+===== صفحة الكتاب 450 =====
+Weeks 12–15 — Final report and demo
+9. [project] Complete the final report, including a quality-metrics section (Chapter 12): defect-removal
+efficiency, at least one chart of your project data, and a short limitations paragraph naming the threats to
+validity in your numbers — a semester project yields few, unevenly measured, non-independent
+observations, and saying so is part of the analysis. Descriptive statistics, trends, and honest raw counts are
+the expected level of rigor; add a confidence interval only if your data give you enough independent
+observations to justify one (§12.8), and say explicitly when they do not. A stated limitation earns more
+credit than pseudo-precision. If your pipeline history supports it, also report your five DORA delivery
+metrics (§14.7.4) from your deploy log — with the same limitations discipline.
+10. [analysis] Write an honest individual contribution statement for each member, then a team retrospective:
+what would you do differently if you started over knowing what you know now? Tie at least three lessons
+back to specific chapters.
+11. [project] Prepare a 5–8 minute demo that shows the system doing real work for its primary user — not a
+slideshow about the system, but the system itself.
+12. [analysis] Score your repository with the repository scorecard from §A.6 at the start of this phase and again
+before the demo. Include both scorecards in your final report with a short account of what changed: which
+findings you fixed, which you decided not to fix and why, and which you refuted with evidence the tool
+could not see. A defended disagreement counts as much here as a fix.
+
+===== صفحة الكتاب 451 =====
+
+===== صفحة الكتاب 452 =====
+Appendix A — Open Resources
+Free, open-licensed, or freely accessible materials to help your team run the semester project well. Types: 📘 open
+text · 🎓 course · 📄 primary source/standard · 🎥 video.
+Running a team project end to end
+🎓 UC Berkeley — Engineering Software as a Service (ESaaS), project guidance — saasbook.info.
+Berkeley’s course materials on scoping, running, and grading agile team projects, including customer
+interaction and the iterate-toward-a-viable-product model this appendix follows. The companion MOOC
+and slides are free to use; the textbook itself is separately licensed, so link the free resources rather than
+copying text.
+🎓 MIT 6.031 — Software Construction — web.mit.edu/6.031. Course readings under a Creative
+Commons license; excellent for the architecture, testing, and code-quality work in the building phase
+(Status Reports 1–2).
+📄 Alistair Cockburn — “Walking skeleton” (from Crystal Clear, 2004) — alistair.cockburn.us
+(archived). The original description of the walking-skeleton strategy behind the skeletal-system milestone
+(§A.3). The book is commercially published; Cockburn’s own page, preserved by the Internet Archive, is
+free to read.
+Requirements for the proposal (A.2)
+📄 Volere Requirements Specification templates — volere.org/templates. A widely used, freely
+downloadable template set for eliciting and recording requirements and stakeholders; useful even if you
+work in user stories, as a checklist of what you might be missing. Check the current terms on the site before
+redistributing.
+📄 INVEST checklist & user-story practice — Bill Wake’s original write-up is freely available online;
+search “INVEST in good user stories Wake.” A one-page test for whether a story is ready to build (Chapters
+3–4).
+Team effectiveness (A.1.2)
+📄 Google re:Work — Guide: “Understand team effectiveness” (Project Aristotle) —
+rework.withgoogle.com. Google’s research finding that how a team works together — especially
+psychological safety — matters more than who is on it. Directly relevant to conflict and uneven
+contribution. The re:Work guides and tools are free to use.
+
+===== صفحة الكتاب 453 =====
+📄 Amy C. Edmondson — “Psychological Safety and Learning Behavior in Work Teams”
+(Administrative Science Quarterly, 1999) — doi.org. The original research article defining psychological
+safety as a shared belief that a team is safe for interpersonal risk taking. The journal article is paywalled;
+access it through your library, or read the free re:Work guide above, which summarizes it.
+📄 Patrick Lencioni — The Five Dysfunctions of a Team (2002), model overview — tablegroup.com.
+The source of vulnerability-based trust as the foundation of teamwork (§A.1.2). The book is
+commercially published; the publisher’s overview of the model is free to read.
+📄 NACE — Job Outlook 2025 — naceweb.org. The National Association of Colleges and Employers’
+annual employer survey; teamwork consistently ranks among the attributes employers most want to see in
+new graduates. The report is freely downloadable.
+Process (A.1.1, referenced from Ch. 2)
+📄 The Scrum Guide — scrumguides.org. The definitive, short, free definition of Scrum accountabilities,
+events, and artifacts, released under a Creative Commons Attribution-ShareAlike license. Ideal for teams
+choosing a process in week 2.
+📘 Ryan Singer — Shape Up: Stop Running in Circles and Ship Work that Matters —
+basecamp.com/shapeup. Basecamp’s product-development method — pitches, appetite, fixed time and
+variable scope, scope hammering — that the two-week-sprint variant of this project draws on. Free to read
+online.
+📄 Manifesto for Agile Software Development — agilemanifesto.org. The four values and twelve
+principles, freely readable, that motivate the whole iterate-early approach here.
+Curriculum context (why the course is shaped this way)
+📄 ACM/IEEE-CS Computing Curricula recommendations — acm.org/education/curricula-
+recommendations. The professional-society guidelines that recommend a substantial team project and the
+parallel concepts/project tracks this course uses. Freely available.
+Cross-team customer models (the dual-hat swap)
+📘 Austin Z. Henley — “The design of software engineering course projects” —
+austinhenley.com/blog/groupprojects.html. A practitioner-professor’s survey of project-course designs,
+including rotating customer/lead roles and mid-course team swaps — context for why separating the
+customer from the builders matters. Free to read.
+📄 “Software engineering team project courses with industrial customers: Students’ insights on
+challenges and lessons learned” (Journal of Systems and Software, 2025) — sciencedirect.com. Research
+on courses that use real external customers — the same customer–developer separation the dual-hat swap
+creates without needing industry partners. Open access.
+
+===== صفحة الكتاب 454 =====
+Metrics for status reports and the final report (referenced from Ch. 12)
+📘 OpenIntro Statistics — openintro.org. A free, openly-licensed statistics textbook; use it to analyze
+your velocity and defect data honestly rather than cherry-picking a number.
+📄 DORA / Accelerate metrics overview — dora.dev. Freely available guidance on the five delivery
+metrics — throughput (change lead time, deployment frequency, failed-deployment recovery time) and
+instability (change fail rate, deployment rework rate) — a mature vocabulary for the quality dashboard in
+your final report.
+License note
+Linked resources remain under their own licenses; verify terms before redistributing any material. This page is
+licensed CC BY-SA 4.0.
+
+===== صفحة الكتاب 455 =====
+
+===== صفحة الكتاب 456 =====
+Idea Pitch —
+How to use this template. Copy this file into your team’s repository (for example, docs/pitches/pitch-
+court-scheduler.md), delete these instruction blockquotes, and replace every italic prompt with your own
+content. One page maximum. A pitch is not a proposal: it is a problem that is rough-solved and bounded
+(§2.8) — solved enough to show a feasible path, bounded enough to say what it will not do. Each teammate
+pitches at least one idea.
+You are writing for another team. Under the dual-hat model (Running the Project on Two-Week Sprints), a
+different team builds this pitch — and your team becomes its customer. Write so that strangers can build
+from it, and only pitch something you are willing to answer questions about all semester. The developer
+team completes the full project proposal with you after the swap.
+Field
+Value
+Working title
+…
+Pitched by
+your name
+Team
+…
+Date
+YYYY-MM-DD
+1. Problem
+Tell one concrete story of the problem happening to a specific person, and state the baseline — how they cope
+today. If you cannot name a real person or office who feels this pain, pitch something else.
+2. Appetite
+Why is this worth roughly a semester of two-week sprints — no more, no less? Time is the fixed box; scope flexes
+to fit it (§4.2.4). Say what a “small but real” version looks like.
+3. Rough solution
+Sketch the core idea at fat-marker level (§6.1.2): elements, connections, and the main user flow — strokes too
+thick for detail on purpose. A photo of a whiteboard sketch is ideal.
+
+===== صفحة الكتاب 457 =====
+4. Rabbit holes
+Where could a team burn a whole sprint? Name the technical unknowns, tricky cases, and integrations this pitch
+is quietly assuming will be easy.
+…
+…
+5. No-gos
+What is explicitly out of bounds, even if someone asks? Saying “no” here is what keeps the appetite honest.
+…
+…
+6. Customer contact
+Who on your team is the primary customer contact for the developers who build this, and where do they reach you
+(channel)? As the customer, you commit to answering elicitation questions, prioritizing stories at their sprint
+planning, and giving feedback at every Demo Day.
+
+===== صفحة الكتاب 458 =====
+
+===== صفحة الكتاب 459 =====
+Project Proposal — <Team / Project Name>
+How to use this template. Copy this file into your team’s repository (for example, docs/proposal.md),
+delete these instruction blockquotes, and replace every italic prompt with your own content. Aim for two to
+four pages. See Appendix A, §A.2 for what makes a proposal strong. Keep the scope small enough to finish,
+test, and measure.
+Field
+Value
+Team name
+…
+Members
+name (role), name (role), …
+Real user / stakeholder
+who you will talk to
+Repository
+URL
+Board / tracker
+URL
+Date
+YYYY-MM-DD
+1. Problem statement
+Describe the problem in two or three sentences. What is hard, slow, error-prone, or impossible today, and who
+feels that pain? State the problem, not your solution.
+2. Users and stakeholders
+Name the specific people this serves. Distinguish primary users (who use it daily) from secondary users and
+sponsors. How will you reach a real user to ask questions and show progress?
+Primary user(s): …
+Secondary user(s): …
+Sponsor / decision-maker: …
+3. Proposed solution and value
+_In a paragraph, describe what you will build and the single most important benefit it delivers. Finish this
+sentence: “A user will be able to __, which today they cannot.”
+
+===== صفحة الكتاب 460 =====
+4. Key user stories / features (prioritized)
+List the most important stories in the user’s language. Prioritize with MoSCoW (Must / Should / Could / Won’t) —
+this is your first backlog.
+Priority
+As a … I want … so that …
+Notes
+Must
+…
+…
+Must
+…
+…
+Should
+…
+…
+Could
+…
+…
+Won’t (this term)
+…
+out of scope, on purpose
+5. Scope boundaries
+State explicitly what you will NOT do. Naming non-goals is how you keep scope finishable.
+In scope: …
+Out of scope: …
+6. Intended architecture and technology
+Sketch the system in broad strokes: major components and how they connect. List your main technology choices
+with one sentence of “why” for each. You are showing a feasible path, not committing forever.
+Components: …
+Stack (with rationale): language/framework — why; database — why; hosting — why
+Sketch: paste a simple diagram or link to one
+7. Process and team plan
+How will you work? See Chapter 2.
+Process: Scrum / XP / hybrid — and why
+Iteration cadence: e.g., 2-week sprints
+Roles: coordinator, customer liaison, architecture owner, quality owner
+Communication: sync channel, async record, meeting schedule
+
+===== صفحة الكتاب 461 =====
+8. Risks and how you’ll probe them
+Name your two or three biggest risks and the early experiment (a “spike”) that will tell you whether each is a real
+problem — while there is still time to react.
+Risk
+Likelihood / impact
+How we’ll probe it, and when
+…
+…
+…
+…
+…
+…
+9. Definition of done for the term
+One or two sentences: what does a successful end-of-semester system look like? This is the bar you will measure
+yourselves against in the final report.
+
+===== صفحة الكتاب 462 =====
+
+===== صفحة الكتاب 463 =====
+Sprint Report <1–4> — <Team / Project Name>
+How to use this template. Copy this file into your repository (for example, docs/sprint-2.md), delete these
+instruction blockquotes, and fill in every italic prompt. Submit one at the end of each two-week build sprint
+(see Running the Project on Two-Week Sprints). The report backs up your Demo Day: everything you claim
+here should be visible in the deployed system or the repository. Be honest — a candid “we cut scope” beats
+an optimistic “almost done.”
+Field
+Value
+Sprint number
+1 / 2 / 3 / 4
+Dates
+YYYY-MM-DD to YYYY-MM-DD
+Demo link
+URL of the deployed system a grader can try
+Repository
+URL
+1. Sprint goal
+One sentence: what this sprint was supposed to achieve, as you stated it at sprint planning.
+2. What shipped (demo notes)
+What can a user do now that they could not two weeks ago? List what you demoed (or will demo) on Demo Day,
+from the main branch.
+…
+…
+3. Stories: planned vs. done
+Your commitment against your delivery. Velocity is the running average of points completed per sprint — track it,
+don’t spin it.
+Story
+Points
+Planned
+Done
+Notes
+…
+…
+Yes / No
+Yes / Partial / No
+…
+…
+
+===== صفحة الكتاب 464 =====
+Points completed this sprint: …
+Velocity so far: points per sprint, averaged over completed sprints
+4. Quality
+See Chapters 9–10.
+CI status: passing? link to the pipeline
+Coverage: target and current number
+Open defects: count, with a link to the tracker
+Pipeline layers active this sprint: CI tests / PR review / CD / linting / dependency scans — per the sprint’s
+hardening arc
+Findings triage: (Sprints 3–4) open vs. fixed linter and vulnerability findings
+4a. Process evidence
+Sprint tag pushed: e.g. sprint2 — verify it is checkout-able on the remote
+Acceptance criteria on cards: Gherkin scenarios present and demoable? (yes/no)
+AI use documented: README section current, with transcript links for each assist
+Customer touchpoints this sprint: planning meeting date + channel posts (URL)
+5. Scopes and hill chart
+Break the remaining work into scopes and place each on the hill: uphill means “still figuring out how,” downhill
+means “just executing” (§12.3.5). Paste a snapshot or sketch.
+Scope
+Position (uphill / crest / downhill / done)
+Movement since last sprint
+…
+…
+…
+6. Scope cuts and nice-to-haves dropped
+Two weeks is a fixed box; scope flexes. What did you hammer out to fit, and which nice-to-haves (~) did you drop
+or defer?
+…
+7. Risks and blockers
+What is threatening the next sprint, and who owns each item?
+
+===== صفحة الكتاب 465 =====
+Item
+Impact
+Action / owner
+…
+…
+…
+8. Next sprint plan
+The candidate goal and top stories for the next sprint, sized to your actual velocity — not your hopes.
+Proposed goal: …
+Top stories: …
+9. Contributions
+One line per member, this sprint only. Keep it current so the final report is honest.
+Member
+What they did this sprint
+…
+…
+
+===== صفحة الكتاب 466 =====
+
+===== صفحة الكتاب 467 =====
+Status Report <1 | 2> — <Team / Project Name>
+How to use this template. Copy this file into your repository (for example, docs/status-1.md), delete these
+instruction blockquotes, and fill in every italic prompt. Use Report 1 for the skeletal system / walking
+skeleton (Appendix A, §A.3) and Report 2 for the viable system / MVP (§A.4). Be honest: graders reward a
+clear-eyed status over an optimistic one.
+Field
+Value
+Report number
+1 (skeletal) / 2 (viable)
+Team
+…
+Date
+YYYY-MM-DD
+How to run / try it
+URL or one-line command a grader can use
+1. Summary
+Two or three sentences: where the project stands and the single most important thing to know since the last
+checkpoint.
+2. What works right now
+Describe what a user can actually do end to end today.
+Report 1 (skeletal): which single path runs end to end through every layer?
+Report 2 (viable): which must-have user stories work end to end for a real user?
+Feature / story
+Status
+Evidence (link, screenshot, test)
+…
+Done / Partial / Not started
+…
+…
+3. Architecture (current)
+Show the system as it actually is now, not as proposed. Note where reality diverged from the plan and why
+(Chapters 6–7).
+
+===== صفحة الكتاب 468 =====
+Diagram placeholder — paste a Mermaid diagram or link to assets/diagrams/…:
+Key decisions since last report: …
+Divergence from proposal / previous report: …
+4. Process and progress
+How the team worked this period (Chapter 2).
+Iterations completed: …
+Velocity / throughput: stories or points per iteration
+Board snapshot: link
+5. Testing and quality (Report 2 emphasizes this)
+See Chapters 9–10.
+CI status: passing? link to the pipeline
+Tests: how many, what kind (unit / integration / end-to-end)
+Coverage: target and current number (Report 1: at least one real end-to-end test)
+6. Metrics so far (Report 2)
+Early numbers you are collecting for the final report (Chapter 12).
+Defects: open / closed
+Build health: …
+Other: …
+7. Risks, blockers, and changes
+What is threatening the plan, what is blocking you, and what you decided to change.
+Item
+Impact
+Action / owner
+…
+…
+…
+
+===== صفحة الكتاب 469 =====
+8. Plan for next milestone
+Concrete, prioritized next steps toward the next deliverable.
+…
+…
+9. Individual contributions this period
+Keep this current every report so the final one is honest.
+Member
+What they did this period
+…
+…
+
+===== صفحة الكتاب 470 =====
+
+===== صفحة الكتاب 471 =====
+Team & Customer Review <#0–4> —
+How to use this template. Copy this file into your repository (for example, docs/review-2.md), delete these
+instruction blockquotes, and fill in every italic prompt as a team, at the end of each sprint cycle (see Running
+the Project on Two-Week Sprints). This is the retrospective half of the cycle (§2.2.3): Demo Day inspects the
+product; this review inspects the team. Candor is the whole point — a review that reports “everything is
+fine” every cycle is a review that is not working.
+Field
+Value
+Review number
+0 / 1 / 2 / 3 / 4
+Team
+…
+Date
+YYYY-MM-DD
+Attendees
+members present; customer present?
+1. Retrospective: keep / change / try
+As a team, name what worked, what hurt, and what you want to experiment with. Specific beats general:
+“standups drifted to 25 minutes” is actionable; “communication” is not.
+Keep (working — protect it)
+Change (hurting — stop or fix it)
+Try (an experiment)
+…
+…
+…
+…
+…
+…
+2. Improvement committed last review — did it stick?
+Copy the one improvement you committed to last time. Did you actually do it? What happened? (Review #0: write
+“first review” and move on.)
+Last commitment: …
+Verdict: stuck / partially / abandoned — and why
+
+===== صفحة الكتاب 472 =====
+3. New committed improvement
+Pick exactly ONE change to carry into the next cycle. One, so it actually happens. Make it checkable: someone
+reading it next review should be able to say yes or no.
+We commit to: …
+We will know it worked if: …
+4. Peer contribution
+Each member rates their own contribution this cycle and receives an averaged rating from teammates (1–5).
+Evidence is a link — commits, pull requests, reviewed PRs, docs, tests — not an adjective. Gaps between self and
+peer ratings are a conversation, not a verdict.
+Member
+Self rating (1–5)
+Peer rating (1–5)
+Evidence
+…
+…
+…
+links
+…
+…
+…
+…
+5. Customer feedback captured
+What did your customer team (and any real end users) say when they saw the demo (or the latest build)? Record
+their words, then your response — even if the response is “no, and here is why.”
+What they said
+What we’ll do about it
+…
+…
+6. Escalations
+Anything that needs instructor attention — a persistent contribution imbalance, a blocked dependency, a scope
+crisis? Raising it now is engineering; raising it in the final week is too late. Write “none” if none.
+…
+
+===== صفحة الكتاب 473 =====
+
+===== صفحة الكتاب 474 =====
+Final Report — <Team / Project Name>
+How to use this template. Copy this file into your repository (for example, docs/final-report.md), delete
+these instruction blockquotes, and replace every italic prompt with your own content. This is your capstone
+artifact and the main thing you are assessed on — see Appendix A, §A.5. It should tie the whole course
+together: requirements (Ch. 3–5), architecture (Ch. 6–7), process (Ch. 2), testing (Ch. 10), and metrics (Ch.
+12). Reward comes from working software, real engineering evidence, and honest reflection.
+Field
+Value
+Team
+…
+Members
+…
+Date
+YYYY-MM-DD
+Repository
+URL
+How to run / try it
+URL or steps
+Demo
+link to video or slides, if any
+1. Problem and users
+What problem did you set out to solve, and for whom? How did that understanding evolve from the proposal to
+now? Name your real user(s) and stakeholders (Chapters 1, 3).
+2. Users and requirements
+The requirements you ultimately built. Present the final, prioritized user stories / use cases, and be honest about
+what changed since the proposal and why (Chapters 3–5).
+Priority
+User story / use case
+Delivered?
+Notes
+Must
+…
+Yes / Partial / No
+…
+Should
+…
+Could
+…
+What changed since the proposal, and why: …
+
+===== صفحة الكتاب 475 =====
+3. Architecture
+Describe the system’s structure and the reasoning behind it (Chapters 6–7). Discuss key design decisions in the
+vocabulary of cohesion, coupling, and patterns, and the trade-offs you accepted.
+Diagram placeholder — paste a current Mermaid diagram or link to assets/diagrams/…:
+Major components and responsibilities: …
+Key decisions and trade-offs: …
+Patterns used, and why: …
+4. Process used
+How you actually worked (Chapter 2) — not the idealized version. Your iterations, cadence, board, standups, and
+where your process adapted mid-project.
+Process and cadence: …
+What worked / what you changed: …
+Tools: repo, board, CI
+5. Testing and quality metrics
+Your test strategy and the evidence behind your quality claims (Chapters 10 and 12).
+
+===== صفحة الكتاب 476 =====
+Test strategy: unit / integration / end-to-end; black-box and white-box (Ch. 10)
+Coverage achieved: target vs. actual
+Defect data: found, fixed, open; where they clustered
+Analysis: what the numbers mean — descriptive statistics, trends, and raw counts first; inferential claims
+like a confidence interval (§12.8) only if your sample justifies them (Ch. 12). Don’t cherry-pick a single
+flattering figure
+Limitations / threats to validity: what your numbers cannot support — small samples, definitions that
+changed mid-project, observations that aren’t independent
+Metric
+Value
+What it tells us
+Test coverage
+…
+…
+Velocity (per iteration)
+…
+…
+Open / closed defects
+…
+…
+other
+…
+…
+6. Results
+What works, what does not, and how you know — measured against the “definition of done” from your proposal.
+Be specific and evidence-based.
+Goals met: …
+Goals not met, and why: …
+Evidence: screenshots, logs, test output, user feedback
+7. Retrospective
+The honest lessons. What surprised you, where estimates were wrong, what you would do differently. Write for the
+next team — the most valuable sentences begin “if we did this again, we would…”. Insight is rewarded here, not
+spin.
+What went well: …
+What went poorly: …
+What we’d do differently: …
+Biggest lesson about software engineering: …
+
+===== صفحة الكتاب 477 =====
+8. AI use and provenance
+Where and how AI assisted the work, per the running log your README kept all term (Chapter 13, §13.2.10): the
+kinds of tasks you delegated, links to the transcripts, and — most importantly — how each AI-assisted change was
+verified (tests, review) before it shipped. One honest paragraph plus the log link beats a list of tools.
+README AI log: link
+What we delegated vs. owned: …
+How we verified AI-assisted changes: …
+9. Individual contributions
+A fair account of who did what, backed by your running log and version-control history. Keep it factual.
+Member
+Primary responsibilities
+Notable contributions
+Rough share
+…
+…
+…
+…%
+…
+…
+…
+…%
+Notes on collaboration: how work was divided and reviewed; how conflicts or imbalances were handled
+10. Appendix (optional)
+Links to the proposal, both status reports, the backlog, and any supporting data or diagrams.
+
+===== صفحة الكتاب 478 =====
+
+===== صفحة الكتاب 479 =====
+Individual Write-up —
+How to use this template. Copy this file, delete these instruction blockquotes, and fill in every italic
+prompt. This is an individual deliverable: write it alone, in your own voice, without coordinating the content
+with teammates. It complements the team’s final report (see Appendix A, §A.5). Graders reward honesty
+over polish — a clear-eyed account of what went wrong teaches more, and scores better, than a varnished
+one. One to three pages.
+Field
+Value
+Name
+…
+Team / project
+…
+Date
+YYYY-MM-DD
+1. What I built
+Your concrete, personal contributions to the system — features, modules, tests, pipeline, documentation. Be
+specific and link the evidence: pull requests, commits, files, the deployed feature itself. “I worked on the backend”
+is not an answer; “I built the scheduling module and its integration tests (PR #41, #47)” is.
+…
+…
+2. What I learned
+Tie your experience to at least three concepts from the chapters, citing the section (for example, walking skeletons
+§A.3, appetite §4.2.4, coupling §6.2.2, coverage §10.3). For each: what the book said, what actually happened on
+your project, and what you now believe about it.
+1. Concept (§…): …
+2. Concept (§…): …
+3. Concept (§…): …
+3. Working on a team
+An honest reflection on the human side: how the team communicated, how conflict or uneven contribution was
+handled, what role you played in the dynamics — including where you were part of the problem. This section is
+
+===== صفحة الكتاب 480 =====
+about insight, not blame.
+4. What I’d do differently
+If you started this project again tomorrow, what would you change — technically, in process, or personally? The
+most valuable sentences here begin “if I did this again, I would…”.
+…
+…
+5. Self-assessment
+The grade you would give yourself for this project, and the justification. Ground it in the evidence from sections
+1–4, your team’s review records, and the version-control history — not in effort you feel but cannot show.
+Grade: …
+Justification: …
+
+===== صفحة الكتاب 481 =====
+
+===== صفحة الكتاب 482 =====
+Open Curriculum Resource Map
+This book is designed to support a complete first undergraduate software-engineering course on its own (see
+the chapter-to-SEEK mapping below). This map is a companion: for each chapter it lists the best free or openly
+accessible courses, textbooks, primary sources, and videos, so learners who want more depth — or instructors
+assembling a reading list — can reinforce every topic without buying anything. Licenses vary and are noted
+where known — “free to read” is not the same as “openly licensed”; check each before adapting.
+Resources are grouped as:
+📘 Open textbook / notes — full readable text, usually CC-licensed.
+🎓 Course / MOOC — university courseware or a free online course.
+📄 Primary source — the canonical spec, standard, or paper.
+🎥 Video — recorded lectures or talks.
+Coverage summary. The book’s fifteen chapters cover a first course. The four “anchor” open courses below
+reinforce most of that ground; the per-chapter tables add focused resources for the rest (estimation, use-case
+mechanics, architectural pattern catalogs, and the statistics in Chapter 12).
+The four anchor courses
+Anchor
+Covers
+chapters
+What it is
+License
+MIT 6.031 Software Construction —
+web.mit.edu/6.031, OCW 6.005 (2016)
+6, 9, 10
+Complete, polished reading notes on
+specs, ADTs, testing, code review, and
+design.
+CC BY-NC-
+SA (OCW)
+UC Berkeley — Engineering Software
+as a Service (ESaaS) — saasbook.info
+1, 2, 3, 10
+Free book + MOOC on agile,
+BDD/user stories, and testing.
+Free book;
+CC-BY
+media
+CMU 17-214 / 17-313 Software
+Engineering — 17-313 course site
+2, 6, 9, 12
+Open slides/readings on process,
+design, reviews, and measurement.
+Course-open
+“Software Engineering at Google” —
+free online
+1, 9, 10, 12
+Industry practices for reviews, testing,
+and metrics at scale.
+CC BY-NC-
+ND
+
+===== صفحة الكتاب 483 =====
+Chapter 1 — Introduction
+Type
+Resource
+Notes
+📘
+ESaaS ch. 1 “Introduction to SaaS & Agile”
+What SE is; why process matters.
+📄
+ACM Code of Ethics and Professional Conduct
+§1.6 social responsibility.
+📄
+IEEE-CS/ACM Software Engineering Code of Ethics
+Professional conduct.
+📄
+N. Leveson & C. Turner, “An Investigation of the Therac-25
+Accidents” (IEEE Computer, 1993)
+The canonical safety case study.
+📄
+SWEBOK Guide v4 (IEEE)
+The discipline’s body of knowledge.
+🎥
+MIT 6.031 Lecture 1 “Static Checking”
+Sets up “safe from bugs, easy to
+understand, ready for change.”
+Covers: what is SE, requirements challenge, complexity, defects/testing intro, the iron triangle (scope/cost/time),
+the VW & Therac-25 case studies, ethics.
+Chapter 2 — Software Development Processes
+Type
+Resource
+Notes
+📄
+Manifesto for Agile Software Development
+The four values, twelve principles.
+📄
+The Scrum Guide (2020) · PDF
+Accountabilities, events, artifacts —
+primary source.
+📘
+Extreme Programming (c2 wiki / Beck summaries)
+XP practices and user stories.
+📄
+W. Royce, “Managing the Development of Large Software
+Systems” (1970)
+The origin of “waterfall” (and its
+critique).
+📄
+B. Boehm, “A Spiral Model of Software Development and
+Enhancement” (1988)
+Risk-driven process.
+🎓
+ESaaS ch. 7 (Project Management, Agile)
+Plan-and-document vs. agile lifecycles.
+Covers: process vs. values, plan-vs-grow cultures, Scrum, XP, waterfall & V-model, risk, the spiral framework.
+
+===== صفحة الكتاب 484 =====
+Chapter 3 — User Requirements
+Type
+Resource
+Notes
+🎓
+ESaaS ch. 7 “Requirements: BDD & User Stories”
+User stories, Connextra template, SMART.
+📄
+Volere Requirements Specification Template
+Industry requirements template.
+📄
+ISO/IEC/IEEE 29148 (requirements engineering)
+Standard (abstract free).
+📘
+K. Wiegers, “Software Requirements” articles
+Free companion articles & templates.
+📄
+B. Schneier, “Attack Trees”
+§3.7 security requirements.
+📄
+INVEST checklist for user stories
+Story quality.
+Covers: requirements cycle, eliciting needs, user stories/features/scenarios, goal hierarchies, security attack trees.
+Chapter 4 — Requirements Analysis
+Type
+Resource
+Notes
+📄
+Planning Poker (Mountain Goat Software)
+Story-point estimation.
+📘
+M. Cohn, “Agile Estimating and Planning” free chapters/articles
+Velocity, story points.
+📄
+MoSCoW prioritization (DSDM/Agile Business)
+Must/Should/Could/Won’t.
+📄
+N. Kano et al., Kano model overview
+Satisfiers vs. dissatisfiers.
+📄
+B. Boehm, COCOMO II model definition
+Parametric effort estimation.
+📄
+Wideband Delphi
+Structured group consensus.
+Covers: iteration planning, anchoring bias, story points & velocity, Planning Poker, MoSCoW, Kano,
+value/cost/risk, COCOMO.
+Chapter 5 — Use Cases
+Type
+Resource
+Notes
+📘
+A. Cockburn, Use-Case Foundation — templates & method
+The definitive use-case method.
+📄
+UML Use Case Diagrams (OMG UML spec)
+Actors, relationships, notation.
+📘
+ESaaS §7 (user stories vs. use cases)
+When to use each.
+🎥
+Use case modeling tutorials (free)
+Notation reference.
+
+===== صفحة الكتاب 485 =====
+Covers: actors & goals, basic/alternative flows, extension points, use-case diagrams, include/extend relationships.
+Chapter 6 — Design and Architecture
+Type
+Resource
+Notes
+📘
+MIT 6.031 — Specifications, ADTs, Abstraction
+Modularity, coupling/cohesion, spec design.
+📄
+P. Kruchten, “Architectural Blueprints — the 4+1 View
+Model” (1995)
+The 4+1 views.
+📘
+refactoring.guru — Design Principles & SOLID
+Coupling, cohesion, OO relationships.
+📄
+UML Class Diagrams reference
+Association, aggregation, composition,
+inheritance.
+📘
+“Software Engineering at Google” ch. on design
+Real-world modular design.
+Covers: role of architecture, modularity principle, coupling & cohesion, UML class diagrams, 4+1 views,
+describing an architecture.
+Chapter 7 — Architectural Patterns
+Type
+Resource
+Notes
+📘
+M. Fowler, Patterns of Enterprise Application Architecture
+(catalog)
+Layering, MVC, and more.
+📄
+M. Fowler, GUI Architectures (MVC/MVP)
+Model-View-Controller in depth.
+📘
+Microsoft — Cloud Design Patterns
+Pub/sub, broker, client-server, pipes-and-
+filters.
+📘
+M. Richards, Software Architecture Patterns (free O’Reilly
+report)
+Layered, event-driven, microkernel.
+📄
+Reactive/Dataflow: The Reactive Manifesto
+Streams and back-pressure.
+📘
+Software Product Lines (SEI)
+Families & product lines.
+Covers: layering, shared-data, observer, publish-subscribe, MVC, dataflow/pipelines, client-server, broker,
+RESTful APIs, product lines.
+
+===== صفحة الكتاب 486 =====
+Chapter 8 — Version Control with Git
+Type
+Resource
+Notes
+📘
+Pro Git (2nd ed.)
+The canonical Git reference; free, CC BY-NC-SA.
+🎓
+MIT Missing Semester — Version Control (Git)
+Data-model-first Git.
+📄
+Markdown Guide · CommonMark
+Markdown syntax and the standard.
+📄
+GitHub Flow · Trunk-Based Development
+Team workflows.
+📄
+Chris Beams — How to Write a Git Commit Message
+Commit hygiene.
+🎥
+“Oh Shit, Git!?!”
+A recovery cookbook for common messes.
+Covers: version control and the commit graph, branching/merging/rebase, remotes and pull requests, merge
+conflicts, team workflows, and Markdown for READMEs and documentation.
+Chapter 9 — Static Checking
+Type
+Resource
+Notes
+📘
+Google Engineering Practices — Code Review
+How industry does code review.
+📘
+MIT 6.031 — Code Review reading
+Static checking & review practice.
+📄
+M. Fagan, “Design and Code Inspections” (IBM Sys. J., 1976)
+The origin of formal inspection.
+📘
+“Software Engineering at Google” — code review ch.
+Review at scale.
+📄
+SonarQube / linters docs
+Automated static analysis in practice.
+Covers: architecture reviews, software inspections, code reviews, automated static analysis, false
+positives/negatives.
+
+===== صفحة الكتاب 487 =====
+Chapter 10 — Testing
+Type
+Resource
+Notes
+📘
+MIT 6.031 — Testing reading
+Partitioning, coverage, glass-box vs.
+black-box.
+📘
+P. Ammann & J. Offutt, Introduction to Software Testing (free
+samples & slides)
+Graph/control-flow coverage, MC/DC.
+🎓
+ESaaS ch. 8 “Testing”
+TDD, unit/integration, test doubles.
+📘
+“Software Engineering at Google” — testing chapters
+Test sizes, flakiness, coverage culture.
+📄
+NIST — Combinatorial (pairwise) testing
+Input coverage & ACTS tool.
+Covers: levels of testing, control-flow graphs & coverage, MC/DC, equivalence/ boundary, combinatorial testing.
+Chapter 11 — Software Security
+Type
+Resource
+Notes
+📄
+OWASP Top 10:2025
+The industry’s shared vulnerability vocabulary (§11.2). CC
+BY-SA 4.0.
+🛠
+OWASP Juice Shop · WebGoat
+Deliberately insecure apps for hands-on practice (§11.2).
+🎓
+PortSwigger Web Security Academy
+Free hands-on web-security labs (§11.2).
+🛠
+Strix — autonomous AI pentest agents
+AI security testing (§11.3). Apache-2.0; authorized testing
+only.
+📄
+Andres Freund’s xz disclosure · xz timeline
+Primary sources for the xz-utils case study (§11.4).
+🛠
+OpenSSF Scorecard · SLSA · Sigstore
+Supply-chain security tooling (§11.4).
+🎓
+OpenSSF “Developing Secure Software”
+(LFD121)
+Free course + certificate (§11.5).
+📄
+Hastings & Walcott, ISSREW 2022
+The six-control continuous-verification framework (§11.4).
+Covers: the CIA triad and defense in depth, the OWASP Top 10:2025, SAST/DAST/SCA and AI-assisted security
+testing, the open-source supply chain (Log4Shell, xz-utils, weak links, continuous verification), and building
+security in (SSDF).
+
+===== صفحة الكتاب 488 =====
+Chapter 12 — Quality Metrics
+Type
+Resource
+Notes
+📘
+OpenIntro Statistics (CC BY-SA)
+Boxplots, histograms, variance, normal & t-distributions,
+confidence intervals, regression.
+📘
+Introduction to Modern Statistics (CC,
+OpenIntro)
+Modern companion to the above.
+📄
+DORA / “Accelerate” State of DevOps
+metrics
+Modern software delivery metrics.
+📘
+N. Fenton & J. Bieman, Software Metrics
+(concepts overview)
+Measurement theory, scales.
+📄
+ISO/IEC 25010 product quality model
+Forms of software quality.
+Covers: meaningful metrics & scales, forms of quality, boxplots/histograms, variance/ SD, normal & t-
+distributions, confidence intervals, linear regression.
+Chapter 13 — Software Engineering in the Age of AI
+Type
+Resource
+Notes
+📄
+METR — Early-2025 AI & experienced developer
+productivity RCT
+The ~19% slowdown trial (§13.1.4).
+📄
+o16g — the Outcome Engineering manifesto
+Primary source for §13.4.
+📄
+Perry et al. — “Do Users Write More Insecure Code with
+AI Assistants?”
+The false-sense-of-security study (§13.3).
+📄
+GitClear — AI code quality research
+Duplication up, refactoring down (§13.3).
+📄
+SWE-bench · SWT-bench
+Coding-agent capability benchmarks
+(§13.2.7).
+📄
+DORA
+Delivery-performance research referenced
+in §13.2.9.
+Covers: what AI changes vs. what endures, the productivity paradox, AI across each lifecycle stage, evidence on
+quality/security, the o16g manifesto.
+
+===== صفحة الكتاب 489 =====
+Chapter 14 — Delivery: CI/CD, DevOps, and Operations
+Type
+Resource
+Notes
+📄
+SEC Release No. 34-70694 — In
+the Matter of Knight Capital
+The primary source for the Knight Capital case study (§14.3). Public
+domain.
+📄
+CrowdStrike — External Technical
+Root Cause Analysis (2024)
+Primary source for the July 2024 outage case study (§14.3).
+📄
+DORA — research and delivery
+metrics
+The five metrics: throughput (change lead time, deployment
+frequency, recovery time) and instability (change-fail rate,
+deployment rework rate) (§14.7).
+📘
+Martin Fowler — CI, Deployment
+Pipelines, Blue-Green
+Canonical free articles for §§14.2–14.3.
+📘
+Google SRE books
+Free online; reliability, release engineering, postmortems.
+📄
+GitHub Dependabot docs ·
+OWASP Dependency-Check ·
+SLSA
+Dependency scanning and supply-chain security (§14.6).
+📘
+minimumcd.org
+A concise, community definition of minimum CD practice.
+Covers: SaaS & cloud, CI pipelines, continuous deployment & rollout strategies (Knight Capital and CrowdStrike
+case studies), packaging and DNS/TLS/the edge, security pipelines & supply chain, DORA metrics.
+Chapter 15 — Maintenance and Evolution
+Type
+Resource
+Notes
+📘
+Martin Fowler — StranglerFigApplication
+The original naming of the incremental-
+replacement pattern (§15.6).
+📘
+Refactoring catalog · refactoring.guru
+Named, behavior-preserving moves behind
+§15.3.
+📄
+Ward Cunningham — The WyCash Portfolio Management
+System (OOPSLA 1992)
+The origin of the technical-debt metaphor
+(§15.5).
+📄
+Glass — Frequently Forgotten Fundamental Facts (IEEE
+Software 2001)
+The maintenance-cost figure behind the
+chapter’s framing.
+Covers: what makes code legacy, characterization tests, refactoring under green tests, technical debt, strangler fig
+versus big-bang rewrite. (Feathers’ Working Effectively with Legacy Code is the standard commercial citation.)
+
+===== صفحة الكتاب 490 =====
+Appendix A — A Team Project
+Type
+Resource
+Notes
+🎓
+ESaaS project guidance & rubric
+Running a semester team project.
+📄
+Volere templates
+Proposal & requirements docs.
+📘
+Google Project Aristotle (team effectiveness)
+What makes teams work.
+📄
+ACM/IEEE CS Curricula — SE course guidance
+Why a project is required.
+Covers: project goals, team experience, proposal, status reports, final report.
+Coverage vs. the ACM/IEEE SEEK body of knowledge
+The book is designed to support a complete first undergraduate SE course. The table below maps each chapter to
+the knowledge areas of the ACM/IEEE SE2014 / SEEK guideline so instructors can see coverage — and its limits
+— directly, rather than taking a “full scope” claim on faith. SEEK is a curriculum guideline; no single one-
+semester course covers the whole discipline, and the “Depth” column is honest about that.
+
+===== صفحة الكتاب 491 =====
+SEEK knowledge area
+Where in this book
+Depth
+Professional Practice (PRF)
+Ch. 1 (ethics, cases), Appendix A (teamwork)
+Introductory
+Software Process (PRO)
+Ch. 2 (Scrum, XP, waterfall, V, spiral, Shape Up)
+Solid
+Requirements / Modeling
+& Analysis (REQ, MAA)
+Ch. 3–5 (elicitation, analysis, use cases)
+Solid
+Software Design (DES)
+Ch. 6–7 (modularity, UML, 4+1, patterns)
+Solid
+Software Configuration
+Management (CFG)
+Ch. 8 (Git, branching, merging, pull requests, team workflows,
+merge conflicts)
+Solid
+Software V&V (VAV)
+Ch. 9–10 (reviews, static analysis, testing, coverage)
+Solid
+Software Quality (QUA)
+Ch. 12 (metrics, statistics, defects)
+Solid
+Security (SEC)
+Ch. 11 (OWASP Top 10:2025, SAST/DAST/SCA, AI security
+testing, supply-chain security); reinforced by Ch. 3 §3.7 (attack
+trees, STRIDE), Ch. 9 §9.4 (SAST), Ch. 14 §14.6 (security
+pipelines)
+Solid
+Software Construction
+(CST)
+assumed as a prerequisite; touched in Ch. 9–10
+Light
+Software Evolution /
+Maintenance
+Ch. 15 (legacy code, characterization tests, refactoring, repository
+stewardship, technical debt, strangler fig); cost-of-change theme
+throughout
+Introductory
+Emerging practice: AI-
+assisted SE
+Ch. 13
+Introductory
+Computing Essentials,
+Math & Eng. Fundamentals
+(CMP, FND)
+assumed prerequisites
+Out of
+scope
+Notes on coverage & gaps
+Within the areas it does teach, the book is self-contained — no purchase is required to follow the course. This map
+records how much of each topic also has strong external open coverage, so you know where the free supplements
+are richest:
+Abundant open supplements: process/agile, requirements & user stories, design/modularity, code review
+& static analysis, testing & coverage, and all of the statistics in Chapter 12.
+
+===== صفحة الكتاب 492 =====
+Thinner external coverage: some estimation details (e.g. COCOMO calibration), a few architectural-
+pattern treatments, and worked case studies. Our own chapters supply original explanations and examples
+for these.
+Deliberately light or out of scope (per the SEEK table above): deep software construction and the
+CS/math prerequisites — appropriate omissions for a one-semester first course, but worth naming so no
+one mistakes this for the whole discipline. (Maintenance/evolution moved from this list to introductory
+coverage when the book added legacy code, refactoring, and technical debt — now Chapter 15; security
+moved to solid coverage when Chapter 11 added the OWASP Top 10, AI-assisted security testing, and
+open-source supply-chain security.)
+
+===== صفحة الكتاب 493 =====
+
+===== صفحة الكتاب 494 =====
+Course Plans
+Two ready-to-use schedules for a junior/senior software-engineering course built on this book — Variant A, a 15-
+week milestone track, and Variant B, a 16-week semester run on two-week sprints. Both run two parallel tracks
+(as the ACM/IEEE guidelines recommend1):
+Concepts track — the fifteen chapters, one theme at a time.
+Project track — a real team project (Appendix A), started early and iterated.
+The two tracks are tightly coupled at the start (weeks 1–4, while teams form and scope their projects) and
+loosely coupled afterward, so each can move at its own pace.
+
+===== صفحة الكتاب 495 =====
+Variant A: 15-week milestone track
+Week
+Concepts (chapter)
+Project milestone
+Key open resources
+1
+Ch. 1 — Introduction
+Form teams; brainstorm ideas
+ACM Code of Ethics;
+Therac-25
+2
+Ch. 2 — Processes (Scrum/XP); Ch. 8
+— Version Control (Git); CI basics
+(§14.2.1–14.2.2)
+Pick a process; set up repo & board
+with a protected main, plus a hello-
+world CI pipeline (§14.2) so every
+later commit lands on green
+Scrum Guide; Pro Git;
+Fowler CI
+3
+Ch. 3 — User Requirements
+Project Proposal (App. A.2)
+ESaaS ch.7; Volere;
+INVEST
+4
+Ch. 4 — Requirements Analysis
+Backlog + estimates (Planning Poker)
+Planning Poker;
+MoSCoW; Kano
+5
+Ch. 5 — Use Cases
+Use cases / stories for iteration 1
+Cockburn use cases
+6
+Ch. 6 — Design & Architecture
+Architecture sketch; class diagram
+MIT 6.031; 4+1 views
+7
+Ch. 7 — Architectural Patterns
+Status Report 1 (skeletal system)
+Fowler PoEAA; MS
+patterns
+8
+Midterm / catch-up
+Sprint review + retrospective
+—
+9
+Ch. 9 — Static Checking; pipeline
+stages & gates (§§14.1–14.2)
+Harden CI: linters, code review as a
+gate
+Google eng-practices;
+Fagan
+10
+Ch. 10 — Testing (coverage);
+progressive deployment (§14.3)
+Test plan; coverage targets; staged
+rollout for the project
+MIT 6.031 testing;
+Ammann/Offutt; SEC
+34-70694
+11
+Ch. 10 — Testing (MC/DC,
+combinatorial)
+Status Report 2 (viable system)
+NIST combinatorial
+12
+Ch. 11 — Software Security (OWASP
+Top 10, SAST/DAST/SCA, supply
+chain)
+Threat-model the project; add
+dependency scanning
+OWASP Top 10;
+PortSwigger;
+OpenSSF Scorecard
+13
+Ch. 12 — Metrics (quality, defects,
+statistics); DORA (§14.7)
+Defect tracking; measure & analyze
+project data
+OpenIntro Stats;
+DORA
+
+===== صفحة الكتاب 496 =====
+Week
+Concepts (chapter)
+Project milestone
+Key open resources
+14
+Ch. 15 — Maintenance & evolution
+(legacy code, refactoring, technical
+debt); synthesis + o16g manifesto
+discussion (§13.8)
+Comprehensive Final Report (A.5)
+o16g manifesto;
+Fowler refactoring
+catalog
+15
+Final presentations / demos
+Ship & retrospective
+—
+Chapter 13 (AI) is read alongside, not as its own week. Its per-stage sections map onto the concept weeks
+— assign each §13.2.x with its matching chapter (requirements weeks get §13.2.2, testing weeks §13.2.5,
+and so on), the evidence sections §13.1 and §13.3 (including the METR study) with week 9 or 10, and the
+o16g manifesto (§13.8) as the week-14 synthesis discussion. Chapter 14’s delivery material is likewise
+distributed where the project needs it: CI basics in week 2, pipeline hardening in week 9, progressive
+deployment in week 10, DORA in week 13 — so week 14 belongs to Chapter 15 and to pulling the course
+together.
+Flexibility on Chapter 11 (Software Security). Week 12 gives security its own session, but the material
+also pairs naturally with the CI and static-analysis week (week 9) — teach it wherever your emphasis lies.
+Either way, the project’s “static analysis + supply-chain security” sprint (Appendix A) is where students
+apply the OWASP Top 10 and the dependency-vetting controls to their own code. If you are pressed for time,
+Chapter 12’s statistics half (§12.6–§12.9) is the readiest thing to move to optional reading, following its own
+“two paths” note.
+Variant B: 16-week semester on two-week sprints
+For courses that run the project on a two-week sprint cadence with the dual-hat cross-team customer model —
+each team pitches an idea that another team builds, and serves as customer for its own pitch (see Running the
+Project on Two-Week Sprints). Concepts and project interleave: four onboarding deliverables (Sprint 0-0 … 0-3),
+then four two-week build sprints, each ending in a Demo Day and a team/customer review, with a progressive
+engineering-hardening arc (CI → CD → lint/dependency scans → debt paydown).
+
+===== صفحة الكتاب 497 =====
+Week
+Concepts (chapter)
+Project / sprint deliverable
+1
+Ch. 1 — Introduction; SaaS & the cloud (§14.1)
+Think about project ideas
+2
+Ch. 3 — User Requirements; Shape Up (§2.8, §4.2.4)
+—
+3
+Ch. 2 — Processes & types of agile; Ch. 8 — Version Control
+(Git)
+Teams form; Sprint 0-0: idea pitches; set
+up repo with protected main
+4
+Ch. 6 — Design principles
+Sprint 0-1: pitch swap + proposal with
+customer
+5
+Ch. 7 — Architectures + REST (§7.5.4); idea presentations
+Sprint 0-2: user stories + lo-fi
+UI/storyboards (§§3.4–3.5)
+6
+Ch. 10 — Testing; CI pipelines (§14.2); DORA (§14.7)
+Sprint 0-3: initial view, deployed
+7
+Demo Day; sprints & iterations (§2.2)
+Sprint 1 begins; team review #0
+8
+Test 1
+—
+9
+Continuous deployment (§14.3: Knight Capital,
+CrowdStrike)
+Sprint 1 due → Demo Day; Sprint 2;
+review #1
+10
+Spring break
+—
+11
+Ch. 9 — Static checking; risk
+Sprint 2 continues
+12
+Ch. 11 — Software Security (OWASP Top 10,
+SAST/DAST/SCA, supply chain); security pipelines (§14.6)
+Sprint 2 due → Demo Day; Sprint 3;
+review #2
+13
+Legacy code & refactoring (Ch. 15); Ch. 13 AI readings
+Sprint 3 continues
+14
+Work days; Ch. 12 metrics in practice
+Sprint 3 due → Demo Day; Sprint 4;
+review #3
+15
+Test 2
+Sprint 4 due
+16
+Final presentations
+Individual write-ups; review #4
+Chapters 4–5 (estimation, use cases) are woven into the sprint work as read-before material (see the sprint table in
+the appendix page) rather than given lecture weeks. Assessment shifts accordingly: sprint reports and team
+reviews replace the two status reports, and two in-term tests replace the midterm/final split.
+
+===== صفحة الكتاب 498 =====
+Assessment (suggested weights)
+Component
+Weight
+Team project artifacts (proposal, iterative progress reports/reviews, final report, demo)
+45%
+Individual exercises / problem sets (chapter exercises.md)
+20%
+Test 1 / midterm (concepts, first half)
+15%
+Test 2 / final exam (concepts, whole book)
+20%
+The progress artifacts differ by variant: Variant A uses the two status reports, Variant B uses sprint reports and
+team reviews — same weight either way.
+Learning outcomes
+By the end, a student can:
+1. Choose and run an appropriate process (Scrum/XP/hybrid) for a team project.
+2. Elicit, write, prioritize, and estimate requirements as user stories/use cases.
+3. Design a modular architecture and describe it with UML and 4+1 views.
+4. Apply the right architectural patterns to a problem.
+5. Use version control — branching, pull requests, reviewed merges — and continuous integration to
+coordinate team development.
+6. Review and statically check code and architecture for defects.
+7. Design a test suite that meets defined coverage criteria.
+8. Identify common vulnerabilities (the OWASP Top 10) and vet open-source dependencies for software-
+supply-chain risk.
+9. Define and interpret quality metrics using sound statistics.
+10. Design and evaluate a delivery pipeline: progressive deployment, automated quality gates, and delivery-
+performance (DORA) metrics.
+11. Safely modify an inherited system using characterization tests, incremental refactoring, and technical-debt
+management.
+12. Use AI-assisted engineering tools responsibly: specify intent, verify outputs, document provenance, and
+retain human accountability.
+13. Work effectively on a software team, communicate progress, and act on the professional and ethical
+responsibilities of shipping software that affects real people.
+
+===== صفحة الكتاب 499 =====
+Adapting the plan
+10-week quarter: merge weeks 4↔︎5, fold Chapter 11 (security) into week 9’s CI/static-analysis session,
+and teach Chapter 12 on its minimum path (§12.1–§12.5); move MC/DC to optional reading. (See the one-
+quarter path on the front page.)
+Bootcamp / self-study: follow the four anchor courses in open-resources-map.md alongside the chapters;
+do the project solo or in a pair.
+No team project: keep the concepts track; use the checkpoints in Appendix A’s project exercises as larger
+individual assignments.
+1 ACM/IEEE-CS Joint Task Force on Computing Curricula, Software Engineering 2014: Curriculum Guidelines for
+Undergraduate Degree Programs in Software Engineering (SE2014), which recommends a substantial team project alongside
+the concepts. acm.org/education/curricula-recommendations.
+
+===== صفحة الكتاب 500 =====
+
+===== صفحة الكتاب 501 =====
+Contributing
+Thanks for helping improve this open software‑engineering book. It is meant to be a living resource, and clear,
+well‑sourced contributions are very welcome.
+Ground rules
+1. Original prose only. Do not paste text, figures, or exercises from any copyrighted textbook. Explain
+concepts in your own words and cite primary/open sources. This keeps the whole book CC BY‑SA‑clean.
+2. Prefer open, durable sources. When you link a resource, prefer ones that are free and openly licensed
+(MOOCs, university courseware, standards, papers, official docs). Add them to the chapter’s resources.md
+and, if broadly useful, to curriculum/open-resources-map.md.
+3. Keep the house style (see below) so chapters read as one book, not many.
+Repository layout
+.
+├── README.md                     # landing page
+├── SUMMARY.md                    # mdBook table of contents
+├── book.toml                     # mdBook config
+├── LICENSE                       # CC BY-SA 4.0 (prose) + MIT (code)
+├── CONTRIBUTING.md
+├── curriculum/
+│   ├── open-resources-map.md     # chapter → open resources mapping
+│   └── course-plan.md            # course plans (15-week and 16-week sprint variants)
+├── chapters/
+│   ├── 01-introduction/
+│   │   ├── README.md             # the chapter body
+│   │   ├── exercises.md          # individual practice exercises
+│   │   └── resources.md          # curated open resources for this chapter
+│   └── ...                       # one directory per chapter
+├── templates/                    # reusable project & document templates
+└── assets/diagrams/              # source for diagrams (Mermaid/SVG)
+
+===== صفحة الكتاب 502 =====
+House style
+Structure per chapter: a short “Where we are / why this matters” opener, then numbered sections
+matching SUMMARY.md, then a footer of three bullets: Key takeaways (pointing at the conclusion section), a
+link to Exercises, and a link to Open resources.
+Voice: direct, second person (“you”), concrete. Explain the why behind each practice, not just the how. Use
+a running example or case study where it helps.
+Diagrams: use Mermaid fenced code blocks (```mermaid) so they render on GitHub and in mdBook. Keep
+an SVG export in assets/diagrams/ if the diagram is complex.
+Callouts: use blockquotes with a bold lead‑in, e.g. > **Principle.** …, > **Pitfall.** …, > **Case
+study.** ….
+Terminology: bold a term the first time you define it. Keep to US spelling.
+Line length: wrap prose around 90–100 columns to keep diffs reviewable.
+Making a change
+1. Fork and branch: git checkout -b improve-chapter-09-mcdc.
+2. Edit Markdown. Preview locally with mdbook serve if you have mdBook installed.
+3. Run the link check (see .github/workflows/ci.yml) or at least verify new links.
+4. Open a pull request describing what changed and why, and cite sources for any new claims.
+Reporting issues
+Open an issue for anything from a typo to a conceptual gap or a broken link. If you know the fix, a PR is even
+better. Suggestions for new open resources are welcome.
+Software Engineering: Standing on the Shoulders of Giants · First Edition · 1.0b16

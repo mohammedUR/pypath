@@ -1,0 +1,249 @@
+[
+ {
+  "lesson": "py4e.ch11.l1",
+  "id": "ex1.anchor-filter",
+  "solution": "import re\nlines = ['Author: csev@umich.edu', 'X-Author: hidden', 'Author: cwen@iupui.edu', 'Spam: Author: no']\nhits = []\nfor line in lines:\n    if re.search(r'^Author:', line):\n        hits.append(line)\n        print(line)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "hits تحوي السطرين الصحيحين فقط",
+     "en": "hits holds exactly the two correct lines"
+    },
+    "code": "assert hits == ['Author: csev@umich.edu', 'Author: cwen@iupui.edu'], 'expected: two Author lines | actual: %r' % (hits,)",
+    "expected": "two Author lines"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "السطران مطبوعان",
+     "en": "Both lines are printed"
+    },
+    "code": "assert 'Author: csev@umich.edu' in __learner_output__ and 'Author: cwen@iupui.edu' in __learner_output__, ('expected: both Author lines | actual: %r' % __learner_output__)",
+    "expected": "both Author lines"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "X-Author استُبعد — المرساة عملت",
+     "en": "X-Author excluded — the anchor worked"
+    },
+    "code": "assert 'X-Author' not in __learner_output__ and 'Spam' not in __learner_output__, ('expected: no X-Author or Spam lines | actual: %r' % __learner_output__)",
+    "expected": "no X-Author or Spam lines"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch11.l2",
+  "id": "ex1.findall-emails",
+  "solution": "import re\ns = 'A message from csev@umich.edu to cwen@iupui.edu about meeting @2PM'\nlst = re.findall(r'\\S+@\\S+', s)\nprint(len(lst))\nprint(lst)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "lst تحوي العنوانين الصحيحين فقط",
+     "en": "lst holds exactly the two correct addresses"
+    },
+    "code": "assert lst == ['csev@umich.edu', 'cwen@iupui.edu'], 'expected: the two addresses | actual: %r' % (lst,)",
+    "expected": "the two addresses"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "لا دخول لـ @2PM",
+     "en": "No @2PM entry"
+    },
+    "code": "assert len(lst) == 2 and '@2PM' not in lst, ('expected: 2 matches without @2PM | actual: %r' % (lst,))",
+    "expected": "2 matches without @2PM"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "العدد والقائمة مطبوعان",
+     "en": "Count and list are printed"
+    },
+    "code": "assert 'cwen@iupui.edu' in __learner_output__ and \"['csev@umich.edu', 'cwen@iupui.edu']\" in __learner_output__, ('expected: the list printed | actual: %r' % __learner_output__)",
+    "expected": "['csev@umich.edu', 'cwen@iupui.edu']"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch11.l3",
+  "id": "ex1.extract-sum",
+  "solution": "import re\nlines = ['X-DSPAM-Confidence: 0.8475', 'Subject: Update now', 'X-DSPAM-Confidence: 0.6178']\ntotal = 0.0\ncount = 0\nfor line in lines:\n    x = re.findall(r'^X\\S*: ([0-9.]+)', line)\n    if len(x) > 0:\n        print(x[0])\n        total = total + float(x[0])\n        count = count + 1\nprint(count)\nprint('%.4f' % total)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "سطرا الثقة فقط دخلوا العدّ",
+     "en": "Only the two confidence lines entered the count"
+    },
+    "code": "assert count == 2, 'expected: count 2 | actual: %r' % (count,)",
+    "expected": "count 2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "المجموع 1.4653",
+     "en": "The total is 1.4653"
+    },
+    "code": "assert abs(total - 1.4653) < 0.0001, 'expected: total 1.4653 | actual: %r' % (total,)",
+    "expected": "total 1.4653"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سطر Subject استبعد ولا يظهر",
+     "en": "The Subject line is excluded and never printed"
+    },
+    "code": "assert 'Subject' not in __learner_output__ and '0.6178' in __learner_output__ and '0.8475' in __learner_output__, ('expected: 0.8475 and 0.6178 without Subject | actual: %r' % __learner_output__)",
+    "expected": "0.8475 and 0.6178 without Subject"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch11.l4",
+  "id": "ex1.times-classes",
+  "solution": "import re\ns = 'Seen at 09:14:16 and again at 18:44:02'\ntimes = re.findall(r'\\d{2}:\\d{2}:\\d{2}', s)\nprint(times)\nprint(times[0])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "times تحوي وقتين كاملين",
+     "en": "times holds exactly two full times"
+    },
+    "code": "assert times == ['09:14:16', '18:44:02'], 'expected: two times | actual: %r' % (times,)",
+    "expected": "two times"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "النمط مقيّد بخانتين لا أكثر",
+     "en": "The pattern is pinned to two digits"
+    },
+    "code": "assert all(len(t) == 8 for t in times), 'expected: every time 8 chars | actual: %r' % (times,)",
+    "expected": "every time 8 chars"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الوقت الأول مطبوع",
+     "en": "The first time is printed"
+    },
+    "code": "assert '09:14:16' in __learner_output__ and '18:44:02' in __learner_output__, ('expected: both times | actual: %r' % __learner_output__)",
+    "expected": "both times"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch11.l5",
+  "id": "ex1.header-values",
+  "solution": "import re\nlines = ['X-DSPAM-Confidence: 0.8475', 'X-DSPAM-Probability: 0.0000', 'Subject: 42']\nvals = []\ntotal = 0.0\nfor line in lines:\n    x = re.findall(r'^X\\S*: ([0-9.]+)', line)\n    if len(x) > 0:\n        vals.append(x[0])\n        total = total + float(x[0])\nprint(vals)\nprint('%.4f' % total)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "vals تحوي القيمتين كسلاسل",
+     "en": "vals holds the two values as strings"
+    },
+    "code": "assert vals == ['0.8475', '0.0000'], 'expected: two values | actual: %r' % (vals,)",
+    "expected": "two values"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "المجموع 0.8475",
+     "en": "The total is 0.8475"
+    },
+    "code": "assert abs(total - 0.8475) < 0.000001, 'expected: total 0.8475 | actual: %r' % (total,)",
+    "expected": "total 0.8475"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "Subject استبعد — المرساة عملت",
+     "en": "Subject excluded — the anchor worked"
+    },
+    "code": "assert 'Subject' not in __learner_output__ and \"['0.8475', '0.0000']\" in __learner_output__ and '0.8475' in __learner_output__, ('expected: vals list and 0.8475, no Subject | actual: %r' % __learner_output__)",
+    "expected": "vals list and 0.8475, no Subject"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch11.l6",
+  "id": "ex2.log-analyzer",
+  "solution": "import re\nlog = [\n    'From stephen.marquard@uct.ac.za Sat Jan  5 09:14:16 2008',\n    'X-DSPAM-Confidence: 0.8475',\n    'Author: stephen.marquard@uct.ac.za',\n    'X-DSPAM-Probability: 0.0000',\n    'From cwen@iupui.edu Thu Jan  3 16:23:48 2008',\n    'X-DSPAM-Confidence: 0.6178',\n    'X-DSPAM-Probability: 0.0000',\n    'X-DSPAM-Confidence: 0.6961',\n    'Subject: Past deadline',\n    'X-DSPAM-Confidence: 0.8386',\n    'From zqian@umich.edu Fri Jan  4 18:10:48 2008',\n]\ntotal = 0.0\ncount = 0\nfor line in log:\n    x = re.findall(r'^X-DSPAM-Confidence: ([0-9.]+)', line)\n    if len(x) > 0:\n        total = total + float(x[0])\n        count = count + 1\nprint('confidence count: %d' % count)\nprint('average: %.4f' % (total / count))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "عدّ القيم أربعة",
+     "en": "The value count is four"
+    },
+    "code": "assert 'confidence count: 4' in __learner_output__, ('expected: confidence count: 4 | actual: %r' % __learner_output__)",
+    "expected": "confidence count: 4"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "المتوسط 0.7500 بتنسيقه",
+     "en": "The average is 0.7500 in format"
+    },
+    "code": "assert 'average: 0.7500' in __learner_output__, ('expected: average: 0.7500 | actual: %r' % __learner_output__)",
+    "expected": "average: 0.7500"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "التجميع صحيح: count=4 والمجموع 3.0",
+     "en": "Accumulation correct: count=4 and sum 3.0"
+    },
+    "code": "assert count == 4 and abs(total - 3.0) < 0.000001, ('expected: count 4, total 3.0 | actual: count %r total %r' % (count, total))",
+    "expected": "count 4, total 3.0"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "لا تلوّث: Probability والصفر لا يظهران",
+     "en": "No pollution: Probability and zeros absent"
+    },
+    "code": "assert 'Probability' not in __learner_output__ and '0.0000' not in __learner_output__, ('expected: no Probability or 0.0000 | actual: %r' % __learner_output__)",
+    "expected": "no Probability or 0.0000"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch11.l6",
+  "id": "ex5.debug-loose-pattern",
+  "solution": "import re\nlog = [\n    'From stephen.marquard@uct.ac.za Sat Jan  5 09:14:16 2008',\n    'X-DSPAM-Confidence: 0.8475',\n    'Author: stephen.marquard@uct.ac.za',\n    'X-DSPAM-Probability: 0.0000',\n    'From cwen@iupui.edu Thu Jan  3 16:23:48 2008',\n    'X-DSPAM-Confidence: 0.6178',\n    'X-DSPAM-Probability: 0.0000',\n    'X-DSPAM-Confidence: 0.6961',\n    'Subject: Past deadline',\n    'X-DSPAM-Confidence: 0.8386',\n    'From zqian@umich.edu Fri Jan  4 18:10:48 2008',\n]\ntotal = 0.0\ncount = 0\nfor line in log:\n    x = re.findall(r'^X-DSPAM-Confidence: ([0-9.]+)', line)\n    if len(x) > 0:\n        total = total + float(x[0])\n        count = count + 1\nprint('confidence count: %d' % count)\nprint('average: %.4f' % (total / count))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "العدّ عاد إلى أربعة",
+     "en": "The count is back to four"
+    },
+    "code": "assert 'confidence count: 4' in __learner_output__ and 'confidence count: 6' not in __learner_output__, ('expected: confidence count: 4 | actual: %r' % __learner_output__)",
+    "expected": "confidence count: 4"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "المتوسط الصحيح 0.7500 لا 0.5000",
+     "en": "The right average 0.7500, not 0.5000"
+    },
+    "code": "assert 'average: 0.7500' in __learner_output__ and '0.5000' not in __learner_output__, ('expected: average: 0.7500 | actual: %r' % __learner_output__)",
+    "expected": "average: 0.7500"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "التجميع المصلح: count=4 والمجموع 3.0",
+     "en": "The fixed accumulation: count=4 and sum 3.0"
+    },
+    "code": "assert count == 4 and abs(total - 3.0) < 0.000001, ('expected: count 4, total 3.0 | actual: count %r total %r' % (count, total))",
+    "expected": "count 4, total 3.0"
+   }
+  ]
+ }
+]

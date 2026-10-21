@@ -1,0 +1,526 @@
+
+===== صفحة الكتاب 920 =====
+20
+Generative Adversarial Networks
+20.1 Generative Adversarial Networks
+Throughout most of this book, we have talked about how to make predictions. In some
+form or another, we used deep neural networks to learn mappings from data examples to
+labels. This kind of learning is called discriminative learning, as in, we’d like to be able
+to discriminate between photos of cats and photos of dogs. Classifiers and regressors are
+both examples of discriminative learning. And neural networks trained by backpropaga-
+tion have upended everything we thought we knew about discriminative learning on large
+complicated datasets. Classification accuracies on high-res images have gone from useless
+to human-level (with some caveats) in just 5-6 years. We will spare you another spiel about
+all the other discriminative tasks where deep neural networks do astoundingly well.
+But there is more to machine learning than just solving discriminative tasks. For example,
+given a large dataset, without any labels, we might want to learn a model that concisely
+captures the characteristics of this data. Given such a model, we could sample synthetic
+data examples that resemble the distribution of the training data. For example, given a large
+corpus of photographs of faces, we might want to be able to generate a new photorealistic
+image that looks like it might plausibly have come from the same dataset. This kind of
+learning is called generative modeling.
+Until recently, we had no method that could synthesize novel photorealistic images. But the
+success of deep neural networks for discriminative learning opened up new possibilities.
+One big trend over the last three years has been the application of discriminative deep
+nets to overcome challenges in problems that we do not generally think of as supervised
+learning problems. The recurrent neural network language models are one example of using
+a discriminative network (trained to predict the next character) that once trained can act as
+a generative model.
+In 2014, a breakthrough paper introduced Generative adversarial networks (GANs) (Good-
+fellow et al., 2014), a clever new way to leverage the power of discriminative models to get
+good generative models. At their heart, GANs rely on the idea that a data generator is good
+if we cannot tell fake data apart from real data. In statistics, this is called a two-sample test
+- a test to answer the question whether datasets 𝑋= {𝑥1, . . . , 𝑥𝑛} and 𝑋′ = {𝑥′
+1, . . . , 𝑥′
+𝑛}
+were drawn from the same distribution. The main difference between most statistics papers
+880
+
+===== صفحة الكتاب 921 =====
+881
+Generative Adversarial Networks
+274
+and GANs is that the latter use this idea in a constructive way. In other words, rather than
+just training a model to say “hey, these two datasets do not look like they came from the
+same distribution”, they use the two-sample test274 to provide training signals to a gener-
+ative model. This allows us to improve the data generator until it generates something that
+resembles the real data. At the very least, it needs to fool the classifier even if our classifier
+is a state of the art deep neural network.
+t
+Fig. 20.1.1
+Generative Adversarial Networks
+The GAN architecture is illustrated in Fig. 20.1.1. As you can see, there are two pieces
+in GAN architecture - first off, we need a device (say, a deep network but it really could
+be anything, such as a game rendering engine) that might potentially be able to generate
+data that looks just like the real thing. If we are dealing with images, this needs to generate
+images. If we are dealing with speech, it needs to generate audio sequences, and so on.
+We call this the generator network. The second component is the discriminator network. It
+attempts to distinguish fake and real data from each other. Both networks are in competition
+with each other. The generator network attempts to fool the discriminator network. At that
+point, the discriminator network adapts to the new fake data. This information, in turn is
+used to improve the generator network, and so on.
+The discriminator is a binary classifier to distinguish if the input 𝑥is real (from real data) or
+fake (from the generator). Typically, the discriminator outputs a scalar prediction 𝑜∈R for
+input x, such as using a fully connected layer with hidden size 1, and then applies sigmoid
+function to obtain the predicted probability 𝐷(x) = 1/(1 + 𝑒−𝑜). Assume the label 𝑦
+for the true data is 1 and 0 for the fake data. We train the discriminator to minimize the
+cross-entropy loss, i.e.,
+min
+𝐷{−𝑦log 𝐷(x) −(1 −𝑦) log(1 −𝐷(x))},
+(20.1.1)
+For the generator, it first draws some parameter z ∈R𝑑from a source of randomness, e.g.,
+a normal distribution z ∼N (0, 1). We often call z as the latent variable. It then applies
+a function to generate x′ = 𝐺(z). The goal of the generator is to fool the discriminator
+to classify x′ = 𝐺(z) as true data, i.e., we want 𝐷(𝐺(z)) ≈1. In other words, for a
+given discriminator 𝐷, we update the parameters of the generator 𝐺to maximize the cross-
+entropy loss when 𝑦= 0, i.e.,
+max
+𝐺{−(1 −𝑦) log(1 −𝐷(𝐺(z)))} = max
+𝐺{−log(1 −𝐷(𝐺(z)))}.
+(20.1.2)
+If the generator does a perfect job, then 𝐷(x′) ≈1, so the above loss is near 0, which
+
+===== صفحة الكتاب 922 =====
+882
+Generative Adversarial Networks
+results in the gradients that are too small to make good progress for the discriminator. So
+commonly, we minimize the following loss:
+min
+𝐺{−𝑦log(𝐷(𝐺(z)))} = min
+𝐺{−log(𝐷(𝐺(z)))},
+(20.1.3)
+which is just feeding x′ = 𝐺(z) into the discriminator but giving label 𝑦= 1.
+To sum up, 𝐷and 𝐺are playing a “minimax” game with the comprehensive objective
+function:
+min
+𝐷max
+𝐺{−𝐸𝑥∼Data log 𝐷(x) −𝐸𝑧∼Noise log(1 −𝐷(𝐺(z)))}.
+(20.1.4)
+Many of the GANs applications are in the context of images. As a demonstration purpose,
+we are going to content ourselves with fitting a much simpler distribution first. We will
+illustrate what happens if we use GANs to build the world’s most inefficient estimator of
+parameters for a Gaussian. Let’s get started.
+%matplotlib inline
+import torch
+from torch import nn
+from d2l import torch as d2l
+20.1.1 Generate Some “Real” Data
+Since this is going to be the world’s lamest example, we simply generate data drawn from
+a Gaussian.
+X = torch.normal(0.0, 1, (1000, 2))
+A = torch.tensor([[1, 2], [-0.1, 0.5]])
+b = torch.tensor([1, 2])
+data = torch.matmul(X, A) + b
+Let’s see what we got. This should be a Gaussian shifted in some rather arbitrary way with
+mean 𝑏and covariance matrix 𝐴𝑇𝐴.
+d2l.set_figsize()
+d2l.plt.scatter(data[:100, (0)].detach().numpy(), data[:100, (1)].detach().
+↩→numpy());
+print(f'The covariance matrix is\n{torch.matmul(A.T, A)}')
+The covariance matrix is
+tensor([[1.0100, 1.9500],
+[1.9500, 4.2500]])
+batch_size = 8
+data_iter = d2l.load_array((data,), batch_size)
+
+===== صفحة الكتاب 923 =====
+883
+Generative Adversarial Networks
+20.1.2 Generator
+Our generator network will be the simplest network possible - a single layer linear model.
+This is since we will be driving that linear network with a Gaussian data generator. Hence,
+it literally only needs to learn the parameters to fake things perfectly.
+net_G = nn.Sequential(nn.Linear(2, 2))
+20.1.3 Discriminator
+For the discriminator we will be a bit more discriminating: we will use an MLP with 3
+layers to make things a bit more interesting.
+net_D = nn.Sequential(
+nn.Linear(2, 5), nn.Tanh(),
+nn.Linear(5, 3), nn.Tanh(),
+nn.Linear(3, 1))
+20.1.4 Training
+First we define a function to update the discriminator.
+#@save
+def update_D(X, Z, net_D, net_G, loss, trainer_D):
+"""Update discriminator."""
+batch_size = X.shape[0]
+ones = torch.ones((batch_size,), device=X.device)
+zeros = torch.zeros((batch_size,), device=X.device)
+trainer_D.zero_grad()
+real_Y = net_D(X)
+fake_X = net_G(Z)
+# Do not need to compute gradient for `net_G`, detach it from
+# computing gradients.
+fake_Y = net_D(fake_X.detach())
+loss_D = (loss(real_Y, ones.reshape(real_Y.shape)) +
+loss(fake_Y, zeros.reshape(fake_Y.shape))) / 2
+loss_D.backward()
+trainer_D.step()
+return loss_D
+
+===== صفحة الكتاب 924 =====
+884
+Generative Adversarial Networks
+The generator is updated similarly. Here we reuse the cross-entropy loss but change the
+label of the fake data from 0 to 1.
+#@save
+def update_G(Z, net_D, net_G, loss, trainer_G):
+"""Update generator."""
+batch_size = Z.shape[0]
+ones = torch.ones((batch_size,), device=Z.device)
+trainer_G.zero_grad()
+# We could reuse `fake_X` from `update_D` to save computation
+fake_X = net_G(Z)
+# Recomputing `fake_Y` is needed since `net_D` is changed
+fake_Y = net_D(fake_X)
+loss_G = loss(fake_Y, ones.reshape(fake_Y.shape))
+loss_G.backward()
+trainer_G.step()
+return loss_G
+Both the discriminator and the generator performs a binary logistic regression with the
+cross-entropy loss. We use Adam to smooth the training process. In each iteration, we first
+update the discriminator and then the generator. We visualize both losses and generated
+examples.
+def train(net_D, net_G, data_iter, num_epochs, lr_D, lr_G, latent_dim, data):
+loss = nn.BCEWithLogitsLoss(reduction='sum')
+for w in net_D.parameters():
+nn.init.normal_(w, 0, 0.02)
+for w in net_G.parameters():
+nn.init.normal_(w, 0, 0.02)
+trainer_D = torch.optim.Adam(net_D.parameters(), lr=lr_D)
+trainer_G = torch.optim.Adam(net_G.parameters(), lr=lr_G)
+animator = d2l.Animator(xlabel='epoch', ylabel='loss',
+xlim=[1, num_epochs], nrows=2, figsize=(5, 5),
+legend=['discriminator', 'generator'])
+animator.fig.subplots_adjust(hspace=0.3)
+for epoch in range(num_epochs):
+# Train one epoch
+timer = d2l.Timer()
+metric = d2l.Accumulator(3)
+# loss_D, loss_G, num_examples
+for (X,) in data_iter:
+batch_size = X.shape[0]
+Z = torch.normal(0, 1, size=(batch_size, latent_dim))
+metric.add(update_D(X, Z, net_D, net_G, loss, trainer_D),
+update_G(Z, net_D, net_G, loss, trainer_G),
+batch_size)
+# Visualize generated examples
+Z = torch.normal(0, 1, size=(100, latent_dim))
+fake_X = net_G(Z).detach().numpy()
+animator.axes[1].cla()
+animator.axes[1].scatter(data[:, 0], data[:, 1])
+animator.axes[1].scatter(fake_X[:, 0], fake_X[:, 1])
+animator.axes[1].legend(['real', 'generated'])
+# Show the losses
+loss_D, loss_G = metric[0]/metric[2], metric[1]/metric[2]
+(continues on next page)
+
+===== صفحة الكتاب 925 =====
+885
+Generative Adversarial Networks
+275
+(continued from previous page)
+animator.add(epoch + 1, (loss_D, loss_G))
+print(f'loss_D {loss_D:.3f}, loss_G {loss_G:.3f}, '
+f'{metric[2] / timer.stop():.1f} examples/sec')
+Now we specify the hyperparameters to fit the Gaussian distribution.
+lr_D, lr_G, latent_dim, num_epochs = 0.05, 0.005, 2, 20
+train(net_D, net_G, data_iter, num_epochs, lr_D, lr_G,
+latent_dim, data[:100].detach().numpy())
+loss_D 0.693, loss_G 0.693, 1020.0 examples/sec
+20.1.5 Summary
+• Generative adversarial networks (GANs) composes of two deep networks, the generator
+and the discriminator.
+• The generator generates the image as much closer to the true image as possible to fool
+the discriminator, via maximizing the cross-entropy loss, i.e., max log(𝐷(x′)).
+• The discriminator tries to distinguish the generated images from the true images, via
+minimizing the cross-entropy loss, i.e., min −𝑦log 𝐷(x) −(1 −𝑦) log(1 −𝐷(x)).
+20.1.6 Exercises
+• Does an equilibrium exist where the generator wins, i.e. the discriminator ends up unable
+to distinguish the two distributions on finite samples?
+Discussions275.
+
+===== صفحة الكتاب 926 =====
+886
+Generative Adversarial Networks
+276
+20.2 Deep Convolutional Generative Adversarial
+Networks
+In Section 20.1, we introduced the basic ideas behind how GANs work. We showed that
+they can draw samples from some simple, easy-to-sample distribution, like a uniform or
+normal distribution, and transform them into samples that appear to match the distribution
+of some dataset. And while our example of matching a 2D Gaussian distribution got the
+point across, it is not especially exciting.
+In this section, we will demonstrate how you can use GANs to generate photorealistic im-
+ages. We will be basing our models on the deep convolutional GANs (DCGAN) introduced
+in Radford et al. (2015). We will borrow the convolutional architecture that have proven
+so successful for discriminative computer vision problems and show how via GANs, they
+can be leveraged to generate photorealistic images.
+import warnings
+import torch
+import torchvision
+from torch import nn
+from d2l import torch as d2l
+20.2.1 The Pokemon Dataset
+The dataset we will use is a collection of Pokemon sprites obtained from pokemondb276 .
+First download, extract and load this dataset.
+#@save
+d2l.DATA_HUB['pokemon'] = (d2l.DATA_URL + 'pokemon.zip',
+'c065c0e2593b8b161a2d7873e42418bf6a21106c')
+data_dir = d2l.download_extract('pokemon')
+pokemon = torchvision.datasets.ImageFolder(data_dir)
+Downloading ../data/pokemon.zip from http://d2l-data.s3-accelerate.amazonaws.
+↩→com/pokemon.zip...
+We resize each image into 64 × 64. The ToTensor transformation will project the pixel
+value into [0, 1], while our generator will use the tanh function to obtain outputs in [−1, 1].
+Therefore we normalize the data with 0.5 mean and 0.5 standard deviation to match the
+value range.
+batch_size = 256
+transformer = torchvision.transforms.Compose([
+torchvision.transforms.Resize((64, 64)),
+(continues on next page)
+
+===== صفحة الكتاب 927 =====
+887
+Deep Convolutional Generative Adversarial Networks
+(continued from previous page)
+torchvision.transforms.ToTensor(),
+torchvision.transforms.Normalize(0.5, 0.5)
+])
+pokemon.transform = transformer
+data_iter = torch.utils.data.DataLoader(
+pokemon, batch_size=batch_size,
+shuffle=True, num_workers=d2l.get_dataloader_workers())
+Let’s visualize the first 20 images.
+warnings.filterwarnings('ignore')
+d2l.set_figsize((4, 4))
+for X, y in data_iter:
+imgs = X[:20,:,:,:].permute(0, 2, 3, 1)/2+0.5
+d2l.show_images(imgs, num_rows=4, num_cols=5)
+break
+20.2.2 The Generator
+The generator needs to map the noise variable z ∈R𝑑, a length-𝑑vector, to a RGB image
+with width and height to be 64×64 . In Section 14.11 we introduced the fully convolutional
+network that uses transposed convolution layer (refer to Section 14.10) to enlarge input size.
+The basic block of the generator contains a transposed convolution layer followed by the
+batch normalization and ReLU activation.
+class G_block(nn.Module):
+def __init__(self, out_channels, in_channels=3, kernel_size=4, strides=2,
+padding=1, **kwargs):
+(continues on next page)
+
+===== صفحة الكتاب 928 =====
+888
+Generative Adversarial Networks
+(continued from previous page)
+super(G_block, self).__init__(**kwargs)
+self.conv2d_trans = nn.ConvTranspose2d(in_channels, out_channels,
+kernel_size, strides, padding, bias=False)
+self.batch_norm = nn.BatchNorm2d(out_channels)
+self.activation = nn.ReLU()
+def forward(self, X):
+return self.activation(self.batch_norm(self.conv2d_trans(X)))
+In default, the transposed convolution layer uses a 𝑘ℎ= 𝑘𝑤= 4 kernel, a 𝑠ℎ= 𝑠𝑤= 2
+strides, and a 𝑝ℎ= 𝑝𝑤= 1 padding. With a input shape of 𝑛
+′
+ℎ×𝑛
+′
+𝑤= 16×16, the generator
+block will double input’s width and height.
+𝑛
+′
+ℎ× 𝑛
+′
+𝑤= [(𝑛ℎ𝑘ℎ−(𝑛ℎ−1)(𝑘ℎ−𝑠ℎ) −2𝑝ℎ] × [(𝑛𝑤𝑘𝑤−(𝑛𝑤−1)(𝑘𝑤−𝑠𝑤) −2𝑝𝑤]
+= [(𝑘ℎ+ 𝑠ℎ(𝑛ℎ−1) −2𝑝ℎ] × [(𝑘𝑤+ 𝑠𝑤(𝑛𝑤−1) −2𝑝𝑤]
+= [(4 + 2 × (16 −1) −2 × 1] × [(4 + 2 × (16 −1) −2 × 1]
+= 32 × 32.
+(20.2.1)
+x = torch.zeros((2, 3, 16, 16))
+g_blk = G_block(20)
+g_blk(x).shape
+torch.Size([2, 20, 32, 32])
+If changing the transposed convolution layer to a 4×4 kernel, 1×1 strides and zero padding.
+With a input size of 1 × 1, the output will have its width and height increased by 3 respec-
+tively.
+x = torch.zeros((2, 3, 1, 1))
+g_blk = G_block(20, strides=1, padding=0)
+g_blk(x).shape
+torch.Size([2, 20, 4, 4])
+The generator consists of four basic blocks that increase input’s both width and height from
+1 to 32. At the same time, it first projects the latent variable into 64 × 8 channels, and then
+halve the channels each time. At last, a transposed convolution layer is used to generate
+the output. It further doubles the width and height to match the desired 64 × 64 shape,
+and reduces the channel size to 3. The tanh activation function is applied to project output
+values into the (−1, 1) range.
+n_G = 64
+net_G = nn.Sequential(
+(continues on next page)
+
+===== صفحة الكتاب 929 =====
+889
+Deep Convolutional Generative Adversarial Networks
+(continued from previous page)
+G_block(in_channels=100, out_channels=n_G*8,
+strides=1, padding=0),
+# Output: (64 * 8, 4, 4)
+G_block(in_channels=n_G*8, out_channels=n_G*4), # Output: (64 * 4, 8, 8)
+G_block(in_channels=n_G*4, out_channels=n_G*2), # Output: (64 * 2, 16, 16)
+G_block(in_channels=n_G*2, out_channels=n_G),
+# Output: (64, 32, 32)
+nn.ConvTranspose2d(in_channels=n_G, out_channels=3,
+kernel_size=4, stride=2, padding=1, bias=False),
+nn.Tanh())
+# Output: (3, 64, 64)
+Generate a 100 dimensional latent variable to verify the generator’s output shape.
+x = torch.zeros((1, 100, 1, 1))
+net_G(x).shape
+torch.Size([1, 3, 64, 64])
+20.2.3 Discriminator
+The discriminator is a normal convolutional network network except that it uses a leaky
+ReLU as its activation function. Given 𝛼∈[0, 1], its definition is
+leaky ReLU(𝑥) =
+(
+𝑥
+if 𝑥> 0
+𝛼𝑥
+otherwise
+.
+(20.2.2)
+As it can be seen, it is normal ReLU if 𝛼= 0, and an identity function if 𝛼= 1. For
+𝛼∈(0, 1), leaky ReLU is a nonlinear function that give a non-zero output for a negative
+input. It aims to fix the “dying ReLU” problem that a neuron might always output a negative
+value and therefore cannot make any progress since the gradient of ReLU is 0.
+alphas = [0, .2, .4, .6, .8, 1]
+x = torch.arange(-2, 1, 0.1)
+Y = [nn.LeakyReLU(alpha)(x).detach().numpy() for alpha in alphas]
+d2l.plot(x.detach().numpy(), Y, 'x', 'y', alphas)
+The basic block of the discriminator is a convolution layer followed by a batch normalization
+layer and a leaky ReLU activation. The hyperparameters of the convolution layer are similar
+to the transpose convolution layer in the generator block.
+
+===== صفحة الكتاب 930 =====
+890
+Generative Adversarial Networks
+class D_block(nn.Module):
+def __init__(self, out_channels, in_channels=3, kernel_size=4, strides=2,
+padding=1, alpha=0.2, **kwargs):
+super(D_block, self).__init__(**kwargs)
+self.conv2d = nn.Conv2d(in_channels, out_channels, kernel_size,
+strides, padding, bias=False)
+self.batch_norm = nn.BatchNorm2d(out_channels)
+self.activation = nn.LeakyReLU(alpha, inplace=True)
+def forward(self, X):
+return self.activation(self.batch_norm(self.conv2d(X)))
+A basic block with default settings will halve the width and height of the inputs, as we
+demonstrated in Section 7.3. For example, given a input shape 𝑛ℎ= 𝑛𝑤= 16, with a kernel
+shape 𝑘ℎ= 𝑘𝑤= 4, a stride shape 𝑠ℎ= 𝑠𝑤= 2, and a padding shape 𝑝ℎ= 𝑝𝑤= 1, the
+output shape will be:
+𝑛
+′
+ℎ× 𝑛
+′
+𝑤= ⌊(𝑛ℎ−𝑘ℎ+ 2𝑝ℎ+ 𝑠ℎ)/𝑠ℎ⌋× ⌊(𝑛𝑤−𝑘𝑤+ 2𝑝𝑤+ 𝑠𝑤)/𝑠𝑤⌋
+= ⌊(16 −4 + 2 × 1 + 2)/2⌋× ⌊(16 −4 + 2 × 1 + 2)/2⌋
+= 8 × 8.
+(20.2.3)
+x = torch.zeros((2, 3, 16, 16))
+d_blk = D_block(20)
+d_blk(x).shape
+torch.Size([2, 20, 8, 8])
+The discriminator is a mirror of the generator.
+n_D = 64
+net_D = nn.Sequential(
+D_block(n_D),
+# Output: (64, 32, 32)
+D_block(in_channels=n_D, out_channels=n_D*2),
+# Output: (64 * 2, 16, 16)
+D_block(in_channels=n_D*2, out_channels=n_D*4),
+# Output: (64 * 4, 8, 8)
+D_block(in_channels=n_D*4, out_channels=n_D*8),
+# Output: (64 * 8, 4, 4)
+nn.Conv2d(in_channels=n_D*8, out_channels=1,
+kernel_size=4, bias=False))
+# Output: (1, 1, 1)
+It uses a convolution layer with output channel 1 as the last layer to obtain a single prediction
+value.
+x = torch.zeros((1, 3, 64, 64))
+net_D(x).shape
+torch.Size([1, 1, 1, 1])
+20.2.4 Training
+
+===== صفحة الكتاب 931 =====
+891
+Deep Convolutional Generative Adversarial Networks
+Compared to the basic GAN in Section 20.1, we use the same learning rate for both gen-
+erator and discriminator since they are similar to each other. In addition, we change 𝛽1 in
+Adam (Section 12.10) from 0.9 to 0.5. It decreases the smoothness of the momentum, the
+exponentially weighted moving average of past gradients, to take care of the rapid changing
+gradients because the generator and the discriminator fight with each other. Besides, the
+random generated noise Z, is a 4-D tensor and we are using GPU to accelerate the compu-
+tation.
+def train(net_D, net_G, data_iter, num_epochs, lr, latent_dim,
+device=d2l.try_gpu()):
+loss = nn.BCEWithLogitsLoss(reduction='sum')
+for w in net_D.parameters():
+nn.init.normal_(w, 0, 0.02)
+for w in net_G.parameters():
+nn.init.normal_(w, 0, 0.02)
+net_D, net_G = net_D.to(device), net_G.to(device)
+trainer_hp = {'lr': lr, 'betas': [0.5,0.999]}
+trainer_D = torch.optim.Adam(net_D.parameters(), **trainer_hp)
+trainer_G = torch.optim.Adam(net_G.parameters(), **trainer_hp)
+animator = d2l.Animator(xlabel='epoch', ylabel='loss',
+xlim=[1, num_epochs], nrows=2, figsize=(5, 5),
+legend=['discriminator', 'generator'])
+animator.fig.subplots_adjust(hspace=0.3)
+for epoch in range(1, num_epochs + 1):
+# Train one epoch
+timer = d2l.Timer()
+metric = d2l.Accumulator(3)
+# loss_D, loss_G, num_examples
+for X, _ in data_iter:
+batch_size = X.shape[0]
+Z = torch.normal(0, 1, size=(batch_size, latent_dim, 1, 1))
+X, Z = X.to(device), Z.to(device)
+metric.add(d2l.update_D(X, Z, net_D, net_G, loss, trainer_D),
+d2l.update_G(Z, net_D, net_G, loss, trainer_G),
+batch_size)
+# Show generated examples
+Z = torch.normal(0, 1, size=(21, latent_dim, 1, 1), device=device)
+# Normalize the synthetic data to N(0, 1)
+fake_x = net_G(Z).permute(0, 2, 3, 1) / 2 + 0.5
+imgs = torch.cat(
+[torch.cat([
+fake_x[i * 7 + j].cpu().detach() for j in range(7)], dim=1)
+for i in range(len(fake_x)//7)], dim=0)
+animator.axes[1].cla()
+animator.axes[1].imshow(imgs)
+# Show the losses
+loss_D, loss_G = metric[0] / metric[2], metric[1] / metric[2]
+animator.add(epoch, (loss_D, loss_G))
+print(f'loss_D {loss_D:.3f}, loss_G {loss_G:.3f}, '
+f'{metric[2] / timer.stop():.1f} examples/sec on {str(device)}')
+We train the model with a small number of epochs just for demonstration. For better per-
+formance, the variable num_epochs can be set to a larger number.
+
+===== صفحة الكتاب 932 =====
+892
+Generative Adversarial Networks
+277
+latent_dim, lr, num_epochs = 100, 0.005, 20
+train(net_D, net_G, data_iter, num_epochs, lr, latent_dim)
+loss_D 0.023, loss_G 7.359, 2292.7 examples/sec on cuda:0
+20.2.5 Summary
+• DCGAN architecture has four convolutional layers for the Discriminator and four “fractionally-
+strided” convolutional layers for the Generator.
+• The Discriminator is a 4-layer strided convolutions with batch normalization (except its
+input layer) and leaky ReLU activations.
+• Leaky ReLU is a nonlinear function that give a non-zero output for a negative input. It
+aims to fix the “dying ReLU” problem and helps the gradients flow easier through the
+architecture.
+20.2.6 Exercises
+1. What will happen if we use standard ReLU activation rather than leaky ReLU?
+2. Apply DCGAN on Fashion-MNIST and see which category works well and which does
+not.
+Discussions277.

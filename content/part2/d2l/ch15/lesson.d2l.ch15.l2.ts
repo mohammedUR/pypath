@@ -1,0 +1,215 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * d2l.ch15.l2 — "Pretraining word2vec: GloVe and Subwords"
+ * تدريب word2vec مسبقًا: GloVe والكلمات الفرعية
+ * Aligned with D2L ch15 s4 (Pretraining word2vec) + s5 (GloVe) + s6 (Subword
+ * Embedding). All expression is original — a paraphrase of the source's ideas,
+ * never a verbatim translation. Runnable design: an embedding-layer row lookup,
+ * GloVe co-occurrence counts on a tiny fixed corpus + the weighted squared
+ * loss at one fixed pair, and byte pair encoding merges on a fixed word family
+ * (fast_/faster_/fastest_). Every literal verified under CPython 3.
+ * Deterministic only.
+ */
+const lesson = {
+  id: 'd2l.ch15.l2',
+  version: 1,
+  part: 'II',
+  track: 'A5',
+  book: 'D2L',
+  chapter: 15,
+  title: {
+    ar: 'تدريب word2vec مسبقا: GloVe والكلمات الفرعية',
+    en: 'Pretraining word2vec: GloVe and Subwords',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['d2l.ch15.l1'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'عندك الآن بيانات جاهزة: أزواج مركز/سياق مقلصة ومحشوة. من يتعلم منها؟ في هذا الدرس نلمس ثلاث إجابات: طبقة التضمين التي تحوّل فهرس كلمة إلى صف من مصفوفة أوزان تُدرَّب هي نفسها؛ وGloVe التي تقرأ إحصاءات التواجد المشترك للنص كله دفعة واحدة بدل زوجًا زوجًا؛ وfastText مع BPE التي تشقّق الكلمة نفسها إلى قطع صغيرة فتدرك أن «faster» و«fastest» تشاركان جذرًا. ثلاث طرق، هدف واحد: متجهات تحمل معنى.',
+        en: 'Your data is ready: slimmed, padded center/context pairs. Who learns from them? This lesson touches three answers: the embedding layer that maps a word index to a row of a trainable weight matrix; GloVe, which reads the whole corpus co-occurrence statistics at once instead of pair by pair; and fastText with BPE, which splits the word itself into small pieces so that "faster" and "fastest" are seen to share a root. Three methods, one goal: vectors that carry meaning.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'طبقة التضمين، إحصاءات GloVe، وقطع الكلمات', en: 'The embedding layer, GloVe statistics, and word pieces' },
+      chunks: [
+        {
+          ar: 'طبقة التضمين هي قلب أي نموذج كلمات: وزنها مصفوفة (|V| صفوف × d أعمدة)، وفهرس الرمز i يقرأ صفاها i — في الكتاب: `nn.Embedding(num_embeddings=20, embedding_dim=4)` يعطي وزنًا 20×4، ومُدخل على شكل (2, 3) يعود (2, 3, 4). نموذج skip-gram للتدريب المسبق يضمّن المركز والسياق+الضجيج بطبقتين، ثم جداءات دفعية تعطي درجات على شكل (حجم الدفعة، 1، max_len)؛ خسارتها ثنائية منعطفة: −log σ(x) − log(1−σ(x))، مع أقنعة <pad> تُصفَّر بالوزن. التهيئة Xavier للمتجهات، والمحسِّن adam بمعدل 0.01 — لكن التدريب على PTB كامل يتجاوز دفترًا تعليميًا، لذلك نركز هنا على القطع الصغيرة القابلة للتحقق.',
+          en: 'The embedding layer is the heart of any word model: its weight is a matrix (|V| rows × d columns) and token index i reads row i — in the book: `nn.Embedding(num_embeddings=20, embedding_dim=4)` gives a 20×4 weight, and an input of shape (2, 3) comes back as (2, 3, 4). The skip-gram training model embeds the center and the context+noise tokens with two embedding layers, then a batched matrix multiply produces scores of shape (batch, 1, max_len); its loss is binary: −log σ(x) − log(1−σ(x)) with <pad> masks zero-weighted. Vectors start from Xavier init, the optimizer is adam with rate 0.01 — but a full PTB pretraining run exceeds a teaching notebook, so we focus here on the small verifiable pieces.',
+        },
+        {
+          ar: 'GloVe يقول: التكرارات المحلية التي يراها skip-gram زوجًا زوجًا يمكن جمعها مسبقًا في عدّاد تواجد مشترك x_ij (كم مرة ظهرت w_j ضمن نافذة w_i في النص كله). الهدف يعاد كتابته خسارة تربيعية موزونة: (w_i·w_j + b_i + b_j − log x_ij)²، بشرط أن w_i·w_j < 0 يعني x_ij = 0 (لا يوجد −∞). الوزن f(x) = (x/c)^α (مثل c=100 وα=0.75) يمنع الكلمات النادرة من الاختلاس والشائعة من الطغيان. ولأن log x_ik − log x_jk يقيس نسبة التواجد، تتلاءم المتجهات مع قياسات «بارد/ساخن» مثل solid مع ice وgas مع steam.',
+          en: 'GloVe argues: the local co-occurrences skip-gram sees pair by pair can be pre-collected into a global counter x_ij (how often w_j appears inside a window of w_i across the whole corpus). The objective is rewritten as a weighted squared loss: (w_i·w_j + b_i + b_j − log x_ij)², with the convention that w_i·w_j < 0 means x_ij = 0 (no −∞ exists). The weight f(x) = (x/c)^α (say c=100, α=0.75) keeps rare words from stealing the loss and frequent ones from dominating it. And since log x_ik − log x_jk measures a co-occurrence ratio, the vectors line up with probes like solid~ice versus gas~steam.',
+        },
+        {
+          ar: 'كلمتان «helps» و«helped» تشاركان الجذر help، لكن skip-gram وGloVe يعطيان كل صيغة متجهًا مستقلا بلا معاملات مشتركة. fastText يجعل الكلمة مجموع متجهات مقاطعها: أضف < و> إلى طرفي الكلمة لتمييز البادئات واللواحق، واستخرج كل مقاطع أحرف بطول بين 3 و6 — «where» بـ n=3 يعطي <wh وwhe وher وere وre> والمقطع الخاص <where> — فيستفيد النادر وغير الموجود في القاموس من مقاطع مشتركة. وBPE يبني مقاطع بطول متغير داخل مفردات ثابتة الحجم: ابدأ من الأحرف المفردة ورمز نهاية الكلمة _، وكرر دمج الزوج المتجاور الأكثر تكرارًا؛ فيتعلم «st» ثم «fa» ثم «fast» من عائلة fast_/faster_/fastest_.',
+          en: 'Two words like "helps" and "helped" share the root help, yet skip-gram and GloVe give each inflection an independent vector with no shared parameters. fastText makes a word the sum of its pieces: wrap the word in < and > to mark prefixes and suffixes, then extract all character n-grams of length 3..6 — "where" with n=3 yields <wh, whe, her, ere, re> plus the special whole word <where> — so rare and out-of-vocabulary words inherit from shared pieces. BPE instead builds variable-length pieces inside a fixed-size vocabulary: start from single characters plus an end-of-word symbol _, and repeatedly merge the most frequent adjacent pair; from the family fast_/faster_/fastest_ it learns "st", then "fa", then "fast".',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: {
+        ar: 'عدّاد تواجد مشترك، خسارة GloVe الموزونة، وثلاث دمجات BPE',
+        en: 'A co-occurrence counter, the GloVe weighted loss, and three BPE merges',
+      },
+      code: "import math\n\ndef dot(a, b):\n    return sum(x * y for x, y in zip(a, b))\n\ndef cooccur(ids, size):\n    counts = {}\n    for t in range(len(ids)):\n        for j in range(-size, size + 1):\n            if j == 0:\n                continue\n            o = t + j\n            if 0 <= o < len(ids):\n                counts[(ids[t], ids[o])] = counts.get((ids[t], ids[o]), 0) + 1\n    return counts\n\nvocab = {'the': 0, 'man': 1, 'loves': 2, 'his': 3, 'son': 4}\nc = cooccur([0, 1, 2, 3, 4], 2)\nprint('cooccur window=2 total =', sum(c.values()))\nprint('x[loves,man] =', c[(2, 1)], ' x[man,loves] =', c[(1, 2)])\nprint('cooccur window=1 total =', sum(cooccur([0, 1, 2, 3, 4], 1).values()))\nc3 = cooccur([0, 0, 1], 1)\nprint('repeat case:', c3, 'total', sum(c3.values()))\n\n# GloVe weighted squared loss on one fixed pair\nwi, wj, bi, bj, x = [0.5, 0.1], [0.2, -0.3], 0.05, -0.02, 2\npred = dot(wi, wj) + bi + bj\ndiff = pred - math.log(x)\nweight = (x / 100) ** 0.75\nprint('pred=%.6f log x=%.6f diff=%.6f sq=%.9f' % (pred, math.log(x), diff, diff * diff))\nprint('weight f(2)=%.9f weighted loss=%.9f' % (weight, weight * diff * diff))\n\n# byte pair encoding: merge the most frequent adjacent pair, three times\ndef merge_pass(toks, pair):\n    out, k = [], 0\n    while k < len(toks):\n        if k < len(toks) - 1 and toks[k] == pair[0] and toks[k + 1] == pair[1]:\n            out.append(pair[0] + pair[1])\n            k += 2\n        else:\n            out.append(toks[k])\n            k += 1\n    return out\n\ndef bpe(words, num_merges):\n    symbols, merges = [list(w) for w in words], []\n    for step in range(num_merges):\n        counts = {}\n        for toks in symbols:\n            for k in range(len(toks) - 1):\n                p = (toks[k], toks[k + 1])\n                counts[p] = counts.get(p, 0) + 1\n        best, cnt = max(counts.items(), key=lambda kv: kv[1])\n        merges.append(best)\n        symbols = [merge_pass(t, best) for t in symbols]\n        print('step %d best=%s x%d -> %s' % (step + 1, best, cnt, symbols))\n    return merges\n\ndef segment(word, merges):\n    toks = list(word)\n    for p in merges:\n        toks = merge_pass(toks, p)\n    return toks\n\nmerges = bpe(['fast_', 'faster_', 'fastest_'], 3)\nfor w in ['fast_', 'faster_', 'fastest_', 'fastly_']:\n    print('segment', w, '->', segment(w, merges))",
+      explanation: {
+        ar: 'العداد يحسب الأزواج المرتبة (مركز، سياق) بكل الإزاحات حتى 2: على جملتنا 14 حالة، وx[loves,man] = x[man,loves] = 1 لأن التواجد متماثل، وبنافذة 1 تنخفض إلى 8، والحالة المتكررة [0,0,1] تكشف التجميع: (0,0)=2 و(0,1)=1 و(1,0)=1 بمجموع 4. خسارة GloVe للزوج الثابت: pred = 0.1 وlog 2 = 0.693147 فرق = −0.593147 ومربع = 0.351823578، والوزن f(2) = (2/100)^0.75 = 0.053182959 فالخسارة الموزونة 0.018711019 — الزوج النادر يُنصَم لكنه لا يغيب. BPE: الدمج الأكثر تكرارا دائمًا هو (s,t) ثم (f,a) ثم (fa,st) بعد ثلاث خطوات تتعلم «fast» كاملا، وتقطيع fastly_ غير المرئية إلى [fast, l, y, _] يظهر فائدة المقاطع المشتركة.',
+        en: 'The counter collects ordered (center, context) pairs at every offset up to 2: 14 hits on our sentence, x[loves,man] = x[man,loves] = 1 because co-occurrence is symmetric, window 1 drops it to 8, and the repeated case [0,0,1] shows aggregation: (0,0)=2, (0,1)=1, (1,0)=1, total 4. The GloVe loss on the fixed pair: pred = 0.1 and log 2 = 0.693147 so diff = −0.593147 and the square = 0.351823578, while the weight f(2) = (2/100)^0.75 = 0.053182959 gives a weighted loss of 0.018711019 — the rare pair is muted but not erased. BPE: the most frequent merge is (s,t), then (f,a), then (fa,st); after three steps the full word "fast" is learned, and segmenting the unseen fastly_ into [fast, l, y, _] shows the value of shared pieces.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.cooccur',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفذ cooccur(ids, size) التي تعيد قاموسا يحسب التواجد المشترك للفهارس: لكل مركز t كل إزاحة j من −size إلى size عدا 0، وأضف 1 إلى المفتاح (ids[t], ids[o]) عندما يكون o = t+j فهرسا صالحا. مخرجاتك يجب أن تشبه عدّاد GloVe قبل الموازنات.',
+        en: 'Implement cooccur(ids, size) returning a dict of co-occurrence counts over indices: for each center t and each offset j from −size to size except 0, add 1 to key (ids[t], ids[o]) when o = t+j is a valid index. Your output mirrors a raw GloVe counter before any weighting.',
+      },
+      starterCode: "def cooccur(ids, size):\n    # TODO: count ordered (center, context) index pairs within the window\n    ...\n",
+      solution: "def cooccur(ids, size):\n    counts = {}\n    for t in range(len(ids)):\n        for j in range(-size, size + 1):\n            if j == 0:\n                continue\n            o = t + j\n            if 0 <= o < len(ids):\n                counts[(ids[t], ids[o])] = counts.get((ids[t], ids[o]), 0) + 1\n    return counts",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'نافذة 2 على جملة من 5 فهارس', en: 'Window 2 on a 5-index sentence' },
+          code: "c = cooccur([0, 1, 2, 3, 4], 2)\nassert sum(c.values()) == 14, 'window 2 must total 14 hits | got %r' % sum(c.values())\nassert c[(0, 1)] == 1 and c[(2, 0)] == 1, 'both directions at distance 2 must count | got %r' % c",
+          expected: '14 hits, c[(2,0)] == 1',
+        },
+        {
+          id: 't2',
+          name: { ar: 'نافذة 1 تقلص المجموع إلى 8', en: 'Window 1 shrinks the total to 8' },
+          code: "c1 = cooccur([0, 1, 2, 3, 4], 1)\nassert sum(c1.values()) == 8, 'window 1 must total 8 hits | got %r' % sum(c1.values())\nassert (0, 2) not in c1, 'distance-2 pairs must not appear at window 1'",
+          expected: '8 hits, no distance-2 pairs',
+        },
+        {
+          id: 't3',
+          name: { ar: 'التكرار يجمع ولا يكتب من جديد', en: 'Repeats aggregate instead of overwriting' },
+          code: "c3 = cooccur([0, 0, 1], 1)\nassert c3[(0, 0)] == 2 and c3[(0, 1)] == 1 and c3[(1, 0)] == 1, 'expected {(0,0):2, (0,1):1, (1,0):1} | got %r' % c3\nassert sum(c3.values()) == 4, 'total must be 4 | got %r' % sum(c3.values())",
+          expected: '{(0,0):2, (0,1):1, (1,0):1}',
+        },
+      ],
+      hints: [
+        { ar: 'البنية نفسها التي استخدمناها لاستخراج أزواج skip-gram في الدرس السابق، مع قاموس عدّ بدل قائمة.', en: 'Same skeleton as the skip-gram pair extraction from the previous lesson, but counting into a dict instead of a list.' },
+        { ar: 'استخدم counts.get(key, 0) + 1 لتراكم العدّ على المفتاح (ids[t], ids[o]) — المفتاح tuple لأن الفهرسين معا.', en: 'Use counts.get(key, 0) + 1 to accumulate on key (ids[t], ids[o]) — the key is a tuple because both indices matter.' },
+        { ar: 'لا تنس الشرطين: j == 0 يُتخطى، و0 <= t + j < len(ids) يحمي من الخروج عن الجملة.', en: 'Do not forget the two guards: skip j == 0, and 0 <= t + j < len(ids) keeps you inside the sentence.' },
+        { ar: 'قيم تحقق: [0,1,2,3,4] بنافذة 1 يعطي 8، وعلى [0,0,1] يعطي (0,0)=2 لأن المركز 0 يجاور نسخة أخرى من نفسه.', en: 'Sanity values: [0,1,2,3,4] with window 1 gives 8, and on [0,0,1] gives (0,0)=2 because center 0 neighbours another copy of itself.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.numeric-subwords',
+      exKind: 'numeric',
+      required: true,
+      prompt: {
+        ar: 'في fastText، كم مقطعا تنتجه معالجة الكلمة «where» بطول مقاطع n=3، بعد إحاطة الكلمة بـ < و> وعدّ المقطع الخاص <where>؟ أجب بعدد صحيح.',
+        en: 'In fastText, how many subwords result from processing the word "where" with n=3, after wrapping the word in < and > and counting the special whole-word subword <where>? Answer with an integer.',
+      },
+      answer: '6',
+      tolerance: 0,
+      solution: '6',
+      hints: [
+        { ar: 'بعد الإحاطة تصبح الكلمة <where> بطول 7 محارف؛ مقاطع بطول 3 تنزلق بلا تكرار على مواضع 0..4.', en: 'After wrapping, the token <where> has 7 characters; length-3 n-grams slide without repetition over positions 0..4.' },
+        { ar: 'عدد المقاطع بطول n من سلسلة بطول L هو L − n + 1: هنا 7 − 3 + 1 = 5 مقاطع.', en: 'The number of length-n pieces from a length-L string is L − n + 1: here 7 − 3 + 1 = 5 pieces.' },
+        { ar: 'لا تنسَ أن fastText يضيف دائمًا مقطعا واحدا خاصا هو الكلمة كاملة <where> إلى جانب المقاطع.', en: 'Do not forget that fastText always adds one special piece, the whole word <where>, alongside the n-grams.' },
+        { ar: 'الجواب: 5 مقاطع ثلاثية (<wh وwhe وher وere وre>) + المقطع الخاص = 6.', en: 'Answer: 5 trigrams (<wh, whe, her, ere, re>) + the special piece = 6.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "import math\n\ndef dot(a, b):\n    return sum(x * y for x, y in zip(a, b))\n\ndef cooccur(ids, size):\n    counts = {}\n    for t in range(len(ids)):\n        for j in range(-size, size + 1):\n            if j == 0:\n                continue\n            o = t + j\n            if 0 <= o < len(ids):\n                counts[(ids[t], ids[o])] = counts.get((ids[t], ids[o]), 0) + 1\n    return counts\n\ndef merge_pass(toks, pair):\n    out, k = [], 0\n    while k < len(toks):\n        if k < len(toks) - 1 and toks[k] == pair[0] and toks[k + 1] == pair[1]:\n            out.append(pair[0] + pair[1])\n            k += 2\n        else:\n            out.append(toks[k])\n            k += 1\n    return out\n\ndef bpe(words, num_merges, report=False):\n    symbols, merges = [list(w) for w in words], []\n    for step in range(num_merges):\n        counts = {}\n        for toks in symbols:\n            for k in range(len(toks) - 1):\n                p = (toks[k], toks[k + 1])\n                counts[p] = counts.get(p, 0) + 1\n        best, cnt = max(counts.items(), key=lambda kv: kv[1])\n        merges.append(best)\n        symbols = [merge_pass(t, best) for t in symbols]\n        if report:\n            print('step %d best=%s x%d -> %s' % (step + 1, best, cnt, symbols))\n    return merges\n\nfamily = ['fast_', 'faster_', 'fastest_', 'faster_', 'fast_']\nprint('counts window=2:', sorted(cooccur([0, 1, 2, 3, 4], 2).items()))\nmerges = bpe(family, 5, report=True)\n\n# try: predict first, then run - which pair merges 4th and 5th?\n# try: add a word like 'last_' to the family - does 'st' still merge first?\n",
+      prompt: {
+        ar: 'الملعب يكرر العائلة (faster_ وfast_ مرتين) فيتغير توازن العدّ، ويشغّل 5 دمجات BPE مع تقرير كامل. توقع قبل التشغيل: أي زوج يندمج رابعا وخامسا بعد أن يستقر «fast»؟ ثم أضف كلمة مثل last_ إلى العائلة ولاحظ هل يبقى (s,t) أول الدمجات.',
+        en: 'The sandbox repeats family members (faster_ and fast_ twice) to shift the count balance and runs 5 BPE merges with a full report. Predict first: which pair merges 4th and 5th once "fast" settles? Then add a word like last_ to the family and check whether (s,t) still merges first.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ماذا يعيد فهرس i عند تمريره إلى طبقة تضمين وزنها (|V|, d)؟',
+            en: 'What does an embedding layer with weight (|V|, d) return for token index i?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الصف i من مصفوفة الأوزان، أي متجه بطول d لهذه الكلمة', en: 'Row i of the weight matrix, i.e. the d-length vector for that token' } },
+            { id: 'b', text: { ar: 'متجه one-hot بطول |V|', en: 'A one-hot vector of length |V|' } },
+            { id: 'c', text: { ar: 'العمود i كاملا من المصفوفة', en: 'The entire i-th column of the matrix' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'وزن الطبقة مصفوفة صفوفها = حجم المفردات وأعمدتها = بعد المتجه، والفهرس يقرأ صفا واحدا. في الكتاب: `nn.Embedding(20, 4)` وزنها 20×4 ومُدخل (2,3) يعود (2,3,4). هذه الصفوف هي نفسها ما نحتاجه بعد انتهاء التدريب.',
+            en: 'The layer weight is a matrix with |V| rows and d columns, and the index reads one row. In the book: `nn.Embedding(20, 4)` has a 20×4 weight and an input of shape (2,3) returns (2,3,4). Those rows are exactly what we keep after pretraining.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ما دور f(x) = (x/c)^α في خسارة GloVe؟',
+            en: 'What is the role of f(x) = (x/c)^α in the GloVe loss?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'موازنة الخسارة التربيعية: تخفف وزن الأزواج الشائعة جدا والنادرة جدا معا', en: 'Balancing the squared loss: it down-weights both very frequent and very rare pairs' } },
+            { id: 'b', text: { ar: 'تحويل العدّادات إلى احتمالات softmax', en: 'Turning the counts into softmax probabilities' } },
+            { id: 'c', text: { ar: 'تهيئة متجهات الكلمات قبل التدريب', en: 'Initializing the word vectors before training' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الخسارة (w_i·w_j + b_i + b_j − log x_ij)² موزونة بـ f(x): عند α=0.75 وc=100 كان الوزن للعدّ x=2 يساوي (2/100)^0.75 ≈ 0.0532 — صغير لكنه غير صفر، بينما الأعداد الضخمة لا تطغى خطيا.',
+            en: 'The loss (w_i·w_j + b_i + b_j − log x_ij)² is weighted by f(x): with α=0.75 and c=100 the weight for a count x=2 is (2/100)^0.75 ≈ 0.0532 — small but nonzero, while huge counts do not dominate linearly.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'لماذا يفيد fastText الكلمات النادرة وغير الموجودة في القاموس؟',
+            en: 'Why does fastText help rare and out-of-vocabulary words?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن متجه الكلمة مجموع متجهات مقاطعه، والمقاطع تتشارك بين الكلمات المتشابهة بنائيا', en: 'Because a word vector is the sum of its subword vectors, and pieces are shared across structurally similar words' } },
+            { id: 'b', text: { ar: 'لأنه يستبدل الكلمات النادرة برمز <unk>', en: 'Because it replaces rare words with an <unk> token' } },
+            { id: 'c', text: { ar: 'لأنه يضاعف بعد المتجه d للكلمات النادرة', en: 'Because it doubles the vector dimension d for rare words' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'القاموس في fastText هو اتحاد مقاطع كل الكلمات، وv_w = مجموع z_g على مقاطع G_w؛ كلمة نادرة مثل fastly_ ترث من مقطع fast المشترك مع عائلتها. الثمن: قاموس أكبر ومعاملات أكثر وحساب أعلى لكل كلمة.',
+            en: 'In fastText the vocabulary is the union of all subwords, and v_w = sum of z_g over pieces G_w; a rare word like fastly_ inherits from the shared piece fast. The price: a larger vocabulary, more parameters, and higher per-word compute.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'طبقة التضمين مصفوفة |V|×d يقرأ الفهرس صفا منها؛ نموذج skip-gram للتدريب المسبق يضمّن المركز والسياق/الضجيج ويحسب خسارة ثنائية σ مع أقنعة <pad> (الهدف من s4).', en: 'An embedding layer is a |V|×d matrix whose row the index reads; the skip-gram training model embeds center and context/noise tokens and computes a σ binary loss with <pad> masks (goal of s4).' },
+        { ar: 'GloVe يجمع إحصاءات النص كله في عدّاد x_ij ويقلل (w_i·w_j + b_i + b_j − log x_ij)² موزونة بـ (x/c)^0.75، والنسب مثل x_ik/x_jk هي ما يجعل المتجهات تلتقط solid/ice مقابل gas/steam (الهدف من s5).', en: 'GloVe collects corpus-wide statistics into a counter x_ij and minimizes (w_i·w_j + b_i + b_j − log x_ij)² weighted by (x/c)^0.75; ratios like x_ik/x_jk are what let vectors capture solid/ice versus gas/steam (goal of s5).' },
+        { ar: 'fastText يمثل الكلمة بمجموع مقاطع أحرف 3..6 مع مقطع خاص <word>، وBPE يبني مقاطع بطول متغير بدمج الزوج المتجاور الأكثر تكرارا: من عائلة fast_ تتعلم st ثم fa ثم fast (الهدف من s6).', en: 'fastText represents a word as the sum of its 3..6 character n-grams plus a special <word> piece, and BPE builds variable-length pieces by merging the most frequent adjacent pair: from the fast_ family it learns st, then fa, then fast (goal of s6).' },
+      ],
+      reflectPrompt: {
+        ar: 'عندك عائلة كلمات واحدة فقط: fast_/faster_/fastest_. كم دمجة BPE تحتاج كحد أدنى حتى يقطع fastly_ إلى مقطعين فقط؟ وأي الأرقام في خسارة GloVe الموزونة سيتغير أولًا لو تضاعف العدّ x من 2 إلى 4: الفرق التربيعي أم الوزن؟',
+        en: 'You have a single word family: fast_/faster_/fastest_. What is the minimum number of BPE merges needed so fastly_ splits into just two pieces? And which quantity in the weighted GloVe loss changes first when the count x doubles from 2 to 4: the squared diff or the weight?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'D2L', section: 'd2l.ch15.s4' },
+        { book: 'D2L', section: 'd2l.ch15.s5' },
+        { book: 'D2L', section: 'd2l.ch15.s6' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'D2L', section: 'd2l.ch15.s4' },
+    { book: 'D2L', section: 'd2l.ch15.s5' },
+    { book: 'D2L', section: 'd2l.ch15.s6' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

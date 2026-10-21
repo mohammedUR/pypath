@@ -1,0 +1,172 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch11.l1",
+   "id": "ex2.trace-salted",
+   "code": "import hashlib\n\ndef digest(password, salt):\n    return hashlib.sha256((salt + password).encode('utf-8')).hexdigest()\n\nstored = digest('open sesame', 'abcd')\nattempts = ['open sesame', 'Open Sesame', 'open  sesame']\nok = 0\nfor a in attempts:\n    if digest(a, 'abcd') == stored:\n        ok = ok + 1\nprint('ok: %d of %d' % (ok, len(attempts)))\nprint('digest length: %d' % len(stored))",
+   "answer": "ok: 1 of 3\ndigest length: 64"
+  },
+  {
+   "lesson": "swe.ch11.l2",
+   "id": "ex2.trace-ast",
+   "code": "import ast\n\nSRC = \"db.execute('SELECT * FROM users WHERE n = ' + name + ' AND x = 1')\\n\"\n\ntree = ast.parse(SRC)\ncalls = 0\nconcats = 0\nfor node in ast.walk(tree):\n    if isinstance(node, ast.Call):\n        calls = calls + 1\n    if isinstance(node, ast.BinOp):\n        concats = concats + 1\nprint('calls: %d' % calls)\nprint('concats: %d' % concats)",
+   "answer": "calls: 1\nconcats: 2"
+  },
+  {
+   "lesson": "swe.ch11.l3",
+   "id": "ex2.trace-hmac",
+   "code": "import base64\nimport hashlib\nimport hmac\n\ndef tag(key, payload):\n    return base64.b64encode(hmac.new(key, payload, hashlib.sha256).digest()).decode('ascii')\n\nt = tag(b'key-2026', b'bundle')\nprint('len: %d' % len(t))\nprint('same: %s' % hmac.compare_digest(t, tag(b'key-2026', b'bundle')))\nprint('key: %s' % hmac.compare_digest(t, tag(b'key-2027', b'bundle')))\nprint('bytes: %s' % hmac.compare_digest(t, tag(b'key-2026', b'bundlX')))",
+   "answer": "len: 44\nsame: True\nkey: False\nbytes: False"
+  },
+  {
+   "lesson": "swe.ch11.l4",
+   "id": "ex2.trace-policy",
+   "code": "def classes(pw):\n    n = 0\n    if any(c.islower() for c in pw):\n        n = n + 1\n    if any(c.isupper() for c in pw):\n        n = n + 1\n    if any(c.isdigit() for c in pw):\n        n = n + 1\n    if any(not c.isalnum() for c in pw):\n        n = n + 1\n    return n\n\nfor pw in ['abc', 'Abc1', 'Abc1!', 'abcdefghij']:\n    print('%s: %d' % (pw, classes(pw)))\nprint('long enough: %s' % (len('abcdefghij') >= 10))",
+   "answer": "abc: 1\nAbc1: 3\nAbc1!: 4\nabcdefghij: 1\nlong enough: True"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch11.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import hashlib\n\ndef digest(password, salt):\n    return hashlib.sha256((salt + password).encode('utf-8')).hexdigest()\n\nprint(digest('s3cret', 'a1b2') == digest('s3cret', 'a1b2'))\nprint(digest('s3cret', 'a1b2') == digest('s3cret', '9c8d'))\nprint(len(digest('s3cret', 'a1b2')))"
+  },
+  {
+   "lesson": "swe.ch11.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import hashlib\nimport hmac\nimport secrets\n\ndef make_user(password):\n    salt = secrets.token_hex(8)\n    digest = hashlib.sha256((salt + password).encode('utf-8')).hexdigest()\n    return {'salt': salt, 'digest': digest}\n\ndef check(user, password):\n    attempt = hashlib.sha256((user['salt'] + password).encode('utf-8')).hexdigest()\n    return hmac.compare_digest(attempt, user['digest'])\n\nusers = {'ada': make_user('lovelace-1815')}\nattempts = [('ada', 'lovelace-1815'), ('ada', 'Lovelace-1815'), ('eve', 'lovelace-1815')]\nfor name, password in attempts:\n    if name in users and check(users[name], password):\n        print('%s: ok' % name)\n    else:\n        print('%s: denied' % name)"
+  },
+  {
+   "lesson": "swe.ch11.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "import hashlib\nimport hmac\nimport secrets\n\nUSERS = {\n    'ada': {'salt': 'a1b2c3d4', 'digest': 'c8e20c85e7a92882cc4e2a10a2e2a6b5eddfb3a52ffed9dd699a7275efe16447'},\n    'grace': {'salt': 'e5f6a7b8', 'digest': '7adb665259691f8dbb956777897b9290429f409302d0a8680c80c1da23af829c'},\n}\n\ndef digest(password, salt):\n    return hashlib.sha256((salt + password).encode('utf-8')).hexdigest()\n\ndef verify(username, password, users):\n    user = users.get(username)\n    if user is None:\n        return False\n    return hmac.compare_digest(digest(password, user['salt']), user['digest'])\n\nattempts = [\n    ('ada', 'lovelace-1815'),\n    ('ada', 'Lovelace-1815'),\n    ('grace', 'hopper-1906'),\n    ('eve', 'lovelace-1815'),\n]\n\nfailed = {}\nfor username, password in attempts:\n    if verify(username, password, USERS):\n        print('%s: ok' % username)\n    else:\n        failed[username] = failed.get(username, 0) + 1\n        print('%s: denied (%d)' % (username, failed[username]))\n\n# جرّب: سجّل مستخدمًا جديدًا بملح طازج من secrets.token_hex(8) — لماذا يختلف مخزنه عن ada رغم كلمة مرور مطابقة؟\n# try: register a new user with a fresh salt from secrets.token_hex(8) — why does their store differ from ada's even with an identical password?\n# جرّب: أضف قفل الحساب بعد 3 إخفاقات — أي فئة من قائمة اليوم يخدم القفل؟\n# try: add an account lock after 3 failures — which category from today's list does locking serve?\n# جرّب: احذف الملح من استدعاء digest وشاهد ada تُرفض رغم كلمة المرور الصحيحة — ثم أرجعه.\n# try: drop the salt from the digest call and watch ada get denied despite the right password — then restore it."
+  },
+  {
+   "lesson": "swe.ch11.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import ast\n\ntree = ast.parse('value = eval(user_text)')\nfor node in ast.walk(tree):\n    if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):\n        print(node.func.id)"
+  },
+  {
+   "lesson": "swe.ch11.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import ast\n\nSAMPLE = '''import helper\n\ndef run(db, name, user_text):\n    try:\n        db.execute('SELECT * FROM users WHERE n = ' + name)\n        return eval(user_text)\n    except:\n        return None\n'''\n\nDENY = {'eval', 'exec'}\n\ndef call_name(node):\n    if isinstance(node.func, ast.Name):\n        return node.func.id\n    if isinstance(node.func, ast.Attribute):\n        return node.func.attr\n    return ''\n\ndef lint(source):\n    tree = ast.parse(source)\n    findings = {'eval': 0, 'sql-concat': 0, 'bare-except': 0}\n    for node in ast.walk(tree):\n        if isinstance(node, ast.Call):\n            name = call_name(node)\n            if name in DENY:\n                findings['eval'] = findings['eval'] + 1\n            if name == 'execute' and node.args and not isinstance(node.args[0], ast.Constant):\n                findings['sql-concat'] = findings['sql-concat'] + 1\n        if isinstance(node, ast.ExceptHandler) and node.type is None:\n            findings['bare-except'] = findings['bare-except'] + 1\n    return findings\n\nreport = lint(SAMPLE)\nfor rule in sorted(report):\n    print('%s: %d' % (rule, report[rule]))"
+  },
+  {
+   "lesson": "swe.ch11.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "import ast\n\nSAMPLE = '''def run(db, name, user_text):\n    try:\n        db.execute('SELECT * FROM users WHERE n = ' + name)\n        return eval(user_text)\n    except:\n        return None\n'''\n\nDENY = {'eval', 'exec', 'compile'}\n\ndef call_name(node):\n    if isinstance(node.func, ast.Name):\n        return node.func.id\n    if isinstance(node.func, ast.Attribute):\n        return node.func.attr\n    return ''\n\ndef lint(source):\n    tree = ast.parse(source)\n    findings = {'eval': 0, 'sql-concat': 0, 'bare-except': 0}\n    for node in ast.walk(tree):\n        if isinstance(node, ast.Call):\n            name = call_name(node)\n            if name in DENY:\n                findings['eval'] = findings['eval'] + 1\n            if name == 'execute' and node.args and not isinstance(node.args[0], ast.Constant):\n                findings['sql-concat'] = findings['sql-concat'] + 1\n        if isinstance(node, ast.ExceptHandler) and node.type is None:\n            findings['bare-except'] = findings['bare-except'] + 1\n    return findings\n\nprint(lint(SAMPLE))\nprint(lint('x = 1\\n'))\nprint(lint('exec(text)\\n'))\n\n# جرّب: قاعدة رابعة تعدّ أسطر السرود المدسوس — مثل أي سطر فيه 'password = \"' نصيًّا\n# try: a fourth rule counting embedded secrets — any line containing 'password = \"' as text\n# جرّب: ارفع compile إلى قائمة الرصد وشاهد العدّ يتغير على عينة عندك\n# try: add compile to the watch-list and watch the count change on your own sample\n# جرّب: ابنِ عينة نظيفة تعطي صفرًا في القواعد الثلاث — ما الذي يجعلها نظيفة فعلًا؟\n# try: build a clean sample scoring zero on all three rules — what makes it genuinely clean?"
+  },
+  {
+   "lesson": "swe.ch11.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import base64\nimport hashlib\nimport hmac\n\ndef tag(payload):\n    return base64.b64encode(hmac.new(b'k9', payload, hashlib.sha256).digest()).decode('ascii')\n\nprint(tag(b'release-1') == tag(b'release-1'))\nprint(tag(b'release-1') == tag(b'release-2'))\nprint(len(tag(b'release-1')))"
+  },
+  {
+   "lesson": "swe.ch11.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import base64\nimport hashlib\nimport hmac\n\nMANIFEST = {\n    'log4j-core': '2.15.0',\n    'xz-utils': '5.6.1',\n    'requests': '2.31.0',\n}\nADVISORIES = {\n    'log4j-core': ['2.14.1', '2.15.0'],\n    'xz-utils': ['5.6.0', '5.6.1'],\n}\n\ndef audit(manifest, advisories):\n    hits = []\n    for pkg in sorted(manifest):\n        if manifest[pkg] in advisories.get(pkg, []):\n            hits.append(pkg)\n    return hits\n\ndef tag(key, payload):\n    return base64.b64encode(hmac.new(key, payload, hashlib.sha256).digest()).decode('ascii')\n\ndef verify(key, payload, expected):\n    return hmac.compare_digest(tag(key, payload), expected)\n\nPUBLISHED = tag(b'key-2026', b'pypath-bundle-2026')\nfor pkg in audit(MANIFEST, ADVISORIES):\n    print('vulnerable: %s' % pkg)\nif verify(b'key-2026', b'pypath-bundle-2026', PUBLISHED):\n    print('artifact: ok')\nelse:\n    print('artifact: tampered')\nif verify(b'key-2026', b'pypath-bundle-2027', PUBLISHED):\n    print('artifact: ok')\nelse:\n    print('artifact: tampered')"
+  },
+  {
+   "lesson": "swe.ch11.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "import base64\nimport hashlib\nimport hmac\n\nMANIFEST = {'log4j-core': '2.15.0', 'xz-utils': '5.6.1', 'requests': '2.31.0'}\nADVISORIES = {'log4j-core': ['2.14.1', '2.15.0'], 'xz-utils': ['5.6.0', '5.6.1']}\n\ndef audit(manifest, advisories):\n    hits = []\n    for pkg in sorted(manifest):\n        if manifest[pkg] in advisories.get(pkg, []):\n            hits.append(pkg)\n    return hits\n\ndef tag(key, payload):\n    return base64.b64encode(hmac.new(key, payload, hashlib.sha256).digest()).decode('ascii')\n\ndef verify(key, payload, expected):\n    return hmac.compare_digest(tag(key, payload), expected)\n\nPUBLISHED = tag(b'key-2026', b'pypath-bundle-2026')\nfor pkg in audit(MANIFEST, ADVISORIES):\n    print('vulnerable: %s' % pkg)\nprint('artifact: %s' % ('ok' if verify(b'key-2026', b'pypath-bundle-2026', PUBLISHED) else 'tampered'))\nprint('artifact: %s' % ('ok' if verify(b'key-2026', b'pypath-bundle-2027', PUBLISHED) else 'tampered'))\nprint('artifact: %s' % ('ok' if verify(b'key-2027', b'pypath-bundle-2026', PUBLISHED) else 'tampered'))\n\n# جرّب: ثبّت إصدارًا جديدًا في MANIFEST وشاهد التقرير يتغير\n# try: pin a new version into MANIFEST and watch the report change\n# جرّب: بدّل مفتاح التوقيع b'key-2026' في سطر التحقق الأول — القطعة السليمة تُرفض: لماذا؟\n# try: swap the signing key b'key-2026' in the first verification line — a healthy artifact gets rejected: why?\n# جرّب: أضف حزمة بلا نصائح إلى MANIFEST — هل يبقى التقرير صادقًا معها؟\n# try: add a package with no advisories to MANIFEST — does the report stay honest about it?"
+  },
+  {
+   "lesson": "swe.ch11.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import hashlib\n\nLEAKED = {'5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'}\n\ndef h(pw):\n    return hashlib.sha256(pw.encode('utf-8')).hexdigest()\n\nprint(h('password') in LEAKED)\nprint(h('P@ssw0rd!') in LEAKED)\nprint(len(LEAKED))"
+  },
+  {
+   "lesson": "swe.ch11.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import hashlib\nimport hmac\n\nSALT_STORE = {\n    'ada': {'salt': 'a1b2c3d4', 'digest': '16fdb6d42c139c7d6b0a4be7e3770a7daa0e98e1acf3b517acc5543cc583e6a7'},\n}\nLEAKED = {\n    '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',\n    '65e84be33532fb784c48129675f9eff3a682b27168c0ea744b2cf58ee02337c5',\n}\n\ndef check(user, password):\n    row = SALT_STORE.get(user)\n    if row is None:\n        return False\n    attempt = hashlib.sha256((row['salt'] + password).encode('utf-8')).hexdigest()\n    return hmac.compare_digest(attempt, row['digest'])\n\ndef in_leak(password):\n    return hashlib.sha256(password.encode('utf-8')).hexdigest() in LEAKED\n\nfor user, pw in [('ada', 'Qw7!vXm2Rp'), ('grace', 'password')]:\n    print('%s: store=%s leak=%s' % (user, check(user, pw), in_leak(pw)))"
+  },
+  {
+   "lesson": "swe.ch11.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "import hashlib\nimport hmac\nimport secrets\n\nLEAKED = {\n    '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',\n    '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',\n    '65e84be33532fb784c48129675f9eff3a682b27168c0ea744b2cf58ee02337c5',\n    '1c8bfe8f801d79745c4631d09fff36c82aa37fc4cce4fc946683d7b336b63032',\n}\n\ndef digest(pw):\n    return hashlib.sha256(pw.encode('utf-8')).hexdigest()\n\ndef breached(pw):\n    return digest(pw) in LEAKED\n\ndef weak(pw):\n    if len(pw) < 10:\n        return True\n    classes = 0\n    if any(c.islower() for c in pw):\n        classes = classes + 1\n    if any(c.isupper() for c in pw):\n        classes = classes + 1\n    if any(c.isdigit() for c in pw):\n        classes = classes + 1\n    if any(not c.isalnum() for c in pw):\n        classes = classes + 1\n    return classes < 3\n\nACCOUNTS = [\n    ('ada', 'Qw7!vXm2Rp'),\n    ('grace', 'password'),\n    ('linus', 'password'),\n    ('kay', 'Sunshine2026'),\n    ('alan', 'abc'),\n    ('betty', 'Tr0ub4dor&3x'),\n]\n\nseen = set()\nweak_n = 0\nreused_n = 0\nbreached_n = 0\nfor name, pw in ACCOUNTS:\n    if weak(pw):\n        weak_n = weak_n + 1\n    if pw in seen:\n        reused_n = reused_n + 1\n    seen.add(pw)\n    if breached(pw):\n        breached_n = breached_n + 1\nprint('weak: %d / reused: %d / breached: %d' % (weak_n, reused_n, breached_n))\n\nsalt = secrets.token_hex(8)\nsalted = hashlib.sha256((salt + 'Qw7!vXm2Rp').encode('utf-8')).hexdigest()\nprint('salted digest escapes the leak: %s' % (salted not in LEAKED))\n\n# جرّب: أضف حسابًا بكلمة مرور قوية جديدة وشاهد الأرقام الثلاثة\n# try: add an account with a new strong password and watch the three numbers\n# جرّب: اخترع كلمة تنجو من قاعدة الطول وتنكسر في الأصناف — والعكس\n# try: craft a password that passes the length rule but fails the classes rule — and the reverse\n# جرّب: قارن بصمة ada الملّحة بأي سطر في LEAKED — لماذا لا يوجد تطابق ممكن؟\n# try: compare ada's salted digest to any LEAKED row — why is a match impossible?"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch11.l1",
+   "id": "ex3.mcq-cia",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch11.l2",
+   "id": "ex3.mcq-sca",
+   "answer": "c",
+   "solution": "c"
+  },
+  {
+   "lesson": "swe.ch11.l3",
+   "id": "ex3.mcq-sbom",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch11.l4",
+   "id": "ex3.mcq-defaults",
+   "answer": "b",
+   "solution": "b"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch11.l1",
+   "id": "ex4.fill-injection",
+   "answer": "injection"
+  },
+  {
+   "lesson": "swe.ch11.l2",
+   "id": "ex4.fill-fuzzing",
+   "answer": "fuzzing"
+  },
+  {
+   "lesson": "swe.ch11.l3",
+   "id": "ex4.fill-pinning",
+   "answer": "pinning"
+  },
+  {
+   "lesson": "swe.ch11.l4",
+   "id": "ex4.fill-hmac",
+   "answer": "hmac"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch11.l1",
+   "id": "ex5.debug-salt",
+   "brokenCode": "import hashlib\nimport hmac\n\nBOB = {'salt': '99887766', 'digest': '958561749c9db531c92c40b272a85f926667ee1b58938d103dea619872648322'}\n\ndef digest(password):\n    return hashlib.sha256(password.encode('utf-8')).hexdigest()\n\ndef check(user, password):\n    return hmac.compare_digest(digest(password), user['digest'])\n\nattempts = [('bob', 'builder-2026'), ('bob', 'Builder-2026')]\nfor name, password in attempts:\n    if check(BOB, password):\n        print('%s: ok' % name)\n    else:\n        print('%s: denied' % name)"
+  },
+  {
+   "lesson": "swe.ch11.l2",
+   "id": "ex5.debug-walk",
+   "brokenCode": "import ast\n\nSRC = 'def run(user_text):\\n    return eval(user_text)\\n'\n\ndef count_eval(source):\n    tree = ast.parse(source)\n    found = 0\n    for node in tree.body:\n        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'eval':\n            found = found + 1\n    return found\n\nfound = count_eval(SRC)\nprint('eval: %d' % found)"
+  },
+  {
+   "lesson": "swe.ch11.l3",
+   "id": "ex5.debug-pin",
+   "brokenCode": "PINS = {\n    'log4j-core': '2.15',\n}\n\ndef pin_ok(pkg, installed):\n    return installed.startswith(PINS[pkg])\n\nattempts = [('log4j-core', '2.15.0'), ('log4j-core', '2.15.1')]\nfor pkg, installed in attempts:\n    if pin_ok(pkg, installed):\n        print('%s: ok' % pkg)\n    else:\n        print('%s: blocked' % pkg)"
+  },
+  {
+   "lesson": "swe.ch11.l4",
+   "id": "ex5.debug-leak",
+   "brokenCode": "import hashlib\n\nLEAKED = {\n    '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',\n    '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',\n}\n\ndef audit(accounts):\n    breached = 0\n    for name, pw in accounts:\n        attempt = hashlib.sha256(('pypath' + pw).encode('utf-8')).hexdigest()\n        if attempt in LEAKED:\n            breached = breached + 1\n    return breached\n\nprint('breached: %d' % audit([('grace', 'password'), ('ada', '123456')]))"
+  }
+ ]
+}

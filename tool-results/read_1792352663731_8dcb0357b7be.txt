@@ -1,0 +1,452 @@
+     1→
+     2→===== صفحة الكتاب 365 =====
+     3→9
+     4→Recurrent Neural Networks
+     5→Up until now, we have focused primarily on fixed-length data. When introducing linear and
+     6→logistic regression in Chapter 3 and Chapter 4 and multilayer perceptrons in Chapter 5, we
+     7→were happy to assume that each feature vector x𝑖consisted of a fixed number of components
+     8→𝑥1, . . . , 𝑥𝑑, where each numerical feature 𝑥𝑗corresponded to a particular attribute. These
+     9→datasets are sometimes called tabular, because they can be arranged in tables, where each
+    10→example 𝑖gets its own row, and each attribute gets its own column. Crucially, with tabular
+    11→data, we seldom assume any particular structure over the columns.
+    12→Subsequently, in Chapter 7, we moved on to image data, where inputs consist of the raw
+    13→pixel values at each coordinate in an image. Image data hardly fitted the bill of a protypical
+    14→tabular dataset. There, we needed to call upon convolutional neural networks (CNNs) to
+    15→handle the hierarchical structure and invariances. However, our data were still of fixed
+    16→length. Every Fashion-MNIST image is represented as a 28 × 28 grid of pixel values.
+    17→Moreover, our goal was to develop a model that looked at just one image and then outputted
+    18→a single prediction. But what should we do when faced with a sequence of images, as in a
+    19→video, or when tasked with producing a sequentially structured prediction, as in the case of
+    20→image captioning?
+    21→A great many learning tasks require dealing with sequential data. Image captioning, speech
+    22→synthesis, and music generation all require that models produce outputs consisting of se-
+    23→quences. In other domains, such as time series prediction, video analysis, and musical
+    24→information retrieval, a model must learn from inputs that are sequences. These demands
+    25→often arise simultaneously: tasks such as translating passages of text from one natural lan-
+    26→guage to another, engaging in dialogue, or controlling a robot, demand that models both
+    27→ingest and output sequentially structured data.
+    28→Recurrent neural networks (RNNs) are deep learning models that capture the dynamics of
+    29→sequences via recurrent connections, which can be thought of as cycles in the network of
+    30→nodes. This might seem counterintuitive at first. After all, it is the feedforward nature of
+    31→neural networks that makes the order of computation unambiguous. However, recurrent
+    32→edges are defined in a precise way that ensures that no such ambiguity can arise. Recurrent
+    33→neural networks are unrolled across time steps (or sequence steps), with the same under-
+    34→lying parameters applied at each step. While the standard connections are applied syn-
+    35→chronously to propagate each layer’s activations to the subsequent layer at the same time
+    36→step, the recurrent connections are dynamic, passing information across adjacent time steps.
+    37→As the unfolded view in Fig. 9.1 reveals, RNNs can be thought of as feedforward neural
+    38→325
+    39→
+    40→===== صفحة الكتاب 366 =====
+    41→326
+    42→Recurrent Neural Networks
+    43→networks where each layer’s parameters (both conventional and recurrent) are shared across
+    44→time steps.
+    45→t
+    46→Fig. 9.1
+    47→On the left recurrent connections are depicted via cyclic edges. On the right, we unfold
+    48→the RNN over time steps. Here, recurrent edges span adjacent time steps, while
+    49→conventional connections are computed synchronously.
+    50→Like neural networks more broadly, RNNs have a long discipline-spanning history, origi-
+    51→nating as models of the brain popularized by cognitive scientists and subsequently adopted
+    52→as practical modeling tools employed by the machine learning community. As we do for
+    53→deep learning more broadly, in this book we adopt the machine learning perspective, focus-
+    54→ing on RNNs as practical tools that rose to popularity in the 2010s owing to breakthrough
+    55→results on such diverse tasks as handwriting recognition (Graves et al., 2008), machine
+    56→translation (Sutskever et al., 2014), and recognizing medical diagnoses (Lipton et al., 2016).
+    57→We point the reader interested in more background material to a publicly available compre-
+    58→hensive review (Lipton et al., 2015). We also note that sequentiality is not unique to RNNs.
+    59→For example, the CNNs that we already introduced can be adapted to handle data of varying
+    60→length, e.g., images of varying resolution. Moreover, RNNs have recently ceded consider-
+    61→able market share to Transformer models, which will be covered in Chapter 11. However,
+    62→RNNs rose to prominence as the default models for handling complex sequential structure
+    63→in deep learning, and remain staple models for sequential modeling to this day. The stories
+    64→of RNNs and of sequence modeling are inextricably linked, and this is as much a chapter
+    65→about the ABCs of sequence modeling problems as it is a chapter about RNNs.
+    66→One key insight paved the way for a revolution in sequence modeling. While the inputs
+    67→and targets for many fundamental tasks in machine learning cannot easily be represented
+    68→as fixed-length vectors, they can often nevertheless be represented as varying-length se-
+    69→quences of fixed-length vectors. For example, documents can be represented as sequences
+    70→of words; medical records can often be represented as sequences of events (encounters,
+    71→medications, procedures, lab tests, diagnoses); videos can be represented as varying-length
+    72→sequences of still images.
+    73→While sequence models have popped up in numerous application areas, basic research in the
+    74→area has been driven predominantly by advances on core tasks in natural language process-
+    75→ing. Thus, throughout this chapter, we will focus our exposition and examples on text data.
+    76→If you get the hang of these examples, then applying the models to other data modalities
+    77→should be relatively straightforward. In the next few sections, we introduce basic notation
+    78→for sequences and some evaluation measures for assessing the quality of sequentially struc-
+    79→tured model outputs. After that, we discuss basic concepts of a language model and use this
+    80→
+    81→===== صفحة الكتاب 367 =====
+    82→327
+    83→Working with Sequences
+    84→discussion to motivate our first RNN models. Finally, we describe the method for calculat-
+    85→ing gradients when backpropagating through RNNs and explore some challenges that are
+    86→often encountered when training such networks, motivating the modern RNN architectures
+    87→that will follow in Chapter 10.
+    88→9.1 Working with Sequences
+    89→Up until now, we have focused on models whose inputs consisted of a single feature vector
+    90→x ∈R𝑑. The main change of perspective when developing models capable of processing
+    91→sequences is that we now focus on inputs that consist of an ordered list of feature vec-
+    92→tors x1, . . . , x𝑇, where each feature vector x𝑡is indexed by a time step 𝑡∈Z+ lying in
+    93→R𝑑.
+    94→Some datasets consist of a single massive sequence. Consider, for example, the extremely
+    95→long streams of sensor readings that might be available to climate scientists. In such cases,
+    96→we might create training datasets by randomly sampling subsequences of some predeter-
+    97→mined length. More often, our data arrives as a collection of sequences. Consider the
+    98→following examples: (i) a collection of documents, each represented as its own sequence of
+    99→words, and each having its own length 𝑇𝑖; (ii) sequence representation of patient stays in the
+   100→hospital, where each stay consists of a number of events and the sequence length depends
+   101→roughly on the length of the stay.
+   102→Previously, when dealing with individual inputs, we assumed that they were sampled inde-
+   103→pendently from the same underlying distribution 𝑃(𝑋). While we still assume that entire
+   104→sequences (e.g., entire documents or patient trajectories) are sampled independently, we
+   105→cannot assume that the data arriving at each time step are independent of each other. For
+   106→example, the words that likely to appear later in a document depend heavily on words oc-
+   107→curring earlier in the document. The medicine a patient is likely to receive on the 10th day
+   108→of a hospital visit depends heavily on what transpired in the previous nine days.
+   109→This should come as no surprise. If we did not believe that the elements in a sequence
+   110→were related, we would not have bothered to model them as a sequence in the first place.
+   111→Consider the usefulness of the auto-fill features that are popular on search tools and modern
+   112→email clients. They are useful precisely because it is often possible to predict (imperfectly,
+   113→but better than random guessing) what the likely continuations of a sequence might be,
+   114→given some initial prefix. For most sequence models, we do not require independence, or
+   115→even stationarity, of our sequences. Instead, we require only that the sequences themselves
+   116→are sampled from some fixed underlying distribution over entire sequences.
+   117→This flexible approach allows for such phenomena as (i) documents looking significantly
+   118→different at the beginning than at the end; or (ii) patient status evolving either towards recov-
+   119→ery or towards death over the course of a hospital stay; or (iii) customer taste evolving in pre-
+   120→dictable ways over the course of continued interaction with a recommender system.
+   121→
+   122→===== صفحة الكتاب 368 =====
+   123→328
+   124→Recurrent Neural Networks
+   125→We sometimes wish to predict a fixed target 𝑦given sequentially structured input (e.g., sen-
+   126→timent classification based on a movie review). At other times, we wish to predict a sequen-
+   127→tially structured target (𝑦1, . . . , 𝑦𝑇) given a fixed input (e.g., image captioning). Still other
+   128→times, our goal is to predict sequentially structured targets based on sequentially structured
+   129→inputs (e.g., machine translation or video captioning). Such sequence-to-sequence tasks
+   130→take two forms: (i) aligned: where the input at each time step aligns with a correspond-
+   131→ing target (e.g., part of speech tagging); (ii) unaligned: where the input and target do not
+   132→necessarily exhibit a step-for-step correspondence (e.g., machine translation).
+   133→Before we worry about handling targets of any kind, we can tackle the most straightforward
+   134→problem: unsupervised density modeling (also called sequence modeling). Here, given a
+   135→collection of sequences, our goal is to estimate the probability mass function that tells us
+   136→how likely we are to see any given sequence, i.e., 𝑝(x1, . . . , x𝑇).
+   137→%matplotlib inline
+   138→import torch
+   139→from torch import nn
+   140→from d2l import torch as d2l
+   141→9.1.1 Autoregressive Models
+   142→Before introducing specialized neural networks designed to handle sequentially structured
+   143→data, let’s take a look at some actual sequence data and build up some basic intuitions
+   144→and statistical tools. In particular, we will focus on stock price data from the FTSE 100
+   145→index (Fig. 9.1.1). At each time step 𝑡∈Z+, we observe the price, 𝑥𝑡, of the index at that
+   146→time.
+   147→t
+   148→Fig. 9.1.1
+   149→FTSE 100 index over about 30 years.
+   150→Now suppose that a trader would like to make short-term trades, strategically getting into
+   151→or out of the index, depending on whether they believe that it will rise or decline in the
+   152→subsequent time step. Absent any other features (news, financial reporting data, etc.), the
+   153→
+   154→===== صفحة الكتاب 369 =====
+   155→329
+   156→Working with Sequences
+   157→only available signal for predicting the subsequent value is the history of prices to date.
+   158→The trader is thus interested in knowing the probability distribution
+   159→𝑃(𝑥𝑡| 𝑥𝑡−1, . . . , 𝑥1)
+   160→(9.1.1)
+   161→over prices that the index might take in the subsequent time step. While estimating the entire
+   162→distribution over a continuously valued random variable can be difficult, the trader would
+   163→be happy to focus on a few key statistics of the distribution, particularly the expected value
+   164→and the variance. One simple strategy for estimating the conditional expectation
+   165→E[(𝑥𝑡| 𝑥𝑡−1, . . . , 𝑥1)],
+   166→(9.1.2)
+   167→would be to apply a linear regression model (recall Section 3.1). Such models that regress
+   168→the value of a signal on the previous values of that same signal are naturally called au-
+   169→toregressive models. There is just one major problem: the number of inputs, 𝑥𝑡−1, . . . , 𝑥1
+   170→varies, depending on 𝑡. In other words, the number of inputs increases with the amount of
+   171→data that we encounter. Thus if we want to treat our historical data as a training set, we
+   172→are left with the problem that each example has a different number of features. Much of
+   173→what follows in this chapter will revolve around techniques for overcoming these challenges
+   174→when engaging in such autoregressive modeling problems where the object of interest is
+   175→𝑃(𝑥𝑡| 𝑥𝑡−1, . . . , 𝑥1) or some statistic(s) of this distribution.
+   176→A few strategies recur frequently. First of all, we might believe that although long sequences
+   177→𝑥𝑡−1, . . . , 𝑥1 are available, it may not be necessary to look back so far in the history when
+   178→predicting the near future. In this case we might content ourselves to condition on some
+   179→window of length 𝜏and only use 𝑥𝑡−1, . . . , 𝑥𝑡−𝜏observations. The immediate benefit is
+   180→that now the number of arguments is always the same, at least for 𝑡> 𝜏. This allows us to
+   181→train any linear model or deep network that requires fixed-length vectors as inputs. Second,
+   182→we might develop models that maintain some summary ℎ𝑡of the past observations (see
+   183→Fig. 9.1.2) and at the same time update ℎ𝑡in addition to the prediction ˆ𝑥𝑡. This leads to
+   184→models that estimate not only 𝑥𝑡with ˆ𝑥𝑡= 𝑃(𝑥𝑡| ℎ𝑡) but also updates of the form ℎ𝑡=
+   185→𝑔(ℎ𝑡−1, 𝑥𝑡−1). Since ℎ𝑡is never observed, these models are also called latent autoregressive
+   186→models.
+   187→t
+   188→Fig. 9.1.2
+   189→A latent autoregressive model.
+   190→To construct training data from historical data, one typically creates examples by sampling
+   191→windows randomly. In general, we do not expect time to stand still. However, we often
+   192→assume that while the specific values of 𝑥𝑡might change, the dynamics according to which
+   193→each subsequent observation is generated given the previous observations do not. Statisti-
+   194→cians call dynamics that do not change stationary.
+   195→
+   196→===== صفحة الكتاب 370 =====
+   197→330
+   198→Recurrent Neural Networks
+   199→9.1.2 Sequence Models
+   200→Sometimes, especially when working with language, we wish to estimate the joint probabil-
+   201→ity of an entire sequence. This is a common task when working with sequences composed
+   202→of discrete tokens, such as words. Generally, these estimated functions are called sequence
+   203→models and for natural language data, they are called language models. The field of se-
+   204→quence modeling has been driven so much by natural language processing, that we often
+   205→describe sequence models as “language models”, even when dealing with non-language
+   206→data. Language models prove useful for all sorts of reasons. Sometimes we want to evalu-
+   207→ate the likelihood of sentences. For example, we might wish to compare the naturalness of
+   208→two candidate outputs generated by a machine translation system or by a speech recognition
+   209→system. But language modeling gives us not only the capacity to evaluate likelihood, but
+   210→the ability to sample sequences, and even to optimize for the most likely sequences.
+   211→While language modeling might not, at first glance, look like an autoregressive problem,
+   212→we can reduce language modeling to autoregressive prediction by decomposing the joint
+   213→density of a sequence 𝑝(𝑥1, . . . , 𝑥𝑇) into the product of conditional densities in a left-to-
+   214→right fashion by applying the chain rule of probability:
+   215→𝑃(𝑥1, . . . , 𝑥𝑇) = 𝑃(𝑥1)
+   216→𝑇
+   217→Ö
+   218→𝑡=2
+   219→𝑃(𝑥𝑡| 𝑥𝑡−1, . . . , 𝑥1).
+   220→(9.1.3)
+   221→Note that if we are working with discrete signals such as words, then the autoregressive
+   222→model must be a probabilistic classifier, outputting a full probability distribution over the
+   223→vocabulary for whatever word will come next, given the leftwards context.
+   224→Markov Models
+   225→Now suppose that we wish to employ the strategy mentioned above, where we condition
+   226→only on the 𝜏previous time steps, i.e., 𝑥𝑡−1, . . . , 𝑥𝑡−𝜏, rather than the entire sequence history
+   227→𝑥𝑡−1, . . . , 𝑥1. Whenever we can throw away the history beyond the previous 𝜏steps without
+   228→any loss in predictive power, we say that the sequence satisfies a Markov condition, i.e., that
+   229→the future is conditionally independent of the past, given the recent history. When 𝜏= 1,
+   230→we say that the data is characterized by a first-order Markov model, and when 𝜏= 𝑘, we
+   231→say that the data is characterized by a 𝑘th-order Markov model. For when the first-order
+   232→Markov condition holds (𝜏= 1) the factorization of our joint probability becomes a product
+   233→of probabilities of each word given the previous word:
+   234→𝑃(𝑥1, . . . , 𝑥𝑇) = 𝑃(𝑥1)
+   235→𝑇
+   236→Ö
+   237→𝑡=2
+   238→𝑃(𝑥𝑡| 𝑥𝑡−1).
+   239→(9.1.4)
+   240→We often find it useful to work with models that proceed as though a Markov condition were
+   241→satisfied, even when we know that this is only approximately true. With real text documents
+   242→we continue to gain information as we include more and more leftwards context. But these
+   243→gains diminish rapidly. Thus, sometimes we compromise, obviating computational and
+   244→statistical difficulties by training models whose validity depends on a 𝑘th-order Markov
+   245→condition. Even today’s massive RNN- and Transformer-based language models seldom
+   246→incorporate more than thousands of words of context.
+   247→
+   248→===== صفحة الكتاب 371 =====
+   249→331
+   250→Working with Sequences
+   251→With discrete data, a true Markov model simply counts the number of times that each word
+   252→has occurred in each context, producing the relative frequency estimate of 𝑃(𝑥𝑡| 𝑥𝑡−1).
+   253→Whenever the data assumes only discrete values (as in language), the most likely sequence
+   254→of words can be computed efficiently using dynamic programming.
+   255→The Order of Decoding
+   256→You may be wondering why we represented the factorization of a text sequence 𝑃(𝑥1, . . . , 𝑥𝑇)
+   257→as a left-to-right chain of conditional probabilities. Why not right-to-left or some other,
+   258→seemingly random order? In principle, there is nothing wrong with unfolding 𝑃(𝑥1, . . . , 𝑥𝑇)
+   259→in reverse order. The result is a valid factorization:
+   260→𝑃(𝑥1, . . . , 𝑥𝑇) = 𝑃(𝑥𝑇)
+   261→1
+   262→Ö
+   263→𝑡=𝑇−1
+   264→𝑃(𝑥𝑡| 𝑥𝑡+1, . . . , 𝑥𝑇).
+   265→(9.1.5)
+   266→However, there are many reasons why factorizing text in the same direction in which we
+   267→read it (left-to-right for most languages, but right-to-left for Arabic and Hebrew) is preferred
+   268→for the task of language modeling. First, this is just a more natural direction for us to think
+   269→about. After all we all read text every day, and this process is guided by our ability to
+   270→anticipate which words and phrases are likely to come next. Just think of how many times
+   271→you have completed someone else’s sentence. Thus, even if we had no other reason to prefer
+   272→such in-order decodings, they would be useful if only because we have better intuitions for
+   273→what should be likely when predicting in this order.
+   274→Second, by factorizing in order, we can assign probabilities to arbitrarily long sequences
+   275→using the same language model. To convert a probability over steps 1 through 𝑡into one that
+   276→extends to word 𝑡+1 we simply multiply by the conditional probability of the additional to-
+   277→ken given the previous ones: 𝑃(𝑥𝑡+1, . . . , 𝑥1) = 𝑃(𝑥𝑡, . . . , 𝑥1) · 𝑃(𝑥𝑡+1 | 𝑥𝑡, . . . , 𝑥1).
+   278→Third, we have stronger predictive models for predicting adjacent words than words at ar-
+   279→bitrary other locations. While all orders of factorization are valid, they do not necessarily
+   280→all represent equally easy predictive modeling problems. This is true not only for language,
+   281→but for other kinds of data as well, e.g., when the data is causally structured. For example,
+   282→we believe that future events cannot influence the past. Hence, if we change 𝑥𝑡, we may be
+   283→able to influence what happens for 𝑥𝑡+1 going forward but not the converse. That is, if we
+   284→change 𝑥𝑡, the distribution over past events will not change. In some contexts, this makes
+   285→it easier to predict 𝑃(𝑥𝑡+1 | 𝑥𝑡) than to predict 𝑃(𝑥𝑡| 𝑥𝑡+1). For instance, in some cases,
+   286→we can find 𝑥𝑡+1 = 𝑓(𝑥𝑡) + 𝜖for some additive noise 𝜖, whereas the converse is not true
+   287→(Hoyer et al., 2009). This is great news, since it is typically the forward direction that we
+   288→are interested in estimating. The book by Peters et al. (2017) contains more on this topic.
+   289→We barely scratch the surface of it.
+   290→9.1.3 Training
+   291→Before we focus our attention on text data, let’s first try this out with some continuous-
+   292→valued synthetic data.
+   293→Here, our 1000 synthetic data will follow the trigonometric sin function, applied to 0.01
+   294→
+   295→===== صفحة الكتاب 372 =====
+   296→332
+   297→Recurrent Neural Networks
+   298→times the time step. To make the problem a little more interesting, we corrupt each sample
+   299→with additive noise. From this sequence we extract training examples, each consisting of
+   300→features and a label.
+   301→class Data(d2l.DataModule):
+   302→def __init__(self, batch_size=16, T=1000, num_train=600, tau=4):
+   303→self.save_hyperparameters()
+   304→self.time = torch.arange(1, T + 1, dtype=torch.float32)
+   305→self.x = torch.sin(0.01 * self.time) + torch.randn(T) * 0.2
+   306→data = Data()
+   307→d2l.plot(data.time, data.x, 'time', 'x', xlim=[1, 1000], figsize=(6, 3))
+   308→To begin, we try a model that acts as if the data satisfied a 𝜏th-order Markov condition,
+   309→and thus predicts 𝑥𝑡using only the past 𝜏observations. Thus for each time step we have an
+   310→example with label 𝑦= 𝑥𝑡and features x𝑡= [𝑥𝑡−𝜏, . . . , 𝑥𝑡−1]. The astute reader might have
+   311→noticed that this results in 1000−𝜏examples, since we lack sufficient history for 𝑦1, . . . , 𝑦𝜏.
+   312→While we could pad the first 𝜏sequences with zeros, to keep things simple, we drop them
+   313→for now. The resulting dataset contains 𝑇−𝜏examples, where each input to the model has
+   314→sequence length 𝜏. We create a data iterator on the first 600 examples, covering a period of
+   315→the sin function.
+   316→@d2l.add_to_class(Data)
+   317→def get_dataloader(self, train):
+   318→features = [self.x[i : self.T-self.tau+i] for i in range(self.tau)]
+   319→self.features = torch.stack(features, 1)
+   320→self.labels = self.x[self.tau:].reshape((-1, 1))
+   321→i = slice(0, self.num_train) if train else slice(self.num_train, None)
+   322→return self.get_tensorloader([self.features, self.labels], train, i)
+   323→In this example our model will be a standard linear regression.
+   324→model = d2l.LinearRegression(lr=0.01)
+   325→trainer = d2l.Trainer(max_epochs=5)
+   326→trainer.fit(model, data)
+   327→
+   328→===== صفحة الكتاب 373 =====
+   329→333
+   330→Working with Sequences
+   331→9.1.4 Prediction
+   332→To evaluate our model, we first check how well it performs at one-step-ahead prediction.
+   333→onestep_preds = model(data.features).detach().numpy()
+   334→d2l.plot(data.time[data.tau:], [data.labels, onestep_preds], 'time', 'x',
+   335→legend=['labels', '1-step preds'], figsize=(6, 3))
+   336→These predictions look good, even near the end at 𝑡= 1000.
+   337→But what if we only observed sequence data up until time step 604 (n_train + tau) and
+   338→wished to make predictions several steps into the future? Unfortunately, we cannot directly
+   339→compute the one-step-ahead prediction for time step 609, because we do not know the cor-
+   340→responding inputs, having seen only up to 𝑥604. We can address this problem by plugging in
+   341→our earlier predictions as inputs to our model for making subsequent predictions, projecting
+   342→forward, one step at a time, until reaching the desired time step:
+   343→ˆ𝑥605 = 𝑓(𝑥601, 𝑥602, 𝑥603, 𝑥604),
+   344→ˆ𝑥606 = 𝑓(𝑥602, 𝑥603, 𝑥604, ˆ𝑥605),
+   345→ˆ𝑥607 = 𝑓(𝑥603, 𝑥604, ˆ𝑥605, ˆ𝑥606),
+   346→ˆ𝑥608 = 𝑓(𝑥604, ˆ𝑥605, ˆ𝑥606, ˆ𝑥607),
+   347→ˆ𝑥609 = 𝑓( ˆ𝑥605, ˆ𝑥606, ˆ𝑥607, ˆ𝑥608),
+   348→...
+   349→(9.1.6)
+   350→Generally, for an observed sequence 𝑥1, . . . , 𝑥𝑡, its predicted output ˆ𝑥𝑡+𝑘at time step 𝑡+ 𝑘
+   351→
+   352→===== صفحة الكتاب 374 =====
+   353→334
+   354→Recurrent Neural Networks
+   355→is called the 𝑘-step-ahead prediction. Since we have observed up to 𝑥604, its 𝑘-step-ahead
+   356→prediction is ˆ𝑥604+𝑘. In other words, we will have to keep on using our own predictions to
+   357→make multistep-ahead predictions. Let’s see how well this goes.
+   358→multistep_preds = torch.zeros(data.T)
+   359→multistep_preds[:] = data.x
+   360→for i in range(data.num_train + data.tau, data.T):
+   361→multistep_preds[i] = model(
+   362→multistep_preds[i - data.tau:i].reshape((1, -1)))
+   363→multistep_preds = multistep_preds.detach().numpy()
+   364→d2l.plot([data.time[data.tau:], data.time[data.num_train+data.tau:]],
+   365→[onestep_preds, multistep_preds[data.num_train+data.tau:]], 'time',
+   366→'x', legend=['1-step preds', 'multistep preds'], figsize=(6, 3))
+   367→Unfortunately, in this case we fail spectacularly. The predictions decay to a constant pretty
+   368→quickly after a few steps. Why did the algorithm perform so much worse when predicting
+   369→further into the future? Ultimately, this is down to the fact that errors build up. Let’s say
+   370→that after step 1 we have some error 𝜖1 = ¯𝜖. Now the input for step 2 is perturbed by 𝜖1,
+   371→hence we suffer some error in the order of 𝜖2 = ¯𝜖+ 𝑐𝜖1 for some constant 𝑐, and so on. The
+   372→predictions can diverge rapidly from the true observations. You may already be familiar
+   373→with this common phenomenon. For instance, weather forecasts for the next 24 hours tend
+   374→to be pretty accurate but beyond that, accuracy declines rapidly. We will discuss methods
+   375→for improving this throughout this chapter and beyond.
+   376→Let’s take a closer look at the difficulties in 𝑘-step-ahead predictions by computing predic-
+   377→tions on the entire sequence for 𝑘= 1, 4, 16, 64.
+   378→def k_step_pred(k):
+   379→features = []
+   380→for i in range(data.tau):
+   381→features.append(data.x[i : i+data.T-data.tau-k+1])
+   382→# The (i+tau)-th element stores the (i+1)-step-ahead predictions
+   383→for i in range(k):
+   384→preds = model(torch.stack(features[i : i+data.tau], 1))
+   385→features.append(preds.reshape(-1))
+   386→return features[data.tau:]
+   387→
+   388→===== صفحة الكتاب 375 =====
+   389→335
+   390→Working with Sequences
+   391→steps = (1, 4, 16, 64)
+   392→preds = k_step_pred(steps[-1])
+   393→d2l.plot(data.time[data.tau+steps[-1]-1:],
+   394→[preds[k - 1].detach().numpy() for k in steps], 'time', 'x',
+   395→legend=[f'{k}-step preds' for k in steps], figsize=(6, 3))
+   396→This clearly illustrates how the quality of the prediction changes as we try to predict further
+   397→into the future. While the 4-step-ahead predictions still look good, anything beyond that is
+   398→almost useless.
+   399→9.1.5 Summary
+   400→There is quite a difference in difficulty between interpolation and extrapolation. Conse-
+   401→quently, if you have a sequence, always respect the temporal order of the data when training,
+   402→i.e., never train on future data. Given this kind of data, sequence models require specialized
+   403→statistical tools for estimation. Two popular choices are autoregressive models and latent-
+   404→variable autoregressive models. For causal models (e.g., time going forward), estimating
+   405→the forward direction is typically a lot easier than the reverse direction. For an observed
+   406→sequence up to time step 𝑡, its predicted output at time step 𝑡+ 𝑘is the 𝑘-step-ahead predic-
+   407→tion. As we predict further in time by increasing 𝑘, the errors accumulate and the quality
+   408→of the prediction degrades, often dramatically.
+   409→9.1.6 Exercises
+   410→1. Improve the model in the experiment of this section.
+   411→1. Incorporate more than the past four observations? How many do you really need?
+   412→2. How many past observations would you need if there was no noise? Hint: you can
+   413→write sin and cos as a differential equation.
+   414→3. Can you incorporate older observations while keeping the total number of features
+   415→constant? Does this improve accuracy? Why?
+   416→4. Change the neural network architecture and evaluate the performance. You may train
+   417→the new model with more epochs. What do you observe?
+   418→
+   419→===== صفحة الكتاب 376 =====
+   420→336
+   421→Recurrent Neural Networks
+   422→136
+   423→137
+   424→2. An investor wants to find a good security to buy. They look at past returns to decide
+   425→which one is likely to do well. What could possibly go wrong with this strategy?
+   426→3. Does causality also apply to text? To which extent?
+   427→4. Give an example for when a latent autoregressive model might be needed to capture the
+   428→dynamic of the data.
+   429→Discussions136.
+   430→9.2 Converting Raw Text into Sequence Data
+   431→Throughout this book, we will often work with text data represented as sequences of words,
+   432→characters, or word pieces. To get going, we will need some basic tools for converting raw
+   433→text into sequences of the appropriate form. Typical preprocessing pipelines execute the
+   434→following steps:
+   435→1. Load text as strings into memory.
+   436→2. Split the strings into tokens (e.g., words or characters).
+   437→3. Build a vocabulary dictionary to associate each vocabulary element with a numerical
+   438→index.
+   439→4. Convert the text into sequences of numerical indices.
+   440→import collections
+   441→import random
+   442→import re
+   443→import torch
+   444→from d2l import torch as d2l
+   445→9.2.1 Reading the Dataset
+   446→Here, we will work with H. G. Wells’ The Time Machine137 , a book containing just over
+   447→30,000 words. While real applications will typically involve significantly larger datasets,
+   448→this is sufficient to demonstrate the preprocessing pipeline. The following _download
+   449→method reads the raw text into a string.
+   450→class TimeMachine(d2l.DataModule): #@save
+
+[showing lines 1-450 of 1984; use offset=451 with limit to continue reading]

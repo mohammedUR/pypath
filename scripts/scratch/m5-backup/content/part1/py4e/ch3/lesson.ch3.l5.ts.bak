@@ -1,0 +1,298 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * py4e.ch3.l5 — "Short-Circuit Evaluation / التقييم قصير الدارة (Short-Circuit)"
+ * Aligned with PY4E ch3 s8 (تجاوز حق التعبيرات المنطقية) — the guardian pattern.
+ * All expression is original.
+ */
+const lesson = {
+  id: 'py4e.ch3.l5',
+  version: 1,
+  part: 'I',
+  track: 'P1',
+  book: 'PY4E',
+  chapter: 3,
+  title: { ar: 'التقييم قصير الدارة (Short-Circuit)', en: 'Short-Circuit Evaluation' },
+  estimatedMinutes: 15,
+  prerequisites: ['py4e.ch3.l4'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'المفسّر موظف ذكي وكسول: يتوقف عن العمل أول ما يعرف الجواب. لو سألته «هل الأبواب مفتوحة، وهل المطبخ فيه زلزال؟» فإذا جاوبت الأبواب مغلقة، لن يدخل المطبخ أصلًا. هذا التوقف المبكر اسمه التقييم قصير الدارة — وبه تكتب حماية عبقرية اسمها نمط الحارس.',
+        en: 'The interpreter is a smart, lazy employee: it stops working the moment it knows the answer. Ask it “are the doors open, and is there an earthquake in the kitchen?” — answer the doors are closed, and it never enters the kitchen. This early stopping is called short-circuit evaluation — and with it you write a brilliant protection called the guardian pattern.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: 'x = 1\ny = 0\nprint(x >= 2 and (x / y) > 2)',
+      question: {
+        ar: 'التعبير يحوي قسمة على صفر! هل ينهار البرنامج أم يطبع شيئًا؟',
+        en: 'The expression contains a division by zero! Will the program crash or print something?',
+      },
+      reveal: {
+        ar: 'يطبع False بهدوء: x >= 2 خاطئة، وكفاية — and يعرف أن الجواب False مهما كان ما بعده، فلا يقيّم القسمة أبدًا. هذا هو التوقف قصير الدارة من كتابنا نفسه (ص49). لكن انتبه: سنرى بعد قليل متى ينجح هذا الحارس ومتى يفشل فشلًا محرجًا.',
+        en: 'It quietly prints False: x >= 2 is false, and that is enough — and knows the answer is False no matter what follows, so it never evaluates the division. This is short-circuiting, straight from our book (p.49). But stay alert: in a moment we will see when this guardian works and when it fails embarrassingly.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'كيف يتوقف and وor', en: 'How and and or stop early' },
+      chunks: [
+        {
+          ar: 'المفسّر يقيّم التعبير المنطقي من اليسار إلى اليمين. مع and: إن كانت أول قيمة False فالجواب كله False بغض النظر عن البقية — فيتوقف ولا يجري أي حساب لما بعدها. ومع or العكس: إن كانت أول قيمة True فالجواب True حتمًا — يتوقف هو الآخر. يسمى هذا «تجاوز حق التعبيرات المنطقية» أو التقييم قصير الدارة (short-circuiting the evaluation).',
+          en: 'The interpreter evaluates a boolean expression left to right. With and: if the first value is False the whole answer is False regardless of the rest — so it stops and computes nothing further. With or it is the reverse: if the first value is True the answer is certainly True — it stops too. This is called short-circuiting the evaluation — in the book’s Arabic, «تجاوز حق التعبيرات المنطقية».',
+        },
+        {
+          ar: 'قد تبدو ميزة ترف، لكنها أساس أسلوب برمجي كامل. تذكّر من أول الفصل أن and وor تجمعان أسئلة؛ الآن صار ترتيب الأسئلة بينهما سلاحًا: الجواب الرخيص الآمن يوضع يسارًا، والعملية الخطرة المكلفة توضع يمينًا حيث لا تُلمس إلا عند الضرورة.',
+          en: 'It may look like a convenience, but it is the foundation of a whole programming style. Remember from the start of the chapter that and and or combine questions; now the order of those questions becomes a weapon: the cheap, safe answer goes on the left, and the risky, costly operation goes on the right, touched only when necessary.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'نمط الحارس (guardian pattern)', en: 'The guardian pattern' },
+      chunks: [
+        {
+          ar: 'القسمة على صفر تنفجر ZeroDivisionError، والفهرسة في نص فارغ تنفجر كذلك. الحارس شرط رخيص يوضع يسارًا ليوقف التقييم قبل الوصول إلى العملية الخطرة: في x >= 2 and (x / y) > 2 الحارس x >= 2 يحمي القسمة متى فشل — لكن انتبه، حمايته مشروطة بأن يفشل هو نفسه.',
+          en: 'Division by zero explodes with ZeroDivisionError, and indexing an empty string explodes too. A guardian is a cheap condition placed on the left to stop evaluation before the risky operation is reached: in x >= 2 and (x / y) > 2 the guardian x >= 2 shields the division whenever it fails — but beware, its protection only exists while it itself fails.',
+        },
+        {
+          ar: 'والحارس الجيد يفحص سبب الخطر نفسه: y != 0 and (x / y) > 2 يوقف القسمة كلما كان المقام صفرًا — في كل الحالات. ومثال آخر مفيد مع النصوص: len(s) > 0 and s[0] == \'A\' — إن كان النص فارغًا وقف الفحص قبل لمس s[0]. (len دالة تقيس طول النص — سنفصّلها في فصل السلاسل.)',
+          en: 'And a good guardian checks the very cause of the danger: y != 0 and (x / y) > 2 stops the division whenever the denominator is zero — in every case. Another handy one with strings: len(s) > 0 and s[0] == \'A\' — if the string is empty, checking stops before touching s[0]. (len is a function that measures a string’s length — details come in the strings chapter.)',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'ثلاث حالات: حارس ينفع، حارس يقصر، حارس صحيح', en: 'Three cases: a guardian that works, one that falls short, one done right' },
+      code: "x = 6\ny = 2\nprint(x >= 2 and (x / y) > 2)   # الحارس صحيح والقسمة تجري\n\nx = 1\ny = 0\nprint(x >= 2 and (x / y) > 2)   # الحارس فشل فأوقف كل شيء\n\nx = 6\ny = 0\ntry:\n    print(x >= 2 and (x / y) > 2)\nexcept:\n    print('ZeroDivisionError — الحارس لم يوقف شيئًا')",
+      explanation: {
+        ar: 'الحالة الأولى: الحارس صحيح والقسمة سليمة فالجواب True. الثانية: الحارس فشل فيوقف التقييم قبل القسمة — False بلا انفجار. الثالثة: الحارس ينجح فيمرر المفسّر إلى القسمة على صفر فينفجر — لولا try/except من الدرس الماضي لانهار البرنامج. جرّب في الملعب الحارس الصحيح: y != 0 and (x / y) > 2 بالقيم نفسها.',
+        en: 'First case: the guardian holds, the division is safe, the answer is True. Second: the guardian fails and stops evaluation before the division — False, no explosion. Third: the guardian passes, so the interpreter walks into division by zero and it blows — without last lesson’s try/except the program would have crashed. Try the right guardian in the sandbox: y != 0 and (x / y) > 2 with the same values.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.guarded-print',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'عرّف a = 10 وb = 0، ثم اطبع قيمة الشرط المحمي: b != 0 and a / b > 1. يجب أن يظهر False في الخرْج دون أي انهيار — لو انفجرت القسمة فالترتيب خاطئ.',
+        en: 'Define a = 10 and b = 0, then print the guarded condition: b != 0 and a / b > 1. False must appear in the output with no crash — if the division explodes, your order is wrong.',
+      },
+      starterCode: 'a = 10\nb = 0\n# اطبع الشرط المحمي / print the guarded condition\n',
+      solution: 'a = 10\nb = 0\nprint(b != 0 and a / b > 1)',
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'يُطبع False بلا انهيار', en: 'False is printed with no crash' },
+          code: "assert 'False' in __learner_output__, ('expected: False | actual: %r' % __learner_output__)",
+          expected: 'False',
+        },
+        {
+          id: 't2',
+          name: { ar: 'لا يُطبع True — الحارس أوقف القسمة', en: 'No True printed — the guardian stopped the division' },
+          code: "assert 'True' not in __learner_output__, ('expected: False only | actual: %r' % __learner_output__)",
+          expected: 'False فقط / False only',
+        },
+      ],
+      hints: [
+        { ar: 'الحارس يجب أن يسبق القسمة — وليس أن يليها.', en: 'The guardian must precede the division — never follow it.' },
+        { ar: 'b != 0 شرطك الرخيص: ضعه يسار and وضَع القسمة يمينه.', en: 'b != 0 is your cheap condition: put it left of and and the division right of it.' },
+        { ar: 'الهيكل:\nprint(b != 0 and a / b > 1)', en: 'The skeleton:\nprint(b != 0 and a / b > 1)' },
+        { ar: 'a = 10\nb = 0\nprint(b != 0 and a / b > 1)', en: 'a = 10\nb = 0\nprint(b != 0 and a / b > 1)' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.mcq-and-stop',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'في التعبير A and B: متى يتوقف المفسّر عن التقييم؟',
+        en: 'In the expression A and B: when does the interpreter stop evaluating?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'عندما تكون A خاطئة False', en: 'When A is False' } },
+        { id: 'b', text: { ar: 'عندما تكون A صحيحة True', en: 'When A is True' } },
+        { id: 'c', text: { ar: 'لا يتوقف أبدًا — يقيّم الاثنين دائمًا', en: 'It never stops — it always evaluates both' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'and تحتاج الاثنين معًا لتقول True.', en: 'and needs both sides to say True.' },
+        { ar: 'إذًا كفاية واحدة خاطئة لإسقاط الجواب كله.', en: 'So one false side is enough to sink the whole answer.' },
+        { ar: 'وهذا عكس or الذي يتوقف عند أول True.', en: 'This is the opposite of or, which stops at the first True.' },
+        { ar: 'الجواب: أ — A خاطئة يكفي، فلا يُقيَّم B أبدًا.', en: 'Answer: a — a false A suffices; B is never evaluated.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.trace-or',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'توقّع الخرْج — وانتبه: يوجد قسمة على صفر داخل التعبير!',
+        en: 'Predict the output — and beware: there is a division by zero inside the expression!',
+      },
+      code: 'x = 0\nprint(x >= 0 or 10 / x > 1)',
+      solution: 'True',
+      answer: 'True',
+      hints: [
+        { ar: 'افحص يسار or أولًا: هل 0 >= 0؟', en: 'Check the left of or first: is 0 >= 0?' },
+        { ar: 'or يتوقف عند أول True — فهل يصل إلى القسمة أصلًا؟', en: 'or stops at the first True — does it ever reach the division?' },
+        { ar: 'القسمة لم تُقيَّم إطلاقًا: الجاء جواب يسار فاكتفى.', en: 'The division was never evaluated: the left answered, and that was enough.' },
+        { ar: 'الخرْج: True', en: 'The output: True' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-guard-word',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'أكمل المصطلح: وضع شرط رخيص يسارًا ليوقف التقييم قبل العملية الخطرة يسمى نمط ______.',
+        en: 'Complete the term (Arabic): placing a cheap condition on the left to stop evaluation before the risky operation is called the ______ pattern.',
+      },
+      answer: 'الحارس',
+      solution: 'الحارس',
+      hints: [
+        { ar: 'هو من يقف عند الباب قبل أن تدخل الخطر.', en: 'It is the one standing at the door before danger enters.' },
+        { ar: 'اسمه يذكر بحرّاس المنازل.', en: 'Its name evokes house guards.' },
+        { ar: 'كلمة واحدة — الفصل نفسه استعملها في عنوان النمط.', en: 'One word — the chapter itself used it for the pattern’s name.' },
+        { ar: 'الجواب: الحارس', en: 'Answer (in Arabic): الحارس — guardian' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "# ملعبك الحرّ — حارسك الشخصي\n# Your playground — your personal guardian\n\ns = ''\nprint(len(s) > 0 and s[0] == 'أ')   # نص فارغ: الحارس يوقف قبل s[0]\ns = 'أهلاً'\nprint(len(s) > 0 and s[0] == 'أ')   # نص غير فارغ: الفحص يجري\nprint(True or 10 / 0)               # or يتوقف عند True فلا انفجار",
+      prompt: {
+        ar: "جرّب بنفسك: اطبع s[0] على النص الفارغ مباشرة وراقب الانفجار، ثم أعِد الحارس ولاحظ الهدوء. والعكس مع or: لماذا لم ينفجر السطر الأخير رغم القسمة على صفر؟ لا اختبار هنا — فضولك فقط.",
+        en: "Try it yourself: print s[0] on the empty string directly and watch it explode, then restore the guardian and enjoy the calm. And the flip side with or: why did the last line survive the division by zero? No tests here — just your curiosity.",
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'في A or B: متى يتوقف التقييم؟',
+            en: 'In A or B: when does evaluation stop?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'عندما تكون A صحيحة True', en: 'When A is True' } },
+            { id: 'b', text: { ar: 'عندما تكون A خاطئة False', en: 'When A is False' } },
+            { id: 'c', text: { ar: 'بعد تقييم الطرفين دائمًا', en: 'Always after evaluating both sides' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'or يكفيه طرف صحيح واحد ليعلن True، فيتوقف عندها — كما في تمرين التتبع حيث نجت القسمة من التقييم.',
+            en: 'or needs only one true side to declare True, so it stops right there — as in the trace exercise where the division escaped evaluation.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ومن أول الفصل: ما نوع الجواب النهائي لأي تعبير منطقي مثل حارسنا؟',
+            en: 'And from the chapter’s first lesson: what is the final type of any boolean expression like our guardian?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'bool — True أو False', en: 'bool — True or False' } },
+            { id: 'b', text: { ar: 'نص str', en: 'A string str' } },
+            { id: 'c', text: { ar: 'يعتمد على التعبير', en: 'It depends on the expression' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'المقارنة وجمع الشروط تُخرج دائمًا قيمة bool — ولهذا صالح الحارس لأن يوضع بعد if مباشرة.',
+            en: 'Comparisons and combined conditions always produce a bool — which is why a guardian can sit right after an if.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'ومن الفصل الثاني: ما ناتج 9 / 3 في بايثون — القسمة التي تحرسها؟',
+            en: 'And from chapter 2: what is 9 / 3 in Python — the division you guard?',
+          },
+          options: [
+            { id: 'a', text: { ar: '3.0 عدد عائم', en: '3.0, a float' } },
+            { id: 'b', text: { ar: '3 عدد صحيح', en: '3, an integer' } },
+            { id: 'c', text: { ar: '3.3', en: '3.3' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'القسمة الحقيقية / تعيد float دائمًا ولو كان الناتج صحيحًا — تذكّر ذلك حين تقرأ خرْج شروطك المحمية.',
+            en: 'True division / always returns a float, even for a whole result — keep that in mind when reading your guarded conditions’ output.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'ما فائدة نمط الحارس؟',
+            en: 'What is the guardian pattern for?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'منع الخطأ قبل وقوعه بإيقاف التقييم مبكرًا', en: 'Preventing the error before it happens by stopping evaluation early' } },
+            { id: 'b', text: { ar: 'إخفاء كل رسائل الأخطاء عن المستخدم', en: 'Hiding all error messages from the user' } },
+            { id: 'c', text: { ar: 'تسريع الطباعة على الشاشة', en: 'Speeding up printing to the screen' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الحارس يشتغل قبل الخطر ولا يلغيه فقط: القسمة الخطرة لم تحدث أصلًا. أما إخفاء الأخطاء فكان درس try/except حذّر منها.',
+            en: 'The guardian works before the danger, it does not just mute it: the risky division never happens. Hiding errors is what the try/except lesson warned against.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'print(a / b > 1 and b != 0)',
+          right: 'print(b != 0 and a / b > 1)',
+          note: {
+            ar: 'الحارس بعد الخطر لا ينفع: القسمة تُقيَّم أولًا فينفجر قبل أن يُسأل الحارس. الحارس يسارًا دائمًا.',
+            en: 'A guardian placed after the danger is useless: the division is evaluated first and explodes before anyone asks the guard. Guardian on the left, always.',
+          },
+        },
+        {
+          wrong: 'print(x >= 2 and (x / y) > 2)   # مع x = 6 وy = 0',
+          right: 'print(y != 0 and (x / y) > 2)',
+          note: {
+            ar: 'الحارس يجب أن يفحص سبب الخطر نفسه — المقام y — لا شرطًا جانبيًا قد يمر والخطر باقٍ. في المثال مرّ x >= 2 وانفجرت القسمة.',
+            en: 'The guardian must check the very cause of the danger — the denominator y — not a side condition that can pass while the danger stays. In the example x >= 2 passed and the division exploded.',
+          },
+        },
+        {
+          wrong: 'print(x != 0 or 10 / x > 1)   # مع x = 0',
+          right: 'print(x != 0 and 10 / x > 1)',
+          note: {
+            ar: 'اختر العامل حسب المعنى ثم رتّب الحارس: or مع x = 0 يرى شرطه خاطئًا فيواصل إلى القسمة فينفجر؛ وand يتوقف عند الخاطئ نفسه فيحمي.',
+            en: 'Pick the operator by meaning, then order the guard: with x = 0, or sees its first side false and continues into the division — boom; and stops at that same false side and shields.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'and يتوقف عند أول False، وor يتوقف عند أول True — التقييم من اليسار ولا حاجة لتقييم البقية.', en: 'and stops at the first False, or at the first True — evaluation runs left to right and the rest is never evaluated.' },
+        { ar: 'التقييم قصير الدارة يمكّن نمط الحارس: شرط آمن رخيص يسارًا يحمي عملية خطرة يمينًا.', en: 'Short-circuiting enables the guardian pattern: a cheap, safe condition on the left shields a risky operation on the right.' },
+        { ar: 'الحارس الصحيح يفحص سبب الخطر نفسه (المقام، طول النص) — وإلا مرَّ الحارس وانفجر الخطر.', en: 'A proper guardian checks the very cause of danger (the denominator, the string’s length) — otherwise it passes and the danger explodes.' },
+      ],
+      reflectPrompt: {
+        ar: 'اذكر عملية خطرة قد تقع في مشروعك القادم (قسمة، فهرسة، تحويل). صُغ حارسها بسطر واحد: أي شرط يوقفها قبل حدوثها؟',
+        en: 'Name one risky operation that could occur in your next project (a division, an index, a conversion). Phrase its guardian in one line: which condition stops it before it happens?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [{ book: 'PY4E', section: 'py4e.ch3.s8', pages: 'ص49-50 / pp.49-50' }],
+    },
+  ],
+  sources: [{ book: 'PY4E', section: 'py4e.ch3.s8', pages: 'ص49-50 / pp.49-50' }],
+} satisfies Lesson;
+
+export default lesson;

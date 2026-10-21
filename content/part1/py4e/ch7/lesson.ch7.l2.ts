@@ -1,0 +1,326 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * py4e.ch7.l2 — "Reading Files / قراءة الملفات"
+ * Aligned with PY4E ch7 s3 (ملفات النصوص والأسطر), s4 (قراءة الملفات).
+ * All expression is original.
+ * Deterministic: every runnable block creates its sample file in memory first.
+ */
+const lesson = {
+  id: 'py4e.ch7.l2',
+  version: 1,
+  part: 'I',
+  track: 'P1',
+  book: 'PY4E',
+  chapter: 7,
+  title: { ar: 'قراءة الملفات', en: 'Reading Files' },
+  estimatedMinutes: 15,
+  prerequisites: ['py4e.ch7.l1'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'الدرس الماضي فتح الباب — اليوم ندخل منه: كيف يتحول الملف من معرّف صامت إلى أسطر تمرّ في حلقاتك وتتكدّس في عدّاداتك. سترى طريقتين للقراءة: ابتلاع الملف كله بجرعة واحدة، أو شربه سطرًا سطرًا كما تشرب الشاي الساخن. بنهاية الدرس ستكون قادرًا على: عدّ محارف ملف بـ read() وlen، وعدّ أسطره بحلقة for على المعرّف.',
+        en: 'Last lesson opened the door — today we walk through it: how a file turns from a silent handle into lines flowing through your loops and landing in your counters. You will see two ways to read: swallowing the whole file in one gulp, or sipping it line by line like hot tea. By the end of this lesson you will be able to: count a file characters with read() and len, and count its lines with a for loop over the handle.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "stuff = 'Hello\\nWorld!'\nprint(stuff)\nprint(len(stuff))",
+      question: {
+        ar: 'كم يطبع len؟ انتبه إلى المحرف \\n — كم محرفًا هو فعلًا؟',
+        en: 'What does len print? Look closely at \\n — how many characters is it really?',
+      },
+      reveal: {
+        ar: 'يطبع 12. محرف السطر الجديد \\n يبدو محرفين في الكود لكنه محرف واحد في الذاكرة: عدّ معنا — Hello خمسة محارف، وWorld! ستة، والمحرف الواحد بينهما = 12. لو كان \\n محرفين لبلغ العدد 13. وهذا درس الكتاب نفسه: المحرف غير المرئي يُعدّ كأخيه.',
+        en: 'It prints 12. The newline \\n looks like two characters in code but is one in memory: count with us — Hello is five, World! is six, plus the single newline between them = 12. Had \\n been two characters, the count would be 13. The book itself: the invisible character still counts.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'ملفات النصوص: أسطر يفصلها محرف واحد', en: 'Text files: lines split by one character' },
+      chunks: [
+        {
+          ar: "الملف النصي يمكن عدّه سلسلة من الأسطر، تمامًا كما تعُدّ السلسلة النصية في بايثون سلسلة من المحارف. الذي يقسم الملف إلى أسطر هو محرف السطر الجديد \\n: عند كتابة stuff = 'X\\nY' ثم print(stuff) يظهر X وY في سطرين، وlen('X\\nY') تعطي 3 لأن \\n محرف واحد يُعدّ كغيره.",
+          en: "A text file can be counted as a sequence of lines, just as a Python string is counted as a sequence of characters. What splits the file into lines is the newline character \\n: with stuff = 'X\\nY', printing stuff shows X and Y on two lines, and len('X\\nY') gives 3 because \\n is one character counted like any other.",
+        },
+        {
+          ar: 'فحين ننظر إلى السطور في أي ملف علينا أن نتخيل محرف السطر الجديد مختبئًا في نهاية كل سطر: هو الفاصل غير المرئي الذي يجعل محارف الملف سطورًا. وأدوات السلاسل من الفصل السادس تعمل عليه كعادتها: len يعدّه، والتقطيع يقصّه، والبحث يجده.',
+          en: 'So when looking at the lines of any file, imagine the newline character hiding at the end of every line: it is the invisible separator that turns file characters into lines. And the string tools from chapter 6 treat it like any character: len counts it, slicing cuts around it, and searching finds it.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'read(): الملف كله في سلسلة واحدة', en: 'read(): the whole file in one string' },
+      chunks: [
+        {
+          ar: "إذا كان الملف صغيرًا مقارنة بذاكرتك يمكنك قراءته كله دفعة واحدة: inp = fhand.read() تجعل الملف كله — محارفه ومحارف أسطره الجديدة — سلسلة واحدة في المتغير inp، ثم print(len(inp)) يعدّ محارفه. عرّفنا الكتاب: خزّن ناتج القراءة في متغير، لأن كل استدعاء read يستنفد المورد.",
+          en: "If the file is small compared to your memory you can read it all at once: inp = fhand.read() makes the entire file — its characters and its newline characters — one single string in inp, and print(len(inp)) counts its characters. Define your storage: keep the read result in a variable, because each read call exhausts the resource.",
+        },
+        {
+          ar: "الدليل الطبيعي: استدعِ len(fhand.read()) مرة فيظهر طول الملف، ثم استدعها مرة ثانية على نفس المعرّف فيظهر 0 — القراءة الأولى أفرغت المورد والثانية لم تجد شيئًا. لذلك القاعدة: خزّن أول قراءة في متغير وعاملها كسلسلة عادية.",
+          en: "Natural proof: call len(fhand.read()) once and the file length appears; call it a second time on the same handle and 0 appears — the first read drained the resource and the second found nothing. So the rule: store the first read in a variable and treat it like an ordinary string.",
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'حلقة for على المعرّف: سطرًا سطرًا', en: 'A for loop over the handle: line by line' },
+      chunks: [
+        {
+          ar: 'المعرّف لا يحمل بيانات، لكن من السهل جدًا إدارة حلقة for عليه تقرأ كل سطر وتعده: fhand = open(...) ثم count = 0 ثم for line in fhand: وداخلها count = count + 1. بهذا يحسب البرنامج أسطر أي ملف. تقرأ بايثون كل سطر عن طريق محرف السطر الجديد وتضيفه كمحرف أخير في line عند كل تكرار.',
+          en: 'The handle holds no data, yet running a for loop on it is very easy — it reads every line and counts them: fhand = open(...), then count = 0, then for line in fhand: with count = count + 1 inside. That program counts the lines of any file. Python reads each line up to the newline character and keeps it as the last character in line on every iteration.',
+        },
+        {
+          ar: "ولماذا لا تقرأ open الملف كله فورًا؟ لأن الملف قد يبلغ حجمه غيغابايتات: تستغرق open نفس الوقت بغض النظر عن حجم الملف، وتعمل الحلقة على قراءة البيانات سطرًا واحدًا في كل مرة. لذلك يستطيع البرنامج أعلاه عدّ أسطر ملف بأي حجم بذاكرة صغيرة: يُقرأ السطر ويُعد ثم يتخلص منه.",
+          en: 'And why does open not read the whole file at once? Because a file can grow to gigabytes: open takes the same time regardless of file size, and the loop does the reading one line at a time. That is why the program above can count the lines of any file with a tiny memory: each line is read, counted, then thrown away.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'الجرعة الواحدة والشرب السطري', en: 'The single gulp and the line sips' },
+      code: "out = open('mbox.txt', 'w')\nout.write('From: sara@x.com\\n')\nout.write('Subject: hi\\n')\nout.write('data line\\n')\nout.close()\n\nfhand = open('mbox.txt')\ninp = fhand.read()\nfhand.close()\nprint(len(inp))\n\nfhand = open('mbox.txt')\ncount = 0\nfor line in fhand:\n    count = count + 1\nfhand.close()\nprint('Line Count:', count)",
+      explanation: {
+        ar: 'القراءة الأولى جمعت الملف كله في inp فعدّت len محارفه: 39. ثم أعدنا فتح الملف — لأن read الأولى استنفدت المورد — ومرت الحلقة على المعرّف سطرًا سطرًا فبلغ العداد ثلاثة أسطر. طريقتان لمهمتين مختلفتين: المحارف بسلسلة واحدة، والأسطر بحلقة لا تملك الذاكرة مهما ضخم الملف.',
+        en: 'The first read gathered the whole file into inp and its len counted 39 characters. Then we reopened the file — the first read exhausted the resource — and the loop walked the handle line by line, lifting the counter to three lines. Two ways for two jobs: characters as one string, lines through a loop that owns no memory no matter how big the file.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.read-count',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: "اصنع ملفًا اسمه notes-l2.txt بوضع 'w' واكتب فيه بالضبط 'ab\\n' ثم 'cd\\n' ثم أغلق. أعد فتحه وخزّن read() في المتغير data وأغلقه، ثم اطبع len(data) واطبع data.",
+        en: "Make a file named notes-l2.txt in 'w' mode, write exactly 'ab\\n' then 'cd\\n' into it, then close it. Reopen it, store read() in the variable data, close it, then print len(data) and print data.",
+      },
+      starterCode: '# اصنع ثم اقرأ ثم عُدّ / make, then read, then count\n',
+      solution: "out = open('notes-l2.txt', 'w')\nout.write('ab\\n')\nout.write('cd\\n')\nout.close()\nfhand = open('notes-l2.txt')\ndata = fhand.read()\nfhand.close()\nprint(len(data))\nprint(data)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'data تساوي ab وcd مع محرفي سطر جديد', en: 'data equals ab and cd with two newlines' },
+          code: "assert data == 'ab\\ncd\\n', 'expected: ab\\ncd\\n | actual: %r' % data",
+          expected: 'ab / cd',
+        },
+        {
+          id: 't2',
+          name: { ar: 'يُطبع عدد المحارف 6', en: 'The character count 6 is printed' },
+          code: "assert '6' in __learner_output__, ('expected: 6 | actual: %r' % __learner_output__)",
+          expected: '6',
+        },
+        {
+          id: 't3',
+          name: { ar: 'الملف محفوظ في الذاكرة كما كُتب', en: 'The file is stored in memory as written' },
+          code: "chk = open('notes-l2.txt')\ncontent = chk.read()\nchk.close()\nassert content == 'ab\\ncd\\n', 'expected: file intact | actual: %r' % content",
+          expected: 'file intact',
+        },
+      ],
+      hints: [
+        { ar: 'كل سطر مكتوب يحتاج محرف \\n في نهايته — وإلا التصق السطران.', en: 'Every written line needs a \\n at its end — otherwise the two lines glue together.' },
+        { ar: 'بعد الإغلاق افتح من جديد بدون وضع: الوضع الافتراضي قراءة.', en: 'After closing, open again with no mode: the default mode is reading.' },
+        { ar: 'الهيكل:\nout = open(..., \'w\')\nout.write(...)\nout.close()\nfhand = open(...)\ndata = fhand.read()\nfhand.close()\nprint(len(data))\nprint(data)', en: "The skeleton:\nout = open(..., 'w')\nout.write(...)\nout.close()\nfhand = open(...)\ndata = fhand.read()\nfhand.close()\nprint(len(data))\nprint(data)" },
+        { ar: "out = open('notes-l2.txt', 'w')\nout.write('ab\\n')\nout.write('cd\\n')\nout.close()\nfhand = open('notes-l2.txt')\ndata = fhand.read()\nfhand.close()\nprint(len(data))\nprint(data)", en: "out = open('notes-l2.txt', 'w')\nout.write('ab\\n')\nout.write('cd\\n')\nout.close()\nfhand = open('notes-l2.txt')\ndata = fhand.read()\nfhand.close()\nprint(len(data))\nprint(data)" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-slice',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرْجه بالضبط — سطرًا لكل طباعة. تذكّر التقطيع من الفصل السادس: inp[:3] يأخذ المحارف الثلاثة الأولى.',
+        en: 'Read the code and predict its exact output — one line per print. Remember slicing from chapter 6: inp[:3] takes the first three characters.',
+      },
+      code: "out = open('tiny.txt', 'w')\nout.write('X\\nY\\n')\nout.close()\nfhand = open('tiny.txt')\ninp = fhand.read()\nprint(len(inp))\nprint(inp[:3])\nfhand.close()",
+      solution: '4\nX\nY',
+      answer: '4\nX\nY',
+      hints: [
+        { ar: 'X ثم محرف سطر جديد ثم Y ثم محرف آخر — كم المجموع؟', en: 'X, then a newline, then Y, then another newline — what is the total?' },
+        { ar: 'inp[:3] يمسك X و\\n وY معًا في سلسلة واحدة.', en: 'inp[:3] grabs X, \\n and Y together in one string.' },
+        { ar: 'print يترجم محرف السطر الجديد إلى نهاية سطر حقيقية.', en: 'print translates the newline character into a real line break.' },
+        { ar: 'الخرْج:\n4\nX\nY', en: 'The output:\n4\nX\nY' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.numeric-newline',
+      exKind: 'numeric',
+      required: true,
+      prompt: {
+        ar: 'بلا تشغيل: كم محرفًا يعدّها len(\'X\\nY\')؟ (مثال الكتاب: محرف السطر الجديد محرف واحد.)',
+        en: "Without running: how many characters does len('X\\nY') count? (The book's example: the newline is one character.)",
+      },
+      answer: '3',
+      solution: '3',
+      tolerance: 0,
+      hints: [
+        { ar: 'X محرف، وY محرف، وماذا عن \\n؟', en: 'X is one character, Y is one — and what about \\n?' },
+        { ar: 'شكل الكود بخطين مجرد طريقة كتابة لا حقيقة الذاكرة.', en: 'The two-line look in code is only the writing style, not the memory truth.' },
+        { ar: 'عُدّها: X ثم \\n ثم Y.', en: 'Count them: X, then \\n, then Y.' },
+        { ar: 'الجواب: 3', en: 'Answer: 3' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.mcq-exhausted',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'نفذت print(len(fhand.read())) مرتين متتاليتين على نفس المعرّف. ماذا يطبع الاستدعاء الثاني؟',
+        en: 'You ran print(len(fhand.read())) twice in a row on the same handle. What does the second call print?',
+      },
+      options: [
+        { id: 'a', text: { ar: '0 — القراءة الأولى استنفدت المورد', en: '0 — the first read exhausted the resource' } },
+        { id: 'b', text: { ar: 'طول الملف مرة أخرى', en: 'The file length again' } },
+        { id: 'c', text: { ar: 'نصف الطول — تُقرأ الملفات نصفًا نصفًا', en: 'Half the length — files are read in halves' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'تشبيه الكتاب: كل استدعاء للقراءة يستنفد المورد.', en: "The book's analogy: each read call exhausts the resource." },
+        { ar: 'read الثانية تقف على الملف بعد نهايته.', en: 'The second read stands at the end of the file with nothing left.' },
+        { ar: 'لهذا خزّننا أول قراءة في متغير.', en: 'That is why we stored the first read in a variable.' },
+        { ar: 'الجواب: أ — 0.', en: 'Answer: a — 0.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: '# ملعبك الحرّ — جرّب القراءتين\n# Your playground — try both readings\n\nout = open("sandbox2.txt", "w")\nout.write("alpha\\n")\nout.write("beta\\n")\nout.write("gamma\\n")\nout.close()\n\n# القراءة الكاملة / the whole-file read\nfhand = open("sandbox2.txt")\ninp = fhand.read()\nfhand.close()\nprint(len(inp))\nprint(inp[:8])\n\n# القراءة السطرية / the line-by-line read\nfhand = open("sandbox2.txt")\nfor line in fhand:\n    print("line:", line, end="")\nfhand.close()',
+      prompt: {
+        ar: 'جرّب بنفسك: احذف end="" وراقب الأسطر الفارغة الإضافية — كل سطر قرأته يحمل محرف \\n في نهايته وprint يضيف سطرًا آخر. ثم عدّ الأسطر بحلقة for وعدّاد. لا اختبار هنا — فضولك فقط.',
+        en: 'Try it yourself: delete end="" and watch the extra blank lines — every line you read carries its \\n and print adds one more. Then count the lines with a for loop and a counter. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'عودة إلى الفصل الخامس: in ماذا يمثل line في for line in fhand:؟',
+            en: 'Back to chapter 5: in for line in fhand: what is line?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'متغيّر التكرار يأخذ قيمة سطر جديد في كل دورة', en: 'The iteration variable taking a new line each pass' } },
+            { id: 'b', text: { ar: 'كلمة محجوزة تخزن الملف كله', en: 'A reserved word storing the whole file' } },
+            { id: 'c', text: { ar: 'اسم الملف نفسه', en: 'The name of the file itself' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'هو متغيّر التكرار من دروس الحلقات: يولد في أول دورة بـ السطر الأول، ويجدَّد كل دورة، وينتهي أخيرًا بآخر سطر.',
+            en: 'It is the iteration variable from the loops lessons: born on the first pass with the first line, renewed every pass, ending with the last line.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: "كم يطبع print(len('X\\nY'))؟",
+            en: "What does print(len('X\\nY')) print?",
+          },
+          options: [
+            { id: 'a', text: { ar: '3', en: '3' } },
+            { id: 'b', text: { ar: '4', en: '4' } },
+            { id: 'c', text: { ar: '2', en: '2' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'X ومحرف السطر الجديد وY: ثلاثة محارف — \\n محرف واحد يُعدّ كأخيه.',
+            en: 'X, the newline, then Y: three characters — \\n is one character counted like its siblings.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'ماذا يعيد read() الثانية على المعرّف نفسه بعد قراءة اكتملت؟',
+            en: 'What does a second read() on the same handle return after a completed read?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'سلسلة فارغة — المورد استُنفد', en: 'An empty string — the resource is exhausted' } },
+            { id: 'b', text: { ar: 'نفس المحتوى من جديد', en: 'The same content again' } },
+            { id: 'c', text: { ar: 'استثناء يوقف البرنامج', en: 'An exception stopping the program' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'كل استدعاء للقراءة يستنفد المورد: الثانية تجد مؤشر الملف في النهاية فتعيد "". لهذا خزّن أول قراءة في متغير.',
+            en: 'Each read call exhausts the resource: the second finds the file pointer at the end and returns "". So store the first read in a variable.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'لماذا لا تقرأ open الملف كله في لحظة فتحه؟',
+            en: 'Why does open not read the whole file at the moment of opening?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن الملف قد يكون ضخمًا — والحلقة تقرأ سطرًا سطرًا بذاكرة صغيرة', en: 'Because the file can be huge — the loop reads line by line with a small memory' } },
+            { id: 'b', text: { ar: 'لأن نظام التشغيل يمنع قراءة أكثر من سطر', en: 'Because the operating system forbids reading more than one line' } },
+            { id: 'c', text: { ar: 'لأن read() أسرع دائمًا من الفتح', en: 'Because read() is always faster than opening' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'تستغرق open نفس الوقت بغض النظر عن الحجم، والحلقة تتدفق على الأسطر: يُقرأ السطر ويُعد ثم يتخلص منه — فتعمل البرامج على ملفات بغيغابايتات.',
+            en: 'open takes the same time regardless of size, and the loop streams the lines: read, count, discard — so programs chew through gigabyte files.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'print(len(fhand.read()))\nprint(len(fhand.read()))',
+          right: 'inp = fhand.read()\nprint(len(inp))\nprint(len(inp))',
+          note: {
+            ar: 'كل read يستنفد المورد: الثانية تعيد "". خزّن القراءة الأولى في متغير وعاملها كسلسلة عادية.',
+            en: 'Each read drains the resource: the second returns "". Store the first read in a variable and treat it like an ordinary string.',
+          },
+        },
+        {
+          wrong: 'for line in fhand:\n    if line == "Subject: hi":\n        count = count + 1',
+          right: 'for line in fhand:\n    if line.startswith("Subject: hi"):\n        count = count + 1',
+          note: {
+            ar: 'السطر القادم من الملف يحمل محرف \\n في نهايته فتفشل المقارنة بالتساوي. استخدم startswith أو التخلص من المسافات الذي سيتعهده الدرس القادم.',
+            en: 'A line from the file carries its trailing \\n, so equality comparison fails. Use startswith — or the stripping the next lesson will teach.',
+          },
+        },
+        {
+          wrong: 'print(len(fhand))',
+          right: 'for line in fhand:\n    count = count + 1',
+          note: {
+            ar: 'len لا يقبل المعرّف أصلًا. لعدّ الأسطر أدر حلقة on المعرّف — وlen(data) بعد read يعطي المحارف لا الأسطر.',
+            en: 'len refuses the handle outright. To count lines run a loop on the handle — and len(data) after read gives characters, not lines.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'محرف السطر الجديد \\n محرف واحد غير مرئي يقسم محارف الملف إلى أسطر — وlen يعدّه كأي محرف.', en: 'The newline \\n is one invisible character that splits file characters into lines — and len counts it like any other.' },
+        { ar: 'read() تجمع الملف كله سلسلة واحدة؛ خزّنها في متغير لأن كل قراءة إضافية تعيد "".', en: 'read() gathers the whole file into one string; store it in a variable because any further read returns "".' },
+        { ar: 'for line in fhand تقرأ سطرًا في كل دورة مع محرف \\n في آخره — وعدّ الأسطر نمط عدّ من الفصل الخامس.', en: 'for line in fhand reads one line per pass with its trailing \\n — and counting lines is the counting pattern of chapter 5.' },
+      ],
+      reflectPrompt: {
+        ar: 'ملف فيه مليون سطر: أي القراءتين تختار لعدّ الأسطر ولماذا؟ وأيّهما لو احتجت البحث في كل المحارف دفعة واحدة؟',
+        en: 'A file of a million lines: which reading do you pick to count lines, and why? And which if you must search all characters at once?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'PY4E', section: 'py4e.ch7.s3', pages: 'ص104 / pp.104' },
+        { book: 'PY4E', section: 'py4e.ch7.s4', pages: 'ص105 / pp.105' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'PY4E', section: 'py4e.ch7.s3', pages: 'ص104 / pp.104' },
+    { book: 'PY4E', section: 'py4e.ch7.s4', pages: 'ص105 / pp.105' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

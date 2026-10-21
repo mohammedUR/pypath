@@ -1,0 +1,366 @@
+/**
+ * Lesson mls.ch4.l3 — بناء المصنفات التوليدية
+ *   / Constructing the Generative Classifiers
+ * Book: MLS — Chapter 4 'Generative Classification', §4.3 Construction (pp.38-53)
+ * Runnable design: three from-scratch builds in pure Python (no numpy):
+ *   gaussian class likelihood, 1-D LDA posterior classifier, NB count-model predictor.
+ * Deterministic only: no input(), no exit(), no random, no unittest.main.
+ */
+import type { Lesson } from '../../../../src/lib/content/schema';
+
+const lesson = {
+  id: 'mls.ch4.l3',
+  version: 1,
+  part: 'II',
+  track: 'A2',
+  book: 'MLS',
+  chapter: 4,
+  title: {
+    ar: 'بناء المصنفات التوليدية',
+    en: 'Constructing the Generative Classifiers',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['mls.ch4.l2'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'هذا هو قسم البناء في الفصل الرابع: تحويل المنظور التوليدي إلى دوال بايثون صافية. سيبني الكتاب في نسخته الأصلية أصناف LDA وQDA وبايز الساذج فوق مصفوفات numpy؛ نحن سنبني الجوهر نفسه بقوائم وحلقات حتى ترى كل خطوة: كثافة غاوسية لصنف، ثم مصنف LDA كامل يستدعي قاعدة بايز، ثم نموذج عدّ لبايز الساذج. كل النتائج المتوقعة محسوبة مسبقًا ومثبتة في الاختبارات — بناؤك إما يطابقها أو يكشف نفسه.',
+        en: 'This is chapter 4 construction section: turning the generative view into plain Python functions. The book builds its original LDA, QDA, and Naive Bayes classes on numpy arrays; we rebuild the same core with lists and loops so every step is visible: a Gaussian density for one class, then a full LDA classifier invoking Bayes rule, then a count model for Naive Bayes. All expected results are pre-computed and pinned in tests — your build either matches them or exposes itself.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: {
+        ar: 'من الكثافة إلى القرار',
+        en: 'From density to decision',
+      },
+      chunks: [
+        {
+          ar: 'اللبنة الأولى لكل المصنفات التوليدية الغاوسية هي دالة الكثافة: gaussian_pdf(x, mu, var) = exp(-(x-mu)^2 / (2*var)) / sqrt(2*pi*var). البسط يكافئ قرب النقطة من المركز والمقام يعاقب التباين الكبير: التوزيع الواسع يجعل كل نقطة أقل إثارة للدهشة. لاحظ أنها ليست احتمالًا — قد تتجاوز 1 عند تباين صغير — لكنها متناسبة معه، وهذا يكفي لأن المقام المشترك في قاعدة بايز يُلغى.',
+          en: 'The first building block of every Gaussian generative classifier is the density: gaussian_pdf(x, mu, var) = exp(-(x-mu)^2 / (2*var)) / sqrt(2*pi*var). The numerator rewards closeness to the center and the denominator punishes large variance: a wide distribution makes every point less surprising. Note it is a density, not a probability — it can exceed 1 for tiny variances — but it is proportional to one, which is all Bayes rule needs since the common denominator cancels.',
+        },
+        {
+          ar: 'بناء LDA في بعدين المفرد هنا بعدين واحد: قدّر المتوسطين mu0 وmu1 والتباين المشترك var من التدريب، ثم لكل نقطة جديدة احسب الدرجة log(pi_k) - (x - mu_k)^2/(2*var) للصنفين واختر الأعلى. هذه حرفيًا حاصل ضرب السابق في الكثافة بعد أخذ اللوغاريتم — قاعدة بايز بثوب برمجي. مصنف بايز الساذج العدّي بنفس القالب تمامًا: بدل الكثافة الغاوسية احتمال كلمة منعّم، وبدل المربع حاصل ضرب عدّ الكلمة في لوغاريتم احتمالها.',
+          en: 'The book builds LDA for many dimensions; here it is one: estimate mu0, mu1, and the shared var from training, then for each new point compute log(pi_k) - (x - mu_k)^2/(2*var) for both classes and take the higher. That is literally the prior times the density after taking logs — Bayes rule in programming clothes. The Naive Bayes count classifier shares the exact template: swap the Gaussian density for a smoothed word probability, and the squared term for the word count times the log of its probability.',
+        },
+        {
+          ar: 'ملاحظة الكتاب التي يجب أن تلاحظها أثناء البناء: في بعدين واحد يكون بايز الساذج الغاوسي مطابقًا رياضيًا لـ QDA — كلاهما متوسط وتباين لكل صنف. الافتراض الساذج لا يفعل شيئًا حين توجد خصيصة واحدة؛ قيمته تظهر حين تتعدد الخصائص ويصبح حاصل الضرب بدل التوزيع المشترك. لذلك في تمارين هذا الدرس سترى nb يعمل على أعداد كلمات (خصائص عدّة منطقيًا) لا على غاوسي مفرد.',
+          en: 'A book-level observation to keep while building: in one dimension, Gaussian Naive Bayes is mathematically identical to QDA — both are a mean and a variance per class. The naive assumption does nothing when there is a single feature; its value appears when features multiply and a product replaces a joint distribution. So in these exercises nb works on word counts (genuinely multiple features), not on a single Gaussian.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: {
+        ar: 'القالب الموحد: درجتان ثم argmax',
+        en: 'The unified template: two scores, then argmax',
+      },
+      code: `import math
+
+def gaussian_pdf(x, mu, var):
+    return math.exp(-(x - mu) ** 2 / (2 * var)) / math.sqrt(2 * math.pi * var)
+
+c0 = [1.0, 2.0, 3.0]
+c1 = [5.0, 7.0, 9.0]
+mu0, mu1 = 2.0, 7.0
+var0, var1 = 2.0 / 3.0, 8.0 / 3.0
+pi0 = pi1 = 0.5
+
+x = 4.0
+like0 = pi0 * gaussian_pdf(x, mu0, var0)
+like1 = pi1 * gaussian_pdf(x, mu1, var1)
+print(f"density*prior class 0 = {like0:.4f}")
+print(f"density*prior class 1 = {like1:.4f}")
+print("pick:", 0 if like0 > like1 else 1)
+print("same as qda?", (0 if like0 > like1 else 1) == 1)`,
+      explanation: {
+        ar: 'هذا هو QDA بثوبه الأصلي: اضرب السابق 0.5 في كثافة غاوسية بتباين كل صنف. عند x = 4: حاصل الكثافة في السابق للصنف 0 = 0.0122 وللصنف 1 = 0.0226 — فيفوز الصنف 1 الواسع كما رأينا في الدرس الأول. القالب نفسه سيخدمك في التمارين الثلاثة: كثافة، ثم درجات، ثم argmax. بدّل x إلى 5.0 في نسختك المحلية وراقب اتساع الفارق لصالح الصنف الواسع كلما بعدت النقطة.',
+        en: 'This is QDA in its original dress: multiply the 0.5 prior by a Gaussian density using each class variance. At x = 4: density*prior is 0.0122 for class 0 and 0.0226 for class 1 — the wide class 1 wins, as seen in the first lesson. The same template serves all three exercises: density, then scores, then argmax. Change x to 5.0 in your local copy and watch the wide-class margin widen as the point moves farther out.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.gaussian-likelihood',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفّذ gaussian_pdf(x, mu, var) بكثافة الغاوسي الكاملة، ثم اترك أسطر الطباعة الثلاثة كما هي (قيمتان مرجعيتان وفحص تناظر).',
+        en: 'Implement gaussian_pdf(x, mu, var) with the full Gaussian density, then leave the three print lines unchanged (two reference values and a symmetry check).',
+      },
+      starterCode: `import math
+
+def gaussian_pdf(x, mu, var):
+    return 0.0  # TODO: exp(-(x-mu)^2/(2*var)) / sqrt(2*pi*var)
+
+print(f"pdf(2, 2, 1) = {gaussian_pdf(2.0, 2.0, 1.0):.4f}")
+print(f"pdf(0, 0, 2) = {gaussian_pdf(0.0, 0.0, 2.0):.4f}")
+sym = abs(gaussian_pdf(4.0, 2.0, 1.0) - gaussian_pdf(0.0, 2.0, 1.0)) < 1e-12
+print("symmetric:", sym)`,
+      solution: `import math
+
+def gaussian_pdf(x, mu, var):
+    return math.exp(-(x - mu) ** 2 / (2 * var)) / math.sqrt(2 * math.pi * var)
+
+print(f"pdf(2, 2, 1) = {gaussian_pdf(2.0, 2.0, 1.0):.4f}")
+print(f"pdf(0, 0, 2) = {gaussian_pdf(0.0, 0.0, 2.0):.4f}")
+sym = abs(gaussian_pdf(4.0, 2.0, 1.0) - gaussian_pdf(0.0, 2.0, 1.0)) < 1e-12
+print("symmetric:", sym)`,
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'كثافة عند المركز بتباين 1', en: 'density at the center, variance 1' },
+          code: `assert abs(gaussian_pdf(2.0, 2.0, 1.0) - 0.3989422804014327) < 1e-9, 'expected 0.3989422804014327 | actual: %r' % gaussian_pdf(2.0, 2.0, 1.0)`,
+        },
+        {
+          id: 't2',
+          name: { ar: 'كثافة عند المركز بتباين 2', en: 'density at the center, variance 2' },
+          code: `assert abs(gaussian_pdf(0.0, 0.0, 2.0) - 0.28209479177387814) < 1e-9, 'expected 0.28209479177387814 | actual: %r' % gaussian_pdf(0.0, 0.0, 2.0)`,
+        },
+        {
+          id: 't3',
+          name: { ar: 'التناظر حول المركز', en: 'symmetry around the mean' },
+          code: `assert abs(gaussian_pdf(4.0, 2.0, 1.0) - gaussian_pdf(0.0, 2.0, 1.0)) < 1e-12, 'pdf must be symmetric: %r vs %r' % (gaussian_pdf(4.0, 2.0, 1.0), gaussian_pdf(0.0, 2.0, 1.0))\nassert 'symmetric: True' in __learner_output__, 'expected line: symmetric: True | actual: %r' % __learner_output__`,
+        },
+      ],
+      hints: [
+        { ar: 'الصيغة: return math.exp(-(x - mu) ** 2 / (2 * var)) / math.sqrt(2 * math.pi * var) — البسط والمقام بالترتيب.', en: 'The formula: return math.exp(-(x - mu) ** 2 / (2 * var)) / math.sqrt(2 * math.pi * var) — numerator then denominator.' },
+        { ar: 'عند المركز (x = mu) يصير الأس صفرًا فالكثافة = 1/sqrt(2*pi*var) — لذلك تقل مع كبر التباين.', en: 'At the center (x = mu) the exponent is zero, so the density = 1/sqrt(2*pi*var) — which is why it shrinks as variance grows.' },
+        { ar: 'فحص التناظر: pdf(4, 2, 1) وpdf(0, 2, 1) تبعدان درجتين عن mu = 2 بالاتجاهين — يجب أن يتطابقا.', en: 'The symmetry check: pdf(4, 2, 1) and pdf(0, 2, 1) sit two units from mu = 2 in opposite directions — they must match.' },
+        { ar: 'المطلوب: pdf(2, 2, 1) = 0.3989 وpdf(0, 0, 2) = 0.2821 وsymmetric: True.', en: 'Expected: pdf(2, 2, 1) = 0.3989, pdf(0, 0, 2) = 0.2821, symmetric: True.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.lda-classifier',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'أكمل مصنف LDA: lda_score(x, pi, mu) بالتباين المشترك المحسوب في الأعلى، وlda_predict(xs) التي تعيد قائمة أصناف بالاختيار الأعلى درجة (التعادل للصنف 0). النتائج مثبتة — تحقق منها.',
+        en: 'Complete the LDA classifier: lda_score(x, pi, mu) using the shared var computed above, and lda_predict(xs) returning a list of classes by the higher score (ties go to class 0). Results are pinned — verify against them.',
+      },
+      starterCode: `import math
+
+c0 = [1.0, 2.0, 3.0]
+c1 = [5.0, 7.0, 9.0]
+n0, n1 = len(c0), len(c1)
+mu0, mu1 = sum(c0) / n0, sum(c1) / n1
+var = (sum((x - mu0) ** 2 for x in c0) + sum((x - mu1) ** 2 for x in c1)) / (n0 + n1)
+pi0 = pi1 = 0.5
+
+def lda_score(x, pi, mu):
+    return 0.0  # TODO: log(pi) - (x - mu)^2 / (2*var)
+
+def lda_predict(xs):
+    # TODO: class 0 when its score ties or wins, else class 1
+    return [0 for _ in xs]
+
+print(f"mu: {mu0}, {mu1} | shared var = {var:.4f}")
+print("preds =", lda_predict([4.0, 6.0, 2.0, 8.0]))
+print("train preds =", lda_predict(c0 + c1))`,
+      solution: `import math
+
+c0 = [1.0, 2.0, 3.0]
+c1 = [5.0, 7.0, 9.0]
+n0, n1 = len(c0), len(c1)
+mu0, mu1 = sum(c0) / n0, sum(c1) / n1
+var = (sum((x - mu0) ** 2 for x in c0) + sum((x - mu1) ** 2 for x in c1)) / (n0 + n1)
+pi0 = pi1 = 0.5
+
+def lda_score(x, pi, mu):
+    return math.log(pi) - (x - mu) ** 2 / (2 * var)
+
+def lda_predict(xs):
+    return [0 if lda_score(x, pi0, mu0) >= lda_score(x, pi1, mu1) else 1 for x in xs]
+
+print(f"mu: {mu0}, {mu1} | shared var = {var:.4f}")
+print("preds =", lda_predict([4.0, 6.0, 2.0, 8.0]))
+print("train preds =", lda_predict(c0 + c1))`,
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'تنبؤات النقاط الجديدة', en: 'predictions for the new points' },
+          code: `assert lda_predict([4.0, 6.0, 2.0, 8.0]) == [0, 1, 0, 1], 'expected [0, 1, 0, 1] | actual: %r' % (lda_predict([4.0, 6.0, 2.0, 8.0]),)`,
+        },
+        {
+          id: 't2',
+          name: { ar: 'تنبؤات التدريب كاملة', en: 'full training predictions' },
+          code: `c0 = [1.0, 2.0, 3.0]\nc1 = [5.0, 7.0, 9.0]\nassert lda_predict(c0 + c1) == [0, 0, 0, 1, 1, 1], 'expected [0, 0, 0, 1, 1, 1] on training data'`,
+        },
+        {
+          id: 't3',
+          name: { ar: 'التباين المشترك صحيح', en: 'shared variance is right' },
+          code: `c0 = [1.0, 2.0, 3.0]\nc1 = [5.0, 7.0, 9.0]\nmu0, mu1 = 2.0, 7.0\nv = (sum((x - mu0) ** 2 for x in c0) + sum((x - mu1) ** 2 for x in c1)) / 6\nassert abs(v - 5.0/3.0) < 1e-9, 'expected shared var = 5/3 | actual: %r' % v\nassert abs(lda_score(4.0, 0.5, 2.0) - (-1.8931471805599451)) < 1e-9, 'expected score at x=4 for class 0 = -1.8931471805599451 | actual: %r' % lda_score(4.0, 0.5, 2.0)`,
+        },
+      ],
+      hints: [
+        { ar: 'lda_score: return math.log(pi) - (x - mu) ** 2 / (2 * var) — var المشترك معرف في أعلى الملف.', en: 'lda_score: return math.log(pi) - (x - mu) ** 2 / (2 * var) — the shared var is defined at the top.' },
+        { ar: 'lda_predict: [0 if lda_score(x, pi0, mu0) >= lda_score(x, pi1, mu1) else 1 for x in xs] — التعادل >= يعطي الصنف 0.', en: 'lda_predict: [0 if lda_score(x, pi0, mu0) >= lda_score(x, pi1, mu1) else 1 for x in xs] — the >= tie rule gives class 0.' },
+        { ar: 'التباين المشترك = (2 + 8)/6 = 5/3 ≈ 1.6667، وحد القرار عند 4.5 لذا [4.0 → 0، 6.0 → 1، 2.0 → 0، 8.0 → 1].', en: 'The shared variance is (2 + 8)/6 = 5/3 ≈ 1.6667 and the boundary sits at 4.5, so [4.0 -> 0, 6.0 -> 1, 2.0 -> 0, 8.0 -> 1].' },
+        { ar: 'المخرج المطلوب: preds = [0, 1, 0, 1] وtrain preds = [0, 0, 0, 1, 1, 1].', en: 'Expected output: preds = [0, 1, 0, 1] and train preds = [0, 0, 0, 1, 1, 1].' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.nb-count-predict',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفّذ nb_predict(counts) على نموذج العدّ الجاهز: اجمع لكل صنف log(prior) زائد counts[d]*log(P[label][word]) لكل كلمة، وأعد الصنف ذا الدرجة الأعلى. الرسائل الثلاث في الأسطر المثبتة يجب أن تفرز spam وham وspam.',
+        en: 'Implement nb_predict(counts) on the ready count model: for each class sum log(prior) plus counts[d]*log(P[label][word]) over the words, and return the higher-scoring label. The three messages in the fixed lines must sort to spam, ham, and spam.',
+      },
+      starterCode: `import math
+
+P = {
+    "spam": {"free": 5 / 12, "meeting": 2 / 12, "money": 5 / 12},
+    "ham": {"free": 2 / 10, "meeting": 6 / 10, "money": 2 / 10},
+}
+PRIOR = {"spam": 0.5, "ham": 0.5}
+WORDS = ["free", "meeting", "money"]
+
+def nb_predict(counts):
+    # TODO: for each class sum log(prior) + counts[d]*log(P[label][word]);
+    # return the label with the larger total.
+    return "ham"
+
+print("doc A [1, 0, 1] ->", nb_predict([1, 0, 1]))
+print("doc B [0, 2, 0] ->", nb_predict([0, 2, 0]))
+print("doc C [0, 0, 3] ->", nb_predict([0, 0, 3]))`,
+      solution: `import math
+
+P = {
+    "spam": {"free": 5 / 12, "meeting": 2 / 12, "money": 5 / 12},
+    "ham": {"free": 2 / 10, "meeting": 6 / 10, "money": 2 / 10},
+}
+PRIOR = {"spam": 0.5, "ham": 0.5}
+WORDS = ["free", "meeting", "money"]
+
+def nb_predict(counts):
+    best, best_score = None, None
+    for label in ("spam", "ham"):
+        s = math.log(PRIOR[label])
+        for d, word in enumerate(WORDS):
+            s += counts[d] * math.log(P[label][word])
+        if best_score is None or s > best_score:
+            best, best_score = label, s
+    return best
+
+print("doc A [1, 0, 1] ->", nb_predict([1, 0, 1]))
+print("doc B [0, 2, 0] ->", nb_predict([0, 2, 0]))
+print("doc C [0, 0, 3] ->", nb_predict([0, 0, 3]))`,
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'الرسالة الأولى مزعجة', en: 'first message is spam' },
+          code: `assert nb_predict([1, 0, 1]) == "spam", 'expected spam | actual: %r' % nb_predict([1, 0, 1])`,
+        },
+        {
+          id: 't2',
+          name: { ar: 'الرسالة الثانية عادية', en: 'second message is ham' },
+          code: `assert nb_predict([0, 2, 0]) == "ham", 'expected ham | actual: %r' % nb_predict([0, 2, 0])`,
+        },
+        {
+          id: 't3',
+          name: { ar: 'رسالة المال الصافية', en: 'the pure-money message' },
+          code: `assert nb_predict([0, 0, 3]) == "spam", 'expected spam | actual: %r' % nb_predict([0, 0, 3])\nassert 'doc C [0, 0, 3] -> spam' in __learner_output__, 'expected line: doc C [0, 0, 3] -> spam | actual: %r' % __learner_output__`,
+        },
+      ],
+      hints: [
+        { ar: 'ابدأ best = None وbest_score = None، وفي كل صنف احسب s = math.log(PRIOR[label]) ثم أضف حدود الكلمات.', en: 'Start with best = None and best_score = None; for each class compute s = math.log(PRIOR[label]) then add the word terms.' },
+        { ar: 'حد الكلمة: s += counts[d] * math.log(P[label][word]) — العدّ يضاعف الدليل.', en: 'Word term: s += counts[d] * math.log(P[label][word]) — the count multiplies the evidence.' },
+        { ar: 'التحديث: if best_score is None or s > best_score — خزّن الصنف ودرجته معًا.', en: 'The update: if best_score is None or s > best_score — store the label and its score together.' },
+        { ar: 'النتيجة: doc A -> spam وdoc B -> ham وdoc C -> spam.', en: 'The result: doc A -> spam, doc B -> ham, doc C -> spam.' },
+      ],
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'لماذا تسمى gaussian_pdf «كثافة» لا «احتمالًا»؟',
+            en: 'Why is gaussian_pdf a density rather than a probability?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأنها قد تتجاوز 1 عند تباين صغير، وهي كثافة لكل وحدة على المحور', en: 'it can exceed 1 for a small variance, being density per unit of the axis' } },
+            { id: 'b', text: { ar: 'لأنها دائمًا أصغر من 1', en: 'because it is always below 1' } },
+            { id: 'c', text: { ar: 'لأنها تُحسب باللوغاريتم فقط', en: 'because it is computed in log space only' } },
+            { id: 'd', text: { ar: 'لأنها لا تعتمد على mu', en: 'because it does not depend on mu' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'كثافة الاحتمال تُكامل إلى 1 على كامل المحور لا تُحدّ عند 1 نقطيًا؛ عند var صغير جدًا تتجاوز القيمة عند المركز الواحد. التناسب يكفي لقاعدة بايز.',
+            en: 'A probability density integrates to 1 over the whole axis rather than being capped at 1 pointwise; at a very small variance the value at the center exceeds one. Proportionality is all Bayes rule needs.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'في بناء LDA: لماذا يكفي مقارنة log(pi_k) ناقص مربع البعد على 2*var دون حساب احتمال لاحق كامل؟',
+            en: 'In the LDA build: why is comparing log(pi_k) minus squared distance over 2*var enough, without computing a full posterior?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن المقام p(x) مشترك بين الأصناف فيُلغى عند المقارنة', en: 'because the denominator p(x) is shared across classes and cancels in the comparison' } },
+            { id: 'b', text: { ar: 'لأن اللوغاريتم يجعل الاحتمال اللاحق دقيقًا دائمًا', en: 'because the logarithm makes the posterior always exact' } },
+            { id: 'c', text: { ar: 'لأن السوابق متساوية في LDA دائمًا', en: 'because priors are always equal in LDA' } },
+            { id: 'd', text: { ar: 'لأن التباين المشترك يحذف الحاجة إلى بايز', en: 'because the shared variance removes the need for Bayes' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'p(y|x) تتناسب مع p(x|y)*pi_k والمقام p(x) واحد للجميع؛ أخذ اللوغاريتم يحول الضرب إلى جمع ويحفظ الترتيب — فالدرجة الأعلى هي اللاحق الأكبر.',
+            en: 'p(y|x) is proportional to p(x|y)*pi_k with one shared denominator p(x); taking logs turns the product into a sum and preserves the order — the higher score is the bigger posterior.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'لماذا لم نبني بايز الساذج الغاوسي على بعد واحد في هذا الدرس؟',
+            en: 'Why did this lesson not build 1-D Gaussian Naive Bayes as a separate model?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأنه معقد حسابيًا', en: 'because it is computationally hard' } },
+            { id: 'b', text: { ar: 'لأنه يطابق QDA تمامًا في بعد واحد: متوسط وتباين لكل صنف', en: 'because in one dimension it coincides with QDA: a mean and variance per class' } },
+            { id: 'c', text: { ar: 'لأنه لا يقبل السوابق', en: 'because it cannot take priors' } },
+            { id: 'd', text: { ar: 'لأنه يحتاج numpy بالضرورة', en: 'because it strictly requires numpy' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'افتراض الاستقلال الشرطي يصير بلا معنى مع خصيصة واحدة، فيصير النموذج متوسطًا وتباينًا لكل صنف — وهذا حرفيًا QDA؛ قيمة السذاجة تظهر مع تعدد الخصائص.',
+            en: 'With a single feature conditional independence is vacuous, so the model reduces to a mean and variance per class — literally QDA; the naivety pays off only with many features.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        {
+          ar: 'بنيتَ الكثافة الغاوسية: exp(-(x-mu)^2/(2*var))/sqrt(2*pi*var) بمرجعيتين 0.3989 و0.2821 وفحص تناظر ناجح.',
+          en: 'You built the Gaussian density exp(-(x-mu)^2/(2*var))/sqrt(2*pi*var) with reference values 0.3989 and 0.2821 and a passing symmetry check.',
+        },
+        {
+          ar: 'بنيتَ مصنف LDA كاملًا: تباين مشترك 5/3 ودرجتان لكل نقطة ثم argmax — تنبؤات [0, 1, 0, 1] والتدريب [0, 0, 0, 1, 1, 1].',
+          en: 'You built a full LDA classifier: shared variance 5/3, two scores per point, then argmax — predictions [0, 1, 0, 1] and training [0, 0, 0, 1, 1, 1].',
+        },
+        {
+          ar: 'بنيتَ مصنف عدّ لبايز الساذج: log(prior) + counts*log(p(word|label)) ثم argmax — فرز ثلاث رسائل صحيح.',
+          en: 'You built the Naive Bayes count classifier: log(prior) + counts*log(p(word|label)), then argmax — three messages sorted correctly.',
+        },
+        {
+          ar: 'القالب واحد عبر التوليديين: سوابق + كثافة/عدّ لكل صنف + argmax — يختلف فقط تقدير «الكثافة».',
+          en: 'One template spans the generative family: priors + per-class density/counts + argmax — only the density estimate changes.',
+        },
+      ],
+      reflectPrompt: {
+        ar: 'قاعدة بايز ظهرت في كل البناء: أين تحديداً اختفت p(x) المقام؟ وماذا كان سيحدث لو أردنا احتمالًا لاحقًا حقيقيًا بدل قرار فقط؟',
+        en: 'Bayes rule ran through every build: where exactly did the denominator p(x) vanish? And what would we have to do if we needed a true posterior number instead of just a decision?',
+      },
+    },
+  ],
+  sources: [
+    { book: 'MLS', section: 'mls.ch4.s3', pages: 'ص38-53 / pp.38-53' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

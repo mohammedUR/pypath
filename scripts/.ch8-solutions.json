@@ -1,0 +1,256 @@
+[
+ {
+  "lesson": "py4e.ch8.l1",
+  "id": "ex1.mutate-list",
+  "solution": "scores = [10, 20, 30]\nscores[2] = 99\nprint(scores)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "القائمة صارت [10, 20, 99]",
+     "en": "The list became [10, 20, 99]"
+    },
+    "code": "assert scores == [10, 20, 99], 'expected: [10, 20, 99] | actual: %r' % scores",
+    "expected": "[10, 20, 99]"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "القائمة مطبوعة كما هي",
+     "en": "The list is printed as-is"
+    },
+    "code": "assert '[10, 20, 99]' in __learner_output__, ('expected: [10, 20, 99] | actual: %r' % __learner_output__)",
+    "expected": "[10, 20, 99]"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch8.l2",
+  "id": "ex1.update-by-index",
+  "solution": "numbers = [1, 2, 3]\nfor i in range(len(numbers)):\n    numbers[i] = numbers[i] * 2\nprint(numbers)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "القائمة صارت [2, 4, 6]",
+     "en": "The list became [2, 4, 6]"
+    },
+    "code": "assert numbers == [2, 4, 6], 'expected: [2, 4, 6] | actual: %r' % numbers",
+    "expected": "[2, 4, 6]"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "القائمة مطبوعة",
+     "en": "The list is printed"
+    },
+    "code": "assert '[2, 4, 6]' in __learner_output__, ('expected: [2, 4, 6] | actual: %r' % __learner_output__)",
+    "expected": "[2, 4, 6]"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch8.l3",
+  "id": "ex1.append-sort",
+  "solution": "nums = [3, 1, 2]\nnums.append(9)\nnums.sort()\nprint(nums)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "القائمة صارت [1, 2, 3, 9]",
+     "en": "The list became [1, 2, 3, 9]"
+    },
+    "code": "assert nums == [1, 2, 3, 9], 'expected: [1, 2, 3, 9] | actual: %r' % nums",
+    "expected": "[1, 2, 3, 9]"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "القائمة مطبوعة",
+     "en": "The list is printed"
+    },
+    "code": "assert '[1, 2, 3, 9]' in __learner_output__, ('expected: [1, 2, 3, 9] | actual: %r' % __learner_output__)",
+    "expected": "[1, 2, 3, 9]"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch8.l4",
+  "id": "ex1.average-list",
+  "solution": "nums = [3, 41, 12, 9, 74, 15]\ntotal = sum(nums)\ncount = len(nums)\naverage = total / count\nprint('count: %d' % count)\nprint('total: %d' % total)\nprint('average: %g' % average)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "total يساوي 154",
+     "en": "total equals 154"
+    },
+    "code": "assert total == 154, 'expected: 154 | actual: %r' % total",
+    "expected": "154"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "count يساوي 6 وaverage صحيح",
+     "en": "count equals 6 and average is correct"
+    },
+    "code": "assert count == 6 and abs(average - 25.666666666666668) < 1e-9, 'expected: count 6, average 25.6667 | actual: %r, %r' % (count, average)",
+    "expected": "count: 6 / average: 25.6667"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "التقرير مطبوع بثلاثة أسطر",
+     "en": "The report prints as three lines"
+    },
+    "code": "assert 'count: 6' in __learner_output__ and 'total: 154' in __learner_output__ and 'average: 25.6667' in __learner_output__, ('expected: count: 6, total: 154, average: 25.6667 | actual: %r' % __learner_output__)",
+    "expected": "count: 6 / total: 154 / average: 25.6667"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch8.l5",
+  "id": "ex1.guarded-days",
+  "solution": "lines = ['From a@b.c Sat Jan 1 08:00:00 2008', '', 'From d@e.f Mon Jan 2 09:30:00 2008', 'Subject: hello']\nfor line in lines:\n    words = line.split()\n    if len(words) < 1:\n        continue\n    if words[0] != 'From':\n        continue\n    print(words[2])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "يوم السبت يُطبع",
+     "en": "Saturday is printed"
+    },
+    "code": "assert 'Sat' in __learner_output__, ('expected: Sat | actual: %r' % __learner_output__)",
+    "expected": "Sat"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يوم الاثنين يُطبع",
+     "en": "Monday is printed"
+    },
+    "code": "assert 'Mon' in __learner_output__, ('expected: Mon | actual: %r' % __learner_output__)",
+    "expected": "Mon"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "السطر الفارغ لم يُطبع محتواه",
+     "en": "The empty line leaked nothing"
+    },
+    "code": "assert 'hello' not in __learner_output__, ('expected: no hello | actual: %r' % __learner_output__)",
+    "expected": "no hello"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch8.l6",
+  "id": "ex2.project-word-organizer",
+  "solution": "sentence = 'Python builds paths. Lists build Python programs, and paths build skills.'\nwords = sentence.split()\nclean = []\nfor w in words:\n    clean.append(w.strip('.,').lower())\nclean.sort()\nunique = []\nfor w in clean:\n    if w not in unique:\n        unique.append(w)\nprint('words: %d' % len(clean))\nprint('unique: %d' % len(unique))\nprint('first: %s' % clean[0])\nprint('last: %s' % clean[-1])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "clean قائمة مرتبة نظيفة",
+     "en": "clean is a sorted clean list"
+    },
+    "code": "assert clean == ['and', 'build', 'build', 'builds', 'lists', 'paths', 'paths', 'programs', 'python', 'python', 'skills'], 'expected: sorted clean words | actual: %r' % clean",
+    "expected": "sorted clean words"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "unique بلا تكرار وطولها 8",
+     "en": "unique has no repeats and length 8"
+    },
+    "code": "assert len(unique) == 8 and unique == ['and', 'build', 'builds', 'lists', 'paths', 'programs', 'python', 'skills'], 'expected: 8 unique words | actual: %r' % unique",
+    "expected": "8 unique words"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "عددا الكلمات والفريدة مطبوعان",
+     "en": "Both word counts are printed"
+    },
+    "code": "assert 'words: 11' in __learner_output__ and 'unique: 8' in __learner_output__, ('expected: words: 11, unique: 8 | actual: %r' % __learner_output__)",
+    "expected": "words: 11 / unique: 8"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "أول كلمة وآخر كلمة مطبوعان",
+     "en": "First and last words are printed"
+    },
+    "code": "assert 'first: and' in __learner_output__ and 'last: skills' in __learner_output__, ('expected: first: and, last: skills | actual: %r' % __learner_output__)",
+    "expected": "first: and / last: skills"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch8.l6",
+  "id": "ex3.middle-function",
+  "solution": "def middle(t):\n    return t[1:-1]\n\nletters = ['a', 'b', 'c', 'd']\nrest = middle(letters)\nprint(rest)\nprint(letters)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "middle يعيد الوسط بلا أول وآخر",
+     "en": "middle returns the middle without first and last"
+    },
+    "code": "assert middle([1, 2, 3, 4]) == [2, 3], 'expected: [2, 3] | actual: %r' % middle([1, 2, 3, 4])",
+    "expected": "[2, 3]"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "القائمة الأصلية لم تُمسّ",
+     "en": "The original list is untouched"
+    },
+    "code": "assert letters == ['a', 'b', 'c', 'd'], 'expected: original intact | actual: %r' % letters",
+    "expected": "original intact"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الوسط ['b', 'c'] مطبوع",
+     "en": "The middle ['b', 'c'] is printed"
+    },
+    "code": "assert \"['b', 'c']\" in __learner_output__, ('expected: [b, c] | actual: %r' % __learner_output__)",
+    "expected": "['b', 'c']"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch8.l6",
+  "id": "ex6.debug-alias-backup",
+  "solution": "original = ['banana', 'apple', 'cherry']\nbackup = original[:]\nbackup.sort()\nprint('backup: %s' % backup)\nprint('original: %s' % original)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الأصل احتفظ بترتيبه",
+     "en": "The original kept its order"
+    },
+    "code": "assert original == ['banana', 'apple', 'cherry'], 'expected: original intact | actual: %r' % original",
+    "expected": "original intact"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "النسخة مرتبة",
+     "en": "The backup is sorted"
+    },
+    "code": "assert backup == ['apple', 'banana', 'cherry'], 'expected: sorted backup | actual: %r' % backup",
+    "expected": "sorted backup"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الأصل مطبوع سليمًا",
+     "en": "The intact original is printed"
+    },
+    "code": "assert \"['banana', 'apple', 'cherry']\" in __learner_output__, ('expected: original intact in output | actual: %r' % __learner_output__)",
+    "expected": "['banana', 'apple', 'cherry']"
+   }
+  ]
+ }
+]

@@ -1,0 +1,2446 @@
+
+===== صفحة الكتاب 730 =====
+15
+Natural Language Processing: Pretraining
+Humans need to communicate. Out of this basic need of the human condition, a vast amount
+of written text has been generated on an everyday basis. Given rich text in social media,
+chat apps, emails, product reviews, news articles, research papers, and books, it becomes
+vital to enable computers to understand them to offer assistance or make decisions based
+on human languages.
+Natural language processing studies interactions between computers and humans using
+natural languages. In practice, it is very common to use natural language processing tech-
+niques to process and analyze text (human natural language) data, such as language models
+in Section 9.3 and machine translation models in Section 10.5.
+To understand text, we can begin by learning its representations. Leveraging the existing
+text sequences from large corpora, self-supervised learning has been extensively used to
+pretrain text representations, such as by predicting some hidden part of the text using some
+other part of their surrounding text. In this way, models learn through supervision from
+massive text data without expensive labeling efforts!
+As we will see in this chapter, when treating each word or subword as an individual token,
+the representation of each token can be pretrained using word2vec, GloVe, or subword
+embedding models on large corpora. After pretraining, representation of each token can
+be a vector, however, it remains the same no matter what the context is. For instance,
+the vector representation of “bank” is the same in both “go to the bank to deposit some
+money” and “go to the bank to sit down”. Thus, many more recent pretraining models
+adapt representation of the same token to different contexts. Among them is BERT, a much
+deeper self-supervised model based on the Transformer encoder. In this chapter, we will
+focus on how to pretrain such representations for text, as highlighted in Fig. 15.1.
+For sight of the big picture, Fig. 15.1 shows that the pretrained text representations can be
+fed to a variety of deep learning architectures for different downstream natural language
+processing applications. We will cover them in Chapter 16.
+690
+
+===== صفحة الكتاب 731 =====
+691
+Word Embedding (word2vec)
+t
+Fig. 15.1
+Pretrained text representations can be fed to various deep learning architectures for
+different downstream natural language processing applications. This chapter focuses on
+the upstream text representation pretraining.
+227
+15.1 Word Embedding (word2vec)
+Natural language is a complex system used to express meanings. In this system, words
+are the basic unit of the meaning. As the name implies, word vectors are vectors used to
+represent words, and can also be considered as feature vectors or representations of words.
+The technique of mapping words to real vectors is called word embedding. In recent years,
+word embedding has gradually become the basic knowledge of natural language process-
+ing.
+15.1.1 One-Hot Vectors Are a Bad Choice
+We used one-hot vectors to represent words (characters are words) in Section 9.5. Suppose
+that the number of different words in the dictionary (the dictionary size) is 𝑁, and each
+word corresponds to a different integer (index) from 0 to 𝑁−1. To obtain the one-hot
+vector representation for any word with index 𝑖, we create a length-𝑁vector with all 0s and
+set the element at position 𝑖to 1. In this way, each word is represented as a vector of length
+𝑁, and it can be used directly by neural networks.
+Although one-hot word vectors are easy to construct, they are usually not a good choice. A
+main reason is that one-hot word vectors cannot accurately express the similarity between
+different words, such as the cosine similarity that we often use. For vectors x, y ∈R𝑑, their
+cosine similarity is the cosine of the angle between them:
+x⊤y
+∥x∥∥y∥∈[−1, 1].
+(15.1.1)
+Since the cosine similarity between one-hot vectors of any two different words is 0, one-hot
+vectors cannot encode similarities among words.
+15.1.2 Self-Supervised word2vec
+The word2vec 227 tool was proposed to address the above issue. It maps each word to a
+
+===== صفحة الكتاب 732 =====
+692
+Natural Language Processing: Pretraining
+fixed-length vector, and these vectors can better express the similarity and analogy relation-
+ship among different words. The word2vec tool contains two models, namely skip-gram
+(Mikolov et al., 2013) and continuous bag of words (CBOW) (Mikolov et al., 2013). For
+semantically meaningful representations, their training relies on conditional probabilities
+that can be viewed as predicting some words using some of their surrounding words in cor-
+pora. Since supervision comes from the data without labels, both skip-gram and continuous
+bag of words are self-supervised models.
+In the following, we will introduce these two models and their training methods.
+15.1.3 The Skip-Gram Model
+The skip-gram model assumes that a word can be used to generate its surrounding words in
+a text sequence. Take the text sequence “the”, “man”, “loves”, “his”, “son” as an example.
+Let’s choose “loves” as the center word and set the context window size to 2. As shown in
+Fig. 15.1.1, given the center word “loves”, the skip-gram model considers the conditional
+probability for generating the context words: “the”, “man”, “his”, and “son”, which are no
+more than 2 words away from the center word:
+𝑃(”the”, ”man”, ”his”, ”son” | ”loves”).
+(15.1.2)
+Assume that the context words are independently generated given the center word (i.e.,
+conditional independence). In this case, the above conditional probability can be rewritten
+as
+𝑃(”the” | ”loves”) · 𝑃(”man” | ”loves”) · 𝑃(”his” | ”loves”) · 𝑃(”son” | ”loves”).
+(15.1.3)
+t
+Fig. 15.1.1
+The skip-gram model considers the conditional probability of generating the surrounding
+context words given a center word.
+In the skip-gram model, each word has two 𝑑-dimensional-vector representations for cal-
+culating conditional probabilities. More concretely, for any word with index 𝑖in the dic-
+tionary, denote by v𝑖∈R𝑑and u𝑖∈R𝑑its two vectors when used as a center word and a
+context word, respectively. The conditional probability of generating any context word 𝑤𝑜
+(with index 𝑜in the dictionary) given the center word 𝑤𝑐(with index 𝑐in the dictionary)
+can be modeled by a softmax operation on vector dot products:
+𝑃(𝑤𝑜| 𝑤𝑐) =
+exp(u⊤
+𝑜v𝑐)
+Í
+𝑖∈V exp(u⊤
+𝑖v𝑐) ,
+(15.1.4)
+
+===== صفحة الكتاب 733 =====
+693
+Word Embedding (word2vec)
+where the vocabulary index set V = {0, 1, . . . , |V| −1}. Given a text sequence of length
+𝑇, where the word at time step 𝑡is denoted as 𝑤(𝑡). Assume that context words are in-
+dependently generated given any center word. For context window size 𝑚, the likelihood
+function of the skip-gram model is the probability of generating all context words given
+any center word:
+𝑇
+Ö
+𝑡=1
+Ö
+−𝑚≤𝑗≤𝑚, 𝑗≠0
+𝑃(𝑤(𝑡+ 𝑗) | 𝑤(𝑡)),
+(15.1.5)
+where any time step that is less than 1 or greater than 𝑇can be omitted.
+Training
+The skip-gram model parameters are the center word vector and context word vector for
+each word in the vocabulary. In training, we learn the model parameters by maximizing the
+likelihood function (i.e., maximum likelihood estimation). This is equivalent to minimizing
+the following loss function:
+−
+𝑇
+Õ
+𝑡=1
+Õ
+−𝑚≤𝑗≤𝑚, 𝑗≠0
+log 𝑃(𝑤(𝑡+ 𝑗) | 𝑤(𝑡)).
+(15.1.6)
+When using stochastic gradient descent to minimize the loss, in each iteration we can ran-
+domly sample a shorter subsequence to calculate the (stochastic) gradient for this subse-
+quence to update the model parameters. To calculate this (stochastic) gradient, we need
+to obtain the gradients of the log conditional probability with respect to the center word
+vector and the context word vector. In general, according to (15.1.4) the log conditional
+probability involving any pair of the center word 𝑤𝑐and the context word 𝑤𝑜is
+log 𝑃(𝑤𝑜| 𝑤𝑐) = u⊤
+𝑜v𝑐−log
+ Õ
+𝑖∈V
+exp(u⊤
+𝑖v𝑐)
+!
+.
+(15.1.7)
+Through differentiation, we can obtain its gradient with respect to the center word vector
+v𝑐as
+𝜕log 𝑃(𝑤𝑜| 𝑤𝑐)
+𝜕v𝑐
+= u𝑜−
+Í
+𝑗∈V exp(u⊤
+𝑗v𝑐)u 𝑗
+Í
+𝑖∈V exp(u⊤
+𝑖v𝑐)
+= u𝑜−
+Õ
+𝑗∈V
+ 
+exp(u⊤
+𝑗v𝑐)
+Í
+𝑖∈V exp(u⊤
+𝑖v𝑐)
+!
+u 𝑗
+= u𝑜−
+Õ
+𝑗∈V
+𝑃(𝑤𝑗| 𝑤𝑐)u 𝑗.
+(15.1.8)
+Note that the calculation in (15.1.8) requires the conditional probabilities of all words in
+the dictionary with 𝑤𝑐as the center word. The gradients for the other word vectors can be
+obtained in the same way.
+After training, for any word with index 𝑖in the dictionary, we obtain both word vectors
+
+===== صفحة الكتاب 734 =====
+694
+Natural Language Processing: Pretraining
+v𝑖(as the center word) and u𝑖(as the context word). In natural language processing ap-
+plications, the center word vectors of the skip-gram model are typically used as the word
+representations.
+15.1.4 The Continuous Bag of Words (CBOW) Model
+The continuous bag of words (CBOW) model is similar to the skip-gram model. The major
+difference from the skip-gram model is that the continuous bag of words model assumes that
+a center word is generated based on its surrounding context words in the text sequence. For
+example, in the same text sequence “the”, “man”, “loves”, “his”, and “son”, with “loves” as
+the center word and the context window size being 2, the continuous bag of words model
+considers the conditional probability of generating the center word “loves” based on the
+context words “the”, “man”, “his” and “son” (as shown in Fig. 15.1.2), which is
+𝑃(”loves” | ”the”, ”man”, ”his”, ”son”).
+(15.1.9)
+t
+Fig. 15.1.2
+The continuous bag of words model considers the conditional probability of generating
+the center word given its surrounding context words.
+Since there are multiple context words in the continuous bag of words model, these context
+word vectors are averaged in the calculation of the conditional probability. Specifically, for
+any word with index 𝑖in the dictionary, denote by v𝑖∈R𝑑and u𝑖∈R𝑑its two vectors
+when used as a context word and a center word (meanings are switched in the skip-gram
+model), respectively. The conditional probability of generating any center word 𝑤𝑐(with
+index 𝑐in the dictionary) given its surrounding context words 𝑤𝑜1, . . . , 𝑤𝑜2𝑚(with index
+𝑜1, . . . , 𝑜2𝑚in the dictionary) can be modeled by
+𝑃(𝑤𝑐| 𝑤𝑜1, . . . , 𝑤𝑜2𝑚) =
+exp
+
+1
+2𝑚u⊤
+𝑐(v𝑜1 + . . . + v𝑜2𝑚)
+
+Í
+𝑖∈V exp
+
+1
+2𝑚u⊤
+𝑖(v𝑜1 + . . . + v𝑜2𝑚)
+ .
+(15.1.10)
+For brevity, let W𝑜= {𝑤𝑜1, . . . , 𝑤𝑜2𝑚} and ¯v𝑜=  v𝑜1 + . . . + v𝑜2𝑚
+ /(2𝑚). Then (15.1.10)
+can be simplified as
+𝑃(𝑤𝑐| W𝑜) =
+exp  u⊤
+𝑐¯v𝑜
+
+Í
+𝑖∈V exp  u⊤
+𝑖¯v𝑜
+ .
+(15.1.11)
+Given a text sequence of length 𝑇, where the word at time step 𝑡is denoted as 𝑤(𝑡). For
+
+===== صفحة الكتاب 735 =====
+695
+Word Embedding (word2vec)
+context window size 𝑚, the likelihood function of the continuous bag of words model is
+the probability of generating all center words given their context words:
+𝑇
+Ö
+𝑡=1
+𝑃(𝑤(𝑡) | 𝑤(𝑡−𝑚), . . . , 𝑤(𝑡−1), 𝑤(𝑡+1), . . . , 𝑤(𝑡+𝑚)).
+(15.1.12)
+Training
+Training continuous bag of words models is almost the same as training skip-gram models.
+The maximum likelihood estimation of the continuous bag of words model is equivalent to
+minimizing the following loss function:
+−
+𝑇
+Õ
+𝑡=1
+log 𝑃(𝑤(𝑡) | 𝑤(𝑡−𝑚), . . . , 𝑤(𝑡−1), 𝑤(𝑡+1), . . . , 𝑤(𝑡+𝑚)).
+(15.1.13)
+Notice that
+log 𝑃(𝑤𝑐| W𝑜) = u⊤
+𝑐¯v𝑜−log
+ Õ
+𝑖∈V
+exp  u⊤
+𝑖¯v𝑜
+
+!
+.
+(15.1.14)
+Through differentiation, we can obtain its gradient with respect to any context word vector
+v𝑜𝑖(𝑖= 1, . . . , 2𝑚) as
+𝜕log 𝑃(𝑤𝑐| W𝑜)
+𝜕v𝑜𝑖
+= 1
+2𝑚
+©­
+«
+u𝑐−
+Õ
+𝑗∈V
+exp(u⊤
+𝑗¯v𝑜)u 𝑗
+Í
+𝑖∈V exp(u⊤
+𝑖¯v𝑜)
+ª®
+¬
+= 1
+2𝑚
+©­
+«
+u𝑐−
+Õ
+𝑗∈V
+𝑃(𝑤𝑗| W𝑜)u 𝑗ª®
+¬
+.
+(15.1.15)
+The gradients for the other word vectors can be obtained in the same way. Unlike the skip-
+gram model, the continuous bag of words model typically uses context word vectors as the
+word representations.
+15.1.5 Summary
+• Word vectors are vectors used to represent words, and can also be considered as feature
+vectors or representations of words. The technique of mapping words to real vectors
+is called word embedding.
+• The word2vec tool contains both the skip-gram and continuous bag of words models.
+• The skip-gram model assumes that a word can be used to generate its surrounding words
+in a text sequence; while the continuous bag of words model assumes that a center
+word is generated based on its surrounding context words.
+15.1.6 Exercises
+1. What is the computational complexity for calculating each gradient? What could be the
+issue if the dictionary size is huge?
+
+===== صفحة الكتاب 736 =====
+696
+Natural Language Processing: Pretraining
+228
+2. Some fixed phrases in English consist of multiple words, such as “new york”. How to
+train their word vectors? Hint: see Section 4 in the word2vec paper (Mikolov et al.,
+2013).
+3. Let’s reflect on the word2vec design by taking the skip-gram model as an example. What
+is the relationship between the dot product of two word vectors in the skip-gram model
+and the cosine similarity? For a pair of words with similar semantics, why may the
+cosine similarity of their word vectors (trained by the skip-gram model) be high?
+Discussions228.
+15.2 Approximate Training
+Recall our discussions in Section 15.1. The main idea of the skip-gram model is using
+softmax operations to calculate the conditional probability of generating a context word
+𝑤𝑜based on the given center word 𝑤𝑐in (15.1.4), whose corresponding logarithmic loss
+is given by the opposite of (15.1.7).
+Due to the nature of the softmax operation, since a context word may be anyone in the
+dictionary V, the opposite of (15.1.7) contains the summation of items as many as the
+entire size of the vocabulary. Consequently, the gradient calculation for the skip-gram
+model in (15.1.8) and that for the continuous bag-of-words model in (15.1.15) both contain
+the summation. Unfortunately, the computational cost for such gradients that sum over a
+large dictionary (often with hundreds of thousands or millions of words) is huge!
+In order to reduce the aforementioned computational complexity, this section will introduce
+two approximate training methods: negative sampling and hierarchical softmax. Due to the
+similarity between the skip-gram model and the continuous bag of words model, we will
+just take the skip-gram model as an example to describe these two approximate training
+methods.
+15.2.1 Negative Sampling
+Negative sampling modifies the original objective function. Given the context window of
+a center word 𝑤𝑐, the fact that any (context) word 𝑤𝑜comes from this context window is
+considered as an event with the probability modeled by
+𝑃(𝐷= 1 | 𝑤𝑐, 𝑤𝑜) = 𝜎(u⊤
+𝑜v𝑐),
+(15.2.1)
+where 𝜎uses the definition of the sigmoid activation function:
+𝜎(𝑥) =
+1
+1 + exp(−𝑥) .
+(15.2.2)
+Let’s begin by maximizing the joint probability of all such events in text sequences to train
+word embeddings. Specifically, given a text sequence of length 𝑇, denote by 𝑤(𝑡) the word
+
+===== صفحة الكتاب 737 =====
+697
+Approximate Training
+at time step 𝑡and let the context window size be 𝑚, consider maximizing the joint proba-
+bility
+𝑇
+Ö
+𝑡=1
+Ö
+−𝑚≤𝑗≤𝑚, 𝑗≠0
+𝑃(𝐷= 1 | 𝑤(𝑡), 𝑤(𝑡+𝑗)).
+(15.2.3)
+However, (15.2.3) only considers those events that involve positive examples. As a result,
+the joint probability in (15.2.3) is maximized to 1 only if all the word vectors are equal
+to infinity. Of course, such results are meaningless. To make the objective function more
+meaningful, negative sampling adds negative examples sampled from a predefined distri-
+bution.
+Denote by 𝑆the event that a context word 𝑤𝑜comes from the context window of a cen-
+ter word 𝑤𝑐. For this event involving 𝑤𝑜, from a predefined distribution 𝑃(𝑤) sample 𝐾
+noise words that are not from this context window. Denote by 𝑁𝑘the event that a noise
+word 𝑤𝑘(𝑘= 1, . . . , 𝐾) does not come from the context window of 𝑤𝑐. Assume that these
+events involving both the positive example and negative examples 𝑆, 𝑁1, . . . , 𝑁𝐾are mutu-
+ally independent. Negative sampling rewrites the joint probability (involving only positive
+examples) in (15.2.3) as
+𝑇
+Ö
+𝑡=1
+Ö
+−𝑚≤𝑗≤𝑚, 𝑗≠0
+𝑃(𝑤(𝑡+ 𝑗) | 𝑤(𝑡)),
+(15.2.4)
+where the conditional probability is approximated through events 𝑆, 𝑁1, . . . , 𝑁𝐾:
+𝑃(𝑤(𝑡+ 𝑗) | 𝑤(𝑡)) = 𝑃(𝐷= 1 | 𝑤(𝑡), 𝑤(𝑡+ 𝑗))
+𝐾
+Ö
+𝑘=1, 𝑤𝑘∼𝑃(𝑤)
+𝑃(𝐷= 0 | 𝑤(𝑡), 𝑤𝑘). (15.2.5)
+Denote by 𝑖𝑡and ℎ𝑘the indices of a word 𝑤(𝑡) at time step 𝑡of a text sequence and a noise
+word 𝑤𝑘, respectively. The logarithmic loss with respect to the conditional probabilities in
+(15.2.5) is
+−log 𝑃(𝑤(𝑡+ 𝑗) | 𝑤(𝑡)) = −log 𝑃(𝐷= 1 | 𝑤(𝑡), 𝑤(𝑡+ 𝑗)) −
+𝐾
+Õ
+𝑘=1, 𝑤𝑘∼𝑃(𝑤)
+log 𝑃(𝐷= 0 | 𝑤(𝑡), 𝑤𝑘)
+= −log 𝜎
+
+u⊤
+𝑖𝑡+ 𝑗v𝑖𝑡
+
+−
+𝐾
+Õ
+𝑘=1, 𝑤𝑘∼𝑃(𝑤)
+log
+
+1 −𝜎
+
+u⊤
+ℎ𝑘v𝑖𝑡
+
+= −log 𝜎
+
+u⊤
+𝑖𝑡+𝑗v𝑖𝑡
+
+−
+𝐾
+Õ
+𝑘=1, 𝑤𝑘∼𝑃(𝑤)
+log 𝜎
+
+−u⊤
+ℎ𝑘v𝑖𝑡
+
+.
+(15.2.6)
+We can see that now the computational cost for gradients at each training step has nothing
+to do with the dictionary size, but linearly depends on 𝐾. When setting the hyperparameter
+𝐾to a smaller value, the computational cost for gradients at each training step with negative
+sampling is smaller.
+
+===== صفحة الكتاب 738 =====
+698
+Natural Language Processing: Pretraining
+15.2.2 Hierarchical Softmax
+As an alternative approximate training method, hierarchical softmax uses the binary tree, a
+data structure illustrated in Fig. 15.2.1, where each leaf node of the tree represents a word
+in dictionary V.
+t
+Fig. 15.2.1
+Hierarchical softmax for approximate training, where each leaf node of the tree represents
+a word in the dictionary.
+Denote by 𝐿(𝑤) the number of nodes (including both ends) on the path from the root node
+to the leaf node representing word 𝑤in the binary tree. Let 𝑛(𝑤, 𝑗) be the 𝑗th node on this
+path, with its context word vector being u𝑛(𝑤, 𝑗). For example, 𝐿(𝑤3) = 4 in Fig. 15.2.1.
+Hierarchical softmax approximates the conditional probability in (15.1.4) as
+𝑃(𝑤𝑜| 𝑤𝑐) =
+𝐿(𝑤𝑜)−1
+Ö
+𝑗=1
+𝜎
+
+[[𝑛(𝑤𝑜, 𝑗+ 1) = leftChild(𝑛(𝑤𝑜, 𝑗))]] · u⊤
+𝑛(𝑤𝑜, 𝑗)v𝑐
+
+,
+(15.2.7)
+where function 𝜎is defined in (15.2.2), and leftChild(𝑛) is the left child node of node 𝑛:
+if 𝑥is true, [[𝑥]] = 1; otherwise [[𝑥]] = −1.
+To illustrate, let’s calculate the conditional probability of generating word 𝑤3 given word
+𝑤𝑐in Fig. 15.2.1. This requires dot products between the word vector v𝑐of 𝑤𝑐and non-
+leaf node vectors on the path (the path in bold in Fig. 15.2.1) from the root to 𝑤3, which is
+traversed left, right, then left:
+𝑃(𝑤3 | 𝑤𝑐) = 𝜎(u⊤
+𝑛(𝑤3,1)v𝑐) · 𝜎(−u⊤
+𝑛(𝑤3,2)v𝑐) · 𝜎(u⊤
+𝑛(𝑤3,3)v𝑐).
+(15.2.8)
+Since 𝜎(𝑥) + 𝜎(−𝑥) = 1, it holds that the conditional probabilities of generating all the
+words in dictionary V based on any word 𝑤𝑐sum up to one:
+Õ
+𝑤∈V
+𝑃(𝑤| 𝑤𝑐) = 1.
+(15.2.9)
+Fortunately, since 𝐿(𝑤𝑜) −1 is on the order of O(log2|V|) due to the binary tree struc-
+ture, when the dictionary size V is huge, the computational cost for each training step us-
+ing hierarchical softmax is significantly reduced compared with that without approximate
+training.
+
+===== صفحة الكتاب 739 =====
+699
+The Dataset for Pretraining Word Embeddings
+229
+230
+15.2.3 Summary
+• Negative sampling constructs the loss function by considering mutually independent
+events that involve both positive and negative examples. The computational cost for
+training is linearly dependent on the number of noise words at each step.
+• Hierarchical softmax constructs the loss function using the path from the root node to
+the leaf node in the binary tree. The computational cost for training is dependent on
+the logarithm of the dictionary size at each step.
+15.2.4 Exercises
+1. How can we sample noise words in negative sampling?
+2. Verify that (15.2.9) holds.
+3. How to train the continuous bag of words model using negative sampling and hierarchi-
+cal softmax, respectively?
+Discussions229.
+15.3 The Dataset for Pretraining Word Embeddings
+Now that we know the technical details of the word2vec models and approximate training
+methods, let’s walk through their implementations. Specifically, we will take the skip-
+gram model in Section 15.1 and negative sampling in Section 15.2 as an example. In this
+section, we begin with the dataset for pretraining the word embedding model: the original
+format of the data will be transformed into minibatches that can be iterated over during
+training.
+import collections
+import math
+import os
+import random
+import torch
+from d2l import torch as d2l
+15.3.1 Reading the Dataset
+The dataset that we use here is Penn Tree Bank (PTB)230. This corpus is sampled from Wall
+Street Journal articles, split into training, validation, and test sets. In the original format,
+each line of the text file represents a sentence of words that are separated by spaces. Here
+we treat each word as a token.
+
+===== صفحة الكتاب 740 =====
+700
+Natural Language Processing: Pretraining
+#@save
+d2l.DATA_HUB['ptb'] = (d2l.DATA_URL + 'ptb.zip',
+'319d85e578af0cdc590547f26231e4e31cdf1e42')
+#@save
+def read_ptb():
+"""Load the PTB dataset into a list of text lines."""
+data_dir = d2l.download_extract('ptb')
+# Read the training set
+with open(os.path.join(data_dir, 'ptb.train.txt')) as f:
+raw_text = f.read()
+return [line.split() for line in raw_text.split('\n')]
+sentences = read_ptb()
+f'# sentences: {len(sentences)}'
+Downloading ../data/ptb.zip from http://d2l-data.s3-accelerate.amazonaws.com/
+↩→ptb.zip...
+'# sentences: 42069'
+After reading the training set, we build a vocabulary for the corpus, where any word that
+appears less than 10 times is replaced by the “<unk>” token. Note that the original dataset
+also contains “<unk>” tokens that represent rare (unknown) words.
+vocab = d2l.Vocab(sentences, min_freq=10)
+f'vocab size: {len(vocab)}'
+'vocab size: 6719'
+15.3.2 Subsampling
+Text data typically have high-frequency words such as “the”, “a”, and “in”: they may even
+occur billions of times in very large corpora. However, these words often co-occur with
+many different words in context windows, providing little useful signals. For instance,
+consider the word “chip” in a context window: intuitively its co-occurrence with a low-
+frequency word “intel” is more useful in training than the co-occurrence with a high-
+frequency word “a”. Moreover, training with vast amounts of (high-frequency) words is
+slow. Thus, when training word embedding models, high-frequency words can be sub-
+sampled (Mikolov et al., 2013). Specifically, each indexed word 𝑤𝑖in the dataset will be
+discarded with probability
+𝑃(𝑤𝑖) = max
+
+1 −
+r
+𝑡
+𝑓(𝑤𝑖) , 0
+
+,
+(15.3.1)
+where 𝑓(𝑤𝑖) is the ratio of the number of words 𝑤𝑖to the total number of words in the
+dataset, and the constant 𝑡is a hyperparameter (10−4 in the experiment). We can see that
+
+===== صفحة الكتاب 741 =====
+701
+The Dataset for Pretraining Word Embeddings
+only when the relative frequency 𝑓(𝑤𝑖) > 𝑡can the (high-frequency) word 𝑤𝑖be discarded,
+and the higher the relative frequency of the word, the greater the probability of being dis-
+carded.
+#@save
+def subsample(sentences, vocab):
+"""Subsample high-frequency words."""
+# Exclude unknown tokens ('<unk>')
+sentences = [[token for token in line if vocab[token] != vocab.unk]
+for line in sentences]
+counter = collections.Counter([
+token for line in sentences for token in line])
+num_tokens = sum(counter.values())
+# Return True if `token` is kept during subsampling
+def keep(token):
+return(random.uniform(0, 1) <
+math.sqrt(1e-4 / counter[token] * num_tokens))
+return ([[token for token in line if keep(token)] for line in sentences],
+counter)
+subsampled, counter = subsample(sentences, vocab)
+The following code snippet plots the histogram of the number of tokens per sentence be-
+fore and after subsampling. As expected, subsampling significantly shortens sentences by
+dropping high-frequency words, which will lead to training speedup.
+d2l.show_list_len_pair_hist(['origin', 'subsampled'], '# tokens per sentence',
+'count', sentences, subsampled);
+For individual tokens, the sampling rate of the high-frequency word “the” is less than
+1/20.
+def compare_counts(token):
+return (f'# of "{token}": '
+f'before={sum([l.count(token) for l in sentences])}, '
+f'after={sum([l.count(token) for l in subsampled])}')
+compare_counts('the')
+
+===== صفحة الكتاب 742 =====
+702
+Natural Language Processing: Pretraining
+'# of "the": before=50770, after=2010'
+In contrast, low-frequency words “join” are completely kept.
+compare_counts('join')
+'# of "join": before=45, after=45'
+After subsampling, we map tokens to their indices for the corpus.
+corpus = [vocab[line] for line in subsampled]
+corpus[:3]
+[[], [4127, 3228, 1773], [3922, 1922, 4743, 2696]]
+15.3.3 Extracting Center Words and Context Words
+The following get_centers_and_contexts function extracts all the center words and their
+context words from corpus. It uniformly samples an integer between 1 and max_window_size
+at random as the context window size. For any center word, those words whose distance
+from it does not exceed the sampled context window size are its context words.
+#@save
+def get_centers_and_contexts(corpus, max_window_size):
+"""Return center words and context words in skip-gram."""
+centers, contexts = [], []
+for line in corpus:
+# To form a "center word--context word" pair, each sentence needs to
+# have at least 2 words
+if len(line) < 2:
+continue
+centers += line
+for i in range(len(line)):
+# Context window centered at `i`
+window_size = random.randint(1, max_window_size)
+indices = list(range(max(0, i - window_size),
+min(len(line), i + 1 + window_size)))
+# Exclude the center word from the context words
+indices.remove(i)
+contexts.append([line[idx] for idx in indices])
+return centers, contexts
+Next, we create an artificial dataset containing two sentences of 7 and 3 words, respectively.
+Let the maximum context window size be 2 and print all the center words and their context
+words.
+
+===== صفحة الكتاب 743 =====
+703
+The Dataset for Pretraining Word Embeddings
+tiny_dataset = [list(range(7)), list(range(7, 10))]
+print('dataset', tiny_dataset)
+for center, context in zip(*get_centers_and_contexts(tiny_dataset, 2)):
+print('center', center, 'has contexts', context)
+dataset [[0, 1, 2, 3, 4, 5, 6], [7, 8, 9]]
+center 0 has contexts [1]
+center 1 has contexts [0, 2]
+center 2 has contexts [0, 1, 3, 4]
+center 3 has contexts [1, 2, 4, 5]
+center 4 has contexts [2, 3, 5, 6]
+center 5 has contexts [3, 4, 6]
+center 6 has contexts [5]
+center 7 has contexts [8, 9]
+center 8 has contexts [7, 9]
+center 9 has contexts [7, 8]
+When training on the PTB dataset, we set the maximum context window size to 5. The
+following extracts all the center words and their context words in the dataset.
+all_centers, all_contexts = get_centers_and_contexts(corpus, 5)
+f'# center-context pairs: {sum([len(contexts) for contexts in all_contexts])}'
+'# center-context pairs: 1503420'
+15.3.4 Negative Sampling
+We use negative sampling for approximate training. To sample noise words according to a
+predefined distribution, we define the following RandomGenerator class, where the (possi-
+bly unnormalized) sampling distribution is passed via the argument sampling_weights.
+#@save
+class RandomGenerator:
+"""Randomly draw among {1, ..., n} according to n sampling weights."""
+def __init__(self, sampling_weights):
+# Exclude
+self.population = list(range(1, len(sampling_weights) + 1))
+self.sampling_weights = sampling_weights
+self.candidates = []
+self.i = 0
+def draw(self):
+if self.i == len(self.candidates):
+# Cache `k` random sampling results
+self.candidates = random.choices(
+self.population, self.sampling_weights, k=10000)
+self.i = 0
+self.i += 1
+return self.candidates[self.i - 1]
+
+===== صفحة الكتاب 744 =====
+704
+Natural Language Processing: Pretraining
+For example, we can draw 10 random variables 𝑋among indices 1, 2, and 3 with sampling
+probabilities 𝑃(𝑋= 1) = 2/9, 𝑃(𝑋= 2) = 3/9, and 𝑃(𝑋= 3) = 4/9 as follows.
+For a pair of center word and context word, we randomly sample K (5 in the experiment)
+noise words. According to the suggestions in the word2vec paper, the sampling probability
+𝑃(𝑤) of a noise word 𝑤is set to its relative frequency in the dictionary raised to the power
+of 0.75 (Mikolov et al., 2013).
+#@save
+def get_negatives(all_contexts, vocab, counter, K):
+"""Return noise words in negative sampling."""
+# Sampling weights for words with indices 1, 2, ... (index 0 is the
+# excluded unknown token) in the vocabulary
+sampling_weights = [counter[vocab.to_tokens(i)]**0.75
+for i in range(1, len(vocab))]
+all_negatives, generator = [], RandomGenerator(sampling_weights)
+for contexts in all_contexts:
+negatives = []
+while len(negatives) < len(contexts) * K:
+neg = generator.draw()
+# Noise words cannot be context words
+if neg not in contexts:
+negatives.append(neg)
+all_negatives.append(negatives)
+return all_negatives
+all_negatives = get_negatives(all_contexts, vocab, counter, 5)
+15.3.5 Loading Training Examples in Minibatches
+After all the center words together with their context words and sampled noise words are
+extracted, they will be transformed into minibatches of examples that can be iteratively
+loaded during training.
+In a minibatch, the 𝑖th example includes a center word and its 𝑛𝑖context words and 𝑚𝑖noise
+words. Due to varying context window sizes, 𝑛𝑖+ 𝑚𝑖varies for different 𝑖. Thus, for each
+example we concatenate its context words and noise words in the contexts_negatives
+variable, and pad zeros until the concatenation length reaches max𝑖𝑛𝑖+ 𝑚𝑖(max_len). To
+exclude paddings in the calculation of the loss, we define a mask variable masks. There is a
+one-to-one correspondence between elements in masks and elements in contexts_negatives,
+where zeros (otherwise ones) in masks correspond to paddings in contexts_negatives.
+To distinguish between positive and negative examples, we separate context words from
+noise words in contexts_negatives via a labels variable. Similar to masks, there is also
+a one-to-one correspondence between elements in labels and elements in contexts_negatives,
+where ones (otherwise zeros) in labels correspond to context words (positive examples)
+in contexts_negatives.
+The above idea is implemented in the following batchify function. Its input data is a
+list with length equal to the batch size, where each element is an example consisting of
+the center word center, its context words context, and its noise words negative. This
+
+===== صفحة الكتاب 745 =====
+705
+The Dataset for Pretraining Word Embeddings
+function returns a minibatch that can be loaded for calculations during training, such as
+including the mask variable.
+#@save
+def batchify(data):
+"""Return a minibatch of examples for skip-gram with negative sampling."""
+max_len = max(len(c) + len(n) for _, c, n in data)
+centers, contexts_negatives, masks, labels = [], [], [], []
+for center, context, negative in data:
+cur_len = len(context) + len(negative)
+centers += [center]
+contexts_negatives += [context + negative + [0] * (max_len - cur_len)]
+masks += [[1] * cur_len + [0] * (max_len - cur_len)]
+labels += [[1] * len(context) + [0] * (max_len - len(context))]
+return (torch.tensor(centers).reshape((-1, 1)), torch.tensor(
+contexts_negatives), torch.tensor(masks), torch.tensor(labels))
+Let’s test this function using a minibatch of two examples.
+x_1 = (1, [2, 2], [3, 3, 3, 3])
+x_2 = (1, [2, 2, 2], [3, 3])
+batch = batchify((x_1, x_2))
+names = ['centers', 'contexts_negatives', 'masks', 'labels']
+for name, data in zip(names, batch):
+print(name, '=', data)
+centers = tensor([[1],
+[1]])
+contexts_negatives = tensor([[2, 2, 3, 3, 3, 3],
+[2, 2, 2, 3, 3, 0]])
+masks = tensor([[1, 1, 1, 1, 1, 1],
+[1, 1, 1, 1, 1, 0]])
+labels = tensor([[1, 1, 0, 0, 0, 0],
+[1, 1, 1, 0, 0, 0]])
+15.3.6 Putting It All Together
+Last, we define the load_data_ptb function that reads the PTB dataset and returns the data
+iterator and the vocabulary.
+#@save
+def load_data_ptb(batch_size, max_window_size, num_noise_words):
+"""Download the PTB dataset and then load it into memory."""
+num_workers = d2l.get_dataloader_workers()
+sentences = read_ptb()
+vocab = d2l.Vocab(sentences, min_freq=10)
+subsampled, counter = subsample(sentences, vocab)
+corpus = [vocab[line] for line in subsampled]
+all_centers, all_contexts = get_centers_and_contexts(
+corpus, max_window_size)
+(continues on next page)
+
+===== صفحة الكتاب 746 =====
+706
+Natural Language Processing: Pretraining
+(continued from previous page)
+all_negatives = get_negatives(
+all_contexts, vocab, counter, num_noise_words)
+class PTBDataset(torch.utils.data.Dataset):
+def __init__(self, centers, contexts, negatives):
+assert len(centers) == len(contexts) == len(negatives)
+self.centers = centers
+self.contexts = contexts
+self.negatives = negatives
+def __getitem__(self, index):
+return (self.centers[index], self.contexts[index],
+self.negatives[index])
+def __len__(self):
+return len(self.centers)
+dataset = PTBDataset(all_centers, all_contexts, all_negatives)
+data_iter = torch.utils.data.DataLoader(dataset, batch_size, shuffle=True,
+collate_fn=batchify,
+num_workers=num_workers)
+return data_iter, vocab
+Let’s print the first minibatch of the data iterator.
+data_iter, vocab = load_data_ptb(512, 5, 5)
+for batch in data_iter:
+for name, data in zip(names, batch):
+print(name, 'shape:', data.shape)
+break
+centers shape: torch.Size([512, 1])
+contexts_negatives shape: torch.Size([512, 60])
+masks shape: torch.Size([512, 60])
+labels shape: torch.Size([512, 60])
+15.3.7 Summary
+• High-frequency words may not be so useful in training. We can subsample them for
+speedup in training.
+• For computational efficiency, we load examples in minibatches. We can define other
+variables to distinguish paddings from non-paddings, and positive examples from neg-
+ative ones.
+15.3.8 Exercises
+1. How does the running time of code in this section changes if not using subsampling?
+
+===== صفحة الكتاب 747 =====
+707
+Pretraining word2vec
+231
+2. The RandomGenerator class caches k random sampling results. Set k to other values
+and see how it affects the data loading speed.
+3. What other hyperparameters in the code of this section may affect the data loading
+speed?
+Discussions231.
+15.4 Pretraining word2vec
+We go on to implement the skip-gram model defined in Section 15.1. Then we will pretrain
+word2vec using negative sampling on the PTB dataset. First of all, let’s obtain the data
+iterator and the vocabulary for this dataset by calling the d2l.load_data_ptb function,
+which was described in Section 15.3
+import math
+import torch
+from torch import nn
+from d2l import torch as d2l
+batch_size, max_window_size, num_noise_words = 512, 5, 5
+data_iter, vocab = d2l.load_data_ptb(batch_size, max_window_size,
+num_noise_words)
+15.4.1 The Skip-Gram Model
+We implement the skip-gram model by using embedding layers and batch matrix multipli-
+cations. First, let’s review how embedding layers work.
+Embedding Layer
+As described in Section 10.7, an embedding layer maps a token’s index to its feature vec-
+tor.
+The weight of this layer is a matrix whose number of rows equals to the dictio-
+nary size (input_dim) and number of columns equals to the vector dimension for each
+token (output_dim). After a word embedding model is trained, this weight is what we
+need.
+embed = nn.Embedding(num_embeddings=20, embedding_dim=4)
+print(f'Parameter embedding_weight ({embed.weight.shape}, '
+f'dtype={embed.weight.dtype})')
+Parameter embedding_weight (torch.Size([20, 4]), dtype=torch.float32)
+The input of an embedding layer is the index of a token (word). For any token index 𝑖, its
+
+===== صفحة الكتاب 748 =====
+708
+Natural Language Processing: Pretraining
+vector representation can be obtained from the 𝑖th row of the weight matrix in the embedding
+layer. Since the vector dimension (output_dim) was set to 4, the embedding layer returns
+vectors with shape (2, 3, 4) for a minibatch of token indices with shape (2, 3).
+x = torch.tensor([[1, 2, 3], [4, 5, 6]])
+embed(x)
+tensor([[[ 0.7606,
+0.3872, -0.1864,
+1.1732],
+[ 1.5035,
+2.3623, -1.7542, -1.4990],
+[-1.2639, -1.5313,
+2.1719,
+0.4151]],
+[[-1.9079,
+0.2434,
+1.5395,
+1.2990],
+[ 0.7470,
+1.0129,
+0.4039,
+0.0591],
+[-0.6293, -0.1814, -0.4782, -0.5289]]], grad_fn=<EmbeddingBackward0>)
+Defining the Forward Propagation
+In the forward propagation, the input of the skip-gram model includes the center word
+indices center of shape (batch size, 1) and the concatenated context and noise word indices
+contexts_and_negatives of shape (batch size, max_len), where max_len is defined in
+Section 15.3.5. These two variables are first transformed from the token indices into vectors
+via the embedding layer, then their batch matrix multiplication (described in Section 11.3.2)
+returns an output of shape (batch size, 1, max_len). Each element in the output is the dot
+product of a center word vector and a context or noise word vector.
+def skip_gram(center, contexts_and_negatives, embed_v, embed_u):
+v = embed_v(center)
+u = embed_u(contexts_and_negatives)
+pred = torch.bmm(v, u.permute(0, 2, 1))
+return pred
+Let’s print the output shape of this skip_gram function for some example inputs.
+skip_gram(torch.ones((2, 1), dtype=torch.long),
+torch.ones((2, 4), dtype=torch.long), embed, embed).shape
+torch.Size([2, 1, 4])
+15.4.2 Training
+Before training the skip-gram model with negative sampling, let’s first define its loss func-
+tion.
+Binary Cross-Entropy Loss
+According to the definition of the loss function for negative sampling in Section 15.2.1, we
+will use the binary cross-entropy loss.
+
+===== صفحة الكتاب 749 =====
+709
+Pretraining word2vec
+class SigmoidBCELoss(nn.Module):
+# Binary cross-entropy loss with masking
+def __init__(self):
+super().__init__()
+def forward(self, inputs, target, mask=None):
+out = nn.functional.binary_cross_entropy_with_logits(
+inputs, target, weight=mask, reduction="none")
+return out.mean(dim=1)
+loss = SigmoidBCELoss()
+Recall our descriptions of the mask variable and the label variable in Section 15.3.5. The
+following calculates the binary cross-entropy loss for the given variables.
+pred = torch.tensor([[1.1, -2.2, 3.3, -4.4]] * 2)
+label = torch.tensor([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0]])
+mask = torch.tensor([[1, 1, 1, 1], [1, 1, 0, 0]])
+loss(pred, label, mask) * mask.shape[1] / mask.sum(axis=1)
+tensor([0.9352, 1.8462])
+Below shows how the above results are calculated (in a less efficient way) using the sigmoid
+activation function in the binary cross-entropy loss. We can consider the two outputs as two
+normalized losses that are averaged over non-masked predictions.
+def sigmd(x):
+return -math.log(1 / (1 + math.exp(-x)))
+print(f'{(sigmd(1.1) + sigmd(2.2) + sigmd(-3.3) + sigmd(4.4)) / 4:.4f}')
+print(f'{(sigmd(-1.1) + sigmd(-2.2)) / 2:.4f}')
+0.9352
+1.8462
+Initializing Model Parameters
+We define two embedding layers for all the words in the vocabulary when they are used as
+center words and context words, respectively. The word vector dimension embed_size is
+set to 100.
+embed_size = 100
+net = nn.Sequential(nn.Embedding(num_embeddings=len(vocab),
+embedding_dim=embed_size),
+nn.Embedding(num_embeddings=len(vocab),
+embedding_dim=embed_size))
+
+===== صفحة الكتاب 750 =====
+710
+Natural Language Processing: Pretraining
+Defining the Training Loop
+The training loop is defined below. Because of the existence of padding, the calculation of
+the loss function is slightly different compared to the previous training functions.
+def train(net, data_iter, lr, num_epochs, device=d2l.try_gpu()):
+def init_weights(module):
+if type(module) == nn.Embedding:
+nn.init.xavier_uniform_(module.weight)
+net.apply(init_weights)
+net = net.to(device)
+optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+animator = d2l.Animator(xlabel='epoch', ylabel='loss',
+xlim=[1, num_epochs])
+# Sum of normalized losses, no. of normalized losses
+metric = d2l.Accumulator(2)
+for epoch in range(num_epochs):
+timer, num_batches = d2l.Timer(), len(data_iter)
+for i, batch in enumerate(data_iter):
+optimizer.zero_grad()
+center, context_negative, mask, label = [
+data.to(device) for data in batch]
+pred = skip_gram(center, context_negative, net[0], net[1])
+l = (loss(pred.reshape(label.shape).float(), label.float(), mask)
+/ mask.sum(axis=1) * mask.shape[1])
+l.sum().backward()
+optimizer.step()
+metric.add(l.sum(), l.numel())
+if (i + 1) % (num_batches // 5) == 0 or i == num_batches - 1:
+animator.add(epoch + (i + 1) / num_batches,
+(metric[0] / metric[1],))
+print(f'loss {metric[0] / metric[1]:.3f}, '
+f'{metric[1] / timer.stop():.1f} tokens/sec on {str(device)}')
+Now we can train a skip-gram model using negative sampling.
+lr, num_epochs = 0.002, 5
+train(net, data_iter, lr, num_epochs)
+loss 0.410, 223485.0 tokens/sec on cuda:0
+
+===== صفحة الكتاب 751 =====
+711
+Word Embedding with Global Vectors (GloVe)
+232
+15.4.3 Applying Word Embeddings
+After training the word2vec model, we can use the cosine similarity of word vectors from
+the trained model to find words from the dictionary that are most semantically similar to
+an input word.
+def get_similar_tokens(query_token, k, embed):
+W = embed.weight.data
+x = W[vocab[query_token]]
+# Compute the cosine similarity. Add 1e-9 for numerical stability
+cos = torch.mv(W, x) / torch.sqrt(torch.sum(W * W, dim=1) *
+torch.sum(x * x) + 1e-9)
+topk = torch.topk(cos, k=k+1)[1].cpu().numpy().astype('int32')
+for i in topk[1:]:
+# Remove the input words
+print(f'cosine sim={float(cos[i]):.3f}: {vocab.to_tokens(i)}')
+get_similar_tokens('chip', 3, net[0])
+cosine sim=0.702: microprocessor
+cosine sim=0.649: mips
+cosine sim=0.643: intel
+15.4.4 Summary
+• We can train a skip-gram model with negative sampling using embedding layers and the
+binary cross-entropy loss.
+• Applications of word embeddings include finding semantically similar words for a given
+word based on the cosine similarity of word vectors.
+15.4.5 Exercises
+1. Using the trained model, find semantically similar words for other input words. Can you
+improve the results by tuning hyperparameters?
+2. When a training corpus is huge, we often sample context words and noise words for
+the center words in the current minibatch when updating model parameters. In other
+words, the same center word may have different context words or noise words in different
+training epochs. What are the benefits of this method? Try to implement this training
+method.
+Discussions232.
+15.5 Word Embedding with Global Vectors (GloVe)
+Word-word co-occurrences within context windows may carry rich semantic information.
+For example, in a large corpus word “solid” is more likely to co-occur with “ice” than
+
+===== صفحة الكتاب 752 =====
+712
+Natural Language Processing: Pretraining
+“steam”, but word “gas” probably co-occurs with “steam” more frequently than “ice”. Be-
+sides, global corpus statistics of such co-occurrences can be precomputed: this can lead
+to more efficient training. To leverage statistical information in the entire corpus for word
+embedding, let’s first revisit the skip-gram model in Section 15.1.3, but interpreting it using
+global corpus statistics such as co-occurrence counts.
+15.5.1 Skip-Gram with Global Corpus Statistics
+Denoting by 𝑞𝑖𝑗the conditional probability 𝑃(𝑤𝑗| 𝑤𝑖) of word 𝑤𝑗given word 𝑤𝑖in the
+skip-gram model, we have
+𝑞𝑖𝑗=
+exp(u⊤
+𝑗v𝑖)
+Í
+𝑘∈V exp(u⊤
+𝑘v𝑖) ,
+(15.5.1)
+where for any index 𝑖vectors v𝑖and u𝑖represent word 𝑤𝑖as the center word and context
+word, respectively, and V = {0, 1, . . . , |V| −1} is the index set of the vocabulary.
+Consider word 𝑤𝑖that may occur multiple times in the corpus. In the entire corpus, all the
+context words wherever 𝑤𝑖is taken as their center word form a multiset C𝑖of word indices
+that allows for multiple instances of the same element. For any element, its number of in-
+stances is called its multiplicity. To illustrate with an example, suppose that word 𝑤𝑖occurs
+twice in the corpus and indices of the context words that take 𝑤𝑖as their center word in the
+two context windows are 𝑘, 𝑗, 𝑚, 𝑘and 𝑘, 𝑙, 𝑘, 𝑗. Thus, multiset C𝑖= { 𝑗, 𝑗, 𝑘, 𝑘, 𝑘, 𝑘, 𝑙, 𝑚},
+where multiplicities of elements 𝑗, 𝑘, 𝑙, 𝑚are 2, 4, 1, 1, respectively.
+Now let’s denote the multiplicity of element 𝑗in multiset C𝑖as 𝑥𝑖𝑗. This is the global co-
+occurrence count of word 𝑤𝑗(as the context word) and word 𝑤𝑖(as the center word) in
+the same context window in the entire corpus. Using such global corpus statistics, the loss
+function of the skip-gram model is equivalent to
+−
+Õ
+𝑖∈V
+Õ
+𝑗∈V
+𝑥𝑖𝑗log 𝑞𝑖𝑗.
+(15.5.2)
+We further denote by 𝑥𝑖the number of all the context words in the context windows where
+𝑤𝑖occurs as their center word, which is equivalent to |C𝑖|. Letting 𝑝𝑖𝑗be the conditional
+probability 𝑥𝑖𝑗/𝑥𝑖for generating context word 𝑤𝑗given center word 𝑤𝑖, (15.5.2) can be
+rewritten as
+−
+Õ
+𝑖∈V
+𝑥𝑖
+Õ
+𝑗∈V
+𝑝𝑖𝑗log 𝑞𝑖𝑗.
+(15.5.3)
+In (15.5.3), −Í
+𝑗∈V 𝑝𝑖𝑗log 𝑞𝑖𝑗calculates the cross-entropy of the conditional distribution
+𝑝𝑖𝑗of global corpus statistics and the conditional distribution 𝑞𝑖𝑗of model predictions. This
+loss is also weighted by 𝑥𝑖as explained above. Minimizing the loss function in (15.5.3)
+will allow the predicted conditional distribution to get close to the conditional distribution
+from the global corpus statistics.
+Though being commonly used for measuring the distance between probability distributions,
+the cross-entropy loss function may not be a good choice here. On the one hand, as we
+mentioned in Section 15.2, the cost of properly normalizing 𝑞𝑖𝑗results in the sum over
+
+===== صفحة الكتاب 753 =====
+713
+Word Embedding with Global Vectors (GloVe)
+the entire vocabulary, which can be computationally expensive. On the other hand, a large
+number of rare events from a large corpus are often modeled by the cross-entropy loss to
+be assigned with too much weight.
+15.5.2 The GloVe Model
+In view of this, the GloVe model makes three changes to the skip-gram model based on
+squared loss (Pennington et al., 2014):
+1. Use variables 𝑝′
+𝑖𝑗= 𝑥𝑖𝑗and 𝑞′
+𝑖𝑗= exp(u⊤
+𝑗v𝑖) that are not probability distributions
+and take the logarithm of both, so the squared loss term is
+
+log 𝑝′
+𝑖𝑗−log 𝑞′
+𝑖𝑗
+2
+=
+
+u⊤
+𝑗v𝑖−log 𝑥𝑖𝑗
+2
+.
+2. Add two scalar model parameters for each word 𝑤𝑖: the center word bias 𝑏𝑖and the
+context word bias 𝑐𝑖.
+3. Replace the weight of each loss term with the weight function ℎ(𝑥𝑖𝑗), where ℎ(𝑥) is
+increasing in the interval of [0, 1].
+Putting all things together, training GloVe is to minimize the following loss function:
+Õ
+𝑖∈V
+Õ
+𝑗∈V
+ℎ(𝑥𝑖𝑗)
+
+u⊤
+𝑗v𝑖+ 𝑏𝑖+ 𝑐𝑗−log 𝑥𝑖𝑗
+2
+.
+(15.5.4)
+For the weight function, a suggested choice is: ℎ(𝑥) = (𝑥/𝑐) 𝛼(e.g 𝛼= 0.75) if 𝑥< 𝑐(e.g.,
+𝑐= 100); otherwise ℎ(𝑥) = 1. In this case, because ℎ(0) = 0, the squared loss term for any
+𝑥𝑖𝑗= 0 can be omitted for computational efficiency. For example, when using minibatch
+stochastic gradient descent for training, at each iteration we randomly sample a minibatch
+of non-zero 𝑥𝑖𝑗to calculate gradients and update the model parameters. Note that these
+non-zero 𝑥𝑖𝑗are precomputed global corpus statistics; thus, the model is called GloVe for
+Global Vectors.
+It should be emphasized that if word 𝑤𝑖appears in the context window of word 𝑤𝑗, then
+vice versa. Therefore, 𝑥𝑖𝑗= 𝑥𝑗𝑖. Unlike word2vec that fits the asymmetric conditional
+probability 𝑝𝑖𝑗, GloVe fits the symmetric log 𝑥𝑖𝑗. Therefore, the center word vector and
+the context word vector of any word are mathematically equivalent in the GloVe model.
+However in practice, owing to different initialization values, the same word may still get
+different values in these two vectors after training: GloVe sums them up as the output
+vector.
+15.5.3 Interpreting GloVe from the Ratio of Co-occurrence
+Probabilities
+We can also interpret the GloVe model from another perspective. Using the same notation
+in Section 15.5.1, let 𝑝𝑖𝑗
+def= 𝑃(𝑤𝑗| 𝑤𝑖) be the conditional probability of generating the
+context word 𝑤𝑗given 𝑤𝑖as the center word in the corpus. tab_glove lists several co-
+occurrence probabilities given words “ice” and “steam” and their ratios based on statistics
+from a large corpus.
+
+===== صفحة الكتاب 754 =====
+714
+Natural Language Processing: Pretraining
+:Word-word co-occurrence probabilities and their ratios from a large corpus (adapted from
+Table 1 in Pennington et al. (2014))
+Table 15.5.1: label:tab_glove
+𝑤𝑘=
+solid
+gas
+water
+fashion
+𝑝1 = 𝑃(𝑤𝑘| ice)
+0.00019
+0.000066
+0.003
+0.000017
+𝑝2 = 𝑃(𝑤𝑘| steam)
+0.000022
+0.00078
+0.0022
+0.000018
+𝑝1/𝑝2
+8.9
+0.085
+1.36
+0.96
+We can observe the following from tab_glove:
+• For a word 𝑤𝑘that is related to “ice” but unrelated to “steam”, such as 𝑤𝑘= solid, we
+expect a larger ratio of co-occurence probabilities, such as 8.9.
+• For a word 𝑤𝑘that is related to “steam” but unrelated to “ice”, such as 𝑤𝑘= gas, we
+expect a smaller ratio of co-occurence probabilities, such as 0.085.
+• For a word 𝑤𝑘that is related to both “ice” and “steam”, such as 𝑤𝑘= water, we expect
+a ratio of co-occurence probabilities that is close to 1, such as 1.36.
+• For a word 𝑤𝑘that is unrelated to both “ice” and “steam”, such as 𝑤𝑘= fashion, we
+expect a ratio of co-occurence probabilities that is close to 1, such as 0.96.
+It can be seen that the ratio of co-occurrence probabilities can intuitively express the rela-
+tionship between words. Thus, we can design a function of three word vectors to fit this
+ratio. For the ratio of co-occurrence probabilities 𝑝𝑖𝑗/𝑝𝑖𝑘with 𝑤𝑖being the center word and
+𝑤𝑗and 𝑤𝑘being the context words, we want to fit this ratio using some function 𝑓:
+𝑓(u 𝑗, u𝑘, v𝑖) ≈𝑝𝑖𝑗
+𝑝𝑖𝑘
+.
+(15.5.5)
+Among many possible designs for 𝑓, we only pick a reasonable choice in the following.
+Since the ratio of co-occurrence probabilities is a scalar, we require that 𝑓be a scalar
+function, such as 𝑓(u 𝑗, u𝑘, v𝑖) = 𝑓 (u 𝑗−u𝑘)⊤v𝑖
+. Switching word indices 𝑗and 𝑘in
+(15.5.5), it must hold that 𝑓(𝑥) 𝑓(−𝑥) = 1, so one possibility is 𝑓(𝑥) = exp(𝑥), i.e.,
+𝑓(u 𝑗, u𝑘, v𝑖) =
+exp
+
+u⊤
+𝑗v𝑖
+
+exp
+
+u⊤
+𝑘v𝑖
+ ≈𝑝𝑖𝑗
+𝑝𝑖𝑘
+.
+(15.5.6)
+Now let’s pick exp
+
+u⊤
+𝑗v𝑖
+
+≈𝛼𝑝𝑖𝑗, where 𝛼is a constant. Since 𝑝𝑖𝑗= 𝑥𝑖𝑗/𝑥𝑖, after taking
+the logarithm on both sides we get u⊤
+𝑗v𝑖≈log 𝛼+ log 𝑥𝑖𝑗−log 𝑥𝑖. We may use additional
+bias terms to fit −log 𝛼+ log 𝑥𝑖, such as the center word bias 𝑏𝑖and the context word bias
+𝑐𝑗:
+u⊤
+𝑗v𝑖+ 𝑏𝑖+ 𝑐𝑗≈log 𝑥𝑖𝑗.
+(15.5.7)
+Measuring the squared error of (15.5.7) with weights, the GloVe loss function in (15.5.4)
+is obtained.
+
+===== صفحة الكتاب 755 =====
+715
+Subword Embedding
+233
+15.5.4 Summary
+• The skip-gram model can be interpreted using global corpus statistics such as word-word
+co-occurrence counts.
+• The cross-entropy loss may not be a good choice for measuring the difference of two
+probability distributions, especially for a large corpus. GloVe uses squared loss to fit
+precomputed global corpus statistics.
+• The center word vector and the context word vector are mathematically equivalent for
+any word in GloVe.
+• GloVe can be interpreted from the ratio of word-word co-occurrence probabilities.
+15.5.5 Exercises
+1. If words 𝑤𝑖and 𝑤𝑗co-occur in the same context window, how can we use their distance
+in the text sequence to redesign the method for calculating the conditional probability
+𝑝𝑖𝑗? Hint: see Section 4.2 of the GloVe paper (Pennington et al., 2014).
+2. For any word, are its center word bias and context word bias mathematically equivalent
+in GloVe? Why?
+Discussions233.
+15.6 Subword Embedding
+In English, words such as “helps”, “helped”, and “helping” are inflected forms of the same
+word “help”. The relationship between “dog” and “dogs” is the same as that between “cat”
+and “cats”, and the relationship between “boy” and “boyfriend” is the same as that between
+“girl” and “girlfriend”. In other languages such as French and Spanish, many verbs have
+over 40 inflected forms, while in Finnish, a noun may have up to 15 cases. In linguistics,
+morphology studies word formation and word relationships. However, the internal structure
+of words was neither explored in word2vec nor in GloVe.
+15.6.1 The fastText Model
+Recall how words are represented in word2vec. In both the skip-gram model and the con-
+tinuous bag-of-words model, different inflected forms of the same word are directly repre-
+sented by different vectors without shared parameters. To use morphological information,
+the fastText model proposed a subword embedding approach, where a subword is a charac-
+ter 𝑛-gram (Bojanowski et al., 2017). Instead of learning word-level vector representations,
+fastText can be considered as the subword-level skip-gram, where each center word is rep-
+resented by the sum of its subword vectors.
+Let’s illustrate how to obtain subwords for each center word in fastText using the word
+
+===== صفحة الكتاب 756 =====
+716
+Natural Language Processing: Pretraining
+“where”. First, add special characters “<” and “>” at the beginning and end of the word
+to distinguish prefixes and suffixes from other subwords. Then, extract character 𝑛-grams
+from the word. For example, when 𝑛= 3, we obtain all subwords of length 3: “<wh”,
+“whe”, “her”, “ere”, “re>”, and the special subword “<where>”.
+In fastText, for any word 𝑤, denote by G𝑤the union of all its subwords of length between
+3 and 6 and its special subword. The vocabulary is the union of the subwords of all words.
+Letting z𝑔be the vector of subword 𝑔in the dictionary, the vector v𝑤for word 𝑤as a center
+word in the skip-gram model is the sum of its subword vectors:
+v𝑤=
+Õ
+𝑔∈G𝑤
+z𝑔.
+(15.6.1)
+The rest of fastText is the same as the skip-gram model. Compared with the skip-gram
+model, the vocabulary in fastText is larger, resulting in more model parameters. Besides,
+to calculate the representation of a word, all its subword vectors have to be summed, leading
+to higher computational complexity. However, thanks to shared parameters from subwords
+among words with similar structures, rare words and even out-of-vocabulary words may
+obtain better vector representations in fastText.
+15.6.2 Byte Pair Encoding
+In fastText, all the extracted subwords have to be of the specified lengths, such as 3 to 6,
+thus the vocabulary size cannot be predefined. To allow for variable-length subwords in
+a fixed-size vocabulary, we can apply a compression algorithm called byte pair encoding
+(BPE) to extract subwords (Sennrich et al., 2015).
+Byte pair encoding performs a statistical analysis of the training dataset to discover com-
+mon symbols within a word, such as consecutive characters of arbitrary length. Starting
+from symbols of length 1, byte pair encoding iteratively merges the most frequent pair of
+consecutive symbols to produce new longer symbols. Note that for efficiency, pairs cross-
+ing word boundaries are not considered. In the end, we can use such symbols as subwords
+to segment words. Byte pair encoding and its variants has been used for input representa-
+tions in popular natural language processing pretraining models such as GPT-2 (Radford
+et al., 2019) and RoBERTa (Liu et al., 2019). In the following, we will illustrate how byte
+pair encoding works.
+First, we initialize the vocabulary of symbols as all the English lowercase characters, a
+special end-of-word symbol '_', and a special unknown symbol '[UNK]'.
+import collections
+symbols = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm',
+'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
+'_', '[UNK]']
+Since we do not consider symbol pairs that cross boundaries of words, we only need a
+dictionary raw_token_freqs that maps words to their frequencies (number of occurrences)
+in a dataset. Note that the special symbol '_' is appended to each word so that we can
+
+===== صفحة الكتاب 757 =====
+717
+Subword Embedding
+easily recover a word sequence (e.g., “a taller man”) from a sequence of output symbols
+( e.g., “a_ tall er_ man”). Since we start the merging process from a vocabulary of only
+single characters and special symbols, space is inserted between every pair of consecutive
+characters within each word (keys of the dictionary token_freqs). In other words, space
+is the delimiter between symbols within a word.
+raw_token_freqs = {'fast_': 4, 'faster_': 3, 'tall_': 5, 'taller_': 4}
+token_freqs = {}
+for token, freq in raw_token_freqs.items():
+token_freqs[' '.join(list(token))] = raw_token_freqs[token]
+token_freqs
+{'f a s t _': 4, 'f a s t e r _': 3, 't a l l _': 5, 't a l l e r _': 4}
+We define the following get_max_freq_pair function that returns the most frequent pair
+of consecutive symbols within a word, where words come from keys of the input dictionary
+token_freqs.
+def get_max_freq_pair(token_freqs):
+pairs = collections.defaultdict(int)
+for token, freq in token_freqs.items():
+symbols = token.split()
+for i in range(len(symbols) - 1):
+# Key of `pairs` is a tuple of two consecutive symbols
+pairs[symbols[i], symbols[i + 1]] += freq
+return max(pairs, key=pairs.get)
+# Key of `pairs` with the max value
+As a greedy approach based on frequency of consecutive symbols, byte pair encoding will
+use the following merge_symbols function to merge the most frequent pair of consecutive
+symbols to produce new symbols.
+def merge_symbols(max_freq_pair, token_freqs, symbols):
+symbols.append(''.join(max_freq_pair))
+new_token_freqs = dict()
+for token, freq in token_freqs.items():
+new_token = token.replace(' '.join(max_freq_pair),
+''.join(max_freq_pair))
+new_token_freqs[new_token] = token_freqs[token]
+return new_token_freqs
+Now we iteratively perform the byte pair encoding algorithm over the keys of the dictionary
+token_freqs. In the first iteration, the most frequent pair of consecutive symbols are 't'
+and 'a', thus byte pair encoding merges them to produce a new symbol 'ta'. In the
+second iteration, byte pair encoding continues to merge 'ta' and 'l' to result in another
+new symbol 'tal'.
+num_merges = 10
+for i in range(num_merges):
+(continues on next page)
+
+===== صفحة الكتاب 758 =====
+718
+Natural Language Processing: Pretraining
+(continued from previous page)
+max_freq_pair = get_max_freq_pair(token_freqs)
+token_freqs = merge_symbols(max_freq_pair, token_freqs, symbols)
+print(f'merge #{i + 1}:', max_freq_pair)
+merge #1: ('t', 'a')
+merge #2: ('ta', 'l')
+merge #3: ('tal', 'l')
+merge #4: ('f', 'a')
+merge #5: ('fa', 's')
+merge #6: ('fas', 't')
+merge #7: ('e', 'r')
+merge #8: ('er', '_')
+merge #9: ('tall', '_')
+merge #10: ('fast', '_')
+After 10 iterations of byte pair encoding, we can see that list symbols now contains 10
+more symbols that are iteratively merged from other symbols.
+print(symbols)
+['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p
+↩→', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '_', '[UNK]', 'ta', 'tal
+↩→', 'tall', 'fa', 'fas', 'fast', 'er', 'er_', 'tall_', 'fast_']
+For the same dataset specified in the keys of the dictionary raw_token_freqs, each word
+in the dataset is now segmented by subwords “fast_”, “fast”, “er_”, “tall_”, and “tall” as a
+result of the byte pair encoding algorithm. For instance, words “faster_” and “taller_” are
+segmented as “fast er_” and “tall er_”, respectively.
+print(list(token_freqs.keys()))
+['fast_', 'fast er_', 'tall_', 'tall er_']
+Note that the result of byte pair encoding depends on the dataset being used. We can also
+use the subwords learned from one dataset to segment words of another dataset. As a
+greedy approach, the following segment_BPE function tries to break words into the longest
+possible subwords from the input argument symbols.
+def segment_BPE(tokens, symbols):
+outputs = []
+for token in tokens:
+start, end = 0, len(token)
+cur_output = []
+# Segment token with the longest possible subwords from symbols
+while start < len(token) and start < end:
+if token[start: end] in symbols:
+(continues on next page)
+
+===== صفحة الكتاب 759 =====
+719
+Subword Embedding
+234
+(continued from previous page)
+cur_output.append(token[start: end])
+start = end
+end = len(token)
+else:
+end -= 1
+if start < len(token):
+cur_output.append('[UNK]')
+outputs.append(' '.join(cur_output))
+return outputs
+In the following, we use the subwords in list symbols, which is learned from the aforemen-
+tioned dataset, to segment tokens that represent another dataset.
+tokens = ['tallest_', 'fatter_']
+print(segment_BPE(tokens, symbols))
+['tall e s t _', 'fa t t er_']
+15.6.3 Summary
+• The fastText model proposes a subword embedding approach. Based on the skip-gram
+model in word2vec, it represents a center word as the sum of its subword vectors.
+• Byte pair encoding performs a statistical analysis of the training dataset to discover com-
+mon symbols within a word. As a greedy approach, byte pair encoding iteratively
+merges the most frequent pair of consecutive symbols.
+• Subword embedding may improve the quality of representations of rare words and out-
+of-dictionary words.
+15.6.4 Exercises
+1. As an example, there are about 3 × 108 possible 6-grams in English. What is the issue
+when there are too many subwords? How to address the issue? Hint: refer to the end of
+Section 3.2 of the fastText paper (Bojanowski et al., 2017).
+2. How to design a subword embedding model based on the continuous bag-of-words
+model?
+3. To get a vocabulary of size 𝑚, how many merging operations are needed when the initial
+symbol vocabulary size is 𝑛?
+4. How to extend the idea of byte pair encoding to extract phrases?
+Discussions234.
+
+===== صفحة الكتاب 760 =====
+720
+Natural Language Processing: Pretraining
+235
+236
+15.7 Word Similarity and Analogy
+In Section 15.4, we trained a word2vec model on a small dataset, and applied it to find
+semantically similar words for an input word. In practice, word vectors that are pretrained
+on large corpora can be applied to downstream natural language processing tasks, which
+will be covered later in Chapter 16. To demonstrate semantics of pretrained word vectors
+from large corpora in a straightforward way, let’s apply them in the word similarity and
+analogy tasks.
+import os
+import torch
+from torch import nn
+from d2l import torch as d2l
+15.7.1 Loading Pretrained Word Vectors
+Below lists pretrained GloVe embeddings of dimension 50, 100, and 300, which can be
+downloaded from the GloVe website235. The pretrained fastText embeddings are available
+in multiple languages. Here we consider one English version (300-dimensional “wiki.en”)
+that can be downloaded from the fastText website236.
+#@save
+d2l.DATA_HUB['glove.6b.50d'] = (d2l.DATA_URL + 'glove.6B.50d.zip',
+'0b8703943ccdb6eb788e6f091b8946e82231bc4d')
+#@save
+d2l.DATA_HUB['glove.6b.100d'] = (d2l.DATA_URL + 'glove.6B.100d.zip',
+'cd43bfb07e44e6f27cbcc7bc9ae3d80284fdaf5a')
+#@save
+d2l.DATA_HUB['glove.42b.300d'] = (d2l.DATA_URL + 'glove.42B.300d.zip',
+'b5116e234e9eb9076672cfeabf5469f3eec904fa')
+#@save
+d2l.DATA_HUB['wiki.en'] = (d2l.DATA_URL + 'wiki.en.zip',
+'c1816da3821ae9f43899be655002f6c723e91b88')
+To load these pretrained GloVe and fastText embeddings, we define the following Token-
+Embedding class.
+#@save
+class TokenEmbedding:
+"""Token Embedding."""
+def __init__(self, embedding_name):
+self.idx_to_token, self.idx_to_vec = self._load_embedding(
+embedding_name)
+self.unknown_idx = 0
+(continues on next page)
+
+===== صفحة الكتاب 761 =====
+721
+Word Similarity and Analogy
+(continued from previous page)
+self.token_to_idx = {token: idx for idx, token in
+enumerate(self.idx_to_token)}
+def _load_embedding(self, embedding_name):
+idx_to_token, idx_to_vec = ['<unk>'], []
+data_dir = d2l.download_extract(embedding_name)
+# GloVe website: https://nlp.stanford.edu/projects/glove/
+# fastText website: https://fasttext.cc/
+with open(os.path.join(data_dir, 'vec.txt'), 'r') as f:
+for line in f:
+elems = line.rstrip().split(' ')
+token, elems = elems[0], [float(elem) for elem in elems[1:]]
+# Skip header information, such as the top row in fastText
+if len(elems) > 1:
+idx_to_token.append(token)
+idx_to_vec.append(elems)
+idx_to_vec = [[0] * len(idx_to_vec[0])] + idx_to_vec
+return idx_to_token, torch.tensor(idx_to_vec)
+def __getitem__(self, tokens):
+indices = [self.token_to_idx.get(token, self.unknown_idx)
+for token in tokens]
+vecs = self.idx_to_vec[torch.tensor(indices)]
+return vecs
+def __len__(self):
+return len(self.idx_to_token)
+Below we load the 50-dimensional GloVe embeddings (pretrained on a Wikipedia sub-
+set). When creating the TokenEmbedding instance, the specified embedding file has to be
+downloaded if it was not yet.
+glove_6b50d = TokenEmbedding('glove.6b.50d')
+Downloading ../data/glove.6B.50d.zip from http://d2l-data.s3-accelerate.
+↩→amazonaws.com/glove.6B.50d.zip...
+Output the vocabulary size. The vocabulary contains 400000 words (tokens) and a special
+unknown token.
+len(glove_6b50d)
+400001
+We can get the index of a word in the vocabulary, and vice versa.
+glove_6b50d.token_to_idx['beautiful'], glove_6b50d.idx_to_token[3367]
+
+===== صفحة الكتاب 762 =====
+722
+Natural Language Processing: Pretraining
+(3367, 'beautiful')
+15.7.2 Applying Pretrained Word Vectors
+Using the loaded GloVe vectors, we will demonstrate their semantics by applying them in
+the following word similarity and analogy tasks.
+Word Similarity
+Similar to Section 15.4.3, in order to find semantically similar words for an input word
+based on cosine similarities between word vectors, we implement the following knn (𝑘-
+nearest neighbors) function.
+def knn(W, x, k):
+# Add 1e-9 for numerical stability
+cos = torch.mv(W, x.reshape(-1,)) / (
+torch.sqrt(torch.sum(W * W, axis=1) + 1e-9) *
+torch.sqrt((x * x).sum()))
+_, topk = torch.topk(cos, k=k)
+return topk, [cos[int(i)] for i in topk]
+Then, we search for similar words using the pretrained word vectors from the TokenEm-
+bedding instance embed.
+def get_similar_tokens(query_token, k, embed):
+topk, cos = knn(embed.idx_to_vec, embed[[query_token]], k + 1)
+for i, c in zip(topk[1:], cos[1:]):
+# Exclude the input word
+print(f'cosine sim={float(c):.3f}: {embed.idx_to_token[int(i)]}')
+The vocabulary of the pretrained word vectors in glove_6b50d contains 400000 words
+and a special unknown token. Excluding the input word and unknown token, among this
+vocabulary let’s find three most semantically similar words to word “chip”.
+get_similar_tokens('chip', 3, glove_6b50d)
+cosine sim=0.856: chips
+cosine sim=0.749: intel
+cosine sim=0.749: electronics
+Below outputs similar words to “baby” and “beautiful”.
+get_similar_tokens('baby', 3, glove_6b50d)
+cosine sim=0.839: babies
+cosine sim=0.800: boy
+cosine sim=0.792: girl
+
+===== صفحة الكتاب 763 =====
+723
+Word Similarity and Analogy
+get_similar_tokens('beautiful', 3, glove_6b50d)
+cosine sim=0.921: lovely
+cosine sim=0.893: gorgeous
+cosine sim=0.830: wonderful
+Word Analogy
+Besides finding similar words, we can also apply word vectors to word analogy tasks. For
+example, “man”:“woman”::“son”:“daughter” is the form of a word analogy: “man” is to
+“woman” as “son” is to “daughter”. Specifically, the word analogy completion task can be
+defined as: for a word analogy 𝑎: 𝑏:: 𝑐: 𝑑, given the first three words 𝑎, 𝑏and 𝑐, find 𝑑.
+Denote the vector of word 𝑤by vec(𝑤). To complete the analogy, we will find the word
+whose vector is most similar to the result of vec(𝑐) + vec(𝑏) −vec(𝑎).
+def get_analogy(token_a, token_b, token_c, embed):
+vecs = embed[[token_a, token_b, token_c]]
+x = vecs[1] - vecs[0] + vecs[2]
+topk, cos = knn(embed.idx_to_vec, x, 1)
+return embed.idx_to_token[int(topk[0])]
+# Remove unknown words
+Let’s verify the “male-female” analogy using the loaded word vectors.
+get_analogy('man', 'woman', 'son', glove_6b50d)
+'daughter'
+Below completes a “capital-country” analogy: “beijing”:“china”::“tokyo”:“japan”. This
+demonstrates semantics in the pretrained word vectors.
+get_analogy('beijing', 'china', 'tokyo', glove_6b50d)
+'japan'
+For the “adjective-superlative adjective” analogy such as “bad”:“worst”::“big”:“biggest”,
+we can see that the pretrained word vectors may capture the syntactic information.
+get_analogy('bad', 'worst', 'big', glove_6b50d)
+'biggest'
+To show the captured notion of past tense in the pretrained word vectors, we can test the
+syntax using the “present tense-past tense” analogy: “do”:“did”::“go”:“went”.
+
+===== صفحة الكتاب 764 =====
+724
+Natural Language Processing: Pretraining
+237
+get_analogy('do', 'did', 'go', glove_6b50d)
+'went'
+15.7.3 Summary
+• In practice, word vectors that are pretrained on large corpora can be applied to down-
+stream natural language processing tasks.
+• Pretrained word vectors can be applied to the word similarity and analogy tasks.
+15.7.4 Exercises
+1. Test the fastText results using TokenEmbedding('wiki.en').
+2. When the vocabulary is extremely large, how can we find similar words or complete a
+word analogy faster?
+Discussions237.
+15.8 Bidirectional Encoder Representations from
+Transformers (BERT)
+We have introduced several word embedding models for natural language understanding.
+After pretraining, the output can be thought of as a matrix where each row is a vector that
+represents a word of a predefined vocabulary. In fact, these word embedding models are
+all context-independent. Let’s begin by illustrating this property.
+15.8.1 From Context-Independent to Context-Sensitive
+Recall the experiments in Section 15.4 and Section 15.7. For instance, word2vec and GloVe
+both assign the same pretrained vector to the same word regardless of the context of the
+word (if any). Formally, a context-independent representation of any token 𝑥is a func-
+tion 𝑓(𝑥) that only takes 𝑥as its input. Given the abundance of polysemy and complex
+semantics in natural languages, context-independent representations have obvious limita-
+tions. For instance, the word “crane” in contexts “a crane is flying” and “a crane driver
+came” has completely different meanings; thus, the same word may be assigned different
+representations depending on contexts.
+This motivates the development of context-sensitive word representations, where represen-
+tations of words depend on their contexts. Hence, a context-sensitive representation of
+
+===== صفحة الكتاب 765 =====
+725
+Bidirectional Encoder Representations from Transformers (BERT)
+token 𝑥is a function 𝑓(𝑥, 𝑐(𝑥)) depending on both 𝑥and its context 𝑐(𝑥). Popular context-
+sensitive representations include TagLM (language-model-augmented sequence tagger) (Pe-
+ters et al., 2017), CoVe (Context Vectors) (McCann et al., 2017), and ELMo (Embeddings
+from Language Models) (Peters et al., 2018).
+For example, by taking the entire sequence as input, ELMo is a function that assigns a rep-
+resentation to each word from the input sequence. Specifically, ELMo combines all the
+intermediate layer representations from pretrained bidirectional LSTM as the output rep-
+resentation. Then the ELMo representation will be added to a downstream task’s existing
+supervised model as additional features, such as by concatenating ELMo representation
+and the original representation (e.g., GloVe) of tokens in the existing model. On the one
+hand, all the weights in the pretrained bidirectional LSTM model are frozen after ELMo
+representations are added. On the other hand, the existing supervised model is specifically
+customized for a given task. Leveraging different best models for different tasks at that
+time, adding ELMo improved the state of the art across six natural language processing
+tasks: sentiment analysis, natural language inference, semantic role labeling, coreference
+resolution, named entity recognition, and question answering.
+15.8.2 From Task-Specific to Task-Agnostic
+Although ELMo has significantly improved solutions to a diverse set of natural language
+processing tasks, each solution still hinges on a task-specific architecture. However, it is
+practically non-trivial to craft a specific architecture for every natural language processing
+task. The GPT (Generative Pre-Training) model represents an effort in designing a general
+task-agnostic model for context-sensitive representations (Radford et al., 2018). Built on
+a Transformer decoder, GPT pretrains a language model that will be used to represent text
+sequences. When applying GPT to a downstream task, the output of the language model
+will be fed into an added linear output layer to predict the label of the task. In sharp contrast
+to ELMo that freezes parameters of the pretrained model, GPT fine-tunes all the parame-
+ters in the pretrained Transformer decoder during supervised learning of the downstream
+task. GPT was evaluated on twelve tasks of natural language inference, question answer-
+ing, sentence similarity, and classification, and improved the state of the art in nine of them
+with minimal changes to the model architecture.
+However, due to the autoregressive nature of language models, GPT only looks forward
+(left-to-right). In contexts “i went to the bank to deposit cash” and “i went to the bank
+to sit down”, as “bank” is sensitive to the context to its left, GPT will return the same
+representation for “bank”, though it has different meanings.
+15.8.3 BERT: Combining the Best of Both Worlds
+As we have seen, ELMo encodes context bidirectionally but uses task-specific architectures;
+while GPT is task-agnostic but encodes context left-to-right. Combining the best of both
+worlds, BERT (Bidirectional Encoder Representations from Transformers) encodes con-
+text bidirectionally and requires minimal architecture changes for a wide range of natural
+language processing tasks (Devlin et al., 2018). Using a pretrained Transformer encoder,
+BERT is able to represent any token based on its bidirectional context. During supervised
+
+===== صفحة الكتاب 766 =====
+726
+Natural Language Processing: Pretraining
+learning of downstream tasks, BERT is similar to GPT in two aspects. First, BERT rep-
+resentations will be fed into an added output layer, with minimal changes to the model
+architecture depending on nature of tasks, such as predicting for every token vs. predicting
+for the entire sequence. Second, all the parameters of the pretrained Transformer encoder
+are fine-tuned, while the additional output layer will be trained from scratch. Fig. 15.8.1
+depicts the differences among ELMo, GPT, and BERT.
+t
+Fig. 15.8.1
+A comparison of ELMo, GPT, and BERT.
+BERT further improved the state of the art on eleven natural language processing tasks
+under broad categories of (i) single text classification (e.g., sentiment analysis), (ii) text pair
+classification (e.g., natural language inference), (iii) question answering, (iv) text tagging
+(e.g., named entity recognition). All proposed in 2018, from context-sensitive ELMo to
+task-agnostic GPT and BERT, conceptually simple yet empirically powerful pretraining of
+deep representations for natural languages have revolutionized solutions to various natural
+language processing tasks.
+In the rest of this chapter, we will dive into the pretraining of BERT. When natural language
+processing applications are explained in Chapter 16, we will illustrate fine-tuning of BERT
+for downstream applications.
+import torch
+from torch import nn
+from d2l import torch as d2l
+15.8.4 Input Representation
+In natural language processing, some tasks (e.g., sentiment analysis) take single text as
+input, while in some other tasks (e.g., natural language inference), the input is a pair of
+text sequences. The BERT input sequence unambiguously represents both single text and
+text pairs. In the former, the BERT input sequence is the concatenation of the special
+classification token “<cls>”, tokens of a text sequence, and the special separation token
+“<sep>”. In the latter, the BERT input sequence is the concatenation of “<cls>”, tokens
+of the first text sequence, “<sep>”, tokens of the second text sequence, and “<sep>”. We
+will consistently distinguish the terminology “BERT input sequence” from other types of
+
+===== صفحة الكتاب 767 =====
+727
+Bidirectional Encoder Representations from Transformers (BERT)
+“sequences”. For instance, one BERT input sequence may include either one text sequence
+or two text sequences.
+To distinguish text pairs, the learned segment embeddings e𝐴and e𝐵are added to the
+token embeddings of the first sequence and the second sequence, respectively. For single
+text inputs, only e𝐴is used.
+The following get_tokens_and_segments takes either one sentence or two sentences as
+input, then returns tokens of the BERT input sequence and their corresponding segment
+IDs.
+#@save
+def get_tokens_and_segments(tokens_a, tokens_b=None):
+"""Get tokens of the BERT input sequence and their segment IDs."""
+tokens = ['<cls>'] + tokens_a + ['<sep>']
+# 0 and 1 are marking segment A and B, respectively
+segments = [0] * (len(tokens_a) + 2)
+if tokens_b is not None:
+tokens += tokens_b + ['<sep>']
+segments += [1] * (len(tokens_b) + 1)
+return tokens, segments
+BERT chooses the Transformer encoder as its bidirectional architecture. Common in the
+Transformer encoder, positional embeddings are added at every position of the BERT input
+sequence. However, different from the original Transformer encoder, BERT uses learnable
+positional embeddings. To sum up, Fig. 15.8.2 shows that the embeddings of the BERT
+input sequence are the sum of the token embeddings, segment embeddings, and positional
+embeddings.
+t
+Fig. 15.8.2
+The embeddings of the BERT input sequence are the sum of the token embeddings,
+segment embeddings, and positional embeddings.
+The following BERTEncoder class is similar to the TransformerEncoder class as imple-
+mented in Section 11.7. Different from TransformerEncoder, BERTEncoder uses segment
+embeddings and learnable positional embeddings.
+#@save
+class BERTEncoder(nn.Module):
+"""BERT encoder."""
+def __init__(self, vocab_size, num_hiddens, ffn_num_hiddens, num_heads,
+num_blks, dropout, max_len=1000, **kwargs):
+(continues on next page)
+
+===== صفحة الكتاب 768 =====
+728
+Natural Language Processing: Pretraining
+(continued from previous page)
+super(BERTEncoder, self).__init__(**kwargs)
+self.token_embedding = nn.Embedding(vocab_size, num_hiddens)
+self.segment_embedding = nn.Embedding(2, num_hiddens)
+self.blks = nn.Sequential()
+for i in range(num_blks):
+self.blks.add_module(f"{i}", d2l.TransformerEncoderBlock(
+num_hiddens, ffn_num_hiddens, num_heads, dropout, True))
+# In BERT, positional embeddings are learnable, thus we create a
+# parameter of positional embeddings that are long enough
+self.pos_embedding = nn.Parameter(torch.randn(1, max_len,
+num_hiddens))
+def forward(self, tokens, segments, valid_lens):
+# Shape of `X` remains unchanged in the following code snippet:
+# (batch size, max sequence length, `num_hiddens`)
+X = self.token_embedding(tokens) + self.segment_embedding(segments)
+X = X + self.pos_embedding[:, :X.shape[1], :]
+for blk in self.blks:
+X = blk(X, valid_lens)
+return X
+Suppose that the vocabulary size is 10000. To demonstrate forward inference of BERTEn-
+coder, let’s create an instance of it and initialize its parameters.
+vocab_size, num_hiddens, ffn_num_hiddens, num_heads = 10000, 768, 1024, 4
+ffn_num_input, num_blks, dropout = 768, 2, 0.2
+encoder = BERTEncoder(vocab_size, num_hiddens, ffn_num_hiddens, num_heads,
+num_blks, dropout)
+We define tokens to be 2 BERT input sequences of length 8, where each token is an index
+of the vocabulary. The forward inference of BERTEncoder with the input tokens returns
+the encoded result where each token is represented by a vector whose length is predefined
+by the hyperparameter num_hiddens. This hyperparameter is usually referred to as the
+hidden size (number of hidden units) of the Transformer encoder.
+tokens = torch.randint(0, vocab_size, (2, 8))
+segments = torch.tensor([[0, 0, 0, 0, 1, 1, 1, 1], [0, 0, 0, 1, 1, 1, 1, 1]])
+encoded_X = encoder(tokens, segments, None)
+encoded_X.shape
+torch.Size([2, 8, 768])
+15.8.5 Pretraining Tasks
+The forward inference of BERTEncoder gives the BERT representation of each token of
+the input text and the inserted special tokens “<cls>” and “<seq>”. Next, we will use
+these representations to compute the loss function for pretraining BERT. The pretraining
+is composed of the following two tasks: masked language modeling and next sentence
+prediction.
+
+===== صفحة الكتاب 769 =====
+729
+Bidirectional Encoder Representations from Transformers (BERT)
+Masked Language Modeling
+As illustrated in Section 9.3, a language model predicts a token using the context on its
+left. To encode context bidirectionally for representing each token, BERT randomly masks
+tokens and uses tokens from the bidirectional context to predict the masked tokens in a
+self-supervised fashion. This task is referred to as a masked language model.
+In this pretraining task, 15% of tokens will be selected at random as the masked tokens for
+prediction. To predict a masked token without cheating by using the label, one straight-
+forward approach is to always replace it with a special “<mask>” token in the BERT input
+sequence. However, the artificial special token “<mask>” will never appear in fine-tuning.
+To avoid such a mismatch between pretraining and fine-tuning, if a token is masked for
+prediction (e.g., “great” is selected to be masked and predicted in “this movie is great”), in
+the input it will be replaced with:
+• a special “<mask>” token for 80% of the time (e.g., “this movie is great” becomes “this
+movie is <mask>”);
+• a random token for 10% of the time (e.g., “this movie is great” becomes “this movie is
+drink”);
+• the unchanged label token for 10% of the time (e.g., “this movie is great” becomes “this
+movie is great”).
+Note that for 10% of 15% time a random token is inserted. This occasional noise encourages
+BERT to be less biased towards the masked token (especially when the label token remains
+unchanged) in its bidirectional context encoding.
+We implement the following MaskLM class to predict masked tokens in the masked language
+model task of BERT pretraining. The prediction uses a one-hidden-layer MLP (self.mlp).
+In forward inference, it takes two inputs: the encoded result of BERTEncoder and the token
+positions for prediction. The output is the prediction results at these positions.
+#@save
+class MaskLM(nn.Module):
+"""The masked language model task of BERT."""
+def __init__(self, vocab_size, num_hiddens, **kwargs):
+super(MaskLM, self).__init__(**kwargs)
+self.mlp = nn.Sequential(nn.LazyLinear(num_hiddens),
+nn.ReLU(),
+nn.LayerNorm(num_hiddens),
+nn.LazyLinear(vocab_size))
+def forward(self, X, pred_positions):
+num_pred_positions = pred_positions.shape[1]
+pred_positions = pred_positions.reshape(-1)
+batch_size = X.shape[0]
+batch_idx = torch.arange(0, batch_size)
+# Suppose that `batch_size` = 2, `num_pred_positions` = 3, then
+# `batch_idx` is `torch.tensor([0, 0, 0, 1, 1, 1])`
+batch_idx = torch.repeat_interleave(batch_idx, num_pred_positions)
+masked_X = X[batch_idx, pred_positions]
+(continues on next page)
+
+===== صفحة الكتاب 770 =====
+730
+Natural Language Processing: Pretraining
+(continued from previous page)
+masked_X = masked_X.reshape((batch_size, num_pred_positions, -1))
+mlm_Y_hat = self.mlp(masked_X)
+return mlm_Y_hat
+To demonstrate the forward inference of MaskLM, we create its instance mlm and initialize
+it. Recall that encoded_X from the forward inference of BERTEncoder represents 2 BERT
+input sequences. We define mlm_positions as the 3 indices to predict in either BERT input
+sequence of encoded_X. The forward inference of mlm returns prediction results mlm_Y_hat
+at all the masked positions mlm_positions of encoded_X. For each prediction, the size of
+the result is equal to the vocabulary size.
+mlm = MaskLM(vocab_size, num_hiddens)
+mlm_positions = torch.tensor([[1, 5, 2], [6, 1, 5]])
+mlm_Y_hat = mlm(encoded_X, mlm_positions)
+mlm_Y_hat.shape
+torch.Size([2, 3, 10000])
+With the ground truth labels mlm_Y of the predicted tokens mlm_Y_hat under masks, we
+can calculate the cross-entropy loss of the masked language model task in BERT pretrain-
+ing.
+mlm_Y = torch.tensor([[7, 8, 9], [10, 20, 30]])
+loss = nn.CrossEntropyLoss(reduction='none')
+mlm_l = loss(mlm_Y_hat.reshape((-1, vocab_size)), mlm_Y.reshape(-1))
+mlm_l.shape
+torch.Size([6])
+Next Sentence Prediction
+Although masked language modeling is able to encode bidirectional context for represent-
+ing words, it does not explicitly model the logical relationship between text pairs. To help
+understand the relationship between two text sequences, BERT considers a binary classi-
+fication task, next sentence prediction, in its pretraining. When generating sentence pairs
+for pretraining, for half of the time they are indeed consecutive sentences with the label
+“True”; while for the other half of the time the second sentence is randomly sampled from
+the corpus with the label “False”.
+The following NextSentencePred class uses a one-hidden-layer MLP to predict whether
+the second sentence is the next sentence of the first in the BERT input sequence. Due to
+self-attention in the Transformer encoder, the BERT representation of the special token
+“<cls>” encodes both the two sentences from the input. Hence, the output layer (self.
+
+===== صفحة الكتاب 771 =====
+731
+Bidirectional Encoder Representations from Transformers (BERT)
+output) of the MLP classifier takes X as input, where X is the output of the MLP hidden
+layer whose input is the encoded “<cls>” token.
+#@save
+class NextSentencePred(nn.Module):
+"""The next sentence prediction task of BERT."""
+def __init__(self, **kwargs):
+super(NextSentencePred, self).__init__(**kwargs)
+self.output = nn.LazyLinear(2)
+def forward(self, X):
+# `X` shape: (batch size, `num_hiddens`)
+return self.output(X)
+We can see that the forward inference of an NextSentencePred instance returns binary
+predictions for each BERT input sequence.
+# PyTorch by default will not flatten the tensor as seen in mxnet where, if
+# flatten=True, all but the first axis of input data are collapsed together
+encoded_X = torch.flatten(encoded_X, start_dim=1)
+# input_shape for NSP: (batch size, `num_hiddens`)
+nsp = NextSentencePred()
+nsp_Y_hat = nsp(encoded_X)
+nsp_Y_hat.shape
+torch.Size([2, 2])
+The cross-entropy loss of the 2 binary classifications can also be computed.
+nsp_y = torch.tensor([0, 1])
+nsp_l = loss(nsp_Y_hat, nsp_y)
+nsp_l.shape
+torch.Size([2])
+It is noteworthy that all the labels in both the aforementioned pretraining tasks can be triv-
+ially obtained from the pretraining corpus without manual labeling effort. The original
+BERT has been pretrained on the concatenation of BookCorpus (Zhu et al., 2015) and En-
+glish Wikipedia. These two text corpora are huge: they have 800 million words and 2.5
+billion words, respectively.
+15.8.6 Putting It All Together
+When pretraining BERT, the final loss function is a linear combination of both the loss
+functions for masked language modeling and next sentence prediction. Now we can de-
+fine the BERTModel class by instantiating the three classes BERTEncoder, MaskLM, and
+NextSentencePred. The forward inference returns the encoded BERT representations en-
+
+===== صفحة الكتاب 772 =====
+732
+Natural Language Processing: Pretraining
+coded_X, predictions of masked language modeling mlm_Y_hat, and next sentence predic-
+tions nsp_Y_hat.
+#@save
+class BERTModel(nn.Module):
+"""The BERT model."""
+def __init__(self, vocab_size, num_hiddens, ffn_num_hiddens,
+num_heads, num_blks, dropout, max_len=1000):
+super(BERTModel, self).__init__()
+self.encoder = BERTEncoder(vocab_size, num_hiddens, ffn_num_hiddens,
+num_heads, num_blks, dropout,
+max_len=max_len)
+self.hidden = nn.Sequential(nn.LazyLinear(num_hiddens),
+nn.Tanh())
+self.mlm = MaskLM(vocab_size, num_hiddens)
+self.nsp = NextSentencePred()
+def forward(self, tokens, segments, valid_lens=None, pred_positions=None):
+encoded_X = self.encoder(tokens, segments, valid_lens)
+if pred_positions is not None:
+mlm_Y_hat = self.mlm(encoded_X, pred_positions)
+else:
+mlm_Y_hat = None
+# The hidden layer of the MLP classifier for next sentence prediction.
+# 0 is the index of the '<cls>' token
+nsp_Y_hat = self.nsp(self.hidden(encoded_X[:, 0, :]))
+return encoded_X, mlm_Y_hat, nsp_Y_hat
+15.8.7 Summary
+• Word embedding models such as word2vec and GloVe are context-independent. They
+assign the same pretrained vector to the same word regardless of the context of the
+word (if any). It is hard for them to handle well polysemy or complex semantics in
+natural languages.
+• For context-sensitive word representations such as ELMo and GPT, representations of
+words depend on their contexts.
+• ELMo encodes context bidirectionally but uses task-specific architectures (however, it is
+practically non-trivial to craft a specific architecture for every natural language pro-
+cessing task); while GPT is task-agnostic but encodes context left-to-right.
+• BERT combines the best of both worlds: it encodes context bidirectionally and requires
+minimal architecture changes for a wide range of natural language processing tasks.
+• The embeddings of the BERT input sequence are the sum of the token embeddings,
+segment embeddings, and positional embeddings.
+• Pretraining BERT is composed of two tasks: masked language modeling and next sen-
+tence prediction. The former is able to encode bidirectional context for representing
+words, while the latter explicitly models the logical relationship between text pairs.
+
+===== صفحة الكتاب 773 =====
+733
+The Dataset for Pretraining BERT
+238
+15.8.8 Exercises
+1. All other things being equal, will a masked language model require more or fewer pre-
+training steps to converge than a left-to-right language model? Why?
+2. In the original implementation of BERT, the positionwise feed-forward network in BERTEn-
+coder (via d2l.TransformerEncoderBlock) and the fully connected layer in MaskLM
+both use the Gaussian error linear unit (GELU) (Hendrycks and Gimpel, 2016) as the
+activation function. Research into the difference between GELU and ReLU.
+Discussions238.
+15.9 The Dataset for Pretraining BERT
+To pretrain the BERT model as implemented in Section 15.8, we need to generate the dataset
+in the ideal format to facilitate the two pretraining tasks: masked language modeling and
+next sentence prediction. On the one hand, the original BERT model is pretrained on
+the concatenation of two huge corpora BookCorpus and English Wikipedia (see Section
+15.8.5), making it hard to run for most readers of this book. On the other hand, the off-
+the-shelf pretrained BERT model may not fit for applications from specific domains like
+medicine. Thus, it is getting popular to pretrain BERT on a customized dataset. To facil-
+itate the demonstration of BERT pretraining, we use a smaller corpus WikiText-2 (Merity
+et al., 2016).
+Comparing with the PTB dataset used for pretraining word2vec in Section 15.3, WikiText-
+2 (i) retains the original punctuation, making it suitable for next sentence prediction; (ii)
+retains the original case and numbers; (iii) is over twice larger.
+import os
+import random
+import torch
+from d2l import torch as d2l
+In the WikiText-2 dataset, each line represents a paragraph where space is inserted be-
+tween any punctuation and its preceding token. Paragraphs with at least two sentences are
+retained. To split sentences, we only use the period as the delimiter for simplicity. We
+leave discussions of more complex sentence splitting techniques in the exercises at the end
+of this section.
+#@save
+d2l.DATA_HUB['wikitext-2'] = (
+'https://s3.amazonaws.com/research.metamind.io/wikitext/'
+'wikitext-2-v1.zip', '3c914d17d80b1459be871a5039ac23e752a53cbe')
+#@save
+(continues on next page)
+
+===== صفحة الكتاب 774 =====
+734
+Natural Language Processing: Pretraining
+(continued from previous page)
+def _read_wiki(data_dir):
+file_name = os.path.join(data_dir, 'wiki.train.tokens')
+with open(file_name, 'r') as f:
+lines = f.readlines()
+# Uppercase letters are converted to lowercase ones
+paragraphs = [line.strip().lower().split(' . ')
+for line in lines if len(line.split(' . ')) >= 2]
+random.shuffle(paragraphs)
+return paragraphs
+15.9.1 Defining Helper Functions for Pretraining Tasks
+In the following, we begin by implementing helper functions for the two BERT pretraining
+tasks: next sentence prediction and masked language modeling. These helper functions
+will be invoked later when transforming the raw text corpus into the dataset of the ideal
+format to pretrain BERT.
+Generating the Next Sentence Prediction Task
+According to descriptions of Section 15.8.5, the _get_next_sentence function generates
+a training example for the binary classification task.
+#@save
+def _get_next_sentence(sentence, next_sentence, paragraphs):
+if random.random() < 0.5:
+is_next = True
+else:
+# `paragraphs` is a list of lists of lists
+next_sentence = random.choice(random.choice(paragraphs))
+is_next = False
+return sentence, next_sentence, is_next
+The following function generates training examples for next sentence prediction from the
+input paragraph by invoking the _get_next_sentence function. Here paragraph is a list
+of sentences, where each sentence is a list of tokens. The argument max_len specifies the
+maximum length of a BERT input sequence during pretraining.
+#@save
+def _get_nsp_data_from_paragraph(paragraph, paragraphs, vocab, max_len):
+nsp_data_from_paragraph = []
+for i in range(len(paragraph) - 1):
+tokens_a, tokens_b, is_next = _get_next_sentence(
+paragraph[i], paragraph[i + 1], paragraphs)
+# Consider 1 '<cls>' token and 2 '<sep>' tokens
+if len(tokens_a) + len(tokens_b) + 3 > max_len:
+continue
+tokens, segments = d2l.get_tokens_and_segments(tokens_a, tokens_b)
+nsp_data_from_paragraph.append((tokens, segments, is_next))
+return nsp_data_from_paragraph
+
+===== صفحة الكتاب 775 =====
+735
+The Dataset for Pretraining BERT
+Generating the Masked Language Modeling Task
+In order to generate training examples for the masked language modeling task from a BERT
+input sequence, we define the following _replace_mlm_tokens function. In its inputs, to-
+kens is a list of tokens representing a BERT input sequence, candidate_pred_positions
+is a list of token indices of the BERT input sequence excluding those of special tokens (spe-
+cial tokens are not predicted in the masked language modeling task), and num_mlm_preds
+indicates the number of predictions (recall 15% random tokens to predict). Following the
+definition of the masked language modeling task in Section 15.8.5, at each prediction posi-
+tion, the input may be replaced by a special “<mask>” token or a random token, or remain
+unchanged. In the end, the function returns the input tokens after possible replacement, the
+token indices where predictions take place and labels for these predictions.
+#@save
+def _replace_mlm_tokens(tokens, candidate_pred_positions, num_mlm_preds,
+vocab):
+# For the input of a masked language model, make a new copy of tokens and
+# replace some of them by '<mask>' or random tokens
+mlm_input_tokens = [token for token in tokens]
+pred_positions_and_labels = []
+# Shuffle for getting 15% random tokens for prediction in the masked
+# language modeling task
+random.shuffle(candidate_pred_positions)
+for mlm_pred_position in candidate_pred_positions:
+if len(pred_positions_and_labels) >= num_mlm_preds:
+break
+masked_token = None
+# 80% of the time: replace the word with the '<mask>' token
+if random.random() < 0.8:
+masked_token = '<mask>'
+else:
+# 10% of the time: keep the word unchanged
+if random.random() < 0.5:
+masked_token = tokens[mlm_pred_position]
+# 10% of the time: replace the word with a random word
+else:
+masked_token = random.choice(vocab.idx_to_token)
+mlm_input_tokens[mlm_pred_position] = masked_token
+pred_positions_and_labels.append(
+(mlm_pred_position, tokens[mlm_pred_position]))
+return mlm_input_tokens, pred_positions_and_labels
+By invoking the aforementioned _replace_mlm_tokens function, the following function
+takes a BERT input sequence (tokens) as an input and returns indices of the input tokens
+(after possible token replacement as described in Section 15.8.5), the token indices where
+predictions take place, and label indices for these predictions.
+#@save
+def _get_mlm_data_from_tokens(tokens, vocab):
+candidate_pred_positions = []
+# `tokens` is a list of strings
+for i, token in enumerate(tokens):
+(continues on next page)
+
+===== صفحة الكتاب 776 =====
+736
+Natural Language Processing: Pretraining
+(continued from previous page)
+# Special tokens are not predicted in the masked language modeling
+# task
+if token in ['<cls>', '<sep>']:
+continue
+candidate_pred_positions.append(i)
+# 15% of random tokens are predicted in the masked language modeling task
+num_mlm_preds = max(1, round(len(tokens) * 0.15))
+mlm_input_tokens, pred_positions_and_labels = _replace_mlm_tokens(
+tokens, candidate_pred_positions, num_mlm_preds, vocab)
+pred_positions_and_labels = sorted(pred_positions_and_labels,
+key=lambda x: x[0])
+pred_positions = [v[0] for v in pred_positions_and_labels]
+mlm_pred_labels = [v[1] for v in pred_positions_and_labels]
+return vocab[mlm_input_tokens], pred_positions, vocab[mlm_pred_labels]
+15.9.2 Transforming Text into the Pretraining Dataset
+Now we are almost ready to customize a Dataset class for pretraining BERT. Before that,
+we still need to define a helper function _pad_bert_inputs to append the special “<pad>”
+tokens to the inputs. Its argument examples contain the outputs from the helper func-
+tions _get_nsp_data_from_paragraph and _get_mlm_data_from_tokens for the two
+pretraining tasks.
+#@save
+def _pad_bert_inputs(examples, max_len, vocab):
+max_num_mlm_preds = round(max_len * 0.15)
+all_token_ids, all_segments, valid_lens,
+= [], [], []
+all_pred_positions, all_mlm_weights, all_mlm_labels = [], [], []
+nsp_labels = []
+for (token_ids, pred_positions, mlm_pred_label_ids, segments,
+is_next) in examples:
+all_token_ids.append(torch.tensor(token_ids + [vocab['<pad>']] * (
+max_len - len(token_ids)), dtype=torch.long))
+all_segments.append(torch.tensor(segments + [0] * (
+max_len - len(segments)), dtype=torch.long))
+# `valid_lens` excludes count of '<pad>' tokens
+valid_lens.append(torch.tensor(len(token_ids), dtype=torch.float32))
+all_pred_positions.append(torch.tensor(pred_positions + [0] * (
+max_num_mlm_preds - len(pred_positions)), dtype=torch.long))
+# Predictions of padded tokens will be filtered out in the loss via
+# multiplication of 0 weights
+all_mlm_weights.append(
+torch.tensor([1.0] * len(mlm_pred_label_ids) + [0.0] * (
+max_num_mlm_preds - len(pred_positions)),
+dtype=torch.float32))
+all_mlm_labels.append(torch.tensor(mlm_pred_label_ids + [0] * (
+max_num_mlm_preds - len(mlm_pred_label_ids)), dtype=torch.long))
+nsp_labels.append(torch.tensor(is_next, dtype=torch.long))
+return (all_token_ids, all_segments, valid_lens, all_pred_positions,
+all_mlm_weights, all_mlm_labels, nsp_labels)
+Putting the helper functions for generating training examples of the two pretraining tasks,
+
+===== صفحة الكتاب 777 =====
+737
+The Dataset for Pretraining BERT
+and the helper function for padding inputs together, we customize the following _Wiki-
+TextDataset class as the WikiText-2 dataset for pretraining BERT. By implementing the
+__getitem__function, we can arbitrarily access the pretraining (masked language model-
+ing and next sentence prediction) examples generated from a pair of sentences from the
+WikiText-2 corpus.
+The original BERT model uses WordPiece embeddings whose vocabulary size is 30000
+(Wu et al., 2016). The tokenization method of WordPiece is a slight modification of the
+original byte pair encoding algorithm in Section 15.6.2. For simplicity, we use the d2l.
+tokenize function for tokenization. Infrequent tokens that appear less than five times are
+filtered out.
+#@save
+class _WikiTextDataset(torch.utils.data.Dataset):
+def __init__(self, paragraphs, max_len):
+# Input `paragraphs[i]` is a list of sentence strings representing a
+# paragraph; while output `paragraphs[i]` is a list of sentences
+# representing a paragraph, where each sentence is a list of tokens
+paragraphs = [d2l.tokenize(
+paragraph, token='word') for paragraph in paragraphs]
+sentences = [sentence for paragraph in paragraphs
+for sentence in paragraph]
+self.vocab = d2l.Vocab(sentences, min_freq=5, reserved_tokens=[
+'<pad>', '<mask>', '<cls>', '<sep>'])
+# Get data for the next sentence prediction task
+examples = []
+for paragraph in paragraphs:
+examples.extend(_get_nsp_data_from_paragraph(
+paragraph, paragraphs, self.vocab, max_len))
+# Get data for the masked language model task
+examples = [(_get_mlm_data_from_tokens(tokens, self.vocab)
++ (segments, is_next))
+for tokens, segments, is_next in examples]
+# Pad inputs
+(self.all_token_ids, self.all_segments, self.valid_lens,
+self.all_pred_positions, self.all_mlm_weights,
+self.all_mlm_labels, self.nsp_labels) = _pad_bert_inputs(
+examples, max_len, self.vocab)
+def __getitem__(self, idx):
+return (self.all_token_ids[idx], self.all_segments[idx],
+self.valid_lens[idx], self.all_pred_positions[idx],
+self.all_mlm_weights[idx], self.all_mlm_labels[idx],
+self.nsp_labels[idx])
+def __len__(self):
+return len(self.all_token_ids)
+By using the _read_wiki function and the _WikiTextDataset class, we define the follow-
+ing load_data_wiki to download and WikiText-2 dataset and generate pretraining exam-
+ples from it.
+
+===== صفحة الكتاب 778 =====
+738
+Natural Language Processing: Pretraining
+#@save
+def load_data_wiki(batch_size, max_len):
+"""Load the WikiText-2 dataset."""
+num_workers = d2l.get_dataloader_workers()
+data_dir = d2l.download_extract('wikitext-2', 'wikitext-2')
+paragraphs = _read_wiki(data_dir)
+train_set = _WikiTextDataset(paragraphs, max_len)
+train_iter = torch.utils.data.DataLoader(train_set, batch_size,
+shuffle=True, num_workers=num_workers)
+return train_iter, train_set.vocab
+Setting the batch size to 512 and the maximum length of a BERT input sequence to be
+64, we print out the shapes of a minibatch of BERT pretraining examples. Note that in
+each BERT input sequence, 10 (64 × 0.15) positions are predicted for the masked language
+modeling task.
+batch_size, max_len = 512, 64
+train_iter, vocab = load_data_wiki(batch_size, max_len)
+for (tokens_X, segments_X, valid_lens_x, pred_positions_X, mlm_weights_X,
+mlm_Y, nsp_y) in train_iter:
+print(tokens_X.shape, segments_X.shape, valid_lens_x.shape,
+pred_positions_X.shape, mlm_weights_X.shape, mlm_Y.shape,
+nsp_y.shape)
+break
+Downloading ../data/wikitext-2-v1.zip from https://s3.amazonaws.com/research.
+↩→metamind.io/wikitext/wikitext-2-v1.zip...
+torch.Size([512, 64]) torch.Size([512, 64]) torch.Size([512]) torch.Size([512,␣
+↩→10]) torch.Size([512, 10]) torch.Size([512, 10]) torch.Size([512])
+In the end, let’s take a look at the vocabulary size. Even after filtering out infrequent tokens,
+it is still over twice larger than that of the PTB dataset.
+len(vocab)
+20256
+15.9.3 Summary
+• Comparing with the PTB dataset, the WikiText-2 dateset retains the original punctuation,
+case and numbers, and is over twice larger.
+• We can arbitrarily access the pretraining (masked language modeling and next sentence
+prediction) examples generated from a pair of sentences from the WikiText-2 corpus.
+15.9.4 Exercises
+
+===== صفحة الكتاب 779 =====
+739
+Pretraining BERT
+239
+1. For simplicity, the period is used as the only delimiter for splitting sentences. Try other
+sentence splitting techniques, such as the spaCy and NLTK. Take NLTK as an exam-
+ple. You need to install NLTK first: pip install nltk. In the code, first import
+nltk. Then, download the Punkt sentence tokenizer: nltk.download('punkt'). To
+split sentences such as sentences = 'This is great ! Why not ?', invok-
+ing nltk.tokenize.sent_tokenize(sentences) will return a list of two sentence
+strings: ['This is great !', 'Why not ?'].
+2. What is the vocabulary size if we do not filter out any infrequent token?
+Discussions239.
+15.10 Pretraining BERT
+With the BERT model implemented in Section 15.8 and the pretraining examples generated
+from the WikiText-2 dataset in Section 15.9, we will pretrain BERT on the WikiText-2
+dataset in this section.
+import torch
+from torch import nn
+from d2l import torch as d2l
+To start, we load the WikiText-2 dataset as minibatches of pretraining examples for masked
+language modeling and next sentence prediction. The batch size is 512 and the maximum
+length of a BERT input sequence is 64. Note that in the original BERT model, the maximum
+length is 512.
+batch_size, max_len = 512, 64
+train_iter, vocab = d2l.load_data_wiki(batch_size, max_len)
+15.10.1 Pretraining BERT
+The original BERT has two versions of different model sizes (Devlin et al., 2018). The base
+model (BERTBASE) uses 12 layers (Transformer encoder blocks) with 768 hidden units
+(hidden size) and 12 self-attention heads. The large model (BERTLARGE) uses 24 layers
+with 1024 hidden units and 16 self-attention heads. Notably, the former has 110 million
+parameters while the latter has 340 million parameters. For demonstration with ease, we
+define a small BERT, using 2 layers, 128 hidden units, and 2 self-attention heads.
+net = d2l.BERTModel(len(vocab), num_hiddens=128,
+ffn_num_hiddens=256, num_heads=2, num_blks=2, dropout=0.2)
+devices = d2l.try_all_gpus()
+loss = nn.CrossEntropyLoss()
+
+===== صفحة الكتاب 780 =====
+740
+Natural Language Processing: Pretraining
+Before defining the training loop, we define a helper function _get_batch_loss_bert.
+Given the shard of training examples, this function computes the loss for both the masked
+language modeling and next sentence prediction tasks. Note that the final loss of BERT
+pretraining is just the sum of both the masked language modeling loss and the next sentence
+prediction loss.
+#@save
+def _get_batch_loss_bert(net, loss, vocab_size, tokens_X,
+segments_X, valid_lens_x,
+pred_positions_X, mlm_weights_X,
+mlm_Y, nsp_y):
+# Forward pass
+_, mlm_Y_hat, nsp_Y_hat = net(tokens_X, segments_X,
+valid_lens_x.reshape(-1),
+pred_positions_X)
+# Compute masked language model loss
+mlm_l = loss(mlm_Y_hat.reshape(-1, vocab_size), mlm_Y.reshape(-1)) *\
+mlm_weights_X.reshape(-1, 1)
+mlm_l = mlm_l.sum() / (mlm_weights_X.sum() + 1e-8)
+# Compute next sentence prediction loss
+nsp_l = loss(nsp_Y_hat, nsp_y)
+l = mlm_l + nsp_l
+return mlm_l, nsp_l, l
+Invoking the two aforementioned helper functions, the following train_bert function de-
+fines the procedure to pretrain BERT (net) on the WikiText-2 (train_iter) dataset. Train-
+ing BERT can take very long. Instead of specifying the number of epochs for training as in
+the train_ch13 function (see Section 14.1), the input num_steps of the following function
+specifies the number of iteration steps for training.
+def train_bert(train_iter, net, loss, vocab_size, devices, num_steps):
+net(*next(iter(train_iter))[:4])
+net = nn.DataParallel(net, device_ids=devices).to(devices[0])
+trainer = torch.optim.Adam(net.parameters(), lr=0.01)
+step, timer = 0, d2l.Timer()
+animator = d2l.Animator(xlabel='step', ylabel='loss',
+xlim=[1, num_steps], legend=['mlm', 'nsp'])
+# Sum of masked language modeling losses, sum of next sentence prediction
+# losses, no. of sentence pairs, count
+metric = d2l.Accumulator(4)
+num_steps_reached = False
+while step < num_steps and not num_steps_reached:
+for tokens_X, segments_X, valid_lens_x, pred_positions_X,\
+mlm_weights_X, mlm_Y, nsp_y in train_iter:
+tokens_X = tokens_X.to(devices[0])
+segments_X = segments_X.to(devices[0])
+valid_lens_x = valid_lens_x.to(devices[0])
+pred_positions_X = pred_positions_X.to(devices[0])
+mlm_weights_X = mlm_weights_X.to(devices[0])
+mlm_Y, nsp_y = mlm_Y.to(devices[0]), nsp_y.to(devices[0])
+trainer.zero_grad()
+timer.start()
+mlm_l, nsp_l, l = _get_batch_loss_bert(
+(continues on next page)
+
+===== صفحة الكتاب 781 =====
+741
+Pretraining BERT
+(continued from previous page)
+net, loss, vocab_size, tokens_X, segments_X, valid_lens_x,
+pred_positions_X, mlm_weights_X, mlm_Y, nsp_y)
+l.backward()
+trainer.step()
+metric.add(mlm_l, nsp_l, tokens_X.shape[0], 1)
+timer.stop()
+animator.add(step + 1,
+(metric[0] / metric[3], metric[1] / metric[3]))
+step += 1
+if step == num_steps:
+num_steps_reached = True
+break
+print(f'MLM loss {metric[0] / metric[3]:.3f}, '
+f'NSP loss {metric[1] / metric[3]:.3f}')
+print(f'{metric[2] / timer.sum():.1f} sentence pairs/sec on '
+f'{str(devices)}')
+We can plot both the masked language modeling loss and the next sentence prediction loss
+during BERT pretraining.
+train_bert(train_iter, net, loss, len(vocab), devices, 50)
+MLM loss 5.885, NSP loss 0.760
+4413.2 sentence pairs/sec on [device(type='cuda', index=0), device(type='cuda',
+↩→index=1)]
+15.10.2 Representing Text with BERT
+After pretraining BERT, we can use it to represent single text, text pairs, or any token in
+them. The following function returns the BERT (net) representations for all tokens in
+tokens_a and tokens_b.
+def get_bert_encoding(net, tokens_a, tokens_b=None):
+tokens, segments = d2l.get_tokens_and_segments(tokens_a, tokens_b)
+token_ids = torch.tensor(vocab[tokens], device=devices[0]).unsqueeze(0)
+segments = torch.tensor(segments, device=devices[0]).unsqueeze(0)
+(continues on next page)
+
+===== صفحة الكتاب 782 =====
+742
+Natural Language Processing: Pretraining
+(continued from previous page)
+valid_len = torch.tensor(len(tokens), device=devices[0]).unsqueeze(0)
+encoded_X, _, _ = net(token_ids, segments, valid_len)
+return encoded_X
+Consider the sentence “a crane is flying”. Recall the input representation of BERT as dis-
+cussed in Section 15.8.4. After inserting special tokens “<cls>” (used for classification)
+and “<sep>” (used for separation), the BERT input sequence has a length of six. Since
+zero is the index of the “<cls>” token, encoded_text[:, 0, :] is the BERT represen-
+tation of the entire input sentence. To evaluate the polysemy token “crane”, we also print
+out the first three elements of the BERT representation of the token.
+tokens_a = ['a', 'crane', 'is', 'flying']
+encoded_text = get_bert_encoding(net, tokens_a)
+# Tokens: '<cls>', 'a', 'crane', 'is', 'flying', '<sep>'
+encoded_text_cls = encoded_text[:, 0, :]
+encoded_text_crane = encoded_text[:, 2, :]
+encoded_text.shape, encoded_text_cls.shape, encoded_text_crane[0][:3]
+(torch.Size([1, 6, 128]),
+torch.Size([1, 128]),
+tensor([0.8414, 1.4830, 0.8226], device='cuda:0', grad_fn=<SliceBackward0>))
+Now consider a sentence pair “a crane driver came” and “he just left”. Similarly, encoded_pair[:,
+0, :] is the encoded result of the entire sentence pair from the pretrained BERT. Note that
+the first three elements of the polysemy token “crane” are different from those when the
+context is different. This supports that BERT representations are context-sensitive.
+tokens_a, tokens_b = ['a', 'crane', 'driver', 'came'], ['he', 'just', 'left']
+encoded_pair = get_bert_encoding(net, tokens_a, tokens_b)
+# Tokens: '<cls>', 'a', 'crane', 'driver', 'came', '<sep>', 'he', 'just',
+# 'left', '<sep>'
+encoded_pair_cls = encoded_pair[:, 0, :]
+encoded_pair_crane = encoded_pair[:, 2, :]
+encoded_pair.shape, encoded_pair_cls.shape, encoded_pair_crane[0][:3]
+(torch.Size([1, 10, 128]),
+torch.Size([1, 128]),
+tensor([0.0430, 1.6132, 0.0437], device='cuda:0', grad_fn=<SliceBackward0>))
+In Chapter 16, we will fine-tune a pretrained BERT model for downstream natural language
+processing applications.
+15.10.3 Summary
+• The original BERT has two versions, where the base model has 110 million parameters
+and the large model has 340 million parameters.
+
+===== صفحة الكتاب 783 =====
+743
+Pretraining BERT
+240
+• After pretraining BERT, we can use it to represent single text, text pairs, or any token in
+them.
+• In the experiment, the same token has different BERT representation when their contexts
+are different. This supports that BERT representations are context-sensitive.
+15.10.4 Exercises
+1. In the experiment, we can see that the masked language modeling loss is significantly
+higher than the next sentence prediction loss. Why?
+2. Set the maximum length of a BERT input sequence to be 512 (same as the original BERT
+model). Use the configurations of the original BERT model such as BERTLARGE. Do
+you encounter any error when running this section? Why?
+Discussions240.

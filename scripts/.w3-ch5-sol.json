@@ -1,0 +1,125 @@
+[
+ {
+  "lesson": "swe.ch5.l1",
+  "id": "ex1.write-validator",
+  "solution": "def check_record(uc):\n    \"\"\"Return a list of problem strings; empty list = complete record.\"\"\"\n    problems = []\n    if not uc.get(\"actor\"):\n        problems.append(\"no actor\")\n    if not uc.get(\"goal\"):\n        problems.append(\"no goal\")\n    if not uc.get(\"preconditions\"):\n        problems.append(\"no preconditions\")\n    steps = uc.get(\"steps\", [])\n    if len(steps) < 2:\n        problems.append(\"too few steps\")\n    return problems\n\nrecord = {\"actor\": \"Cardholder\", \"goal\": \"\",\n          \"preconditions\": [\"ATM in service\"],\n          \"steps\": [\"The Cardholder inserts a card.\"]}\n\nproblems = check_record(record)\nfor p in problems:\n    print(\"fix:\", p)\nprint(\"problems:\", len(problems))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "تُبلغ عن هدف ناقص",
+     "en": "reports the missing goal"
+    },
+    "code": "assert 'fix: no goal' in __learner_output__, 'expected: fix: no goal | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "تحسب مشكلتين",
+     "en": "counts two problems"
+    },
+    "code": "assert 'problems: 2' in __learner_output__, 'expected: problems: 2 | actual: %r' % __learner_output__"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch5.l2",
+  "id": "ex1.add-alt-flow",
+  "solution": "MAIN = [\"insert card\", \"enter PIN\", \"enter amount\", \"dispense cash\"]\nALTS = {\n    (3, \"no funds\"): {\"name\": \"A3 no funds\",\n                      \"steps\": [\"show message\"],\n                      \"resume\": 3},\n}\n\ndef walk(events):\n    events = dict(events)\n    path = []\n    i = 1\n    guard = 0\n    while i <= len(MAIN) and guard < 30:\n        guard += 1\n        cond = events.get(i, \"ok\")\n        if cond != \"ok\" and (i, cond) in ALTS:\n            alt = ALTS[(i, cond)]\n            path.append(f\"step{i} ALT({alt['name']})\")\n            for s in alt[\"steps\"]:\n                path.append(f\"step{i}: {s}\")\n            del events[i]\n            i = alt[\"resume\"]\n        else:\n            path.append(f\"step{i} ok\")\n            i += 1\n    return \" -> \".join(path)\n\nALTS[(4, \"machine empty\")] = {\"name\": \"A4 machine empty\",\n                              \"steps\": [\"show message\", \"offer smaller amount\"],\n                              \"resume\": 4}\nprint(walk({4: \"machine empty\"}))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "يتفرع إلى A4 عند الخطوة 4",
+     "en": "branches into A4 at step 4"
+    },
+    "code": "assert 'step4 ALT(A4 machine empty)' in __learner_output__, 'expected: step4 ALT(A4 machine empty) | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يعرض خطوة العرض الأصغر ويستأنف",
+     "en": "shows the smaller-amount step and resumes"
+    },
+    "code": "assert 'step4: offer smaller amount' in __learner_output__ and 'step4 ok' in __learner_output__, 'expected: step4: offer smaller amount then step4 ok | actual: %r' % __learner_output__"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch5.l3",
+  "id": "ex1.lint-uc",
+  "solution": "VERBS = (\"insert\", \"enter\", \"select\", \"confirm\", \"dispense\",\n         \"return\", \"print\", \"read\", \"display\", \"prompt\", \"validate\")\nUI_WORDS = (\"button\", \"click\", \"field\", \"tap\", \"hash\")\n\ndef lint_uc(steps):\n    clean = 0\n    for i, s in enumerate(steps, 1):\n        problems = []\n        if not s.split() or s.split()[0].lower() not in VERBS:\n            problems.append(\"no-verb-start\")\n        leaks = [w for w in UI_WORDS if w in s.lower()]\n        if leaks:\n            problems.append(\"ui:\" + \",\".join(leaks))\n        if problems:\n            print(f\"step{i}:\", \" \".join(problems))\n        else:\n            clean += 1\n            print(f\"step{i}: clean\")\n    print(\"clean:\", clean, \"/\", len(steps))\n    return clean\n\nuc_steps = [\"Insert a bank card.\", \"Tap the amount field.\", \"Dispense the cash.\"]\nlint_uc(uc_steps)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "تلتقط خطوة الواجهة المخالفة",
+     "en": "catches the violating UI step"
+    },
+    "code": "assert 'step2: no-verb-start ui:field,tap' in __learner_output__, 'expected: step2: no-verb-start ui:field,tap | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "تطبع العدّ الصحيح",
+     "en": "prints the correct totals line"
+    },
+    "code": "assert 'clean: 2 / 3' in __learner_output__, 'expected: clean: 2 / 3 | actual: %r' % __learner_output__"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch5.l4",
+  "id": "ex1.flow-engine",
+  "solution": "REGISTRY = {\n    \"Authenticate Cardholder\": {\n        \"steps\": [\"Read the card\", \"Prompt for PIN\", \"Validate PIN with bank\"],\n    },\n    \"Assess Withdrawal Fee\": {\n        \"steps\": [\"Check the network\", \"Add a fee note\"],\n        \"extends\": (\"Withdraw Cash\", \"AmountConfirmed\", \"out-of-network\"),\n    },\n    \"Withdraw Cash\": {\n        \"steps\": [\"Include Authenticate Cardholder\", \"Prompt for amount\",\n                  \"point:AmountConfirmed\", \"Dispense cash\"],\n    },\n}\n\ndef run(use_case, conditions=None):\n    \"\"\"Trace one use case. 'Include X' splices X (always runs). 'point:P'\n    runs extenders whose (base, point, condition) matches conditions[P].\"\"\"\n    conditions = dict(conditions or {})\n    out = []\n\n    def walk(name, prefix):\n        for i, s in enumerate(REGISTRY[name][\"steps\"], 1):\n            tag = f\"{prefix}{i}\"\n            if s.startswith(\"Include \"):\n                sub = s[len(\"Include \"):]\n                out.append(f\"{tag} include>{sub}\")\n                walk(sub, tag + \".\")\n            elif s.startswith(\"point:\"):\n                point = s[len(\"point:\"):]\n                ran = False\n                for other in sorted(REGISTRY):\n                    ext = REGISTRY[other].get(\"extends\")\n                    if (ext and ext[0] == name and ext[1] == point\n                            and ext[2] == conditions.get(point)):\n                        out.append(f\"{tag} extend>{other}\")\n                        walk(other, tag + \".\")\n                        ran = True\n                if not ran:\n                    out.append(f\"{tag} pass {point}\")\n            else:\n                out.append(f\"{tag} {s}\")\n\n    walk(use_case, \"U\")\n    return out\n\nt1 = run(\"Withdraw Cash\", {})\nt2 = run(\"Withdraw Cash\", {\"AmountConfirmed\": \"out-of-network\"})\nprint(\"== S1 ==\")\nfor line in t1:\n    print(line)\nprint(\"== S2 ==\")\nfor line in t2:\n    print(line)\nprint(\"summary:\",\n      \"S1 lines=%d extend=%d\" % (len(t1), sum(\"extend>\" in x for x in t1)),\n      \"|\",\n      \"S2 lines=%d extend=%d\" % (len(t2), sum(\"extend>\" in x for x in t2)))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "S1 يمرّ بنقطة الامتداد بلا امتداد",
+     "en": "S1 passes the extension point with no extension"
+    },
+    "code": "assert 'U3 pass AmountConfirmed' in __learner_output__, 'expected: U3 pass AmountConfirmed | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "S2 يريح خطوات الامتداد كاملة",
+     "en": "S2 splices the extension steps in full"
+    },
+    "code": "assert ('U3 extend>Assess Withdrawal Fee' in __learner_output__\n        and 'U3.2 Add a fee note' in __learner_output__), 'expected: U3 extend>Assess Withdrawal Fee + U3.2 Add a fee note | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سطر الملخص مطابق حرفياً",
+     "en": "summary line matches exactly"
+    },
+    "code": "assert 'summary: S1 lines=7 extend=0 | S2 lines=9 extend=1' in __learner_output__, 'expected: summary: S1 lines=7 extend=0 | S2 lines=9 extend=1 | actual: %r' % __learner_output__"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch5.l4",
+  "id": "ex5.debug-extend-always",
+  "solution": "REGISTRY = {\n    \"Authenticate Cardholder\": {\"steps\": [\"Read the card\", \"Prompt for PIN\"]},\n    \"Assess Withdrawal Fee\": {\n        \"steps\": [\"Check the network\", \"Add a fee note\"],\n        \"extends\": (\"Withdraw Cash\", \"AmountConfirmed\", \"out-of-network\"),\n    },\n    \"Withdraw Cash\": {\n        \"steps\": [\"Include Authenticate Cardholder\",\n                  \"point:AmountConfirmed\", \"Dispense cash\"],\n    },\n}\n\ndef run(use_case, conditions=None):\n    conditions = dict(conditions or {})\n    out = []\n\n    def walk(name, prefix):\n        for i, s in enumerate(REGISTRY[name][\"steps\"], 1):\n            tag = f\"{prefix}{i}\"\n            if s.startswith(\"Include \"):\n                sub = s[len(\"Include \"):]\n                out.append(f\"{tag} include>{sub}\")\n                walk(sub, tag + \".\")\n            elif s.startswith(\"point:\"):\n                point = s[len(\"point:\"):]\n                ran = False\n                for other in sorted(REGISTRY):\n                    ext = REGISTRY[other].get(\"extends\")\n                    if (ext and ext[0] == name and ext[1] == point\n                            and ext[2] == conditions.get(point)):\n                        out.append(f\"{tag} extend>{other}\")\n                        walk(other, tag + \".\")\n                        ran = True\n                if not ran:\n                    out.append(f\"{tag} pass {point}\")\n            else:\n                out.append(f\"{tag} {s}\")\n\n    walk(use_case, \"U\")\n    return out\n\nt1 = run(\"Withdraw Cash\", {})\nt2 = run(\"Withdraw Cash\", {\"AmountConfirmed\": \"out-of-network\"})\nprint(\"== S1 ==\")\nfor line in t1:\n    print(line)\nprint(\"== S2 ==\")\nfor line in t2:\n    print(line)\nprint(\"summary:\",\n      \"S1 lines=%d extend=%d\" % (len(t1), sum(\"extend>\" in x for x in t1)),\n      \"|\",\n      \"S2 lines=%d extend=%d\" % (len(t2), sum(\"extend>\" in x for x in t2)))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "S1 يتجاوز النقطة بلا امتداد",
+     "en": "S1 passes the point with no extension"
+    },
+    "code": "assert 'S1 lines=5 extend=0' in __learner_output__, 'expected: S1 lines=5 extend=0 | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "S2 يظل يوسّع بشرطه الصحيح",
+     "en": "S2 still extends under its correct condition"
+    },
+    "code": "assert 'S2 lines=7 extend=1' in __learner_output__, 'expected: S2 lines=7 extend=1 | actual: %r' % __learner_output__"
+   }
+  ]
+ }
+]

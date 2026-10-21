@@ -1,0 +1,298 @@
+/**
+ * swe.ch7.l3 — تدفقات البيانات وربط العملاء بالخوادم /
+ *              Dataflow and Client-Server Patterns
+ * SWE ch7 — s4 Dataflow Architectures (ص184-187 / pp.184-187) + s5 Connecting
+ * Clients with Servers (ص188-193 / pp.188-193).
+ * Runnable design: a deterministic pipe-filter pipeline over a fixed list with
+ * per-stage prints, plus a mini request/response round-trip table simulation.
+ * Deterministic only: no input(), no exit(), no random, no unittest.main.
+ */
+import type { Lesson } from '@/lib/content/schema';
+
+const lesson = {
+  id: 'swe.ch7.l3',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 7,
+  title: { ar: 'تدفقات البيانات وربط العملاء بالخوادم', en: 'Dataflow and Client-Server Patterns' },
+  estimatedMinutes: 30,
+  prerequisites: ['swe.ch7.l2'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'ستة أوامر صغيرة كتبها ستة أشخاص لم يلتقوا قط، تتراصف في سطر واحد فتحول سجل دخول بحجم جيجابايت إلى تقرير. وفي اللحظة نفسها يطلب متصفحك من خادم في قارة أخرى موعدًا يعيش في قاعدة بيانات لا تراها. عائلتا معماريات تحلان مشكلتين مختلفتين: تدفق البيانات عبر تحويلات مستقلة، ومشاركة حقيقة واحدة عبر الآلات. اليوم تتعلم متى تختار كل منهما — وبأي ثمن بالضبط.',
+        en: 'Six tiny commands written by six people who never met, chained in one line, turn a gigabyte log into a report. At the same moment your browser asks a server on another continent for an appointment that lives in a database you never see. Two architecture families solve two different problems: data flowing through independent transforms, and one shared truth across machines. Today you learn when to pick each — and exactly what it costs.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: 'stream = ["a", "b", "c"]\ns1 = [x + "!" for x in stream]\ns2 = [x.upper() for x in s1]\nprint("|".join(s2))\n',
+      question: {
+        ar: 'ماذا يطبع؟ ولماذا لم تحتاج أي مرحلة إلى معرفة المرحلة التالية؟',
+        en: 'What does it print? And why did no stage need to know the next stage?',
+      },
+      reveal: {
+        ar: 'يطبع A!|B!|C!. كل مرحلة تستقبل قائمة وتعيد قائمة بنفس الشكل — التنسيق الموحد بين المراحل هو ما يسمح بالتركيب الحر دون أن تعرف أي مرحلة جارتها.',
+        en: 'It prints A!|B!|C!. Each stage takes a list and returns a list of the same shape — the uniform stream format between stages is what allows free composition without any stage knowing its neighbor.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الأنابيب والمرشحات: تدفق يركب كاللعب', en: 'Pipes and filters: a flow that composes like Lego' },
+      chunks: [
+        {
+          ar: 'في معمارية dataflow تفكر أولًا في البيانات: من أين تدخل، كيف تتحول خطوة خطوة، وأين تخرج — فتنبثق المكونات كمراحل تحويل. المرشح (filter) وحدة مكتملة بغرض واحد: يستهلك مدخلًا وينتج مخرجًا، وعادة بلا حالة. والأنبوب (pipe) موصل يحمل مخرجات مرشح إلى مدخل التالي — مؤخرة تفصل بينهما. ولأن المرشحات لا تتشارك شيئًا سوى شكل البيانات، تستطيع بناءها واختبارها وإعادة ترتيبها دون معرفة جيرانها: أوامر Unix في سطر واحد، ومراحل المترجم lexer ثم parser ثم optimizer. الثمن المحدد: الأنبوب يفرض تنسيق أصغر قاسم مشترك — نص غالبًا — فيدفع كل حد كلفة تحليل وإعادة تسلسل، والسلسلة الخطية سيئة في الأخطاء وفي التفاعل المتبادل ذهابًا وإيابًا.',
+          en: 'In a dataflow architecture you think about the data first: where it enters, how it transforms step by step, where it exits — and the components fall out as the transforming stages. A filter is a self-contained unit with one job: consume input, produce output, usually stateless. A pipe is the connector carrying one filter output to the next filter input — a buffer that decouples them. Because filters share nothing but the data shape, you can build, test, and reorder them without knowing their neighbors: a one-line Unix pipeline, or a compiler lexer, then parser, then optimizer. The precise cost: pipes impose a lowest-common-denominator format — often plain text — so every boundary pays parsing and re-serialization, and a linear chain handles errors and back-and-forth interaction poorly.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'العميل والخادم: حقيقة واحدة يطلبها الجميع', en: 'Client and server: one truth everyone requests' },
+      chunks: [
+        {
+          ar: 'حين يحتاج مستخدمون كثير على أجهزة كثيرة إلى بيانات مشتركة — دفتر حساب، تقويم مواعيد — لا يصح أن يحمل كل جهاز نسخة ويرجى أن تتفق. نمط client-server يسمي الأدوار: الخادم يملك المورد الموثوق ويستمع، والعميل يبدأ الطلب ويستهلك الجواب، والعملاء لا يكلم بعضهم. العقد بينهما هو البروتوكول — عقد طلب/جواب يسمح للطرفين بالتطور منفصلين، تمامًا كواجهة الطبقة. تربح مصدر حقيقة واحدًا وتحكمًا مركزيًا بالأمان والاتساق، وتدفع: الخادم عنق زجاجة ونقطة فشل وحيدة، ولهذا يكرر الأنظمة الحقيقية الخوادم ويوازن الحمل بينها. وبركة جانبية ثمينة: لأن العميل يعتمد على البروتوكول لا على تنفيذ بعينه، تستطيع أن تشير به في التطوير والاختبار إلى خادم بدل (test server) يحاكي الأخطاء والمهلات بأمان تام.',
+          en: 'When many users on many machines need shared data — a ledger, a shared calendar — you cannot give every device a copy and hope they agree. Client-server names the roles: the server owns the authoritative resource and waits; the client initiates requests and consumes responses; clients do not talk to each other. The contract between them is the protocol — a request/response agreement letting both sides evolve separately, exactly like a layer interface. You gain one source of truth and central control of security and consistency; you pay: the server is a bottleneck and a single point of failure, which is why real systems replicate servers and load-balance. A precious bonus: because the client depends only on the protocol, you can point it at a test server during development — a stub that simulates errors and timeouts safely.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'متى تختار أيهما؟ ومن يوسط؟', en: 'When do you pick which? And who mediates?' },
+      chunks: [
+        {
+          ar: 'قاعدة الاختيار صريحة: إن كان جوهر نظامك «حول تيارًا من شيء إلى تيار من شيء آخر» عبر تحويلات مستقلة — أنابيب ومرشحات. وإن كان الجوهر «حقيقة واحدة يشاركها طالبون كثر عبر الشبكة» — عميل وخادم. وإذا كبر النظام إلى خدمات كثيرة تعذر على كل متصل معرفة عنوان كل خادم، يقف نمط الوسيط (broker): يوجه الطلبات إلى الخادم المناسب فيكتسب شفافية الموقع ومرونة الإضافة والإحلال، ويدفع قفزة إضافية وتعقيدًا يجعل الوسيط نفسه نقطة فشل تستحق الحماية. وكما في كل الأنماط: سم ما تشتريه وما تدفعه قبل أن تلتزم — ولا تتوقع من النمط الخطي أن يخدم حاجة تفاعلية متبادلة.',
+          en: 'The choice rule is blunt: if your system essence is "turn a stream of this into a stream of that" through independent transforms — pipes and filters. If the essence is "one truth shared by many requesters across a network" — client and server. And when the system grows into many services where no caller can know every server address, the broker pattern steps in: it routes each request to a capable server, buying location transparency and easy addition or replacement, and paying an extra hop plus complexity that can make the broker itself the failure point worth protecting. As with every pattern: name what you buy and what you pay before committing — and never expect a one-directional pattern to serve a back-and-forth interactive need.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'ثلاثة مرشحات، أنبوبان، تقرير واحد', en: 'Three filters, two pipes, one report' },
+      code: '# three filters, two pipes; each stage knows only the data shape\nLOG = ["10.0.0.1 404 /a", "10.0.0.2 200 /b", "10.0.0.1 404 /c", "10.0.0.3 404 /d"]\n\ndef select_404(rows):            # filter: keep the 404 lines\n    return [r for r in rows if " 404 " in r]\n\ndef take_ip(rows):               # filter: project the client ip\n    return [r.split()[0] for r in rows]\n\ndef tally(ips):                  # filter: aggregate per ip\n    counts = {}\n    for ip in ips:\n        counts[ip] = counts.get(ip, 0) + 1\n    return counts\n\nstage1 = select_404(LOG)\nstage2 = take_ip(stage1)\nstage3 = tally(stage2)\nprint("1:", stage1)\nprint("2:", stage2)\nprint("3:", stage3)\n',
+      explanation: {
+        ar: 'ثلاث مراحل مستقلة تتصل بشكل البيانات فقط: select_404 ترشح السطور، وtake_ip تستخرج العمود الأول، وtally تجمع العدادات في قاموس. لو طلب منك تقرير جديد — كأبرز عشر مسارات — تضيف مرشحًا رابعًا في نهاية الأنبوب دون فتح أي مرحلة سابقة. اطبع مخرجات كل مرحلة وسيصبح خط الأنابيب مرئيًا: قائمة سطور ثم قائمة عناوين ثم قاموس عدادات. هذا هو قابلية إعادة التركيب، وثمنها ظاهر في كل حد: تحليل نص وإعادة تسلسله.',
+        en: 'Three independent stages connected only by the data shape: select_404 keeps the 404 lines, take_ip projects the first column, tally folds counts into a dictionary. Asked for a new report — say a top-ten of paths — you append a fourth filter without opening any earlier stage. Printing each stage output makes the pipeline visible: list of lines, then list of ips, then a counts dictionary. That is composability, paid for visibly at every boundary: parsing text and re-serializing it.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.pipeline',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'ابن أنبوبًا من ثلاث مراحل على NUMS: keep_evens ترشح الزوجيات، وdouble تضاعف كل عنصر، وtotal تجمعها. اطبع كل مرحلة بالترتيب: evens ثم doubled ثم total — يجب أن يطبع بالضبط: evens: [2, 4, 6] ثم doubled: [4, 8, 12] ثم total: 24.',
+        en: 'Build a three-stage pipeline over NUMS: keep_evens filters the even numbers, double multiplies every element by 2, total sums them. Print each stage in order: evens, then doubled, then total — it must print exactly evens: [2, 4, 6], then doubled: [4, 8, 12], then total: 24.',
+      },
+      starterCode: 'NUMS = [1, 2, 3, 4, 5, 6]\n\ndef keep_evens(xs):\n    return []   # TODO: keep only the even numbers\n\ndef double(xs):\n    return []   # TODO: multiply every number by 2\n\ndef total(xs):\n    return 0    # TODO: sum the list\n\nstage1 = keep_evens(NUMS)\nstage2 = double(stage1)\nstage3 = total(stage2)\nprint("evens:", stage1)\nprint("doubled:", stage2)\nprint("total:", stage3)\n',
+      solution: 'NUMS = [1, 2, 3, 4, 5, 6]\n\ndef keep_evens(xs):\n    return [x for x in xs if x % 2 == 0]\n\ndef double(xs):\n    return [x * 2 for x in xs]\n\ndef total(xs):\n    return sum(xs)\n\nstage1 = keep_evens(NUMS)\nstage2 = double(stage1)\nstage3 = total(stage2)\nprint("evens:", stage1)\nprint("doubled:", stage2)\nprint("total:", stage3)\n',
+      tests: [
+        {
+          id: 'stage1-evens',
+          name: { ar: 'مرحلة الترشيح', en: 'filter stage' },
+          code: "assert 'evens: [2, 4, 6]' in __learner_output__, 'expected: evens: [2, 4, 6] | actual: %r' % __learner_output__",
+        },
+        {
+          id: 'stage2-double',
+          name: { ar: 'مرحلة التحويل', en: 'map stage' },
+          code: "assert 'doubled: [4, 8, 12]' in __learner_output__, 'expected: doubled: [4, 8, 12] | actual: %r' % __learner_output__",
+        },
+        {
+          id: 'stage3-total',
+          name: { ar: 'مرحلة التجميع', en: 'aggregate stage' },
+          code: "assert 'total: 24' in __learner_output__, 'expected: total: 24 | actual: %r' % __learner_output__",
+        },
+      ],
+      hints: [
+        { ar: 'كل مرحلة دالة تأخذ قائمة وتعيد قائمة (والأخيرة تعيد رقمًا) — ولا تعرف شيئًا عن جاراتها.', en: 'Each stage is a function taking a list and returning a list (the last one returns a number) — and it knows nothing about its neighbors.' },
+        { ar: 'الترشيح: الشرط x % 2 == 0 داخل list comprehension.', en: 'Filtering: the condition x % 2 == 0 inside a list comprehension.' },
+        { ar: 'التحويل: [x * 2 for x in xs] — والتجميع: sum(xs).', en: 'Transform: [x * 2 for x in xs] — aggregate: sum(xs).' },
+        { ar: 'السلسلة في الأسفل مكتملة؛ املأ الدوال الثلاث فقط وسيطبع البرنامج مراحل الأنبوب الثلاث بالترتيب.', en: 'The chain at the bottom is complete; fill only the three functions and the program prints the three pipeline stages in order.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-roundtrip',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'محاكاة طلب/جواب صغيرة: تتبع الحلقة واكتب المخرجات الثلاثة بالضبط.',
+        en: 'A tiny request/response simulation: trace the loop and write the three printed lines exactly.',
+      },
+      code: 'def server(req, book):\n    if req == "GET":\n        return "200 count=" + str(book["n"])\n    if req == "POST":\n        book["n"] += 1\n        return "201 count=" + str(book["n"])\n    return "400"\nbook = {"n": 2}\nfor req in ["GET", "POST", "GET"]:\n    print(req, "->", server(req, book))\n',
+      answer: 'GET -> 200 count=2\nPOST -> 201 count=3\nGET -> 200 count=3',
+      solution: 'GET -> 200 count=2\nPOST -> 201 count=3\nGET -> 200 count=3',
+      hints: [
+        { ar: 'GET يقرأ فقط دون تغيير، وPOST يزيد العداد قبل الرد.', en: 'GET only reads without change; POST increments the counter before replying.' },
+        { ar: 'السطر الأول: GET -> 200 count=2.', en: 'First line: GET -> 200 count=2.' },
+        { ar: 'بعد POST صار count=3، فالـ GET الأخير يقرأ 3.', en: 'After the POST, count=3, so the final GET reads 3.' },
+        { ar: 'الناتج: GET -> 200 count=2 ثم POST -> 201 count=3 ثم GET -> 200 count=3.', en: 'Output: GET -> 200 count=2, then POST -> 201 count=3, then GET -> 200 count=3.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-who',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'في نمط العميل-الخادم: من يبدأ التفاعل دائمًا، ومن يملك النسخة الموثوقة من البيانات؟',
+        en: 'In client-server: who always initiates the interaction, and who owns the authoritative copy of the data?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'الخادم يبدأ، والنسخ الموثوقة موزعة عند العملاء', en: 'The server initiates, and authoritative copies live on the clients' } },
+        { id: 'b', text: { ar: 'العميل يبدأ الطلب، والخادم يملك المورد الموثوق ويرد', en: 'The client initiates the request, and the server owns the authoritative resource and replies' } },
+        { id: 'c', text: { ar: 'الوسيط broker يبدأ دائمًا ويملك كل البيانات', en: 'The broker always initiates and owns all data' } },
+        { id: 'd', text: { ar: 'الطرفان يكتبان بالتوازي بلا بادئ محدد', en: 'Both sides write in parallel with no designated initiator' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'تذكر معنى «حقيقة واحدة مشتركة» — من يحملها إذن؟', en: 'Remember what "one shared truth" means — who holds it, then?' },
+        { ar: 'اسأل: من ينتظر ومن يطلب؟', en: 'Ask: who waits, and who asks?' },
+        { ar: 'البروتوكول عقد طلب/جواب: طرف واحد هو مصدر الطلب دائمًا.', en: 'The protocol is a request/response contract: one side is always the source of the request.' },
+        { ar: 'الإجابة b: العميل يبدأ والخادم يرد ويملك المورد.', en: 'Answer b: the client initiates, the server replies and owns the resource.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-pipe',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'الموصل الذي يحمل مخرجات مرشح إلى مدخل المرشح التالي في نمط الأنابيب والمرشحات يسمى ______. اكتب المصطلح الإنجليزي كلمة واحدة.',
+        en: 'The connector that carries one filter output to the next filter input in pipes-and-filters is called a ______. Write the English term, one word.',
+      },
+      answer: 'pipe',
+      solution: 'pipe',
+      hints: [
+        { ar: 'كلمة إنجليزية من أربعة أحرف، اسمها في عنوان النمط نفسه.', en: 'A four-letter English word, sitting in the pattern name itself.' },
+        { ar: 'المرشح يحول، و______ ينقل.', en: 'The filter transforms; the ______ transports.' },
+        { ar: 'تبدأ بحرف p.', en: 'It starts with p.' },
+        { ar: 'pipe — الأنبوب الذي يفصل المرشحات ويربطها معًا.', en: 'pipe — the connector that separates filters yet links them.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: 'def server(req, book):\n    # tiny REST-ish contract: GET reads, POST books, PATCH arrives\n    if req == "GET":\n        return "200 count=" + str(book["n"])\n    if req == "POST":\n        book["n"] += 1\n        return "201 count=" + str(book["n"])\n    if req == "PATCH":\n        return "204 arrived"\n    return "400"\nbook = {"n": 2}\nfor req in ["GET", "POST", "PATCH", "GET"]:\n    print(req, "->", server(req, book))\n# experiment: resend the POST twice (networks retry!). What happens to count?\n# POST is not idempotent — protect writes that must not repeat.\n',
+      prompt: {
+        ar: 'أكمل دورة حياة موعد عبر بروتوكول صغير: اقرأ، احجز، غير الحالة بـ PATCH، واقرأ مرة أخرى. ثم أرسل POST مرتين متتاليتين ولاحظ العداد يقفز مرتين: POST ليس idempotent والشبكة تعيد الإرسال. فكر: كيف تحمي عملية كتابة من التكرار؟',
+        en: 'Walk an appointment lifecycle through a small protocol: read, book, change status with PATCH, read again. Then send the POST twice in a row and watch the counter jump twice: POST is not idempotent and networks retry. Think: how would you protect a write from being repeated?',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz',
+      items: [
+        {
+          id: 'q1.boundarycost',
+          question: { ar: 'ما الكلفة المتأصلة في كل حد بين مرشحين داخل خط الأنابيب؟', en: 'What is the inherent cost at every boundary between two filters in a pipeline?' },
+          options: [
+            { id: 'a', text: { ar: 'تحليل وإعادة تسلسل بسبب تنسيق أصغر قاسم مشترك', en: 'Parsing and re-serialization due to a lowest-common-denominator format' } },
+            { id: 'b', text: { ar: 'قفل توزيع على الحالة المشتركة', en: 'A distributed lock on shared state' } },
+            { id: 'c', text: { ar: 'انفجار في عدد الاختبارات المطلوبة', en: 'An explosion in the number of required tests' } },
+            { id: 'd', text: { ar: 'لا كلفة — الأنابيب مجانية بالكامل', en: 'No cost — pipes are entirely free' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الأنبوب يحمل نصًا غالبًا؛ كل حد يدفع تحليلًا ثم إعادة تسلسل، والبنية الغنية تمر بصعوبة — ولهذا تفضل الأنابيب تدفقات نصية موحدة.',
+            en: 'A pipe usually carries text; every boundary pays a parse then a re-serialize, and rich structure struggles through — which is why pipelines favor uniform text streams.',
+          },
+        },
+        {
+          id: 'q2.cs-tradeoff',
+          question: { ar: 'ما المقايضة المحورية في نمط العميل-الخادم؟', en: 'What is the core trade-off in the client-server pattern?' },
+          options: [
+            { id: 'a', text: { ar: 'مصدر حقيقة مركزي مقابل عنق زجاجة ونقطة فشل وحيدة', en: 'A central source of truth versus a bottleneck and single point of failure' } },
+            { id: 'b', text: { ar: 'سرعة الرسم مقابل حجم الخطوط', en: 'Drawing speed versus font size' } },
+            { id: 'c', text: { ar: 'اختبار أسهل مقابل اختبارات أقل', en: 'Easier testing versus fewer tests' } },
+            { id: 'd', text: { ar: 'لا مقايضة معروفة لهذا النمط', en: 'No known trade-off for this pattern' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'المركزية تشتري اتساقًا وأمنًا أسهل، وتدفع عنق زجاجة ونقطة فشل وحيدة — ولهذا تكرر الأنظمة الحقيقية الخوادم وتوازن الحمل.',
+            en: 'Centralization buys consistency and easier security, and pays a bottleneck plus a single point of failure — which is why real systems replicate and load-balance.',
+          },
+        },
+        {
+          id: 'q3.testserver',
+          question: { ar: 'كيف تختبر «ماذا يفعل العميل إن رجع الخادم بخطأ 500؟» دون لمس الخادم الحقيقي؟', en: 'How do you test "what does the client do when the server returns a 500?" without touching the real server?' },
+          options: [
+            { id: 'a', text: { ar: 'بإيقاف الشبكة في جهاز المطور', en: 'By switching off the network on the developer machine' } },
+            { id: 'b', text: { ar: 'باستبدال خادم اختبار (stub) يطبق البروتوكول ويعيد 500 برمجيًا', en: 'By pointing the client at a test server (stub) implementing the protocol and returning 500 on demand' } },
+            { id: 'c', text: { ar: 'بحذف حالة الخطأ من كود العميل', en: 'By deleting the error case from the client code' } },
+            { id: 'd', text: { ar: 'بالانتظار حتى يخطئ الخادم الحقيقي فعلًا', en: 'By waiting until the real server actually fails' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'العميل يعتمد على البروتوكول لا على تنفيذ معين — فبدل التنفيذ بخادم اختبار يحاكي الأخطاء والمهلات. تبقى بضعة اختبارات تكامل ضد الخادم الحقيقي لأن الـ stub لا يضمن الواقعية.',
+            en: 'The client depends on the protocol, not an implementation — so swap the implementation with a stub that simulates errors and timeouts. Keep a few integration tests against the real server, since a stub is only as faithful as you make it.',
+          },
+        },
+        {
+          id: 'q4.ch6',
+          question: { ar: 'استبدال خادم حقيقي بـ stub في الاختبارات يحقق أي مبدأ تعرفه؟', en: 'Swapping a real server for a stub in tests realizes which principle you already know?' },
+          options: [
+            { id: 'a', text: { ar: 'اعتمد على الواجهة لا على التنفيذ — فكرة الفصل 6', en: 'Depend on the interface, not the implementation — the Chapter 6 idea' } },
+            { id: 'b', text: { ar: 'اجعل كل شيء عامًا ليصل إليه الاختبار', en: 'Make everything public so tests can reach it' } },
+            { id: 'c', text: { ar: 'كرر الكود لتقليل الاعتماديات', en: 'Duplicate code to reduce dependencies' } },
+            { id: 'd', text: { ar: 'اختبر عبر الشاشة دائمًا لأنها الواقع', en: 'Always test through the screen because it is the real thing' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'البروتوكول واجهة: ما دام العميل يتكلم العقد، يمكن تبديل ما خلفه — خادم بدل في الاختبارات، وخوادم مكررة في الإنتاج. فكرة الواجهة نفسها على مستوى الشبكة.',
+            en: 'The protocol is an interface: as long as the client speaks the contract, what sits behind it can be swapped — a stub in tests, replicated servers in production. The same interface idea, now at network scale.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'مررت كائنات غنية بالسلوك بين المرشحات عبر الأنبوب.',
+          right: 'حافظ على تنسيق تيار موحد بسيط (نص أو سجلات مسطحة)؛ الأنابيب تعيش على أصغر قاسم مشترك.',
+          note: { ar: 'كل حد تحليل وإعادة تسلسل — كل غنى في التنسيق يعني كلفة في كل مستوى.', en: 'Every boundary parses and re-serializes — the richer the format, the higher the per-stage tax.' },
+        },
+        {
+          wrong: 'حفظ كل عميل نسخته المحلية من المواعيد وحدثها حين يتذكر.',
+          right: 'الخادم هو حامل النسخة الموثوقة؛ العميل يطلب ويعرض، ولا يملك حقيقة مستقلة.',
+          note: { ar: 'النسخ المتعددة تنجرف عن بعضها — الاتساق مسؤولية المالك الوحيد.', en: 'Multiple copies drift apart — consistency is the job of the single owner.' },
+        },
+        {
+          wrong: 'أطلقنا خادمًا واحدًا ونمت مرتاحين.',
+          right: 'خطط للتكرار وموازنة الحمل مبكرًا؛ الخادم الوحيد نقطة فشل وحيدة بطبيعته.',
+          note: { ar: 'المركزية تشتري اتساقًا وتدفع هشاشة — عالجها بالتكرار والتوازن عند النمو.', en: 'Centralization buys consistency and pays fragility — treat it with replication and load-balancing as you grow.' },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'في dataflow تفكر بالبيانات أولًا: مرشحات مستقلة وأنابيب تفصلها — تركيب حر مقابل تنسيق أصغر قاسم مشترك.', en: 'In dataflow you think data-first: independent filters separated by pipes — free composition paid in a lowest-common-denominator format.' },
+        { ar: 'في client-server يملك الخادم الحقيقة ويبدأ العميل الطلب عبر بروتوكول — اتساق مركزي مقابل عنق زجاجة.', en: 'In client-server the server owns the truth and the client initiates over a protocol — central consistency paid in a bottleneck.' },
+        { ar: 'الاعتماد على البروتوكول يشتري الاستبدال: خادم اختبار في التطوير، وتكرار وتوازن في الإنتاج.', en: 'Protocol dependence buys substitution: a test server in development, replication and load-balancing in production.' },
+        { ar: 'الوسيط broker يفك حيرة العناوين حين تكبر الخدمات — بقفزة إضافية ونقطة مركزية تستحق الحماية.', en: 'The broker untangles service addresses as the system grows — for an extra hop and a central point worth protecting.' },
+      ],
+      reflectPrompt: {
+        ar: 'أي نمط يناسب توليد مصغرات صور المنتجات ليلاً عبر خطوات تحويل مستقلة؟ وأيها يناسب دفتر رصيد يشاركه ملايين المستخدمين؟ اكتب الجواب مع «ما تشتريه وما تدفعه» لكل واحد.',
+        en: 'Which pattern fits generating product-image thumbnails nightly through independent transforms? And which fits a balance ledger shared by millions? Write both answers with "what you buy, what you pay" for each.',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch7.s4', pages: 'ص184-187 / pp.184-187' },
+        { book: 'SWE', section: 'swe.ch7.s5', pages: 'ص188-193 / pp.188-193' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch7.s4', pages: 'ص184-187 / pp.184-187' },
+    { book: 'SWE', section: 'swe.ch7.s5', pages: 'ص188-193 / pp.188-193' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

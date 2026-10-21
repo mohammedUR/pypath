@@ -1,0 +1,217 @@
+{
+ "traces": [
+  {
+   "lesson": "py4e.ch15.l1",
+   "id": "ex2.trace-one-cell",
+   "code": "import sqlite3\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\ncur.execute('SELECT 1')\nrow = cur.fetchone()\nprint(row)\nprint(row[0])\nprint(len(row))",
+   "answer": "(1,)\n1\n1"
+  },
+  {
+   "lesson": "py4e.ch15.l2",
+   "id": "ex2.trace-update-delete",
+   "code": "import sqlite3\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\ncur.execute('CREATE TABLE t (name TEXT, age INTEGER)')\ncur.execute('INSERT INTO t VALUES (?, ?)', ('Sally', 22))\ncur.execute('UPDATE t SET age = age + 1')\ncur.execute('SELECT age FROM t')\nprint(cur.fetchone()[0])\ncur.execute('DELETE FROM t')\ncur.execute('SELECT COUNT(*) FROM t')\nprint(cur.fetchone()[0])",
+   "answer": "23\n0"
+  },
+  {
+   "lesson": "py4e.ch15.l3",
+   "id": "ex2.trace-filter-range",
+   "code": "import sqlite3\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\ncur.execute('CREATE TABLE t (name TEXT, friends INTEGER)')\ncur.execute('INSERT INTO t VALUES (?, ?)', ('a', 5))\ncur.execute('INSERT INTO t VALUES (?, ?)', ('b', 5))\ncur.execute('INSERT INTO t VALUES (?, ?)', ('c', 2))\ncur.execute('SELECT COUNT(*) FROM t WHERE friends > 2')\nprint(cur.fetchone()[0])\ncur.execute('SELECT MAX(friends) - MIN(friends) FROM t')\nprint(cur.fetchone()[0])",
+   "answer": "2\n3"
+  },
+  {
+   "lesson": "py4e.ch15.l4",
+   "id": "ex2.trace-keys",
+   "code": "import sqlite3\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\ncur.execute('CREATE TABLE People (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')\ncur.execute('INSERT INTO People (name) VALUES (?)', ('a',))\ncur.execute('INSERT INTO People (name) VALUES (?)', ('b',))\ncur.execute('SELECT id FROM People WHERE name = ?', ('b',))\nprint(cur.fetchone()[0])\ncur.execute('INSERT INTO People (name) VALUES (?)', ('c',))\nprint(cur.lastrowid)",
+   "answer": "2\n3"
+  },
+  {
+   "lesson": "py4e.ch15.l5",
+   "id": "ex2.trace-join-count",
+   "code": "import sqlite3\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\ncur.execute('CREATE TABLE a (id INTEGER PRIMARY KEY, name TEXT)')\ncur.execute('CREATE TABLE b (title TEXT, a_id INTEGER)')\ncur.execute('INSERT INTO a VALUES (?, ?)', (1, 'X'))\ncur.execute('INSERT INTO a VALUES (?, ?)', (2, 'Y'))\ncur.execute('INSERT INTO b VALUES (?, ?)', ('t1', 1))\ncur.execute('INSERT INTO b VALUES (?, ?)', ('t2', 2))\ncur.execute('INSERT INTO b VALUES (?, ?)', ('t3', 2))\ncur.execute('SELECT COUNT(*) FROM b JOIN a ON b.a_id = a.id')\nprint(cur.fetchone()[0])\ncur.execute('SELECT b.title FROM b JOIN a ON b.a_id = a.id WHERE a.name = ? ORDER BY b.title LIMIT 1', ('Y',))\nprint(cur.fetchone()[0])",
+   "answer": "3\nt2"
+  },
+  {
+   "lesson": "py4e.ch15.l6",
+   "id": "ex1.trace-mini-report",
+   "code": "import sqlite3\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\ncur.execute('CREATE TABLE t (g TEXT, tracks INTEGER)')\ncur.execute('INSERT INTO t VALUES (?, ?)', ('a', 8))\ncur.execute('INSERT INTO t VALUES (?, ?)', ('a', 4))\ncur.execute('INSERT INTO t VALUES (?, ?)', ('b', 6))\ncur.execute('SELECT COUNT(*) FROM t WHERE g = ?', ('a',))\nprint(cur.fetchone()[0])\ncur.execute('SELECT AVG(tracks) FROM t')\nprint(cur.fetchone()[0])",
+   "answer": "2\n6.0"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "py4e.ch15.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import sqlite3\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\ncur.execute('SELECT 1')\nrow = cur.fetchone()\nprint(row)\nprint(row[0])"
+  },
+  {
+   "lesson": "py4e.ch15.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE friends (name TEXT, friends INTEGER)')\ncur.execute('INSERT INTO friends (name, friends) VALUES (?, ?)', ('drchuck', 20))\ncur.execute('SELECT name, friends FROM friends')\n\nrow = cur.fetchone()\nprint(row)\nprint(row[0])\nconn.close()"
+  },
+  {
+   "lesson": "py4e.ch15.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — أول محادثة مع محرك قاعدة بيانات\n# Your playground — a first conversation with a database engine\n\nimport sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('SELECT 1')\nprint(cur.fetchone())\n\ncur.execute('CREATE TABLE notes (body TEXT)')\ncur.execute('INSERT INTO notes (body) VALUES (?)', ('first note',))\ncur.execute('SELECT body FROM notes')\nprint(cur.fetchone())\n\n# جرّب: أدخل ملاحظة ثانية ثم أضف حلقة for تطبع كل الصفوف / try: insert a second note, then a for loop printing every row\n# جرّب: اطبع type(cur.fetchone()) بعد استهلاك كل الصفوف — ماذا يرد؟ / try: print type(cur.fetchone()) after the rows run out — what comes back?"
+  },
+  {
+   "lesson": "py4e.ch15.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import sqlite3\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\ncur.execute('CREATE TABLE t (x INTEGER)')\ncur.execute('INSERT INTO t (x) VALUES (?)', (7,))\ncur.execute('SELECT x FROM t')\nprint(cur.fetchall())"
+  },
+  {
+   "lesson": "py4e.ch15.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE People (name TEXT, age INTEGER)')\ncur.execute('INSERT INTO People (name, age) VALUES (?, ?)', ('Chuck', 46))\ncur.execute('INSERT INTO People (name, age) VALUES (?, ?)', ('Zaid', 19))\nconn.commit()\n\ncur.execute('SELECT name, age FROM People')\nfor row in cur:\n    print(row)\n\ncur.execute('UPDATE People SET age = 20 WHERE name = ?', ('Zaid',))\ncur.execute('SELECT age FROM People WHERE name = ?', ('Zaid',))\nprint(cur.fetchone()[0])\nconn.close()"
+  },
+  {
+   "lesson": "py4e.ch15.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — صندوق أدوات SQL الأربع\n# Your playground — the four-verb SQL toolbox\n\nimport sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE tracks (title TEXT, plays INTEGER)')\ncur.execute('INSERT INTO tracks (title, plays) VALUES (?, ?)', ('Thunderstruck', 20))\ncur.execute('INSERT INTO tracks (title, plays) VALUES (?, ?)', ('My Way', 15))\nconn.commit()\n\ncur.execute('SELECT title, plays FROM tracks ORDER BY title')\nfor row in cur:\n    print(row)\n\n# جرّب: UPDATE Tracks SET plays = 16 WHERE title = 'My Way' ثم أعد الطباعة / try: UPDATE tracks SET plays = 16 WHERE title = 'My Way' then reprint\n# جرّب: DELETE FROM tracks WHERE plays < 100 كما في الكتاب ثم COUNT(*) — كم بقي؟ / try: DELETE FROM tracks WHERE plays < 100 as in the book, then COUNT(*) — how many remain?\n# جرّب: SELECT * FROM tracks — ماذا تعيد النجمة؟ / try: SELECT * FROM tracks — what does the star return?"
+  },
+  {
+   "lesson": "py4e.ch15.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import sqlite3\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\ncur.execute('CREATE TABLE t (name TEXT, friends INTEGER)')\ncur.execute('INSERT INTO t VALUES (?, ?)', ('a', 3))\ncur.execute('INSERT INTO t VALUES (?, ?)', ('b', 1))\ncur.execute('SELECT COUNT(*), AVG(friends) FROM t')\nrow = cur.fetchone()\nprint(row[0])\nprint(row[1])"
+  },
+  {
+   "lesson": "py4e.ch15.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE Twitter (name TEXT, retrieved INTEGER, friends INTEGER)')\nseed = [\n    ('drchuck', 1, 4),\n    ('opencontent', 1, 3),\n    ('lhawthorn', 1, 2),\n    ('steve_coppin', 0, 1),\n    ('davidkocher', 0, 1),\n    ('hrheingold', 0, 1),\n]\nfor row in seed:\n    cur.execute('INSERT INTO Twitter (name, retrieved, friends) VALUES (?, ?, ?)', row)\nconn.commit()\n\ncur.execute('SELECT name, friends FROM Twitter ORDER BY friends DESC LIMIT 2')\nprint(cur.fetchall())\n\ncur.execute('SELECT COUNT(*), AVG(friends), MIN(friends), MAX(friends) FROM Twitter')\nrow = cur.fetchone()\nprint(row[0], row[1], row[2], row[3])\nconn.close()"
+  },
+  {
+   "lesson": "py4e.ch15.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — قياد الجدول بأسئلة SQL\n# Your playground — interviewing the table with SQL questions\n\nimport sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE Twitter (name TEXT, retrieved INTEGER, friends INTEGER)')\nseed = [\n    ('drchuck', 1, 4),\n    ('opencontent', 1, 3),\n    ('lhawthorn', 1, 2),\n    ('steve_coppin', 0, 1),\n    ('davidkocher', 0, 1),\n    ('hrheingold', 0, 1),\n]\nfor row in seed:\n    cur.execute('INSERT INTO Twitter (name, retrieved, friends) VALUES (?, ?, ?)', row)\nconn.commit()\n\ncur.execute('SELECT name, friends FROM Twitter WHERE friends >= 2 ORDER BY friends DESC')\nfor row in cur:\n    print(row)\n\n# جرّب: GROUP BY تجربة أولى — عدّاد تكرارات كل قيمة أصدقاء / try: a first GROUP BY taste — counting every distinct friends value\n# جرّب: أضف LIMIT 3 بعد ORDER BY — من يبقى ومن يسقط؟ / try: add LIMIT 3 after ORDER BY — who stays, who falls?\n# جرّب: SUM(friends) — هل تساوي جمع AVG مضروبًا في COUNT؟ / try: SUM(friends) — does it equal AVG times COUNT?"
+  },
+  {
+   "lesson": "py4e.ch15.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import sqlite3\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\ncur.execute('CREATE TABLE People (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')\ncur.execute('INSERT INTO People (name) VALUES (?)', ('drchuck',))\ncur.execute('INSERT INTO People (name) VALUES (?)', ('opencontent',))\ncur.execute('SELECT id, name FROM People')\nprint(cur.fetchall())"
+  },
+  {
+   "lesson": "py4e.ch15.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE artists (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')\ncur.execute('CREATE TABLE albums (id INTEGER PRIMARY KEY, title TEXT, artist_id INTEGER)')\n\ndef artist_id(name):\n    # استرجع المفتاح إن كان الفنان معروفًا / retrieve the key if the artist is known\n    cur.execute('SELECT id FROM artists WHERE name = ? LIMIT 1', (name,))\n    row = cur.fetchone()\n    if row is None:\n        # أضف الصف وخذ المفتاح الجديد / add the row and take its new key\n        cur.execute('INSERT INTO artists (name) VALUES (?)', (name,))\n        return cur.lastrowid\n    return row[0]\n\nfor title, artist in [('Ahdan', 'Fairuz'), ('Kifak Inta', 'Fairuz'), ('Houdou Nisbi', 'Ziad Rahbani')]:\n    aid = artist_id(artist)\n    cur.execute('INSERT INTO albums (title, artist_id) VALUES (?, ?)', (title, aid))\nconn.commit()\n\ncur.execute('SELECT id, name FROM artists')\nprint(cur.fetchall())\ncur.execute('SELECT title, artist_id FROM albums')\nprint(cur.fetchall())\nconn.close()"
+  },
+  {
+   "lesson": "py4e.ch15.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — القيود تتكلم: جرّب خرقها\n# Your playground — the constraints speak: try to break them\n\nimport sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE artists (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')\ncur.execute('INSERT INTO artists (name) VALUES (?)', ('Fairuz',))\n\n# جرّب: أدخل Fairuz مرة أخرى بلا OR IGNORE — ماذا يرمي المحرك؟ / try: insert Fairuz again without OR IGNORE — what does the engine raise?\n# cur.execute('INSERT INTO artists (name) VALUES (?)', ('Fairuz',))\n\n# ثم جرّب النسخة الآمنة وقارن rowcount / then try the safe version and compare rowcount\ncur.execute('INSERT OR IGNORE INTO artists (name) VALUES (?)', ('Fairuz',))\nprint('rowcount:', cur.rowcount)\nprint('lastrowid:', cur.lastrowid)\n\n# جرّب: أدخل فنانًا جديدًا ولاحظ هل عاد الترقيم إلى 1؟ / try: insert a new artist and watch whether numbering restarts at 1?\ncur.execute('INSERT INTO artists (name) VALUES (?)', ('Ziad Rahbani',))\nprint('new key:', cur.lastrowid)"
+  },
+  {
+   "lesson": "py4e.ch15.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import sqlite3\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\ncur.execute('CREATE TABLE a (id INTEGER PRIMARY KEY, name TEXT)')\ncur.execute('CREATE TABLE b (title TEXT, a_id INTEGER)')\ncur.execute('INSERT INTO a VALUES (?, ?)', (1, 'X'))\ncur.execute('INSERT INTO b VALUES (?, ?)', ('t1', 1))\ncur.execute('SELECT b.title, a.name FROM b JOIN a ON b.a_id = a.id')\nprint(cur.fetchall())"
+  },
+  {
+   "lesson": "py4e.ch15.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE artists (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')\ncur.execute('CREATE TABLE albums (id INTEGER PRIMARY KEY, title TEXT, artist_id INTEGER)')\n\ncur.execute('INSERT INTO artists (name) VALUES (?)', ('Fairuz',))\ncur.execute('INSERT INTO artists (name) VALUES (?)', ('Ziad Rahbani',))\ncur.execute('INSERT INTO albums (title, artist_id) VALUES (?, ?)', ('Ahdan', 1))\ncur.execute('INSERT INTO albums (title, artist_id) VALUES (?, ?)', ('Kifak Inta', 1))\ncur.execute('INSERT INTO albums (title, artist_id) VALUES (?, ?)', ('Houdou Nisbi', 2))\nconn.commit()\n\ncur.execute('SELECT albums.title, artists.name FROM albums JOIN artists ON albums.artist_id = artists.id')\nfor row in cur:\n    print('%s / %s' % (row[0], row[1]))\nconn.close()"
+  },
+  {
+   "lesson": "py4e.ch15.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — اقلب الاتجاه: من الفنان إلى ألبوماته\n# Your playground — flip the direction: from artist to their albums\n\nimport sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE artists (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')\ncur.execute('CREATE TABLE albums (id INTEGER PRIMARY KEY, title TEXT, artist_id INTEGER)')\ncur.execute('INSERT INTO artists (name) VALUES (?)', ('Fairuz',))\ncur.execute('INSERT INTO artists (name) VALUES (?)', ('Ziad Rahbani',))\ncur.execute('INSERT INTO albums (title, artist_id) VALUES (?, ?)', ('Ahdan', 1))\ncur.execute('INSERT INTO albums (title, artist_id) VALUES (?, ?)', ('Kifak Inta', 1))\ncur.execute('INSERT INTO albums (title, artist_id) VALUES (?, ?)', ('Houdou Nisbi', 2))\nconn.commit()\n\ncur.execute('SELECT artists.name, albums.title FROM artists JOIN albums ON albums.artist_id = artists.id WHERE artists.name = ?', ('Fairuz',))\nfor row in cur:\n    print('%s / %s' % (row[0], row[1]))\n\n# جرّب: احذف WHERE — من يظهر وبأي ترتيب؟ / try: remove WHERE — who appears and in what order?\n# جرّب: احذف ON كليًّا — كم صفا تحصل عليه؟ (لغز الدرس القادم!) / try: drop ON entirely — how many rows do you get? (next lesson's mystery!)"
+  },
+  {
+   "lesson": "py4e.ch15.l6",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import sqlite3\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\ncur.execute('CREATE TABLE t (g TEXT)')\ncur.execute('INSERT INTO t VALUES (?)', ('a',))\ncur.execute('INSERT INTO t VALUES (?)', ('a',))\ncur.execute('INSERT INTO t VALUES (?)', ('b',))\ncur.execute('SELECT g, COUNT(*) FROM t GROUP BY g ORDER BY COUNT(*) DESC LIMIT 1')\nprint(cur.fetchone())"
+  },
+  {
+   "lesson": "py4e.ch15.l6",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE genres (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')\ncur.execute('CREATE TABLE albums (id INTEGER PRIMARY KEY, title TEXT, genre_id INTEGER, tracks INTEGER)')\n\nfor gid, gname in [(1, 'Tarab'), (2, 'Jazz')]:\n    cur.execute('INSERT INTO genres (id, name) VALUES (?, ?)', (gid, gname))\nfor title, genre_id, tracks in [('Ahdan', 1, 8), ('Kifak Inta', 1, 10), ('Ana Mosh Kafir', 2, 6)]:\n    cur.execute('INSERT INTO albums (title, genre_id, tracks) VALUES (?, ?, ?)', (title, genre_id, tracks))\nconn.commit()\n\ncur.execute('SELECT COUNT(*) FROM albums')\nprint('albums: %d' % cur.fetchone()[0])\n\ncur.execute('SELECT genres.name, COUNT(*) FROM albums JOIN genres ON albums.genre_id = genres.id GROUP BY genres.name ORDER BY COUNT(*) DESC LIMIT 1')\nprint('top genre: %s' % cur.fetchone()[0])\n\ncur.execute('SELECT AVG(tracks) FROM albums')\nprint('avg tracks: %.1f' % cur.fetchone()[0])\nconn.close()"
+  },
+  {
+   "lesson": "py4e.ch15.l6",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — مكتبتك الموسيقية الكاملة\n# Your playground — your full music library\n\nimport sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE genres (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')\ncur.execute('CREATE TABLE artists (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')\ncur.execute('CREATE TABLE albums (id INTEGER PRIMARY KEY, title TEXT, artist_id INTEGER, genre_id INTEGER, tracks INTEGER)')\n\nfor gid, gname in [(1, 'Tarab'), (2, 'Jazz'), (3, 'Folk')]:\n    cur.execute('INSERT INTO genres (id, name) VALUES (?, ?)', (gid, gname))\nfor aid, aname in [(1, 'Fairuz'), (2, 'Ziad Rahbani'), (3, 'Marcel Khalife')]:\n    cur.execute('INSERT INTO artists (id, name) VALUES (?, ?)', (aid, aname))\nfor title, artist_id, genre_id, tracks in [\n    ('Ahdan', 1, 1, 8),\n    ('Kifak Inta', 1, 1, 10),\n    ('Ya Ana Ya Ana', 1, 1, 7),\n    ('Ana Mosh Kafir', 2, 2, 6),\n    ('Houdou Nisbi', 2, 2, 5),\n    ('Wahin', 3, 3, 12),\n]:\n    cur.execute('INSERT INTO albums (title, artist_id, genre_id, tracks) VALUES (?, ?, ?, ?)', (title, artist_id, genre_id, tracks))\nconn.commit()\n\n# جرّب: أضف ألبومًا رابعًا لFairuz (genre_id 1) وأعد سطر top genre وavg tracks / try: add a fourth Fairuz album (genre_id 1) and re-run top genre and avg tracks\n# جرّب: JOIN بلا ON — كم صفا يظهران؟ / try: JOIN without ON — how many rows pretend to exist?\n# جرّب: WHERE genre_id = 2 على خط الأزواج — ألبومات Jazz وحدها / try: WHERE genre_id = 2 on the pairs line — only the Jazz albums"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "py4e.ch15.l1",
+   "id": "ex3.mcq-persistence",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch15.l2",
+   "id": "ex3.mcq-placeholder",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch15.l3",
+   "id": "ex3.mcq-row-shape",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch15.l4",
+   "id": "ex3.mcq-numbers-not-strings",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch15.l5",
+   "id": "ex3.mcq-on-role",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch15.l6",
+   "id": "ex3.mcq-inflation",
+   "answer": "a",
+   "solution": "a"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "py4e.ch15.l1",
+   "id": "ex4.fill-connect",
+   "answer": "connect"
+  },
+  {
+   "lesson": "py4e.ch15.l2",
+   "id": "ex4.fill-commit",
+   "answer": "commit"
+  },
+  {
+   "lesson": "py4e.ch15.l4",
+   "id": "ex4.fill-lastrowid",
+   "answer": "lastrowid"
+  },
+  {
+   "lesson": "py4e.ch15.l5",
+   "id": "ex4.fill-on",
+   "answer": "JOIN"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "py4e.ch15.l6",
+   "id": "ex5.debug-join-no-on",
+   "brokenCode": "import sqlite3\n\nconn = sqlite3.connect(':memory:')\ncur = conn.cursor()\n\ncur.execute('CREATE TABLE artists (id INTEGER PRIMARY KEY, name TEXT)')\ncur.execute('CREATE TABLE albums (id INTEGER PRIMARY KEY, title TEXT, artist_id INTEGER)')\n\ncur.execute('INSERT INTO artists (name) VALUES (?)', ('Fairuz',))\ncur.execute('INSERT INTO artists (name) VALUES (?)', ('Ziad Rahbani',))\ncur.execute('INSERT INTO albums (title, artist_id) VALUES (?, ?)', ('Ahdan', 1))\ncur.execute('INSERT INTO albums (title, artist_id) VALUES (?, ?)', ('Kifak Inta', 1))\ncur.execute('INSERT INTO albums (title, artist_id) VALUES (?, ?)', ('Houdou Nisbi', 2))\nconn.commit()\n\ncur.execute('SELECT COUNT(*) FROM albums JOIN artists')  # الربط بلا قاعدة مطابقة / the join with no match rule\ntotal = cur.fetchone()[0]\nprint('albums: %d' % total)"
+  }
+ ]
+}

@@ -1,0 +1,230 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * d2l.ch19.l1 — "Hyperparameter Optimization: Objective, API, and Search"
+ * ضبط فرط المعاملات: الهدف، الواجهة، والبحث
+ * Aligned with D2L ch19 s1 (What Is Hyperparameter Optimization?) + s2 (HPO
+ * API) + s3 (Asynchronous Random Search). All expression is original — a
+ * paraphrase of the source's ideas, never a verbatim translation. Runnable
+ * design: a miniature searcher/scheduler/tuner API running a deterministic
+ * grid search versus a fixed candidate list over a fixed toy objective; the
+ * asynchronous-scheduling idea is taught as a deterministic worker simulation
+ * with literal durations (the searchable concept is sampling, the runnable
+ * code never samples). Every literal verified under CPython 3.
+ */
+const lesson = {
+  id: 'd2l.ch19.l1',
+  version: 1,
+  part: 'II',
+  track: 'A7',
+  book: 'D2L',
+  chapter: 19,
+  title: {
+    ar: 'ضبط فرط المعاملات: الهدف، الواجهة، والبحث',
+    en: 'Hyperparameter Optimization: Objective, API, and Search',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['d2l.ch13.l2'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'تدرّبت على ضبط معدل التعلم بالتجربة والخطأ؛ لكن تدريب نموذج واحد قد يستهلك ساعات، وعشر محاولات متتابعة تعني يومًا كاملًا — وفرط المعاملات لا تنتقل بين المهام فلا مفر من إعادة البحث. ضبط فرط المعاملات HPO يحوّل هذا الفوضى إلى مسألة تحسين شاملة: فضاء تهيئات محدد + دالة هدف تُقيّم خطأ التحقق. سنصمم واجهة صغيرة (باحث، مجدول، مُشغِّل) ونرى كيف يتفوق بحثٌ بثماني قيم مميزة على شبكة بنفس الميزانية، ثم نمحاكاة جدولة المتزامن بأزمنة ثابتة.',
+        en: 'You have tuned learning rates by trial and error; but one training run can take hours, ten sequential trials cost a day — and hyperparameters rarely transfer across tasks, so the search repeats. Hyperparameter optimization (HPO) turns the mess into a global optimization problem: a configuration space plus an objective that scores validation error. We will build a miniature searcher/scheduler/tuner API, watch a search with nine distinct values beat a same-budget grid, and simulate asynchronous scheduling with literal durations.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'مسألة HPO: دالة الهدف وفضاء التهيئات', en: 'The HPO problem: objective function and configuration space' },
+      chunks: [
+        {
+          ar: 'صِغ HPO كالتالي: دالة هدف f: X → R تقبل تهيئة x (مثل معدل التعلم وحجم الدفعة) وتعيد خطأ التحقق — وكل تقييم f(x) يعني تدريبًا كاملًا ثم تحققًا، وهذا ما يجعل المسألة «متعششة» وباهظة. لماذا خطأ التحقق لا خطأ التدريب؟ لأن إسقاط تنظيمٍ مثل weight decay إلى الصفر يخفض خسارة التدريب ويقوض التعميم. ولا توجد تدرجات عملية لـ f (كان سيتطلب تمرير التفاضل عبر كل التدريب)، فنحتاج خوارزميات تصل إلى تهيئات جيدة بأقل عدد تقييمات، مع ملاحظة أن التدريب عشوائي المزاج فالملاحظات مشوشة.',
+          en: 'Frame HPO as: an objective f: X \u2192 R mapping a configuration x (learning rate, batch size, \u2026) to validation error — and every evaluation of f(x) means a full train-then-validate cycle, which makes the problem nested and expensive. Why validation error rather than training loss? Because dropping regularization such as weight decay to zero lowers training loss while sabotaging generalization. There are no practical gradients for f (they would mean backpropagating through the whole training procedure), so algorithms must reach good configurations in as few evaluations as possible — and since training is inherently stochastic, observations are noisy.',
+        },
+        {
+          ar: 'فضاء التهيئات X يصف نوع كل فرط معامل ومداه ومقياسه: معدل التعلم عدد حقيقي على مقياس لوغاريتمي (قيمه المفيدة تتباعد أوامر مقدار)، momentum خطي على [0, 0.99]، وحجم الدفعة عدد صحيح، ووظيفة التنشيط فئوية. الحدود الضيقة تحرمك من الحل، والفضاء الواسع يستنزف الميزانية، وقد تتعلق بعض الفرط بعضها (عدد الوحدات لكل طبقة لا معنى له إن لم توجد الطبقة). وأبسط الخوارزميات: البحث الشبكي يقيّم جداءً ديكارتيًا ثابتًا، والبحث العشوائي يسحب تهيئات مستقلة حتى نفاد الميزانية ويعيد أفضل ما رأى — وقوته إن كانت الهدف يعتمد على قلة من الفرط فكل سحبة جديدة تلمس قيمة جديدة للفرط المهم.',
+          en: 'The configuration space X declares each hyperparameter\u2019s type, range, and scale: learning rate is a float on a log scale (useful values span orders of magnitude), momentum is linear on [0, 0.99], batch size an integer, the activation categorical. Too-narrow ranges exclude the answer; too-wide ones burn the budget; some hyperparameters condition on others (units per layer are meaningless if the layer does not exist). The simplest algorithms: grid search evaluates a fixed Cartesian product, while search-by-sampling draws independent configurations until the budget runs out and returns the best seen — its strength is that when the objective depends on a few hyperparameters, every fresh draw touches a new value of the important one.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'واجهة HPO والجدولة غير المتزامنة', en: 'The HPO API and asynchronous scheduling' },
+      chunks: [
+        {
+          ar: 'كل خوارزميات HPO هنا تُبنى من ثلاثة أدوار: الباحث HPOSearcher يُنتج تهيئة جديدة بـ sample_configuration ويتعلم من التاريخ عبر update؛ والمجدول HPOScheduler يقرر متى وكم موارد تُمنح لكل تجربة (تُسمى التجربة trial بمجرد بدء تقييمها)؛ والمُشغِّل HPOTuner يدير الحلقة ويحفظ incumbent — أفضل تهيئة حتى الآن مع خطئها ومسارها الزمني. مقارنة الخوارزميات تتم على منحنى incumbent مقابل الزمن الحقيقي، وبإحصاءات على تكرارات متعددة لأن التدريب نفسه والبحث نفسه يحملان عشوائية. واجهات مشابهة تجدونها في Syne Tune وRay Tune وOptuna.',
+          en: 'Every HPO algorithm here decomposes into three roles: a searcher (HPOSearcher) producing new configurations via sample_configuration and learning from history via update; a scheduler (HPOScheduler) deciding when and how many resources each trial gets (a trial is a configuration under evaluation); and a tuner (HPOTuner) running the loop while tracking the incumbent — the best configuration so far, its error, and its trajectory over time. Algorithms are compared as incumbent-versus-wall-clock curves, averaged over repetitions because both training and the search itself are noisy. Similar interfaces live in Syne Tune, Ray Tune, and Optuna.',
+        },
+        {
+          ar: 'مع عدة عاملات (GPUs) يظهر قرار الجدولة: التزامن ينتظر اكتمال كل تجارب الدفعة قبل بدء دفعة جديدة — والتجارب البطيئة (stragglers) تجعل بقية العاملات عاطلين. أما غير المتزامن فيطلق تجربة جديدة فور تحرر أي عامل، فلا فترات ميتة، والبحث الذي يسحب تهيئات مستقلة عن الملاحظات (كالبحث العشوائي) يتوازى بلا أي تعديل على الخوارزمية نفسها ويحقق تسريعًا خطيًا تقريبًا بمعامل K بعدد العاملات. سنُظهر الفرق بمحاكاة حتمية بأزمنة ثابتة: نفس الأربع تجارب وعاملان — انظر كيف يتقلص وقت الخمول.',
+          en: 'With several workers (GPUs) a scheduling decision appears: synchronous scheduling waits for every trial in a batch before launching the next — so slow stragglers leave the other workers idle. Asynchronous scheduling launches a new trial the instant a worker frees up, eliminating dead time; and a searcher whose draws are independent of past observations (as in search-by-sampling) parallelizes with no algorithm change, achieving near-linear speed-up by the number of workers K. We will exhibit the difference with a deterministic simulation using literal durations: the same four trials, two workers — watch the idle time shrink.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: {
+        ar: 'واجهة HPO مصغّرة: شبكة مقابل قائمة تهيئات ثابتة',
+        en: 'A miniature HPO API: grid versus a fixed candidate list',
+      },
+      code: "import math\n\n# fixed toy objective: validation error; lr is log-scaled, momentum is linear\ndef objective(lr, momentum):\n    return 0.2 + 0.1 * (math.log10(lr) + 2.5) ** 2 + 0.05 * (momentum - 0.9) ** 2\n\nclass FixedListSearcher:\n    \"\"\"Hands out configurations from a pre-written list, in order.\"\"\"\n    def __init__(self, configs):\n        self.configs = list(configs)\n    def suggest(self):\n        return self.configs.pop(0) if self.configs else None\n    def update(self, config, error):\n        pass                      # a history-aware searcher would learn here\n\nclass BasicScheduler:\n    \"\"\"Delegates every decision to the searcher.\"\"\"\n    def __init__(self, searcher):\n        self.searcher = searcher\n    def suggest(self):\n        return self.searcher.suggest()\n    def update(self, config, error):\n        self.searcher.update(config, error)\n\nclass Tuner:\n    \"\"\"Runs trials and tracks the incumbent: best config seen so far.\"\"\"\n    def __init__(self, scheduler, objective):\n        self.scheduler, self.objective = scheduler, objective\n        self.incumbent, self.incumbent_error, self.trajectory = None, None, []\n    def run(self, number_of_trials):\n        for _ in range(number_of_trials):\n            config = self.scheduler.suggest()\n            if config is None:\n                break\n            error = self.objective(**config)\n            self.scheduler.update(config, error)\n            if self.incumbent_error is None or error < self.incumbent_error:\n                self.incumbent, self.incumbent_error = config, error\n            self.trajectory.append(round(self.incumbent_error, 6))\n        return self.incumbent, self.incumbent_error\n\ngrid = [{'lr': lr, 'momentum': m}\n        for lr in (0.001, 0.01, 0.1) for m in (0.8, 0.9, 0.95)]\nt1 = Tuner(BasicScheduler(FixedListSearcher(grid)), objective)\ninc, err = t1.run(9)\nprint('grid best:', inc, 'error=%.6f' % err)\nprint('grid trajectory:', t1.trajectory)\nprint('grid distinct lr values tried:', len(set(c['lr'] for c in grid)))\n\ncand = [{'lr': round(10.0 ** (-3.0 + 0.25 * i), 6), 'momentum': m}\n        for i, m in enumerate((0.85, 0.92, 0.88, 0.95, 0.9, 0.87, 0.93, 0.89, 0.91))]\nt2 = Tuner(BasicScheduler(FixedListSearcher(cand)), objective)\ninc2, err2 = t2.run(9)\nprint('list best:', inc2, 'error=%.6f' % err2)\nprint('list trajectory:', t2.trajectory)\nprint('list distinct lr values tried:', len(set(c['lr'] for c in cand)))",
+      explanation: {
+        ar: 'الهدف مصمم بحيث يقع أمثله عند lr = 10^−2.5 ≈ 0.003162 على المقياس اللوغاريتمي — وهي قيمة لا تقع على الشبكة. الشبكة 3×3 (تسع تجارب) لمست ثلاث قيم lr فقط وسجلت أفضل خطأ 0.225000 عند (lr=0.001, momentum=0.9): مسار الـ incumbent هبط من 0.2255 إلى 0.225 ثم تجمد. القائمة الثابتة (تسع تجارب أيضًا) لمست تسع قيم lr مميزة: مسارها هبط 0.225125 → 0.206273 → 0.200020 عند (lr=0.003162, momentum=0.88) — أي لمست جوار الأمثل مباشرة. نفس الميزانية، تغطية أوسع للبعد المهم: هذا جوهر تفوق البحث الحر على الشبكة حين تعتمد الهدف على قلة من الفرط.',
+        en: 'The objective is built so its optimum sits at lr = 10^\u22122.5 \u2248 0.003162 on the log scale — a value no grid point hits. The 3\u00D73 grid (nine trials) touched only three distinct lr values and recorded a best error of 0.225000 at (lr=0.001, momentum=0.9): its incumbent path fell from 0.2255 to 0.225 and froze. The fixed candidate list (also nine trials) touched nine distinct lr values: its path descended 0.225125 \u2192 0.206273 \u2192 0.200020 at (lr=0.003162, momentum=0.88) — landing right next to the optimum. Same budget, far wider coverage of the dimension that matters: that is the core argument for free-form search over grids when the objective depends on a few hyperparameters.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.grid-search',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفّذ grid_search(lr_grid, m_grid) فوق دالة الهدف الثابتة objective المعطاة في الهيكل: قيّم كل أزواج (lr, m) من الجداء الديكارتي، وأعد أربعة قيم: أفضل خطأ، وعدد التجارب، وعدد قيم lr المميزة، وعدد قيم momentum المميزة.',
+        en: 'Implement grid_search(lr_grid, m_grid) over the fixed objective given in the starter: evaluate every (lr, m) pair from the Cartesian product and return four values — the best error, the number of trials, the count of distinct lr values, and the count of distinct momentum values.',
+      },
+      starterCode: "import math\n\ndef objective(lr, momentum):\n    return 0.2 + 0.1 * (math.log10(lr) + 2.5) ** 2 + 0.05 * (momentum - 0.9) ** 2\n\ndef grid_search(lr_grid, m_grid):\n    # TODO: evaluate objective for every (lr, m) pair; track the best error,\n    # len(trials), and the number of distinct lr and momentum values.\n    return best_error, n_trials, n_lr, n_m\n",
+      solution: "import math\n\ndef objective(lr, momentum):\n    return 0.2 + 0.1 * (math.log10(lr) + 2.5) ** 2 + 0.05 * (momentum - 0.9) ** 2\n\ndef grid_search(lr_grid, m_grid):\n    trials = [(lr, m, objective(lr, m)) for lr in lr_grid for m in m_grid]\n    best_error = min(t[2] for t in trials)\n    return best_error, len(trials), len(set(t[0] for t in trials)), len(set(t[1] for t in trials))",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'عدد التجارب يساوي حجم الجداء الديكارتي', en: 'Trial count equals the Cartesian product size' },
+          code: "err, n, n_lr, n_m = grid_search([0.001, 0.01, 0.1], [0.8, 0.9, 0.95])\nassert n == 9, 'expected 9 trials for a 3x3 grid | got %d' % n\nassert n_lr == 3 and n_m == 3, 'expected 3 distinct values per axis | got %d, %d' % (n_lr, n_m)",
+          expected: '9 trials, 3 distinct values per axis',
+        },
+        {
+          id: 't2',
+          name: { ar: 'أفضل خطأ للشبكة هو 0.225', en: 'Grid best error is 0.225' },
+          code: "err, n, n_lr, n_m = grid_search([0.001, 0.01, 0.1], [0.8, 0.9, 0.95])\nassert abs(err - 0.225) < 1e-9, 'expected 0.225 | got %r' % err",
+          expected: '0.225',
+        },
+        {
+          id: 't3',
+          name: { ar: 'الشبكة غير المنتظمة تُحصى صحيحًا', en: 'Irregular grids are counted correctly' },
+          code: "err, n, n_lr, n_m = grid_search([0.003162, 0.005623, 0.01], [0.9])\nassert n == 3 and n_lr == 3 and n_m == 1, 'got %d trials, %d lr, %d m' % (n, n_lr, n_m)\nassert err < 0.2064, 'this grid should beat 0.2064 | got %r' % err",
+          expected: '3 trials, best error < 0.2064',
+        },
+      ],
+      hints: [
+        { ar: 'ابنِ القائمة بفهم قائمة مزدوج: [(lr, m, objective(lr, m)) for lr in lr_grid for m in m_grid] — ثم min على العنصر الثالث.', en: 'Build the list with a double comprehension: [(lr, m, objective(lr, m)) for lr in lr_grid for m in m_grid] — then take min over the third element.' },
+        { ar: 'عدد التمييز دالة set: len(set(t[0] for t in trials)) تحصي قيم lr الفريدة مهما تكررت.', en: 'Distinct counts come from set: len(set(t[0] for t in trials)) counts unique lr values however often they repeat.' },
+        { ar: 'قيمة تحقق: الشبكة القياسية 3×3 تعطي أفضل خطأ 0.225 لأن أمثل موضع على الشبكة هو lr=0.001 أو lr=0.01 مع momentum=0.9.', en: 'Sanity value: the standard 3\u00D73 grid gives a best error of 0.225, because the best on-grid spots are lr=0.001 or lr=0.01 with momentum=0.9.' },
+        { ar: 'للاختبار الثالث: قرب lr من 0.003162 يجعل الخطأ يقترب من 0.20002 — الشبكة المُزاحة بشكل جيد تتفوق حتى وهي شبكة.', en: 'For the third test: lr near 0.003162 drives the error toward 0.20002 — a well-shifted grid can win even while remaining a grid.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.mcq-validation-objective',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'لماذا تُبنى دالة هدف HPO على خطأ التحقق بدل خسارة التدريب؟',
+        en: 'Why is the HPO objective built on validation error rather than training loss?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'لأن خفض خسارة التدريب إلى أدنى حد ممكن — مثلًا بإسقاط weight decay إلى الصفر — يقود إلى فرط تخصيص، وخطأ التحقق يقيس التعميم الذي نريده فعلًا', en: 'Because driving training loss as low as possible — say by dropping weight decay to zero — leads to overfitting, while validation error measures the generalization we actually want' } },
+        { id: 'b', text: { ar: 'لأن خسارة التدريب أصعب برمجيًا من خطأ التحقق', en: 'Because training loss is harder to compute programmatically than validation error' } },
+        { id: 'c', text: { ar: 'لأن خطأ التحقق لا يحتاج تدريبًا كاملًا لكل تهيئة', en: 'Because validation error does not require a full training run per configuration' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'تذكّر سلم التعميم من دروس الانحدار والتنظيم: خسارة تدريب منخفضة لا تعني نموذجًا جيدًا.', en: 'Recall the generalization ladder from the regression and regularization lessons: a low training loss does not mean a good model.' },
+        { ar: 'فكر في فرط معامل التنظيم: أفضل قيمة له على خسارة التدريب هي دائمًا الصفر — وهذه كارثة على البيانات الجديدة.', en: 'Think about the regularization hyperparameter: its training-loss optimum is always zero — a disaster on unseen data.' },
+        { ar: 'كل تقييم لـ f(x) يتطلب تدريبًا كاملًا ثم قياسًا على مجموعة منفصلة — لا يوجد تقييم بلا تدريب.', en: 'Every evaluation of f(x) requires a full training run followed by measurement on a held-out set — there is no evaluation without training.' },
+        { ar: 'الجواب: a — الهدف الخارجي يجب أن يعكس الهدف الحقيقي.', en: 'Answer: a — the outer objective must reflect the true goal.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "import heapq\n\n# deterministic async-vs-sync scheduling: fixed trial durations, 2 workers\ndef simulate(durations, n_workers, sync):\n    if sync:\n        free = [0] * n_workers\n        for i in range(0, len(durations), n_workers):\n            batch = durations[i:i + n_workers]\n            start = max(free)\n            free = [start + d for d in batch]\n        end = max(free)\n    else:\n        heap = [(0, w) for w in range(n_workers)]\n        heapq.heapify(heap)\n        end = 0\n        for d in durations:\n            start, w = heapq.heappop(heap)\n            end = max(end, start + d)\n            heapq.heappush(heap, (start + d, w))\n    return end, n_workers * end - sum(durations)   # (makespan, idle worker-time)\n\ndurs = [3, 7, 2, 5]\nprint('durations', durs, 'with 2 workers')\nprint('  sync :', simulate(durs, 2, True))\nprint('  async:', simulate(durs, 2, False))\nprint('  (the straggler of duration 7 idles the other worker in the sync batch)')\n\n# جرّب: غيّر الأزمنة إلى [1, 1, 1, 10] — كم يكلف المتشعب الآن؟ ومتى يفقد عدم التزامن ميزته؟\n# try: change the durations to [1, 1, 1, 10] - what does the straggler cost now, and when does asynchrony lose its edge?\n# جرّب: شغّل Tuner من الدرس بقائمة تهيئات من تأليفك وارسم مسار incumbent بورقة وقلم: أين تجمد؟\n# try: run the lesson's Tuner with a candidate list of your own and sketch the incumbent trajectory on paper: where does it freeze?\n",
+      prompt: {
+        ar: 'الملعب يجسد فكرة s3 كاملة بأزمنة حرفية: نفس العمل، عاملان، والفرق كله في القرار «متى نطلق التجربة التالية». المتزامن يدفع ثمن المتشعب مرتين (الدفعتين)، وغير المتزامن يملأ الفجوات. تذكر أن المحاكاة حتمية — القراءة التجريبية الفعلية تحتاج زمن حقيقي، لكن المنطق نفسه.',
+        en: 'The sandbox embodies the s3 idea with literal durations: same work, two workers, and the only difference is the decision \u201Cwhen to launch the next trial.\u201D Synchronous mode pays for the straggler twice (once per batch); asynchronous mode fills the gaps. The simulation is deterministic — a real measurement would need wall-clock time, but the logic is identical.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'لماذا يُقال إن مسألة HPO «متعششة»؟',
+            en: 'Why is the HPO problem called nested?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن كل تقييم لـ f(x) يشتمل على حلقة تدريب كاملة داخلية قبل إعادة خطأ التحقق', en: 'Because every evaluation of f(x) contains an inner full training loop before returning the validation error' } },
+            { id: 'b', text: { ar: 'لأن فرط المعاملات تُعرَّف داخل معاملات أخرى دائمًا', en: 'Because hyperparameters are always defined inside other hyperparameters' } },
+            { id: 'c', text: { ar: 'لأن الحل يحتاج تحسينًا متداخل المستويات على دالة الخسارة نفسها', en: 'Because the solution requires a two-level optimization of the loss itself' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الدالة الخارجية تُحسَّن على فضاء التهيئات، لكن كل قيمة لها تُحسب بتشغيل حلقة داخلية: تدريب النموذج حتى max_epochs ثم التحقق. هذا يفسر كلفة كل تقييم وضرورة الوصول لتهيئات جيدة بأقل عدد منها، كما في شبكتنا: تسع تجارب فقط لكل استراتيجية.',
+            en: 'The outer function is optimized over the configuration space, but each of its values is produced by running an inner loop: train the model for max_epochs, then validate. This explains the cost per evaluation and why algorithms must reach good configurations in as few of them as possible — our run used just nine trials per strategy.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'في الجدولة غير المتزامنة، متى تُطلق تجربة جديدة؟',
+            en: 'In asynchronous scheduling, when is a new trial launched?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'فور تحرر أي عامل، دون انتظار بقية التجارب الجارية', en: 'As soon as any worker frees up, without waiting for the other running trials' } },
+            { id: 'b', text: { ar: 'بعد اكتمال جميع تجارب الدفعة الحالية معًا', en: 'After all trials in the current batch complete together' } },
+            { id: 'c', text: { ar: 'على فترات زمنية ثابتة مهما كانت حالة العاملات', en: 'At fixed time intervals regardless of worker state' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'عدم التزامن يزيل نقاط التزامن: التجربة التالية تبدأ لحظة توفر مورد. في محاكاتنا (أزمنة 3, 7, 2, 5 وعاملان) انخفض الزمن الكلي من 12 إلى 10 والخمول من 7 إلى 3 لأن التجربة القصيرة (2) ملأت فجوة العامل الذي فرغ مبكرًا. المتزامن عالق بانتظار المتشعب (7) في كل دفعة.',
+            en: 'Asynchrony removes synchronization points: the next trial starts the moment a resource frees up. In our simulation (durations 3, 7, 2, 5 with two workers) the makespan fell from 12 to 10 and idle time from 7 to 3 because the short trial (2) filled the gap left by the early-finishing worker. Synchronous mode was stuck waiting for the straggler (7) in each batch.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'لماذا يُستخدم مقياس لوغاريتمي لمعدل التعلم في فضاء التهيئات؟',
+            en: 'Why is the learning rate given a log scale in the configuration space?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن قيمه المفيدة تمتد على أوامر مقدار (من 10⁻⁶ إلى 10⁻¹)، والتوزيع اللوغاريتمي يعطي كل عقارب المقياس فرصة عادلة', en: 'Its useful values span orders of magnitude (10\u207B\u2076 to 10\u207B\u00B9), and a log-uniform prior gives every decade a fair chance' } },
+            { id: 'b', text: { ar: 'لأنه يجب أن يكون عددًا صحيحًا دائمًا', en: 'Because it must always be an integer' } },
+            { id: 'c', text: { ar: 'لأن التدرج اللوغاريتمي يسرّع تدريب النموذج نفسه', en: 'Because a log gradient speeds up the model training itself' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'معدلات التعلم الجيدة لفئة نماذج معينة تتفاوت بأوامر مقدار، والفرق بين 0.001 و 0.01 قد يكون حاسمًا كما بين 0.1 و 1. المقياس اللوغاريتمي يجعل المسافات النسبية متساوية، وهذا ظهر في مثالنا: الأمثل 10^−2.5 كان بين عيني القائمة اللوغاريتمية وخارج شبكة خطية الفوارق.',
+            en: 'Good learning rates vary by orders of magnitude, and the gap between 0.001 and 0.01 can matter as much as between 0.1 and 1. A log scale makes relative distances equal — visible in our run: the optimum 10^\u22122.5 sat in plain sight of the log-spaced list but outside the evenly spaced grid.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'HPO تحسين شامل متعشش: دالة هدف f(x) تعيد خطأ التحقق (لا خسارة التدريب)، وفضاء تهيئات يصف النوع والمدى والمقياس لكل فرط معامل (الهدف من s1 ما هو ضبط فرط المعاملات).', en: 'HPO is nested global optimization: an objective f(x) returning validation error (not training loss), over a configuration space declaring each hyperparameter\u2019s type, range, and scale (goal of s1 What Is Hyperparameter Optimization).' },
+        { ar: 'واجهة ثلاثية الأدوار — باحث يولّد التهيئات، مجدول يوزع الموارد، مُشغِّل يتتبع incumbent ومساره الزمني — وهي نفسها في Syne Tune وRay Tune وOptuna (الهدف من s2 واجهة ضبط فرط المعاملات).', en: 'A three-role interface — searcher generates configurations, scheduler allocates resources, tuner tracks the incumbent and its trajectory — mirrored by Syne Tune, Ray Tune, and Optuna (goal of s2 Hyperparameter Optimization API).' },
+        { ar: 'الجدولة غير المتزامنة تطلق تجربة جديدة فور تحرر عامل فتزيل خمول المتشعبات، والبحث بتهيئات مستقلة يتوازى بلا تعديل بتسريع شبه خطي بمعامل عدد العاملات (الهدف من s3 البحث غير المتزامن).', en: 'Asynchronous scheduling launches a new trial the instant a worker frees up, eliminating straggler idle time, and search with independent draws parallelizes unchanged with near-linear speed-up by the worker count (goal of s3 Asynchronous Random Search).' },
+      ],
+      reflectPrompt: {
+        ar: 'أنت تملك ميزانية عشر تجارب فقط لنموذجك التالي وثلاثة فرط معاملات: معدل تعلم لوغاريتمي، وحجم دفعة صحيح، ومعدل dropout خطي. أي نقاط ستضعها في قائمتك الثابتة ولماذا — وما البعد الذي ستغطيه أكثف من غيره؟',
+        en: 'You get a budget of ten trials for your next model with three hyperparameters: a log-scale learning rate, an integer batch size, and a linear dropout. Which points go into your fixed candidate list and why — and which dimension gets the densest coverage?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'D2L', section: 'd2l.ch19.s1' },
+        { book: 'D2L', section: 'd2l.ch19.s2' },
+        { book: 'D2L', section: 'd2l.ch19.s3' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'D2L', section: 'd2l.ch19.s1' },
+    { book: 'D2L', section: 'd2l.ch19.s2' },
+    { book: 'D2L', section: 'd2l.ch19.s3' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

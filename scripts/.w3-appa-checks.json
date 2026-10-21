@@ -1,0 +1,158 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.appa.l1",
+   "id": "ex2.trace-map",
+   "code": "plan = {'proposal': 0, 'skeletal': 0, 'viable': 2, 'final': 4}\nfor name in sorted(plan):\n    n = plan[name]\n    tag = 'onboarding' if n == 0 else 'build'\n    print(name + ' -> sprint ' + str(n) + ' ' + tag)",
+   "answer": "final -> sprint 4 build\nproposal -> sprint 0 onboarding\nskeletal -> sprint 0 onboarding\nviable -> sprint 2 build"
+  },
+  {
+   "lesson": "swe.appa.l2",
+   "id": "ex2.trace-week",
+   "code": "milestones = [('skeletal', 3), ('viable', 6), ('final', 9)]\nweek = 7\nfor name, due in milestones:\n    state = 'done' if week > due else 'open'\n    print(name + ': ' + state)",
+   "answer": "skeletal: done\nviable: done\nfinal: open"
+  },
+  {
+   "lesson": "swe.appa.l3",
+   "id": "ex2.trace-rubric",
+   "code": "weights = {'trace': 30, 'tests': 30, 'log': 20, 'limits': 20}\nmet = ['trace', 'tests', 'log']\nscore = sum(weights[k] for k in met)\nprint('met:', len(met), 'of', len(weights))\nprint('score:', str(score) + '/100')",
+   "answer": "met: 3 of 4\nscore: 80/100"
+  },
+  {
+   "lesson": "swe.appa.l4",
+   "id": "ex2.trace-velocity",
+   "code": "points = [8, 9, 13]\nvelocity = sum(points) // len(points)\nfor i, p in enumerate(points, start=1):\n    print('sprint ' + str(i) + ': ' + str(p) + ' points')\nprint('velocity: ' + str(velocity) + ' points/sprint')\nprint('size sprint 4 by velocity, not hopes')",
+   "answer": "sprint 1: 8 points\nsprint 2: 9 points\nsprint 3: 13 points\nvelocity: 10 points/sprint\nsize sprint 4 by velocity, not hopes"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.appa.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "pitch = {\n    'problem': 'clinic loses paper slips',\n    'appetite': 'one term, two-week sprints',\n    'rough_solution': '',\n    'no_gos': 'no billing, no mobile app',\n}\nfilled = [k for k in pitch if pitch[k]]\nprint('fields:', len(pitch), 'filled:', len(filled))\nprint('missing:', [k for k in pitch if not pitch[k]])"
+  },
+  {
+   "lesson": "swe.appa.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "SECTIONS = ['problem', 'users', 'moscow_backlog', 'scope_boundaries', 'risks', 'definition_of_done']\nproposal = {\n    'problem': 'two sentences on the slow paper queue',\n    'users': 'clinic receptionist primary, patients secondary',\n    'moscow_backlog': '8 stories with MoSCoW tags, 1 Wont item',\n    'scope_boundaries': '',\n    'risks': 'SMS gateway unknown - spike in week 1',\n    'definition_of_done': 'receptionist books a visit end to end',\n}\nscore = 0\nfor name in SECTIONS:\n    filled = bool(proposal[name])\n    print(name + ': ' + ('present' if filled else 'MISSING'))\n    score += 1 if filled else 0\nprint('score:', str(score) + '/' + str(len(SECTIONS)))\nprint('verdict:', 'ready to sign' if score == len(SECTIONS) else 'not ready - fix the MISSING rows')"
+  },
+  {
+   "lesson": "swe.appa.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "SECTIONS = ['problem', 'users', 'moscow_backlog', 'scope_boundaries', 'risks', 'definition_of_done']\nproposal = {\n    'problem': 'two sentences on the slow paper queue',\n    'users': 'receptionist primary, patients secondary',\n    'moscow_backlog': '8 stories, 3 Must, 1 Wont',\n    'scope_boundaries': '',\n    'risks': 'SMS gateway unknown - spike in week 1',\n    'definition_of_done': 'receptionist books a visit end to end',\n}\nscore = 0\nfor name in SECTIONS:\n    filled = bool(proposal[name])\n    print(name + ': ' + ('present' if filled else 'MISSING'))\n    score += 1 if filled else 0\nprint('score:', str(score) + '/' + str(len(SECTIONS)))\nprint('verdict:', 'ready to sign' if score == len(SECTIONS) else 'not ready - fix the MISSING rows')"
+  },
+  {
+   "lesson": "swe.appa.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "LAYERS = ['ui', 'logic', 'data']\nruns = {'ui': True, 'logic': True, 'data': False}\nend_to_end = all(runs[layer] for layer in LAYERS)\nprint('one path end to end:', end_to_end)"
+  },
+  {
+   "lesson": "swe.appa.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "LADDER = [\n    ('proposal', True, 'signed by the customer team'),\n    ('skeletal', True, 'one path live on a real URL'),\n    ('viable', False, 'must-haves work for a real user'),\n    ('final', False, 'report + demo + write-ups'),\n]\nfor name, done, proof in LADDER:\n    mark = 'x' if done else ' '\n    print('[' + mark + '] ' + name + ' - ' + proof)"
+  },
+  {
+   "lesson": "swe.appa.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "LAYERS = ['ui', 'logic', 'data']\nruns = {'ui': True, 'logic': True, 'data': False}\nprint('one path end to end:', all(runs[layer] for layer in LAYERS))\n\nreport = {\n    'features': [\n        ('book a visit', 'Done'),\n        ('cancel a visit', 'Done'),\n        ('email reminders', 'Partial'),\n    ],\n    'coverage': 62,\n}\ndone = [name for name, status in report['features'] if status == 'Done']\nprint('stories done:', len(done))\nprint('coverage gate:', 'open' if report['coverage'] >= 80 else 'closed at ' + str(report['coverage']))"
+  },
+  {
+   "lesson": "swe.appa.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "claims = {'coverage 80 percent': 'CI report', 'CD every merge': '', 'auth works': 'test + PR 12'}\nunbacked = [c for c, e in claims.items() if not e]\nprint('unbacked claims:', unbacked)"
+  },
+  {
+   "lesson": "swe.appa.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "RUBRIC = [\n    ('requirements traceable to code', 20, True),\n    ('tests back each claim', 20, True),\n    ('AI use log current', 10, True),\n    ('scorecard findings triaged', 15, False),\n    ('final demo path polished', 15, True),\n    ('honest limitations section', 20, False),\n]\nscore = 0\nmissing = []\nfor item, weight, ok in RUBRIC:\n    if ok:\n        score += weight\n    else:\n        missing.append(item)\nprint('score:', score)\nprint('missing evidence:')\nfor item in missing:\n    print('- ' + item)"
+  },
+  {
+   "lesson": "swe.appa.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "START = [('trace', 20, False), ('tests', 20, True), ('ai_log', 10, True),\n         ('triage', 15, False), ('demo', 15, True), ('limits', 20, False)]\nNOW = [('trace', 20, True), ('tests', 20, True), ('ai_log', 10, True),\n       ('triage', 15, True), ('demo', 15, True), ('limits', 20, False)]\n\ndef score(rubric):\n    return sum(w for _, w, ok in rubric if ok)\n\nprint('score at phase start:', score(START))\nprint('score before demo:', score(NOW))\nprint('what changed: trace + triage fixed; limitations still open')"
+  },
+  {
+   "lesson": "swe.appa.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "milestones = [('proposal', 0), ('skeletal', 0), ('viable', 2), ('final', 4)]\nsprint = 2\nfor name, due in milestones:\n    print(name + ': ' + ('shipped' if sprint >= due else 'ahead'))"
+  },
+  {
+   "lesson": "swe.appa.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "SPRINT = 2\nMILESTONES = [\n    ('proposal', 0, 'signed by the customer'),\n    ('skeletal', 0, 'one path live on a URL'),\n    ('viable', 2, 'must-haves work for a real user'),\n    ('final', 4, 'report + demo + write-ups'),\n]\nfor name, due, proof in MILESTONES:\n    state = 'ready' if SPRINT >= due else 'upcoming'\n    print('milestone ' + name + ': ' + state)"
+  },
+  {
+   "lesson": "swe.appa.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "REQS = [\n    ('R1', 'book a visit', 'Must', 'mina', 5),\n    ('R2', 'cancel a visit', 'Must', 'mina', 3),\n    ('R3', 'email reminders', 'Should', '', 3),\n    ('R4', 'admin dashboard', 'Should', '', 5),\n    ('R5', 'walk-in queue', 'Must', 'leo', 4),\n]\nSTATUS = {'R1': 'done', 'R2': 'done', 'R3': 'not started', 'R4': 'not started', 'R5': 'partial'}\nMILESTONES = [\n    ('proposal', 0, []),\n    ('skeletal', 0, ['R1']),\n    ('viable', 2, ['R1', 'R2', 'R5']),\n    ('final', 4, ['R1', 'R2', 'R3', 'R4', 'R5']),\n]\nSPRINT = 2\n\nfor i, (name, due, needs) in enumerate(MILESTONES, start=1):\n    if SPRINT < due:\n        state = 'upcoming'\n    elif all(STATUS[rid] == 'done' for rid in needs):\n        state = 'ready'\n    else:\n        state = 'blocked'\n    print('milestone ' + str(i) + ': ' + name + ' - ' + state)\n\nunassigned = [r[0] for r in REQS if r[3] == '']\nprint('risk: ' + str(len(unassigned)) + ' requirements unassigned')"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.appa.l1",
+   "id": "ex3.mcq-swap",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.appa.l2",
+   "id": "ex3.mcq-report2",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.appa.l2",
+   "id": "ex4.numeric-velocity",
+   "answer": "10",
+   "solution": "10"
+  },
+  {
+   "lesson": "swe.appa.l3",
+   "id": "ex3.mcq-disagree",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.appa.l4",
+   "id": "ex3.mcq-velocity-plan",
+   "answer": "b",
+   "solution": "b"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.appa.l1",
+   "id": "ex4.fill-scope",
+   "answer": "scope"
+  },
+  {
+   "lesson": "swe.appa.l3",
+   "id": "ex4.fill-provenance",
+   "answer": "provenance"
+  },
+  {
+   "lesson": "swe.appa.l4",
+   "id": "ex4.fill-evidence",
+   "answer": "evidence"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.appa.l4",
+   "id": "ex5.debug-optimistic-map",
+   "brokenCode": "REQS = [\n    ('R1', 'book a visit', 'Must', 'mina', 5),\n    ('R2', 'cancel a visit', 'Must', 'mina', 3),\n    ('R3', 'email reminders', 'Should', '', 3),\n    ('R4', 'admin dashboard', 'Should', '', 5),\n    ('R5', 'walk-in queue', 'Must', 'leo', 4),\n]\nSTATUS = {'R1': 'done', 'R2': 'done', 'R3': 'not started', 'R4': 'not started', 'R5': 'partial'}\nMILESTONES = [\n    ('proposal', 0, []),\n    ('skeletal', 0, ['R1']),\n    ('viable', 2, ['R1', 'R2', 'R5']),\n    ('final', 4, ['R1', 'R2', 'R3', 'R4', 'R5']),\n]\nSPRINT = 2\n\nfor i, (name, due, needs) in enumerate(MILESTONES, start=1):\n    if SPRINT >= due:\n        print('milestone ' + str(i) + ': ' + name + ' - ready')\n    else:\n        print('milestone ' + str(i) + ': ' + name + ' - upcoming')\n\nunassigned = [r[0] for r in REQS if r[3] == '']\nprint('risk: ' + str(len(unassigned)) + ' requirements unassigned')"
+  }
+ ]
+}

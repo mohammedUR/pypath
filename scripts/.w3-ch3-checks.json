@@ -1,0 +1,194 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch3.l1",
+   "id": "swe.ch3.l1.ex1",
+   "code": "ledger = [\n    {\"id\": \"R1\", \"kind\": \"functional\",     \"status\": \"confirmed\"},\n    {\"id\": \"R2\", \"kind\": \"non-functional\", \"status\": \"draft\"},\n    {\"id\": \"R3\", \"kind\": \"non-functional\", \"status\": \"confirmed\"},\n    {\"id\": \"R4\", \"kind\": \"functional\",     \"status\": \"draft\"},\n]\n\nfor r in ledger:\n    if r[\"status\"] == \"draft\":\n        print(r[\"id\"], r[\"kind\"])\n\nn = 0\nfor r in ledger:\n    if r[\"status\"] == \"draft\":\n        n += 1\nprint(\"drafts:\", n)",
+   "answer": "R2 non-functional\nR4 functional\ndrafts: 2"
+  },
+  {
+   "lesson": "swe.ch3.l3",
+   "id": "swe.ch3.l3.ex1",
+   "code": "def check(story):\n    if not story.startswith(\"As a \"):\n        return \"missing role\"\n    if \", I want \" not in story:\n        return \"missing capability\"\n    if \", so that \" not in story:\n        return \"missing goal\"\n    return \"OK\"\n\ncards = [\n    \"As a nurse, I want today's schedule, so that I plan rounds.\",\n    \"As a user, I want faster search.\",\n    \"I want it modern.\",\n]\nfor i, c in enumerate(cards, 1):\n    print(i, check(c))",
+   "answer": "1 OK\n2 missing goal\n3 missing role"
+  },
+  {
+   "lesson": "swe.ch3.l4",
+   "id": "ex1.trace-ladder",
+   "code": "WHY = {\n    'SMS reminders': 'fewer missed appointments',\n    'fewer missed appointments': 'keep every slot full',\n}\n\ndef ladder_up(feature):\n    chain = [feature]\n    while chain[-1] in WHY:\n        chain.append(WHY[chain[-1]])\n    return ' -> '.join(chain)\n\nprint(ladder_up('SMS reminders'))\nprint(ladder_up('keep every slot full'))",
+   "answer": "SMS reminders -> fewer missed appointments -> keep every slot full\nkeep every slot full"
+  },
+  {
+   "lesson": "swe.ch3.l5",
+   "id": "ex2.trace-pack",
+   "code": "MINI = [\n    ('ST-1', 'Must', True),\n    ('ST-2', 'Should', True),\n    ('ST-3', 'Must', False),\n]\nfor key, priority, ok in MINI:\n    print('%s %s %s' % (key, priority, 'valid' if ok else 'INVALID'))\nprint('must valid:', sum(1 for _, p, ok in MINI if p == 'Must' and ok))",
+   "answer": "ST-1 Must valid\nST-2 Should valid\nST-3 Must INVALID\nmust valid: 1"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch3.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "req_a = \"add a dropdown to pick the clinic\"\nreq_b = \"pick one clinic from a short list without typos, in under 5 seconds\"\nprint(\"A:\", req_a)\nprint(\"B:\", req_b)"
+  },
+  {
+   "lesson": "swe.ch3.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "ledger = [\n    {\"id\": \"REQ-1\", \"kind\": \"functional\",     \"status\": \"confirmed\", \"text\": \"search patient by last name\"},\n    {\"id\": \"REQ-2\", \"kind\": \"non-functional\", \"status\": \"draft\",     \"text\": \"search result in under 1 second\"},\n    {\"id\": \"REQ-3\", \"kind\": \"functional\",     \"status\": \"draft\",     \"text\": \"flag patient needs interpreter\"},\n    {\"id\": \"REQ-4\", \"kind\": \"non-functional\", \"status\": \"draft\",     \"text\": \"99.5% uptime on weekdays\"},\n    {\"id\": \"REQ-5\", \"kind\": \"functional\",     \"status\": \"confirmed\", \"text\": \"mark appointment as arrived\"},\n]\n\ntotal = len(ledger)\nconfirmed = sum(1 for r in ledger if r[\"status\"] == \"confirmed\")\nquality = sum(1 for r in ledger if r[\"kind\"] == \"non-functional\")\n\nprint(\"total:\", total)\nprint(\"confirmed:\", confirmed)\nprint(\"quality:\", quality)\nprint(\"unmatured drafts:\", sum(1 for r in ledger if r[\"kind\"] == \"non-functional\" and r[\"status\"] == \"draft\"))"
+  },
+  {
+   "lesson": "swe.ch3.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# سجلّ متطلبات عيادة — عدّل، أضف، وراقب العدّادات.\nledger = [\n    {\"id\": \"REQ-1\", \"kind\": \"functional\",     \"status\": \"draft\",     \"text\": \"search by last name\"},\n    {\"id\": \"REQ-2\", \"kind\": \"non-functional\", \"status\": \"draft\",     \"text\": \"load quickly\"},\n    {\"id\": \"REQ-3\", \"kind\": \"functional\",     \"status\": \"confirmed\", \"text\": \"mark appointment arrived\"},\n]\n\ndef show(records):\n    for r in records:\n        print(r[\"id\"], \"|\", r[\"kind\"], \"|\", r[\"status\"], \"|\", r[\"text\"])\n    print(\"total:\", len(records))\n    print(\"confirmed:\", sum(1 for r in records if r[\"status\"] == \"confirmed\"))\n    print(\"quality:\", sum(1 for r in records if r[\"kind\"] == \"non-functional\"))\n\nshow(ledger)\n\n# جرّب:\n# 1) أعد كتابة REQ-2 بمعيار قياس قابل للاختبار بدل \"load quickly\" ثم انقله إلى confirmed.\n# 2) أضف متطلب جودة رابعًا من عندك وراقب كيف تتغير العدّادات.\n# 3) أي سجلٍّ في رأيك يخفي جدالًا لم يُجرَ بعد؟"
+  },
+  {
+   "lesson": "swe.ch3.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "said = \"search should be faster\"                                   # interview\ndid  = \"keeps a paper list of difficult patients by the keyboard\"  # observation\nprint(\"said:\", said)\nprint(\"did: \", did)"
+  },
+  {
+   "lesson": "swe.ch3.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "notes = [\n    {\"who\": \"clerk\",      \"text\": \"search appointments by patient name\", \"tag\": \"need\"},\n    {\"who\": \"manager\",    \"text\": \"cut check-in time to 15 seconds\",     \"tag\": \"goal\"},\n    {\"who\": \"compliance\", \"text\": \"keep the audit log for 7 years\",      \"tag\": \"constraint\"},\n    {\"who\": \"clerk\",      \"text\": \"flag difficult patients\",             \"tag\": \"need\"},\n    {\"who\": \"sponsor\",    \"text\": \"keep the pilot under 20000 USD\",      \"tag\": \"constraint\"},\n    {\"who\": \"clerk\",      \"text\": \"never show other clinics' patients\",  \"tag\": \"need\"},\n]\n\ncounts = {\"need\": 0, \"goal\": 0, \"constraint\": 0}\nfor n in notes:\n    counts[n[\"tag\"]] += 1\n    print(n[\"who\"], \"->\", n[\"tag\"])\n\nprint(\"need:\", counts[\"need\"])\nprint(\"goal:\", counts[\"goal\"])\nprint(\"constraint:\", counts[\"constraint\"])"
+  },
+  {
+   "lesson": "swe.ch3.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# مسجّل ملاحظاتك: ضع ملاحظات حقيقية من آخر حديث مع مستخدم، وسّمها، وراقب الأعداد.\nnotes = [\n    {\"who\": \"you\", \"text\": \"...\", \"tag\": \"need\"},       # need | goal | constraint\n    {\"who\": \"you\", \"text\": \"...\", \"tag\": \"goal\"},\n]\n\ndef count_tags(records):\n    counts = {}\n    for n in records:\n        counts[n[\"tag\"]] = counts.get(n[\"tag\"], 0) + 1\n    return counts\n\ncounts = count_tags(notes)\nfor tag in sorted(counts):\n    print(tag, \":\", counts[tag])\nprint(\"total notes:\", len(notes))\n\n# جرّب:\n# 1) استبدل \"...\" بملاحظة سمعتها فعلًا من مستخدم حقيقي هذه الأسبوع.\n# 2) هل يمكن أن تكون الملاحظة الواحدة need عند شخص وconstraint عند آخر؟\n# 3) أي وسمٍ يغيب دائمًا عن مقابلاتك؟ (تلميح: إن غاب الكامن فهذا طبيعي — لا يُقال)."
+  },
+  {
+   "lesson": "swe.ch3.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "story = \"As a clerk, I want to flag patients, so that I can flag patients.\"\nfits = story.startswith(\"As a \") and \", I want \" in story and \", so that \" in story\nprint(\"fits template:\", fits)\nprint(\"benefit:\", \"I can flag patients\")"
+  },
+  {
+   "lesson": "swe.ch3.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "stories = [\n    \"As a clerk, I want to flag a patient as needs-interpreter, so that the clinician is prepared before the visit.\",\n    \"As a clerk, I want to search patients.\",\n    \"I want the system to use a dropdown so that it looks modern.\",\n]\n\ndef check_story(story):\n    if not story.startswith(\"As a \"):\n        return \"missing role\"\n    if \", I want \" not in story:\n        return \"missing capability\"\n    if \", so that \" not in story:\n        return \"missing goal\"\n    return \"OK\"\n\nfor i, s in enumerate(stories, 1):\n    print(\"story%d: %s\" % (i, check_story(s)))"
+  },
+  {
+   "lesson": "swe.ch3.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# فاحص القصص: اكتب قصتك، ثم كسرها عمدًا، وراقب الحكم.\ndef check_story(story):\n    if not story.startswith(\"As a \"):\n        return \"missing role\"\n    if \", I want \" not in story:\n        return \"missing capability\"\n    if \", so that \" not in story:\n        return \"missing goal\"\n    return \"OK\"\n\ncards = [\n    \"As a student, I want to see my grades, so that I plan my semester.\",\n]\n\nfor i, s in enumerate(cards, 1):\n    print(\"story%d: %s\" % (i, check_story(s)))\n\n# جرّب:\n# 1) أضف قصة من تطبيق تستخدمه يوميًا — بثلاثتها الكاملة.\n# 2) احذف الـ so that وراقب الحكم: هل قصة بلا هدف تستحق البناء؟\n# 3) قصة بصيغة سليمة لكن benefit دائري («بحيث أستطيع...») ستمر الفاحص — هل تمري أنت؟\n# 4) اكتب سيناريو استثناء لقصتك: من يستخدمها؟ ماذا لو فشل البحث؟ ماذا لو انقطعت الشبكة؟"
+  },
+  {
+   "lesson": "swe.ch3.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "WHY = {'send SMS reminders': 'fewer missed appointments'}\nchain = ['send SMS reminders']\nwhile chain[-1] in WHY:\n    chain.append(WHY[chain[-1]])\nprint(chain[0], '->', WHY[chain[0]])"
+  },
+  {
+   "lesson": "swe.ch3.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "WHY = {\n    'send SMS reminders': 'reduce no-shows',\n    'open a waitlist': 'reduce no-shows',\n    'reduce no-shows': 'keep every slot full',\n}\nHOW = {'reduce no-shows': ['send SMS reminders', 'open a waitlist']}\n\ndef ladder_up(feature):\n    chain = [feature]\n    while chain[-1] in WHY:\n        chain.append(WHY[chain[-1]])\n    return chain\n\nfor f in ['send SMS reminders', 'open a waitlist']:\n    print(' -> '.join(ladder_up(f)))\nprint('down: %s' % ', '.join(HOW['reduce no-shows']))"
+  },
+  {
+   "lesson": "swe.ch3.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "WHY = {\n    'send SMS reminders': 'reduce no-shows',\n    'open a waitlist': 'reduce no-shows',\n    'reduce no-shows': 'keep every slot full',\n}\n\ndef ladder_up(feature):\n    chain = [feature]\n    while chain[-1] in WHY:\n        chain.append(WHY[chain[-1]])\n    return ' -> '.join(chain)\n\nprint(ladder_up('send SMS reminders'))\nprint(ladder_up('open a waitlist'))\n\n# جرّب: أضف ميزة ثالثة تصعد إلى الهدف نفسه — ماذا يغير ذلك في أولويتها؟\n# try: add a third feature climbing to the same goal — what does that do to its priority?\n# جرّب: أضف هدفًا متعارضًا: protect patient privacy يقيد reminders — اكتب جملة المقايضة\n# try: add a conflicting goal: protect patient privacy constrains reminders — write the trade-off sentence\n# جرّب: ابنِ شجرة هجوم من ورقتين لهدف: اقرأ سجلًا بلا تصريح\n# try: build a two-leaf attack tree for the goal: read a record without authorization"
+  },
+  {
+   "lesson": "swe.ch3.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "story = 'As a clinician, I want faster charts.'\nprint('role:', story.startswith('As a '))\nprint('benefit:', ', so that ' in story)"
+  },
+  {
+   "lesson": "swe.ch3.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "MINI = [\n    {'key': 'ST-1', 'priority': 'Must', 'story': 'As a clerk, I want to flag a patient, so that the clinician prepares.'},\n    {'key': 'ST-2', 'priority': 'Should', 'story': 'As a clinician, I want faster charts.'},\n]\n\ndef valid_story(s):\n    return s.startswith('As a ') and ', I want ' in s and ', so that ' in s\n\nvalid = 0\nmust = 0\nfor st in MINI:\n    ok = valid_story(st['story'])\n    valid += ok\n    must += ok and st['priority'] == 'Must'\n    print('%s %s %s' % (st['key'], st['priority'], 'valid' if ok else 'INVALID'))\nprint('stories: %d valid: %d must: %d' % (len(MINI), valid, must))"
+  },
+  {
+   "lesson": "swe.ch3.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "STORIES = [\n    {'key': 'ST-1', 'priority': 'Must', 'story': 'As a clerk, I want to flag a patient, so that the clinician prepares.'},\n    {'key': 'ST-2', 'priority': 'Must', 'story': 'As a clinician, I want faster charts.'},\n]\n\ndef valid_story(s):\n    return s.startswith('As a ') and ', I want ' in s and ', so that ' in s\n\nfor st in STORIES:\n    print(st['key'], 'valid' if valid_story(st['story']) else 'INVALID')\n\n# جرّب: أصلح ST-2 بكتابة جملة so that حقيقية — أين ستضيفها في الحزمة؟\n# try: fix ST-2 by writing a real so-that clause — where does it move in the pack?\n# جرّب: خفّض أولوية ST-2 إلى Should — يتغير شيء في valid؟ و في must؟\n# try: demote ST-2 to Should — does valid change? does must?\n# جرّب: أضف حالة إساءة ثالثة وأعطها صنف STRIDE من عندك\n# try: add a third abuse case with a STRIDE category of your own"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch3.l1",
+   "id": "swe.ch3.l1.ex3",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch3.l2",
+   "id": "swe.ch3.l2.ex2",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch3.l2",
+   "id": "swe.ch3.l2.ex3",
+   "answer": "2",
+   "solution": "2"
+  },
+  {
+   "lesson": "swe.ch3.l3",
+   "id": "swe.ch3.l3.ex3",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch3.l4",
+   "id": "ex3.mcq-conflict",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch3.l4",
+   "id": "ex4.numeric-leaves",
+   "answer": "7",
+   "solution": "7"
+  },
+  {
+   "lesson": "swe.ch3.l5",
+   "id": "ex3.mcq-defense-justification",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch3.l5",
+   "id": "ex4.numeric-must-fix",
+   "answer": "3",
+   "solution": "3"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch3.l1",
+   "id": "swe.ch3.l1.ex4",
+   "answer": "functional"
+  },
+  {
+   "lesson": "swe.ch3.l2",
+   "id": "swe.ch3.l2.ex4",
+   "answer": "latent"
+  },
+  {
+   "lesson": "swe.ch3.l3",
+   "id": "swe.ch3.l3.ex4",
+   "answer": "scenario"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch3.l5",
+   "id": "ex5.debug-loose-validator",
+   "brokenCode": "STORIES = [\n    {'key': 'ST-1', 'priority': 'Must', 'story': 'As a clerk, I want to flag a patient, so that the clinician prepares before the visit.'},\n    {'key': 'ST-2', 'priority': 'Must', 'story': 'As a clerk, I want to search by phone, so that I can fix misspelled records inline.'},\n    {'key': 'ST-3', 'priority': 'Should', 'story': 'As a manager, I want weekly no-show rates, so that staffing can be planned.'},\n    {'key': 'ST-4', 'priority': 'Must', 'story': 'As a clinician, I want faster charts.'},\n]\n\ndef valid_story(s):\n    # WRONG rule: checks the prefix and the want clause only\n    return s.startswith('As a') and 'I want' in s\n\npack = []\nfor st in STORIES:\n    ok = valid_story(st['story'])\n    pack.append((st['key'], st['priority'], ok))\n    print('%s %s %s' % (st['key'], st['priority'], 'valid' if ok else 'INVALID'))\nvalid = sum(1 for _, _, ok in pack if ok)\nmust = sum(1 for _, p, ok in pack if ok and p == 'Must')\nprint('stories: %d valid: %d must: %d' % (len(STORIES), valid, must))"
+  }
+ ]
+}

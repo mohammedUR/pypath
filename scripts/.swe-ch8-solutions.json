@@ -1,0 +1,278 @@
+[
+ {
+  "lesson": "swe.ch8.l1",
+  "id": "ex1.history-and-staging",
+  "solution": "commits = {\n    'c0': {'parent': None, 'msg': 'start project'},\n    'c1': {'parent': 'c0', 'msg': 'add login page'},\n    'c2': {'parent': 'c1', 'msg': 'fix redirect loop'},\n}\nstaging = {'login.py': 'modified', 'main.py': 'staged'}\n\ndef history_size(tip):\n    count = 0\n    cur = tip\n    while cur is not None:\n        count += 1\n        cur = commits[cur]['parent']\n    return count\n\ndef stage(name):\n    staging[name] = 'staged'\n\nstage('login.py')\n\nprint('commits: %d' % history_size('c2'))\nstaged_count = 0\nfor state in staging.values():\n    if state == 'staged':\n        staged_count += 1\nprint('staged: %d' % staged_count)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "history_size تعدّ من الطرف حتى الجذر",
+     "en": "history_size counts from tip to root"
+    },
+    "code": "assert history_size('c2') == 3, 'expected: 3 | actual: %r' % (history_size('c2'),)",
+    "expected": "3"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "السير من أول التزام يعطي 1",
+     "en": "Walking from the first commit gives 1"
+    },
+    "code": "assert history_size('c0') == 1, 'expected: 1 | actual: %r' % (history_size('c0'),)",
+    "expected": "1"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "stage نقل login.py إلى التجهيز",
+     "en": "stage moved login.py into staging"
+    },
+    "code": "assert staging.get('login.py') == 'staged', 'expected: staged | actual: %r' % (staging.get('login.py'),)",
+    "expected": "staged"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "السطران المنسقان مطبوعان",
+     "en": "The two formatted lines printed"
+    },
+    "code": "assert 'commits: 3' in __learner_output__ and 'staged: 2' in __learner_output__, 'expected: commits: 3 then staged: 2 | actual: %r' % __learner_output__",
+    "expected": "commits: 3 then staged: 2"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch8.l2",
+  "id": "ex1.detect-fast-forward",
+  "solution": "commits = {\n    'c0': {'parent': None},\n    'c1': {'parent': 'c0'},\n    'c2': {'parent': 'c1'},\n    'c3': {'parent': 'c1'},\n    'c4': {'parent': 'c2'},\n}\n\ndef is_fast_forward(main_tip, feature_tip):\n    cur = feature_tip\n    while cur is not None:\n        if cur == main_tip:\n            return True\n        cur = commits[cur]['parent']\n    return False\n\nprint('ff 1: %s' % is_fast_forward('c1', 'c2'))\nprint('ff 2: %s' % is_fast_forward('c4', 'c3'))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "main واقفة منذ التفريع → انزلاق سريع",
+     "en": "main unmoved since branching → fast-forward"
+    },
+    "code": "assert is_fast_forward('c1', 'c2') is True, 'expected: True | actual: %r' % (is_fast_forward('c1', 'c2'),)",
+    "expected": "True"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الفرعان تباعدا → دمج ثلاثي",
+     "en": "Branches diverged → three-way merge"
+    },
+    "code": "assert is_fast_forward('c4', 'c3') is False, 'expected: False | actual: %r' % (is_fast_forward('c4', 'c3'),)",
+    "expected": "False"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "التفريع من الجذر نفسه يظل انزلاقًا",
+     "en": "Branching from the root itself is still a fast-forward"
+    },
+    "code": "assert is_fast_forward('c0', 'c1') is True, 'expected: True | actual: %r' % (is_fast_forward('c0', 'c1'),)",
+    "expected": "True"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "السطران المنسقان مطبوعان",
+     "en": "The two formatted lines printed"
+    },
+    "code": "assert 'ff 1: True' in __learner_output__ and 'ff 2: False' in __learner_output__, 'expected: ff 1: True then ff 2: False | actual: %r' % __learner_output__",
+    "expected": "ff 1: True then ff 2: False"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch8.l3",
+  "id": "ex1.detect-conflicts",
+  "solution": "def conflicting_files(mine, theirs):\n    result = []\n    for name in theirs:\n        if name in mine and mine[name] != theirs[name]:\n            result.append(name)\n    return sorted(result)\n\nmine1 = {'app.py': 'tax 1.08', 'util.py': 'helpers'}\ntheirs1 = {'app.py': 'tax 1.095', 'util.py': 'helpers'}\nmine2 = {'app.py': 'tax 1.08'}\ntheirs2 = {'app.py': 'tax 1.08', 'readme.md': 'docs'}\n\nprint(conflicting_files(mine1, theirs1))\nprint(conflicting_files(mine2, theirs2))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "app.py تغيّر عند الطرفين بشكلين",
+     "en": "app.py changed on both sides in two ways"
+    },
+    "code": "assert conflicting_files({'app.py': 'tax 1.08', 'util.py': 'helpers'}, {'app.py': 'tax 1.095', 'util.py': 'helpers'}) == ['app.py'], 'expected: [app.py] | actual: %r' % (conflicting_files({'app.py': 'tax 1.08', 'util.py': 'helpers'}, {'app.py': 'tax 1.095', 'util.py': 'helpers'}),)",
+    "expected": "['app.py']"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "إضافتهم وتغييرنا لا يتعارضان",
+     "en": "Their addition plus our change do not conflict"
+    },
+    "code": "assert conflicting_files({'app.py': 'tax 1.08'}, {'app.py': 'tax 1.08', 'readme.md': 'docs'}) == [], 'expected: [] | actual: %r' % (conflicting_files({'app.py': 'tax 1.08'}, {'app.py': 'tax 1.08', 'readme.md': 'docs'}),)",
+    "expected": "[]"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "المحتوى المطابق لا يتعارض",
+     "en": "Identical content does not conflict"
+    },
+    "code": "assert conflicting_files({'a.py': 'x'}, {'a.py': 'x'}) == [], 'expected: [] | actual: %r' % (conflicting_files({'a.py': 'x'}, {'a.py': 'x'}),)",
+    "expected": "[]"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "التعارضات المتعددة تعاد مرتبة",
+     "en": "Multiple conflicts come back sorted"
+    },
+    "code": "assert conflicting_files({'b.py': '1', 'a.py': '2'}, {'b.py': '3', 'a.py': '4'}) == ['a.py', 'b.py'], 'expected: [a.py, b.py] | actual: %r' % (conflicting_files({'b.py': '1', 'a.py': '2'}, {'b.py': '3', 'a.py': '4'}),)",
+    "expected": "['a.py', 'b.py']"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "السطران المنسقان مطبوعان",
+     "en": "The two formatted lines printed"
+    },
+    "code": "assert \"['app.py']\" in __learner_output__ and '[]' in __learner_output__, \"expected: ['app.py'] then [] | actual: %r\" % __learner_output__",
+    "expected": "['app.py'] then []"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch8.l4",
+  "id": "ex1.commit-linter",
+  "solution": "def lint_subject(subject):\n    words = subject.split()\n    if len(subject) > 50:\n        return 'too long'\n    if words[0].lower() not in ['add', 'fix', 'refactor', 'update', 'remove', 'feat']:\n        return 'not imperative'\n    return 'ok'\n\nprint(lint_subject('Add search box to header'))\nprint(lint_subject('fixed the bug'))\nprint(lint_subject('I was trying to add the search box to the header of the page'))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "رسالة عرفية سليمة تعطي ok",
+     "en": "A proper convention-abiding message gives ok"
+    },
+    "code": "assert lint_subject('Add search box to header') == 'ok', 'expected: ok | actual: %r' % (lint_subject('Add search box to header'),)",
+    "expected": "ok"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الماضي ليس أمرًا جذريًّا",
+     "en": "The past tense is not imperative"
+    },
+    "code": "assert lint_subject('fixed the bug') == 'not imperative', 'expected: not imperative | actual: %r' % (lint_subject('fixed the bug'),)",
+    "expected": "not imperative"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الحكاية الطويلة تسقط في الطول",
+     "en": "The long story fails on length"
+    },
+    "code": "assert lint_subject('I was trying to add the search box to the header of the page') == 'too long', 'expected: too long | actual: %r' % (lint_subject('I was trying to add the search box to the header of the page'),)",
+    "expected": "too long"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "رسالة الكتاب نفسها تجتاز",
+     "en": "The book’s own example message passes"
+    },
+    "code": "assert lint_subject('Fix redirect loop on expired session') == 'ok', 'expected: ok | actual: %r' % (lint_subject('Fix redirect loop on expired session'),)",
+    "expected": "ok"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "الأحكام الثلاثة مطبوعة بالترتيب",
+     "en": "The three verdicts printed in order"
+    },
+    "code": "assert 'ok' in __learner_output__ and 'not imperative' in __learner_output__ and 'too long' in __learner_output__, 'expected: ok / not imperative / too long | actual: %r' % __learner_output__",
+    "expected": "ok / not imperative / too long"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch8.l5",
+  "id": "ex2.project-minigit",
+  "solution": "class MiniGit:\n    def __init__(self):\n        self.commits = {}\n        self.branches = {'main': None}\n        self.head = 'main'\n        self.files = {}\n        self.next_id = 1\n\n    def change(self, fname, version):\n        self.files[fname] = version\n\n    def commit(self, msg):\n        cid = 'c%d' % self.next_id\n        self.next_id = self.next_id + 1\n        self.commits[cid] = {'id': cid, 'parent': self.branches[self.head], 'msg': msg, 'files': dict(self.files)}\n        self.branches[self.head] = cid\n        return cid\n\n    def branch(self, name):\n        self.branches[name] = self.branches[self.head]\n\n    def checkout(self, name):\n        self.head = name\n        tip = self.branches[name]\n        if tip is not None:\n            self.files = dict(self.commits[tip]['files'])\n\n    def merge(self, source):\n        ours = self.branches[self.head]\n        theirs = self.branches[source]\n        if ours == theirs:\n            return 'already up to date'\n        node = theirs\n        while node is not None:\n            if node == ours:\n                self.branches[self.head] = theirs\n                self.files = dict(self.commits[theirs]['files'])\n                return 'fast-forward'\n            node = self.commits[node]['parent']\n\n        def ancestors(tip):\n            chain = []\n            node = tip\n            while node is not None:\n                chain.append(node)\n                node = self.commits[node]['parent']\n            return chain\n\n        base = None\n        for cid in ancestors(ours):\n            if cid in ancestors(theirs):\n                base = cid\n                break\n        base_files = self.commits[base]['files']\n        ours_files = self.commits[ours]['files']\n        theirs_files = self.commits[theirs]['files']\n        ours_changed = set()\n        for fname, ver in ours_files.items():\n            if base_files.get(fname) != ver:\n                ours_changed.add(fname)\n        theirs_changed = set()\n        for fname, ver in theirs_files.items():\n            if base_files.get(fname) != ver:\n                theirs_changed.add(fname)\n        conflicts = sorted(ours_changed & theirs_changed)\n        if conflicts:\n            return 'conflict: %s' % conflicts[0]\n        for fname, ver in theirs_files.items():\n            if base_files.get(fname) != ver:\n                self.files[fname] = ver\n        return 'merged'\n\n\nmg = MiniGit()\nmg.change('app.py', 'v1')\nmg.commit('Add app skeleton')\nmg.change('config.py', 'base')\nmg.commit('Add shared config')\nmg.branch('dev')\nmg.checkout('dev')\nmg.change('search.py', 'dev-v1')\nmg.commit('Add search box')\nmg.change('config.py', 'dev-v2')\nmg.commit('Tune config for search')\nmg.checkout('main')\nmg.change('config.py', 'main-v2')\nmg.commit('Tune config for pages')\nprint('commits: %d' % len(mg.commits))\nprint('branches: %d' % len(mg.branches))\nprint(mg.merge('dev'))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "السائق يطبع العدّادات الثلاثة بالترتيب",
+     "en": "The driver prints the three summary lines in order"
+    },
+    "code": "assert 'commits: 5' in __learner_output__ and 'branches: 2' in __learner_output__ and 'conflict: config.py' in __learner_output__, 'expected: commits: 5 / branches: 2 / conflict: config.py | actual: %r' % __learner_output__",
+    "expected": "commits: 5 / branches: 2 / conflict: config.py"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "المؤشرات: main على c5 وdev على c4",
+     "en": "Pointers: main sits on c5 and dev on c4"
+    },
+    "code": "assert mg.branches == {'main': 'c5', 'dev': 'c4'}, 'expected: main c5 dev c4 | actual: %r' % mg.branches",
+    "expected": "main c5 dev c4"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الرسم البياني: c3 ابن c2 ولقطة c4 تحمل search.py",
+     "en": "The graph: c3 is a child of c2 and c4’s snapshot carries search.py"
+    },
+    "code": "assert mg.commits['c3']['parent'] == 'c2' and mg.commits['c4']['files']['search.py'] == 'dev-v1', 'expected: c3 parent c2 | actual: %r' % mg.commits['c3']['parent']",
+    "expected": "c3 parent c2"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الدمج على خط واحد: fast-forward يحرّك المؤشر ويحدّث الملفات",
+     "en": "Merging on one line: fast-forward moves the pointer and updates files"
+    },
+    "code": "g2 = MiniGit()\ng2.change('a.txt', 'v1')\ng2.commit('one')\ng2.branch('dev')\ng2.checkout('dev')\ng2.change('b.txt', 'v1')\ng2.commit('two')\ng2.checkout('main')\nresult = g2.merge('dev')\nassert result == 'fast-forward', 'expected: fast-forward | actual: %r' % result\nassert g2.branches['main'] == 'c2', 'expected: c2 | actual: %r' % g2.branches['main']\nassert g2.files['b.txt'] == 'v1', 'expected: v1 | actual: %r' % g2.files['b.txt']",
+    "expected": "fast-forward then c2 with b.txt v1"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "التعارض يُقرأ من اللقطات لا من شجرة العمل",
+     "en": "The conflict is read from snapshots, not the working tree"
+    },
+    "code": "g3 = MiniGit()\ng3.change('x.py', 'base')\ng3.commit('base')\ng3.branch('dev')\ng3.change('z.py', 'main')\ng3.commit('main side')\ng3.checkout('dev')\ng3.change('y.py', 'dev')\ng3.commit('dev side')\ng3.checkout('main')\nresult = g3.merge('dev')\nassert result == 'merged', 'expected: merged | actual: %r' % result",
+    "expected": "merged when the changed sets do not overlap"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch8.l5",
+  "id": "ex5.debug-stale-pointer",
+  "solution": "class MiniGit:\n    def __init__(self):\n        self.commits = {}\n        self.branches = {'main': None}\n        self.head = 'main'\n        self.next_id = 1\n\n    def commit(self, msg):\n        cid = 'c%d' % self.next_id\n        self.next_id = self.next_id + 1\n        self.commits[cid] = {'id': cid, 'parent': self.branches[self.head], 'msg': msg}\n        self.branches[self.head] = cid\n        return cid\n\n    def log(self):\n        lines = []\n        node = self.branches[self.head]\n        while node is not None:\n            lines.append('%s %s' % (node, self.commits[node]['msg']))\n            node = self.commits[node]['parent']\n        return lines\n\n\ng = MiniGit()\ng.commit('Add app skeleton')\ng.commit('Add search box')\nprint('commits: %d' % len(g.commits))\nfor line in g.log():\n    print(line)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "العدّادات صحيحة كما كانت",
+     "en": "The counter line is right as before"
+    },
+    "code": "assert 'commits: 2' in __learner_output__, 'expected: commits: 2 | actual: %r' % __learner_output__",
+    "expected": "commits: 2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "السجل حيّ: الالتزامان بالترتيب الجديد-فوق-القديم",
+     "en": "The log is alive: both commits, newest above oldest"
+    },
+    "code": "assert 'c2 Add search box' in __learner_output__ and 'c1 Add app skeleton' in __learner_output__, 'expected: c2 Add search box / c1 Add app skeleton | actual: %r' % __learner_output__",
+    "expected": "c2 Add search box / c1 Add app skeleton"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "المؤشر يتحرك والروابط تتشكل: main على c2 وأب c2 هو c1",
+     "en": "The pointer moves and links form: main on c2 with c2’s parent c1"
+    },
+    "code": "assert g.branches['main'] == 'c2' and g.commits['c2']['parent'] == 'c1', 'expected: main at c2 with parent c1 | actual: %r' % g.branches['main']",
+    "expected": "main at c2 with parent c1"
+   }
+  ]
+ }
+]

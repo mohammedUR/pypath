@@ -1,0 +1,356 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch9.l1 — "Architecture Reviews and Inspections /
+ * مراجعات المعمارية والفحوص"
+ * Aligned with SWE ch9 s1 (9.1 Architecture Reviews, pp.232–234) +
+ * s2 (9.2 Conducting Software Inspections, pp.235–238).
+ * All expression is original (paraphrase of CC BY-SA 4.0 book text).
+ * Process lesson: reviews/inspections as human quality gates. The single
+ * write_code exercise is a severity-weighted inspection scorer over a
+ * deterministic findings list (dict + tuple list, all in known territory:
+ * py4e ch4 functions, ch6 strings, ch8 lists, ch9 dicts).
+ */
+const lesson = {
+  id: 'swe.ch9.l1',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 9,
+  title: { ar: 'مراجعات المعمارية والفحوص', en: 'Architecture Reviews and Inspections' },
+  estimatedMinutes: 30,
+  prerequisites: ['swe.ch8.l5'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'أسطورة عنيدة تقول: لا سبيل لمعرفة أن البرنامج يعمل إلا تشغيله. التشغيل مفيد بلا شك — والفصل العاشر كله عنه — لكن كثيرًا مما هو خاطئ في البرنامج مرئي على الصفحة: قفل أُخذ ونُسي، وواجهة يفهمها فريقان بطريقتين متضادتين، وقرار معماري يفترض في صمت أن قاعدة البيانات لن تبطؤ أبدًا. الفحص الثابت static checking هو انضباط اصطياد تلك المشكلات بفحص البرنامج — وثائقه وشيفرةه وأنواعه — دون تنفيذه. يفتح الفصل التاسع عائلته بأقدم أعضائها وأنسخها: مراجعة المعمارية قبل وجود شيفرة، ثم التنقيح الرسمي inspection لقطعة عمل محددة بمراحل وأدوار وقياس. وستكتب اليوم أول أداة قياس لك: عيّار يزن ملاحظات التنقيح بخطورتها. بنهاية الدرس ستكون قادرًا على: تعريف الفحص الثابت وتمييزه عن الاختبار وذكر سببين لتفضيله أحيانًا، وشرح مبادئ مراجعة المعمارية وأنواعها الثلاثة، وترتيب مراحل التنقيح الست وأدواره الخمسة، وحساب مقياس موزون لقائمة ملاحظات بلغة بايثون.',
+        en: 'A stubborn myth says: the only way to know software works is to run it. Running certainly helps — chapter 10 is all about it — but much of what is wrong with a program is visible on the page: a lock taken and forgotten, an interface two teams read in opposite ways, an architectural decision that quietly assumes the database will never be slow. Static checking is the discipline of catching those problems by examining the software — its documents, its code, its types — without executing it. Chapter 9 opens with its oldest, most human members: the architecture review, held before any code exists, then the formal inspection of a concrete work product with phases, roles and measurement. Today you also write your first measuring tool: a scorer that weights inspection findings by severity. By the end of this lesson you will be able to: define static checking, tell it apart from testing, and give two reasons it is sometimes preferred; explain the principles of architecture reviews and their three kinds; order the six phases and five roles of an inspection; and compute a severity-weighted score for a findings list in Python.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "findings = ['critical', 'minor', 'major', 'critical']\ncritical = 0\nfor f in findings:\n    if f == 'critical':\n        critical = critical + 1\nprint('critical findings: %d' % critical)",
+      question: {
+        ar: 'شيفرة من عالم الفصول المألوفة: قائمة وحلقة وعدّاد. لكن اسأل سؤال الفصل التاسع: لماذا يهتم فريق هندسة برمجيات بعدد الملاحظات الحرجة قبل أن ينعقد اجتماع التنقيح أصلًا؟',
+        en: 'Code from familiar territory: a list, a loop, a counter. But ask this chapter\u2019s question: why would a software team count the critical findings before the inspection meeting even convenes?',
+      },
+      reveal: {
+        ar: 'critical findings: 2. والجواب الأعمق: ما يميز التنقيح عن «نظرة من يمر» أنه يقيس نفسه — يعدّ الملاحظات ويصنفها ويراقب وتيرة الإعداد، فيعرف هل عمليته صحية أم أن المراجعين يقلبون الصفحات. القياس يقلب العادة من طقس إلى عملية يمكن التحكم فيها — وهذا ما ستبنيه في تمارين اليوم.',
+        en: 'critical findings: 2. The deeper answer: what separates an inspection from someone \u201chaving a look\u201d is that it measures itself — it counts and classifies findings and watches the preparation rate, so the team knows whether the process is healthy or reviewers are flipping pages. Measurement turns a ritual into a controllable process — and that is what today\u2019s exercises build.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الفحص الثابت: أن تصطاد العيب في الصفحة', en: 'Static checking: catching the defect on the page' },
+      chunks: [
+        {
+          ar: 'كلمة static هنا نقيض dynamic: لا شيء يعمل، ولا مدخلات اختبار تُختار، ولا ساعة تدق. وعد الفصل الأول — مهاجمة العيوب في كل مرحلة — تسدده هذه العائلة قبل أن يظهر أي إخفاق. ثلاثة أسباب تجعلها تستحق العناء رغم وجود الاختبارات: أولًا تجد العيوب أبكر، وأحيانًا قبل وجود سطر شيفرة واحد — مراجعة معمارية تلتقط خلل توسّع في اجتماع تصميم حين يكون إصلاحه عصرًا لا إعادة بناء. ثانيًا تصل إلى عيوب يصعب على الاختبار بلوغها: حالة سباق تظهر مرة في عشرة آلاف تشغيل، وثغرة في مسار خطأ لا يمر به أي اختبار، واسم مضلل سيورث عللًا. ثالثًا تنقل المعرفة: حين يراجع مهندس خبير تغييرك يخرج كلاكما بفهم أعمق للنظام — وهذا لا يصنعه اختبار آلي.',
+          en: 'Static here is the opposite of dynamic: nothing runs, no test inputs are chosen, no clock ticks. This family delivers chapter 1\u2019s promise — attacking defects at every stage — before any failure ever appears. Three reasons it is worth the trouble even with tests in place: first, it finds defects earlier, often before a single line of code exists — an architecture review catches a scalability flaw in a design meeting, when the fix costs an afternoon rather than a rewrite. Second, it reaches defects testing cannot easily reach: a race condition that shows up once in ten thousand runs, a security hole on an error path no test exercises, a misleading name that will cause a future bug. Third, it transfers knowledge: when a senior engineer reviews your change, you both walk away understanding the system better — no automated test does that.',
+        },
+        {
+          ar: 'والخلاصة التي تحكم الفصل كله: هذه التقنيات متممة للاختبار لا بديلة عنه، وتقف على طيف من البطيء-الإنساني إلى السريع-الآلي. مراجعة المعمارية في أبطأ الأطراف وأكثرها إنسانية، ثم التنقيح الرسمي، ثم مراجعة الكود اليومية، ثم التحليل الثابت الآلي في الطرف الآخر. الفريق الناضج يشبكها جميعًا مع الاختبار — لا شبكة واحدة تصطاد كل شيء، ولهذا ننشر عدة شباك. ستمر على الطيف كله في هذا الفصل، وستبني بنفسك الطرف الآلي في الدرس الرابع.',
+          en: 'The through-line for the whole chapter: these techniques are complementary to testing, not substitutes for it, and they sit on a spectrum from slow-and-human to fast-and-automated. Architecture reviews at the slow, human end, then formal inspection, then everyday code review, then automated static analysis at the other end. A mature team runs all of them alongside testing — no single net catches everything, which is why we cast several. You will walk the whole spectrum in this chapter, and in the fourth lesson you will build the automated end yourself.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'مراجعة المعمارية: أن تُجهد الرسم لا أن تمجده', en: 'Architecture review: stress the diagram, do not admire it' },
+      chunks: [
+        {
+          ar: 'أرخص مكان لاصطياد عيب هو قبل أن يُبنى. مراجعة المعمارية فحص منظم لتصميم النظام — مكوناته الكبرى ومسؤولياتها وصلاتها — يجريه أشخاص غير المصممين، وهدفها إجهاد الرسم البياني لا الإعجاب به: طرح الأسئلة التي توقفت عنها عيون مؤلفيه من قربها. والخطورة حقيقية: خطأ المعمارية عادة أغلى الأخطاء. اسم متغير سيئ إصلاحه خمس دقائق في مراجعة كود، أما قرار تمرير كل الطلبات عبر خدمة واحدة متزامنة أو تخزين المال كعدد عشري أو شُجن وحدتين كان يجب أن تستقلا، فقد يكلف أشهرًا من إعادة العمل بعد أن يُبنى النظام حوله.',
+          en: 'The cheapest place to catch a defect is before it is built. An architecture review is a structured examination of a system\\u2019s design — its major components, responsibilities and connections — conducted by people other than the designers, and its goal is to stress the diagram, not admire it: to ask the questions the design\\u2019s authors have stopped asking. The stakes are real: architectural mistakes are usually the most expensive kind. A poorly named variable is a five-minute fix in code review; a decision to route every request through one synchronous service, to store money as a floating-point number, or to couple two modules that should be independent can cost months of rework once the system is built around it.',
+        },
+          {
+          ar: 'مبادئ الإنتاجية: راجع مقابل سيناريوهات محددة لا في المجرّد — «كيف يتعامل هذا التصميم مع عشرة آلاف مستخدم متزامن؟» لها جواب يقيَّم، و«هل هذا تصميم جيد؟» لا جواب له. ولا يقود المؤلفون الغرفة: عملهم أن يشرحوا ويستمعوا لا أن ينتصروا. وركّز على الخطِر والعسير عكسُه: نماذج البيانات وحدود الثقة والتزامن والاعتماديات الخارجية. واختم بقرارات مسجلة ومالكين وإجراءات: كل قلق مهم يصير بندًا — يُصلح الآن، أو تُقبل مخاطرته وسببها، أو يُتحرى باتجاه تاريخ.',
+          en: 'Principles that keep it productive: review against concrete scenarios, not in the abstract — \\u201chow does this design handle 10,000 concurrent users?\\u201d has an answer you can evaluate, \\u201cis this good design?\\u201d does not. The authors should not run the room: their job is to explain and listen, not to win. Focus on the risky and the irreversible: data models, trust boundaries, concurrency, external dependencies. End with recorded decisions, owners and follow-up actions: every significant concern becomes a recorded item — fix now, accept the risk (and why), or investigate by a date.',
+        },
+        {
+          ar: 'وليست كل المراجعات في اللحظة نفسها. مراجعة الاكتشاف discovery تجري باكرًا والتصميم ما يزال يتشكل، وهدفها الاتساع: رسم فضاء المسألة وتسمية المكونات الكبرى والتأكد ألا صنف كامل من المتطلبات — أمن، خصوصية، كلفة، تشغيل — قد نُسي؛ ومخرجها قائمة قلق مرتبة بالأولوية وتحقيقات أعمق تُبرمج. مراجعة التعمق deep-dive تأخذ منطقة واحدة تحمل خطورة زائدة وتفحصها فحصًا شاقًا: سيناريوهات الفشل بالضبط، وتشابك التزامن، ومسار الهجرة — فيها يستقدم المتخصصون ولا تغادر حتى تُحل المخاطرة أو تُقبل صراحة.',
+          en: 'Not all reviews happen at the same moment. A discovery review happens early, while the design is still forming; its aim is breadth — map the problem space, name the major components, make sure no whole category of requirement (security, privacy, cost, operability) was forgotten; its output is a prioritized list of concerns and deeper investigations to schedule. A deep-dive review takes one area carrying outsized risk and examines it exhaustively — the exact failure scenarios, concurrency interleavings, migration path — bringing in specialists and not leaving until the risk is resolved or explicitly accepted.',
+        },
+          {
+          ar: 'ومراجعة الاسترجاع retrospective تجري بعد بناء النظام وتشغيله وتسأل: هل أدت المعمارية ما أملينا؟ أي الافتراضات صمد وأيها انكسر؟ — تعلّم لا لوم. واذكر في البداية أي المراجعات تجري: تعمق يتحول إلى اكتشاف يفقد بؤرته، واكتشاف يطالب بصرامة تعمق يُرهق الجميع قبل العثور على المخاطر الكبرى.',
+          en: 'A retrospective review happens after the system is built and running and asks: did the architecture actually deliver? Which assumptions held and which broke? — learning, not blame. State which review you are running at the start: a deep-dive that turns into discovery loses focus, and a discovery demanding deep-dive rigor exhausts everyone before the big risks are found.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'التنقيح الرسمي: مراحل وأدوار وقياس', en: 'Formal inspection: phases, roles, measurement' },
+      chunks: [
+        {
+          ar: 'حيث تراجع المعمارية تصميمًا، يفحص التنقيح inspection قطعة عمل ملموسة — شيفرة غالبًا، أو مواصفة أو خطة اختبار — سطرًا سطرًا بعملية محددة وغاية صريحة: اصطياد العيوب. هو أكثر أعضاء العائلة رسمية: بطيء ومنضبط، ومع ذلك فعّال بشكل مذهل — الفرق التي تجيده تجد بانتظام أكثر من نصف عيوب الوثيقة قبل أن تعمل أي شيفرة منها. الصيغة الكلاسيكية من إبداع Michael Fagan في IBM في السبعينيات: مجموعة صغيرة، وتسلسل مراحل محدد، وأدوار موزعة، وقياس للعملية نفسها.',
+          en: 'Where an architecture review examines a design, an inspection examines a concrete work product — usually source code, but also a specification or a test plan — line by line, with a defined process and the explicit purpose of finding defects. It is the most formal member of the family: slow and disciplined, yet startlingly effective — teams that do it well routinely find more than half of a document\\u2019s defects before any of that code runs. The classic form was pioneered by Michael Fagan at IBM in the 1970s: a small group, a defined sequence of phases, assigned roles, and measurement of the process itself.',
+        },
+          {
+          ar: 'المراحل ست والانضباط كله في عدم تخطي واحدة، لأن كل مرحلة تحرس ثغرة من ثغرات المراجعة العفوية: التخطيط planning يقرر ماذا يفحص ويستوفي شروط الدخول ويختار المشاركين ويحفظ القطعة صغيرة — أكثر من بضع مئات من الأسطر في جلسة يتحول قشطًا. ثم التعريف overview حيث يعرّف المؤلف المراجعين بالسياق باختصار. ثم الإعداد preparation: كل مراجع يقرأ القطعة وحده مسبقًا ويسجل المشتبه به — هنا يوجد معظم العيوب فعلًا.',
+          en: 'There are six phases, and the discipline is in skipping none, because each guards a gap informal review falls through: Planning decides what is inspected, checks entry criteria, picks participants, and keeps the chunk small — more than a few hundred lines in one sitting reliably degrades into skimming. Overview briefly educates reviewers on context. Preparation: each reviewer examines the work product alone and in advance, noting suspected defects — this is where most defects are actually found.',
+        },
+        {
+          ar: 'ثم الاجتماع meeting: القارئ يسرد المادة، والمراجعون يرفعون ما وجدوه في إعدادهم، والكاتب يسجل كل عيب مؤكد — والقاعدة الحرجة: الاجتماع يجد ويسجل، لا يحل. مناقشة الإصلاحات فيه هو الطريق الكلاسيكي لتضخيمه وفقدان قيمته؛ الحلول عمل المؤلف في إعادة العمل rework حيث يصلح كل بند ويوثق مصير كل «عيب» تبيّن أنه سوء فهم. ثم المتابعة follow-up: المنسق يتحقق أن كل عيبًا مسجلًا عولج فعلًا — لا أن المؤلف نوى ذلك.',
+          en: 'Then the meeting: the reader walks through the material, reviewers raise what preparation turned up, and the scribe records each confirmed defect — under the critical rule: the meeting finds and records, it does not solve. Debating fixes there is the classic way inspections balloon and lose value; solutions belong to the author during rework, where every item is fixed and every \\u201cdefect\\u201d that was a misunderstanding gets its disposition noted. Follow-up: the moderator verifies every logged defect was actually addressed — not merely intended to be.',
+        },
+          {
+          ar: 'الأدوار خمسة: المؤلف author يستمع ويجيب عن أسئلة الواقع ولا يدافع؛ والمراجعون reviewers من اثنين إلى أربعة خبراء يعثرون بالعيوب؛ والقارئ reader يعيد صياغة المادة بصوت عالٍ بكلماته — وحين تنحرف إعادة صياغته عن نية المؤلف وجدت مكانًا لا تقول فيه الشيفرة ما تعنيه؛ والمنسق moderator يشد انضباط «جد ولا أصلح»؛ والكاتب scribe يسجل مكان العيب ووصفه وخطورته — العيب الذي لم يكتب لم يحدث. ومؤلف الشيفرة لا يكون منسقًا ولا قارئًا لعمله أبدًا: القيمة كلها من فحص الآخرين له.',
+          en: 'Five roles: the author listens and answers questions of fact rather than defending; two to four expert reviewers find the defects; the reader paraphrases the material aloud in their own words — when the paraphrase diverges from the author\\u2019s intent, you have found a place where the code does not say what it means; the moderator enforces the find-don\\u2019t-fix rule; and the scribe logs location, description and severity — a defect that is not written down did not happen. The author is never the moderator or the reader of their own code: the entire value comes from other people examining it.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'قياس المراجعة', en: 'Measuring the review' },
+      chunks: [
+        {
+          ar: 'ويبقى القياس: الفرق تتتبع وتيرة الإعداد — كم سطرًا قرأ كل مراجع في الساعة قبل الاجتماع — وكثافة العيوب لكل ألف سطر. في دراسة الكتاب المركبة: عند إعداد حتى 500 سطر في الساعة عُثر على نحو 8 عيوب لكل ألف سطر، وحين تجاوزت الوتيرة 1000 انهار المحصول إلى 2 — العيوب لم تختف، لكن العيون سرت أسرع مما ترى به. فوضع الفريق قاعدة: لا اجتماع إلا ووتيرة كل مراجع دون 500، فهبطت عيوب ما بعد الإصدار في الوحدات المفحوصة إلى النصف. المبدأ: تمهّل لتسرع — الوتيرة المنخفضة تجد أكثر، والعيب الذي يرى على الصفحة أرخص كثيرًا من العيب الذي يرى في الإنتاج.',
+          en: 'And measurement remains: teams track the preparation rate — lines each reviewer read per hour before the meeting — and the defect density per thousand lines. In the book\u2019s composite case study: preparing at 500 lines per hour or less yields roughly 8 defects per thousand lines; above 1,000 the yield collapses to 2 — the defects did not vanish, the reviewers simply moved too fast to see them. So the team set a policy: no meeting proceeds unless every reviewer prepared under 500, and their post-release defect rate on inspected modules halved. The principle: slow down to speed up — a lower review rate finds more, and a defect seen on the page is far cheaper than one seen in production.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'من كومة عيوب إلى سجل منظّم', en: 'From a defect pile to a structured log' },
+      code: "logged = ['critical', 'major', 'minor', 'major', 'critical']\ncounts = {}\nfor f in logged:\n    counts[f] = counts.get(f, 0) + 1\nprint('logged defects: %d' % len(logged))\nfor sev in ['critical', 'major', 'minor']:\n    print('%s: %d' % (sev, counts.get(sev, 0)))",
+      explanation: {
+        ar: 'هذا أصغر كاتب scribe إلكتروني: قائمة عيوب مؤكدة تدخل الحلقة، وقاموس يعد كل خطورة، وcounts.get(f, 0) يحفظ العد حتى لو ظهرت خطورة لأول مرة. الخرج أربعة أسطر منسقة يقرأها المنسق في المتابعة: خمسة عيوب مسجلة — اثنتان حرجتان واثنتان رئيسيتان وواحدة ثانوية. لاحظ أننا لا نطبع القاموس بـ print(counts) — التقرير للبشر فنسّقه لهم. في التمرين الأول ستضيف بُعد الجودة: وزن لكل خطورة ي превращ العدد إلى مقياس واحد.',
+        en: 'This is the smallest electronic scribe: confirmed defects enter the loop, a dict counts each severity, and counts.get(f, 0) keeps the tally safe even when a severity appears for the first time. The output is four formatted lines the moderator reads at follow-up: five logged defects — two critical, two major, one minor. Note we never print the raw dict with print(counts) — the report is for humans, so format it for humans. In the first exercise you will add the quality dimension: a weight per severity, turning counts into a single score.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.severity-score',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'في تنقيح سجّل الكاتب ملاحظات وكل منها تحمل خطورتها: critical أو major أو minor. أوزان الخطورة في قاموس WEIGHTS: 3 و2 و1 على الترتيب. اكتب دالة score(findings) تجمع وزن خطورة كل ملاحظة وتعيد المجموع، ثم اطبع سطرين: findings: 4 ثم score: 8 لقائمة FINDINGS المعطاة. يجب أن تعمل دالتك على أي قائمة بالشكل نفسه (صفوف ثنائية: خطورة ووصف).',
+        en: 'In an inspection the scribe logs findings, each carrying its severity: critical, major or minor. The severity weights live in the dict WEIGHTS: 3, 2 and 1 respectively. Write a function score(findings) that sums the severity weight of every finding and returns the total, then print two lines: findings: 4 and score: 8 for the given FINDINGS list. Your function must work for any list of the same shape (tuples of severity and description).',
+      },
+      starterCode: "FINDINGS = [\n    ('critical', 'lock acquired but never released'),\n    ('major', 'name misleads the reader'),\n    ('minor', 'spacing inconsistent'),\n    ('major', 'error path leaks the file handle'),\n]\nWEIGHTS = {'critical': 3, 'major': 2, 'minor': 1}\n\ndef score(findings):\n    # اجمع وزن خطورة كل ملاحظة وعُد بالمجموع\n    # sum the severity weight of every finding and return the total\n    return 0\n\nprint('findings: %d' % len(FINDINGS))\nprint('score: %d' % score(FINDINGS))\n",
+      solution: "FINDINGS = [\n    ('critical', 'lock acquired but never released'),\n    ('major', 'name misleads the reader'),\n    ('minor', 'spacing inconsistent'),\n    ('major', 'error path leaks the file handle'),\n]\nWEIGHTS = {'critical': 3, 'major': 2, 'minor': 1}\n\ndef score(findings):\n    total = 0\n    for sev, desc in findings:\n        total = total + WEIGHTS[sev]\n    return total\n\nprint('findings: %d' % len(FINDINGS))\nprint('score: %d' % score(FINDINGS))",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'مقياس القائمة المعطاة يساوي 8', en: 'The given list scores 8' },
+          code: "assert score(FINDINGS) == 8, 'expected: 8 | actual: %r' % (score(FINDINGS),)",
+          expected: '8',
+        },
+        {
+          id: 't2',
+          name: { ar: 'الدالة تعمم على قائمة أخرى', en: 'The function generalizes to another list' },
+          code: "assert score([('critical', 'x'), ('minor', 'y')]) == 4, 'expected: 4 | actual: %r' % (score([('critical', 'x'), ('minor', 'y')]),)",
+          expected: '4',
+        },
+        {
+          id: 't3',
+          name: { ar: 'سطرا التقرير مطبوعان منسقين', en: 'Both report lines are printed formatted' },
+          code: "assert 'findings: 4' in __learner_output__ and 'score: 8' in __learner_output__, 'expected: findings: 4 then score: 8 | actual: %r' % __learner_output__",
+          expected: 'findings: 4 then score: 8',
+        },
+      ],
+      hints: [
+        { ar: 'كل عنصر في FINDINGS صف ثنائي (sev, desc) — فك حزمته في رأس الحلقة كما في الفصل الثامن، واستخدم sev فقط.', en: 'Each element of FINDINGS is a (sev, desc) tuple — unpack it in the loop header as in chapter 8, and use only sev.' },
+        { ar: 'القاموس WEIGHTS يحول اسم الخطورة إلى وزن: WEIGHTS[sev] — النمط نفسه الذي استخدمته مع القواميس في الفصل التاسع من مسار بايثون.', en: 'The WEIGHTS dict maps a severity name to its weight: WEIGHTS[sev] — the same pattern you used with dicts in chapter 9 of the Python track.' },
+        { ar: 'الهيكل:\ntotal = 0\nfor sev, desc in findings:\n    total = total + WEIGHTS[sev]\nreturn total', en: 'The skeleton:\ntotal = 0\nfor sev, desc in findings:\n    total = total + WEIGHTS[sev]\nreturn total' },
+        { ar: "الحل الكامل:\ndef score(findings):\n    total = 0\n    for sev, desc in findings:\n        total = total + WEIGHTS[sev]\n    return total", en: "Full solution:\ndef score(findings):\n    total = 0\n    for sev, desc in findings:\n        total = total + WEIGHTS[sev]\n    return total" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-weights',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقع خرجه بالضبط — سطر لكل طباعة — دون تشغيله. تذكر فرق الفهرسة المباشرة عن get مع قيمة افتراضية.',
+        en: 'Read the code and predict its exact output — one line per print — without running it. Recall how direct indexing differs from get with a default.',
+      },
+      code: "sev = 'major'\nweights = {'critical': 3, 'major': 2, 'minor': 1}\nprint(weights[sev])\nprint(weights.get('blocker', 0))",
+      solution: '2\n0',
+      answer: '2\n0',
+      hints: [
+        { ar: "weights[sev] مع sev تساوي 'major' فهرسة مباشرة بمفتاح موجود — تعيد قيمته.", en: 'weights[sev] with sev equal to major is direct indexing of an existing key — it returns its value.' },
+        { ar: "المفتاح 'blocker' غير موجود إطلاقًا في القاموس.", en: 'The key blocker is not in the dict at all.' },
+        { ar: 'get بمفتاح غائب تعيد وسيطها الثاني بدل أن ترمي — وهذا ما يجعلها آمنة للعدادات.', en: 'get with a missing key returns its second argument instead of raising — that is what makes it safe for counters.' },
+        { ar: 'الخرج:\n2\n0', en: 'The output:\n2\n0' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-preparation',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'في التنقيح التقليدي ذي المراحل الست: في أي مرحلة توجد معظم العيوب فعلًا، ولماذا ليست الاجتماع؟',
+        en: 'In the traditional six-phase inspection: in which phase are most defects actually found, and why is it not the meeting?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'الإعداد preparation: كل مراجع يقرأ القطعة وحده مسبقًا بتركيز كامل — والاجتماع معد لتثبيت ما وجدته القراءة الفردية وتسجيله', en: 'Preparation: each reviewer reads the work product alone, in advance, with full focus — the meeting exists to consolidate and record what individual reading already found' } },
+        { id: 'b', text: { ar: 'الاجتماع meeting: لأن العقول مجتمعة أذكى من العقل المنفرد فتجد أكثر ما يمكن', en: 'The meeting: many minds together beat one, so they find the most' } },
+        { id: 'c', text: { ar: 'إعادة العمل rework: لأن إصلاح العيوب هو الذي يكشف حجم المشكلة الحقيقي', en: 'Rework: fixing the defects is what reveals the true size of the problem' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'الاجتماع محكوم بقاعدة «جد ولا أصلح» — دوره توحيد الملاحظات لا الاكتشاف الأول.', en: 'The meeting is bound by find-don\u2019t-fix — its role is consolidation, not first discovery.' },
+        { ar: 'القراءة الفردية المركزة قبل الاجتماع هي حيث تظهر معظم العيوب (دراسة Votta التي يستند إليها الكتاب).', en: 'Focused individual reading before the meeting is where most defects surface (the Votta study the book cites).' },
+        { ar: 'إن دخل المراجعون الاجتماع وهم يقرأون الشيفرة لأول مرة فقد فات قطار الاكتشاف.', en: 'If reviewers first read the code at the meeting, the discovery train has already left.' },
+        { ar: 'الجواب: أ — الإعداد preparation يكتشف أغلب العيوب، والاجتماع يجمعها ويسجلها.', en: 'Answer: a — preparation finds most defects; the meeting consolidates and records them.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-reader',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'أثناء اجتماع التنقيح، الدور الذي يسرد المادة بصوت عالٍ بإعادة صياغتها بكلماته — لا بقراءتها حرفيًا — يسمى ____. (كلمة إنجليزية واحدة)',
+        en: 'During the inspection meeting, the role that walks through the material aloud by paraphrasing it in their own words — rather than reading it verbatim — is called the ____. (one English word)',
+      },
+      answer: 'reader',
+      solution: 'reader',
+      hints: [
+        { ar: 'ليس هو من كتب الشيفرة، وليس هو من ينظم الاجتماع.', en: 'Not the one who wrote the code, and not the one who chairs the meeting.' },
+        { ar: 'قوة هذا الدور الخفية: حين تنحرف إعادة صياغته عن نية المؤلف وجدت غموضًا سيولد عيبًا يومًا ما.', en: 'The hidden power of this role: when its paraphrase drifts from the author\u2019s intent, you have found ambiguity that will breed a bug someday.' },
+        { ar: 'اسمه الإنجليزي يطابق فعله الحرفي: من يقرأ — لكن بإعادة الصياغة.', en: 'Its English name matches the act literally: the one who reads — by paraphrasing.' },
+        { ar: 'الجواب: reader', en: 'Answer: reader' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "# ملعبك الحر — عيّار التنقيح بين يديك\n# Your playground — the inspection scorer in your hands\n\nFINDINGS = [\n    ('critical', 'lock taken but never released'),\n    ('major', 'name misleads the reader'),\n    ('minor', 'inconsistent spacing'),\n    ('major', 'error path leaks a file handle'),\n    ('minor', 'comment spelling'),\n]\nWEIGHTS = {'critical': 3, 'major': 2, 'minor': 1}\n\ntotal = 0\ncriticals = 0\nfor sev, desc in FINDINGS:\n    total = total + WEIGHTS[sev]\n    if sev == 'critical':\n        criticals = criticals + 1\n\nprint('findings: %d' % len(FINDINGS))\nprint('criticals: %d' % criticals)\nprint('score: %d' % total)\n\n# جرّب: أضف ملاحظتين جديدتين بخطورتين مختلفتين وأعد الحساب\n# try: add two new findings with different severities and recompute\n# جرّب: اطبع WEIGHTS.get('blocker', 0) — لماذا لا ينكسر العد؟\n# try: print WEIGHTS.get('blocker', 0) — why does the tally not break?\n",
+      prompt: {
+        ar: "جرّب بنفسك: غيّر قائمة FINDINGS — أضف ملاحظة حرجة جديدة وشاهد المقياس يقفز ثلاث درجات. ثم اسأل: أي سياسة تنقيح منطقية على هذا المقياس؟ مثل «لا يُغلق التنقيح والمقياس فوق 6». وأخيرًا اطبع WEIGHTS.get('blocker', 0) وفسّر لنفسك لماذا لم يرم هذا الاستدعاء خطأً.",
+        en: 'Try it yourself: change the FINDINGS list — add one new critical finding and watch the score jump by three. Then ask: what inspection policy would make sense on this scale? For instance, no closing while the score is above 6. Finally print WEIGHTS.get(\u2018blocker\u2019, 0) and explain to yourself why that call did not raise.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ومن الفصل التاسع من مسار بايثون (القواميس): في عدّاد اليوم counts.get(f, 0) + 1 — ما دور الوسيط الثاني 0؟',
+            en: 'From chapter 9 of the Python track (dictionaries): in today\u2019s counter counts.get(f, 0) + 1 — what is the role of the second argument 0?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'القيمة التي تعيدها get إذا كان المفتاح غائبًا — فلا ينكسر العد عند أول ظهور لفئة جديدة', en: 'The value get returns when the key is absent — so the tally survives the first appearance of a new category' } },
+            { id: 'b', text: { ar: 'المفتاح الذي سيضاف حتمًا إلى القاموس بعد الاستدعاء', en: 'The key that will forcibly be added to the dict after the call' } },
+            { id: 'c', text: { ar: 'قيمة تبدأ منها كل الفئات إجبارًا حتى لو كانت موجودة', en: 'A value every category is forced to start from, even existing ones' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'get بمفتاح غائب تعيد افتراضه بدل أن ترمي KeyError — هكذا كتبنا العدادات في الدرس التاسع، وهو نفسه ما يجعل سجل عيوب اليوم يتحمل أي خطورة جديدة تظهر. عدّاد بلا افتراض ينكسر عند أول مفاجأة.',
+            en: 'get with an absent key returns its default instead of raising KeyError — that is how we wrote counters in chapter 9, and it is what lets today\u2019s defect log absorb any new severity. A counter without a default breaks on the first surprise.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'لماذا تحفظ مرحلة التخطيط القطعة المفحوصة صغيرة — بضع مئات من الأسطر في الجلسة كحد أقصى؟',
+            en: 'Why does the planning phase keep the inspected chunk small — a few hundred lines per sitting at most?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن القطعة الأكبر من ذلك تحول المراجعة إلى قشط سريع — وهذا بالضبط حيث ينهار المحصول إلى 2 عيوب لكل ألف سطر', en: 'Because beyond that the review degrades into skimming — exactly where the yield collapses to 2 defects per thousand lines' } },
+            { id: 'b', text: { ar: 'لأن الاجتماعات لا تحتمل أكثر من ساعة قانونًا', en: 'Because meetings are legally capped at one hour' } },
+            { id: 'c', text: { ar: 'لأن الشيفرة الطويلة لا تُترجم', en: 'Because long code does not compile' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'بيانات الكتاب حاسمة: الوتيرة فوق 1000 سطر في الساعة تقتل الاكتشاف، فجعلت الفرق سياستها: لا اجتماع قبل إعداد دون 500. القطعة الصغيرة ليست رفاهية تنظيمية — هي شرط الفعالية المقيسة نفسها.',
+            en: 'The book\u2019s data is decisive: above 1,000 lines per hour, discovery dies — so teams made sub-500 preparation a policy. A small chunk is not organizational nicety; it is the very condition of measured effectiveness.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'لماذا يجب ألا يكون كاتب الشيفرة هو المنسق moderator أو القارئ reader لعمله؟',
+            en: 'Why must the author of the code never be the moderator or the reader of their own work?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن القيمة كلها من فحص أشخاص آخرين للشيفرة — ومهما صدقت النية فالمؤلف يحكم عمله بتحيز صاحبه، و«تنقيح» بلا فحص خارجي يعيد المشكلة التي أنشئ لي هربًا منها', en: 'Because the entire value comes from other people examining the code — however honest the intent, the author judges their own work with its owner\u2019s bias, and an inspection with no outside examination recreates the very problem it was built to escape' } },
+            { id: 'b', text: { ar: 'لأن المؤلف لا يعرف شيفرةه جيدًا كفاية لسردها', en: 'Because the author does not know their own code well enough to narrate it' } },
+            { id: 'c', text: { ar: 'لتوفير راتب موظف إضافي', en: 'To justify hiring an extra employee' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الكتاب صريح: إن كان «تنقيحك» مجرد مؤلف يمشي بالجميع على منطقه فقد أعدت بناء المشكلة ذاتها. ولهذا أيضًا لا يجتمع المؤلفون وحدهم في مراجعة معمارية — النقاط العمياء تشترك فيها العيون نفسها.',
+            en: 'The book is blunt: if your inspection is just the author walking everyone through their own reasoning, you have rebuilt the problem itself. That is also why authors-only architecture reviews fail — the blind spots are shared by the same eyes.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'ولماذا تُراجَع المعمارية قبل كتابة الكود لا بعده؟',
+            en: 'Why is the architecture reviewed before code is written rather than after?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن قرارات المعمارية تؤخذ أبكر، ويصعب عكسها، وتقيد كل ما بعدها — اصطياد خللها حين يكون التغيير رخيصًا يوفر إعادة عمل قد تطول أشهرًا', en: 'Because architectural decisions are made early, are hard to reverse, and constrain everything downstream — catching their flaw while change is cheap avoids rework that can run to months' } },
+            { id: 'b', text: { ar: 'لأن الشيفرة بعد كتابتها لا يمكن قراءتها أصلًا', en: 'Because written code cannot be read at all' } },
+            { id: 'c', text: { ar: 'لكي لا يتعب المبرمجون', en: 'To spare the programmers some effort' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'هذا جوهر مبدأ «ركّز على الخطِر والعسير عكسُه»: وقت المراجعة الشحيح ينفق حيث الكلفة أعلى — نماذج البيانات وحدود الثقة والتزامن — لا حيث يمكن لإعادة هيكلة لاحقة أن تصلح الأمور بخمس دقائق.',
+            en: 'That is the core of focus-on-the-risky-and-irreversible: scarce review time goes where cost is highest — data models, trust boundaries, concurrency — not where a later refactor fixes things in five minutes.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'الاجتماع يتحول إلى جلسة حل: «دعوني أرسم لك الخوارزمية البديلة على السبورة الآن»',
+          right: '«عيب مؤكد في السطر 42 — سُجل. ننتقل.» والحلول في إعادة العمل rework',
+          note: {
+            ar: 'الاجتماع يجد ويسجل ولا يحل — لحظة العصف تضخم الاجتماع، وتفقد أغلب الحاضرين اهتمامهم، وتغطي جزءًا ضئيلًا من المادة. سجل العيب وتحرك، ودع المؤلف يحل في إعادة العمل.',
+            en: 'The meeting finds and records, it does not solve — the brainstorming moment balloons the meeting, disengages most participants, and covers a fraction of the material. Log the defect, move on, let the author solve it in rework.',
+          },
+        },
+        {
+          wrong: 'مراجعة معمارية يحضرها فريق التصميم وحده — «نحن نعرف نظامنا»',
+          right: 'مهندس من فريق آخر + من شغل نظامًا شبيهًا في الإنتاج + من سيتكامل مع هذا النظام',
+          note: {
+            ar: 'المؤلفون وحدهم يشتركون في النقاط العمياء نفسها — ولهذا بالضبط لم يلتقطوا المشكلة. القيمة في عيون خارجية تحمل سياقًا مختلفًا.',
+            en: 'Authors alone share the same blind spots — which is precisely why they missed the problem. The value lies in outside eyes carrying different context.',
+          },
+        },
+        {
+          wrong: '«وجدنا عيوبًا أقل هذه المرة — شيفرتنا تتحسن!»',
+          right: 'وتيرة إعداد فوق 1000 سطر/ساعة؟ 2 عيوب لكل ألف سطر — هذا قشط لا نظافة',
+          note: {
+            ar: 'العدد المنخفض المشبوه خبر سيئ لا خبر جيد: العيوب لم تختف — العيون صارت أسرع مما ترى به. القياس موجود ليكشف هذا بالضبط.',
+            en: 'A suspiciously low count is bad news, not good: the defects did not vanish — the eyes moved faster than they can see. Measurement exists to expose exactly this.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'الفحص الثابت يفحص البرنامج دون تشغيله: أسبق وأرخص، ويصل إلى عيوب يصعب على الاختبار بلوغها، وينقل المعرفة بين البشر — وهو متمم للاختبار لا بديل عنه.', en: 'Static checking examines the program without running it: earlier and cheaper, it reaches defects testing cannot easily touch and transfers knowledge between people — complementary to testing, never a substitute.' },
+        { ar: 'مراجعة المعمارية تُجهد الرسم لا تمجده: سيناريوهات محددة لا أحكام مجردة، والمؤلفون لا يقودون الغرفة، والتركيز للخطِر والعسير عكسُه، والنهاية قرارات مسجلة بمالك وإجراء — بثلاثة أنواع: اكتشاف وتعمق واسترجاع.', en: 'An architecture review stresses the diagram rather than admiring it: concrete scenarios over abstract verdicts, authors never running the room, focus on the risky and irreversible, and recorded decisions with owners and actions — in three kinds: discovery, deep-dive, retrospective.' },
+        { ar: 'التنقيح الرسمي: ست مراحل وخمسة أدوار — الإعداد الفردي يجد أغلب العيوب، والاجتماع يجد ويسجل ولا يحل، والقياس يحمي من القشط: تمهّل لتسرع.', en: 'Formal inspection: six phases and five roles — individual preparation finds most defects, the meeting finds and records without solving, and measurement guards against skimming: slow down to speed up.' },
+      ],
+      reflectPrompt: {
+        ar: 'خذ أقصر دالة كتبتها في هذه السلسلة وافعل بها ما يفعله القارئ reader: أعد سرد كل سطر بكلماتك دون النظر إلى الأسماء. أين انحرفت إعادة صياغتك عما كنت تقصده فعلًا؟ سجل تلك النقطة «عيب وضوح» في قائمة ملاحظات — فقد يكون أول عيوب تنقيحك الشخصي.',
+        en: 'Take the shortest function you wrote in this series and play the reader: paraphrase every line in your own words without looking at the names. Where did your paraphrase drift from what you actually meant? Log that spot as a clarity defect in a findings list — it may be the first entry in your personal inspection.',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch9.s1', pages: 'ص232-234 / pp.232-234' },
+        { book: 'SWE', section: 'swe.ch9.s2', pages: 'ص235-238 / pp.235-238' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch9.s1', pages: 'ص232-234 / pp.232-234' },
+    { book: 'SWE', section: 'swe.ch9.s2', pages: 'ص235-238 / pp.235-238' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

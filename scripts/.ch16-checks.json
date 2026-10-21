@@ -1,0 +1,229 @@
+{
+ "traces": [
+  {
+   "lesson": "py4e.ch16.l1",
+   "id": "ex2.trace-geodata",
+   "code": "import json\njs = json.loads('{\"status\": \"OK\", \"results\": [{\"lat\": 53.2833333, \"lng\": 69.3833333}]}')\nr = js['results'][0]\nprint(js['status'])\nprint(len(js['results']))\nprint(r['lat'] > 0)",
+   "answer": "OK\n1\nTrue"
+  },
+  {
+   "lesson": "py4e.ch16.l2",
+   "id": "ex2.trace-wherejs",
+   "code": "rows = [[53.2833333, 69.3833333, 'Kokshetau']]\nlat, lng, label = rows[0]\nprint(\"[%s, '%s']\" % (lng, label))\nprint(len(rows))",
+   "answer": "[69.3833333, 'Kokshetau']\n1"
+  },
+  {
+   "lesson": "py4e.ch16.l3",
+   "id": "ex2.trace-degree",
+   "code": "counts = dict()\npairs = [('a', 'b'), ('b', 'a'), ('c', 'a')]\nfor x, y in pairs:\n    counts[x] = counts.get(x, 0) + 1\n    counts[y] = counts.get(y, 0) + 1\nprint(counts['a'])\nprint(counts['c'])\nprint(len(counts))",
+   "answer": "3\n1\n3"
+  },
+  {
+   "lesson": "py4e.ch16.l4",
+   "id": "ex2.trace-bars",
+   "code": "def draw_bars(pairs, width):\n    biggest = 0\n    for name, value in pairs:\n        if value > biggest:\n            biggest = value\n    for name, value in pairs:\n        ticks = int(width * value / biggest)\n        print('%s | %s %d' % (name, '#' * ticks, value))\n\ndraw_bars([('x', 4), ('y', 2)], 8)\ndraw_bars([('a', 1), ('b', 4)], 8)",
+   "answer": "x | ######## 4\ny | #### 2\na | ## 1\nb | ######## 4"
+  },
+  {
+   "lesson": "py4e.ch16.l5",
+   "id": "ex2.trace-hour",
+   "code": "import re\nline = 'Date: Fri, 4 Jan 2008 16:10:39'\nm = re.search(r'^Date: .* ([0-9][0-9]):', line)\nprint(bool(m))\nprint(m.group(1))",
+   "answer": "True\n16"
+  },
+  {
+   "lesson": "py4e.ch16.l6",
+   "id": "ex1.trace-summary",
+   "code": "hours = {'09': 3, '14': 1}\nprint(len(hours))\nprint(sum(hours.values()))\nbest = None\nfor h in hours:\n    if best is None or hours[h] > hours[best]:\n        best = h\nprint('peak hour: %s' % best)",
+   "answer": "2\n4\npeak hour: 09"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "py4e.ch16.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "place = 'Kokshetau'\nlat = 53.2833333\nlng = 69.3833333\nprint('%s -> %s, %s' % (place, lat, lng))\nprint(lat > 0, lng > 0)"
+  },
+  {
+   "lesson": "py4e.ch16.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import json\n\npayload = '''\n{\n  \"status\": \"OK\",\n  \"results\": [\n    { \"formatted_address\": \"Northeastern University, Boston, MA 02115, USA\", \"lat\": 42.3396998, \"lng\": -71.08975, \"place_id\": \"ChIJ0X6Y1cdw44kRfCQ5p1WHWvA\" },\n    { \"formatted_address\": \"Bradley University, Peoria, IL 61625, USA\", \"lat\": 40.6963857, \"lng\": -89.6160811, \"place_id\": \"ChIJN1t_tDeuEmsRUsoyG83frY4\" },\n    { \"formatted_address\": \"Monash University, Clayton VIC 3800, Australia\", \"lat\": -37.9152113, \"lng\": 145.134682, \"place_id\": \"ChIJrTLrKyuEj4ARi29s3WvMx0Q\" }\n  ]\n}'''\n\njs = json.loads(payload)\n\nplace = None\nif js['status'] == 'OK':\n    place = js\n\nif place is None:\n    print('status: error')\nelse:\n    print('places: %d' % len(place['results']))\n    for r in place['results']:\n        name = r['formatted_address'].split(',')[0]\n        print('%s -> %s, %s' % (name, r['lat'], r['lng']))\n    first = place['results'][0]\n    print('first place id: %s' % first['place_id'])"
+  },
+  {
+   "lesson": "py4e.ch16.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — خدمتك الجغرافية\n# Your playground — your own geo service\n\nimport json\n\npayload = '{\"status\": \"OK\", \"results\": [{\"formatted_address\": \"Atlantic Ocean\", \"lat\": -15.0, \"lng\": -30.0, \"place_id\": \"ChIJTEST\"}]}'\n\njs = json.loads(payload)\nplace = None\nif js[\"status\"] == \"OK\":\n    place = js\n\nif place is None:\n    print(\"status: error\")\nelse:\n    r = place[\"results\"][0]\n    print(\"%s -> %s, %s\" % (r[\"formatted_address\"], r[\"lat\"], r[\"lng\"]))\n    print(\"north of equator: %s\" % (r[\"lat\"] > 0))\n    print(\"east of Greenwich: %s\" % (r[\"lng\"] > 0))\n\n# جرّب: اجعل status ZERO_RESULTS وresults قائمة فارغة — هل يحميك الحارس؟ / try: set status to ZERO_RESULTS with an empty results list — does the guard protect you?\n# جرّب: أضف نتيجة ثانية لعنوان جامعتك واطبعها / try: add a second result for your own university and print it"
+  },
+  {
+   "lesson": "py4e.ch16.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "lat = 42.3396998\nlng = -71.08975\nlabel = 'Northeastern University'\nprint('[%s, %s, %s]' % (lat, lng, label))\nprint(\"[%s, %s, '%s']\" % (lat, lng, label))"
+  },
+  {
+   "lesson": "py4e.ch16.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "rows = [\n    [42.3396998, -71.08975, 'Northeastern University, Boston, MA 02115, USA'],\n    [40.6963857, -89.6160811, 'Bradley University, Peoria, IL 61625, USA'],\n    [-37.9152113, 145.134682, 'Monash University, Clayton VIC 3800, Australia'],\n    [53.2833333, 69.3833333, 'Kokshetau, Kazakhstan'],\n]\nlines = ['myData = [']\nfor row in rows:\n    lines.append(\"[%s, %s, '%s'],\" % (row[0], row[1], row[2]))\nlines.append('];')\ncontent = '\\n'.join(lines)\n\nout = open('where-l16.js', 'w')\nout.write(content)\nout.close()\n\nfhand = open('where-l16.js')\nback = fhand.read()\nfhand.close()\n\nprint('records: %d' % len(rows))\nprint('lines: %d' % len(back.split('\\n')))\nprint('marker found: %s' % ('myData = [' in back))\nprint(\"row found: %s\" % (\"[53.2833333, 69.3833333, 'Kokshetau, Kazakhstan'],\" in back))"
+  },
+  {
+   "lesson": "py4e.ch16.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — مولّد خرائطك\n# Your playground — your own map generator\n\nrows = [\n    [53.2833333, 69.3833333, 'Kokshetau, Kazakhstan'],\n    [-37.9152113, 145.134682, 'Monash University, Clayton VIC 3800, Australia'],\n]\nlines = ['myData = [']\nfor row in rows:\n    lines.append(\"[%s, %s, '%s'],\" % (row[0], row[1], row[2]))\nlines.append('];')\ncontent = '\\n'.join(lines)\n\nout = open('where-l16.js', 'w')\nout.write(content)\nout.close()\nprint(open('where-l16.js').read())\n\n# جرّب: أضف صفًّا لجامعة من بلدك ولاحظ عدد الأسطر / try: add a row for a university from your country and watch the line count\n# جرّب: انزع الاقتباسين حول التسمية واقرأ الملف — ماذا فسد؟ / try: drop the quotes around the label, read the file — what broke?\n# جرّب: افتح الملف بوضع 'a' مرتين — هل تتراكم السجلات؟ / try: open the file in 'a' mode twice — do records pile up?"
+  },
+  {
+   "lesson": "py4e.ch16.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "counts = dict()\nlinks = [('a', 'b'), ('a', 'c')]\nfor a, b in links:\n    counts[a] = counts.get(a, 0) + 1\n    counts[b] = counts.get(b, 0) + 1\nprint(counts)"
+  },
+  {
+   "lesson": "py4e.ch16.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "links = [\n    ('home', 'blog'), ('home', 'resume'), ('home', 'speaking'),\n    ('blog', 'home'), ('resume', 'home'), ('speaking', 'home'),\n    ('blog', 'cv'), ('cv', 'blog'),\n]\ncounts = dict()\nfor a, b in links:\n    counts[a] = counts.get(a, 0) + 1\n    counts[b] = counts.get(b, 0) + 1\n\nfor name in sorted(counts):\n    print('node: %s %d' % (name, counts[name]))\n\nbest = None\nfor name in counts:\n    if best is None or counts[name] > counts[best]:\n        best = name\nprint('hub: %s %d' % (best, counts[best]))\nprint('links: %d' % len(links))"
+  },
+  {
+   "lesson": "py4e.ch16.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — شبكتك الصغيرة\n# Your playground — your own little network\n\nlinks = [\n    ('home', 'blog'), ('home', 'resume'), ('home', 'speaking'),\n    ('blog', 'home'), ('resume', 'home'), ('speaking', 'home'),\n    ('blog', 'cv'), ('cv', 'blog'),\n]\ncounts = dict()\nfor a, b in links:\n    counts[a] = counts.get(a, 0) + 1\n    counts[b] = counts.get(b, 0) + 1\nprint(counts)\n\n# جرّب: أضف رابطًا من cv إلى home — من يرتفع؟ / try: add a link from cv to home — whose degree rises?\n# جرّب: أحسب مجموع الدرجات وقارنه بضعف len(links) / try: sum the degrees and compare with 2 * len(links)\n# جرّب: رابط عقدة لنفسها ('x', 'x') — كم ترفع درجتها؟ / try: a self-link (x, x) — how much does it add?"
+  },
+  {
+   "lesson": "py4e.ch16.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "name = 'chuck'\ncount = 8\nbar = '#' * count\nprint(bar)\nprint('%s | %s %d' % (name, bar, count))"
+  },
+  {
+   "lesson": "py4e.ch16.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "def draw_bars(pairs, width):\n    biggest = 0\n    for name, value in pairs:\n        if value > biggest:\n            biggest = value\n    for name, value in pairs:\n        ticks = int(width * value / biggest)\n        print('%s | %s %d' % (name, '#' * ticks, value))\n\ncounts = {'gmail.com': 8, 'umich.edu': 6, 'uct.ac.za': 4, 'indiana.edu': 2}\nranked = []\nfor name, value in counts.items():\n    ranked.append((value, name))\nranked.sort(reverse=True)\nordered = []\nfor value, name in ranked:\n    ordered.append((name, value))\ndraw_bars(ordered, 12)"
+  },
+  {
+   "lesson": "py4e.ch16.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — استوديو الأشرطة\n# Your playground — the bar studio\n\ndef draw_bars(pairs, width):\n    biggest = 0\n    for name, value in pairs:\n        if value > biggest:\n            biggest = value\n    for name, value in pairs:\n        ticks = int(width * value / biggest)\n        print(\"%s | %s %d\" % (name, \"#\" * ticks, value))\n\nhours = {\"09\": 6, \"10\": 4, \"11\": 1}\npairs = []\nfor hour in sorted(hours):\n    pairs.append((\"hour \" + hour, hours[hour]))\ndraw_bars(pairs, 10)\n\n# جرّب: غيّر العرض من 10 إلى 40 ثم إلى 2 — متى يختفي شريط القيمة 1؟ / try: change the width from 10 to 40 then to 2 — when does the bar of value 1 vanish?\n# جرّب: أضف ساعة جديدة بقيمة كبيرة وراقب انكماش البقية / try: add a new hour with a big value and watch the rest shrink\n# جرّب: أعط الدالة أزواجًا غير مرتبة — هل ترتبها؟ / try: hand the function unsorted pairs — does it sort them?"
+  },
+  {
+   "lesson": "py4e.ch16.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "line = 'Date: Sat, 5 Jan 2008 09:14:16'\nprint(line.startswith('Date:'))\nprint(line.split()[5])"
+  },
+  {
+   "lesson": "py4e.ch16.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import re\n\nlines = [\n    'Date: Sat, 5 Jan 2008 09:14:16',\n    'From: stephen.marquard@uct.ac.za',\n    '',\n    'Date: Sat, 5 Jan 2008 18:44:02',\n    'From: louis@media.berkeley.edu',\n    '',\n    'Date: Sat, 5 Jan 2008 09:01:44',\n    'From: zqian@umich.edu',\n    '',\n    'Date: Fri, 4 Jan 2008 11:35:08',\n    'From: stephen.marquard@uct.ac.za',\n    '',\n    'Date: Fri, 4 Jan 2008 16:10:39',\n    'From: david.horwitz@uct.ac.za',\n    '',\n    'Date: Fri, 4 Jan 2008 07:02:32',\n    'From: louis@media.berkeley.edu',\n]\nhours = dict()\nfor line in lines:\n    line = line.strip()\n    if not line.startswith('Date:'):\n        continue\n    m = re.search(r'^Date: .* ([0-9][0-9]):', line)\n    if m is None:\n        continue\n    hour = m.group(1)\n    hours[hour] = hours.get(hour, 0) + 1\n\nfor hour in sorted(hours):\n    print('hour %s: %d' % (hour, hours[hour]))\nbest = None\nfor hour in hours:\n    if best is None or hours[hour] > hours[best]:\n        best = hour\nprint('peak hour: %s' % best)\nprint('messages: %d' % sum(hours.values()))"
+  },
+  {
+   "lesson": "py4e.ch16.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — مدرجك الزمني\n# Your playground — your own time histogram\n\nimport re\n\nlines = [\n    'Date: Sat, 5 Jan 2008 09:14:16',\n    'Date: Sat, 5 Jan 2008 09:45:20',\n    'Date: Sat, 5 Jan 2008 14:20:33',\n    'Date: Fri, 4 Jan 2008 22:11:59',\n]\nhours = dict()\nfor line in lines:\n    m = re.search(r'^Date: .* ([0-9][0-9]):', line)\n    if m is not None:\n        hour = m.group(1)\n        hours[hour] = hours.get(hour, 0) + 1\nprint(hours)\n\n# جرّب: أضف رسالة منتصف الليل 00:30 — أين تفرز بين 22 و00؟ / try: add a midnight message 00:30 — how does it sort between 22 and 00?\n# جرّب: انزع المرساة ^ من النمط — هل يتغير شيء على هذه الأسطر؟ / try: drop the ^ anchor — does anything change on these lines?\n# جرّب: احسب متوسط الساعة بعد تحويل المفاتيح إلى أعداد بـ int / try: compute the average hour after converting keys with int"
+  },
+  {
+   "lesson": "py4e.ch16.l6",
+   "kind": "predict",
+   "id": "predict",
+   "code": "hours = {'09': 3, '14': 1}\nprint(len(hours))\nprint(sum(hours.values()))"
+  },
+  {
+   "lesson": "py4e.ch16.l6",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import re\n\nmessages = [\n    ('Date: Sat, 5 Jan 2008 09:14:16', 'From: stephen.marquard@uct.ac.za'),\n    ('Date: Sat, 5 Jan 2008 09:45:20', 'From: zqian@umich.edu'),\n    ('Date: Sat, 5 Jan 2008 09:58:03', 'From: stephen.marquard@uct.ac.za'),\n    ('Date: Sat, 5 Jan 2008 18:44:02', 'From: zqian@umich.edu'),\n    ('Date: Fri, 4 Jan 2008 07:02:32', 'From: stephen.marquard@uct.ac.za'),\n    ('Date: Fri, 4 Jan 2008 16:10:39', 'From: csev@umich.edu'),\n]\nhours = dict()\nsenders = dict()\nfor date_line, from_line in messages:\n    m = re.search(r'^Date: .* ([0-9][0-9]):', date_line)\n    hour = m.group(1)\n    hours[hour] = hours.get(hour, 0) + 1\n    sender = from_line[6:]\n    senders[sender] = senders.get(sender, 0) + 1\n\nbest = None\nfor hour in hours:\n    if best is None or hours[hour] > hours[best]:\n        best = hour\ntop = None\nfor sender in senders:\n    if top is None or senders[sender] > senders[top]:\n        top = sender\nprint('messages: %d' % sum(hours.values()))\nprint('peak hour: %02d' % int(best))\nprint('top sender: %s' % top)"
+  },
+  {
+   "lesson": "py4e.ch16.l6",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — لوحتك البريدية الكاملة\n# Your playground — your full mail dashboard\n\nimport re\n\nlog = [\n    'Date: Sat, 5 Jan 2008 09:14:16',\n    'From: stephen.marquard@uct.ac.za',\n    'Date: Sat, 5 Jan 2008 09:45:20',\n    'From: zqian@umich.edu',\n    'Date: Sat, 5 Jan 2008 14:20:33',\n    'From: csev@umich.edu',\n]\nhours = dict()\ndays = dict()\nfor line in log:\n    m = re.search(r'^Date: ([A-Z][a-z][a-z]), .* ([0-9][0-9]):', line)\n    if m is not None:\n        day = m.group(1)\n        days[day] = days.get(day, 0) + 1\n        hour = m.group(2)\n        hours[hour] = hours.get(hour, 0) + 1\nprint(days)\nprint(hours)\n\n# جرّب: مجموعة ثانية للنطاق من عنوان المرسل — من ينشر من uct.ac.za؟ / try: a second group for the sender domain — who posts from uct.ac.za?\n# جرّب: ادمج days وhours في تقرير ذي عمودين / try: merge days and hours into a two-column report"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "py4e.ch16.l1",
+   "id": "ex3.mcq-cache",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch16.l2",
+   "id": "ex3.mcq-wherehtml",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch16.l3",
+   "id": "ex3.mcq-degree",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch16.l4",
+   "id": "ex4.mcq-scale",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch16.l5",
+   "id": "ex3.mcq-pipeline",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch16.l6",
+   "id": "ex3.mcq-recipe",
+   "answer": "a",
+   "solution": "a"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "py4e.ch16.l1",
+   "id": "ex4.fill-latitude",
+   "answer": "latitude"
+  },
+  {
+   "lesson": "py4e.ch16.l2",
+   "id": "ex4.fill-mydata",
+   "answer": "myData"
+  },
+  {
+   "lesson": "py4e.ch16.l3",
+   "id": "ex4.fill-degree",
+   "answer": "degree"
+  },
+  {
+   "lesson": "py4e.ch16.l5",
+   "id": "ex4.fill-histogram",
+   "answer": "histogram"
+  }
+ ],
+ "numerics": [
+  {
+   "lesson": "py4e.ch16.l4",
+   "id": "ex3.numeric-width",
+   "answer": "12"
+  },
+  {
+   "lesson": "py4e.ch16.l6",
+   "id": "ex4.numeric-sum",
+   "answer": "6"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "py4e.ch16.l6",
+   "id": "ex5.debug-wrong-header",
+   "brokenCode": "import re\n\nlog = [\n    'Received: from mail.uct.ac.za by umich.edu; Sat, 5 Jan 2008 11:12:31',\n    'Date: Sat, 5 Jan 2008 09:14:16',\n    'From: stephen.marquard@uct.ac.za',\n    '',\n    'Received: from mail.uct.ac.za by umich.edu; Sat, 5 Jan 2008 11:47:02',\n    'Date: Sat, 5 Jan 2008 09:45:20',\n    'From: zqian@umich.edu',\n    '',\n    'Received: from umich.edu by uct.ac.za; Sat, 5 Jan 2008 11:59:44',\n    'Date: Sat, 5 Jan 2008 09:58:03',\n    'From: stephen.marquard@uct.ac.za',\n    '',\n    'Received: from uct.ac.za by mail.berkeley.edu; Sat, 5 Jan 2008 16:20:55',\n    'Date: Sat, 5 Jan 2008 14:20:33',\n    'From: csev@umich.edu',\n]\n\nhours = dict()\nfor line in log:\n    line = line.strip()\n    if not line.startswith('Received:'):  # الترويسة الخطأ / the wrong header\n        continue\n    m = re.search(r'^Received: .* ([0-9][0-9]):', line)\n    if m is None:\n        continue\n    hour = m.group(1)\n    hours[hour] = hours.get(hour, 0) + 1\nfor hour in sorted(hours):\n    print('hour %s: %d' % (hour, hours[hour]))\nbest = None\nfor hour in hours:\n    if best is None or hours[hour] > hours[best]:\n        best = hour\nprint('peak hour: %s' % best)\nprint('messages: %d' % sum(hours.values()))"
+  }
+ ]
+}

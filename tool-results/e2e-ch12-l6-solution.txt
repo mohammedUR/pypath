@@ -1,0 +1,12 @@
+import re
+response = 'HTTP/1.1 200 OK\nDate: Mon, 01 Jan 2024 00:00:00 GMT\nServer: Apache\nContent-Type: text/html\nContent-Length: 97\n\nArise fair sun\n<a href="http://www.py4e.com">book</a>\n<a href="http://www.dr-chuck.com">chuck</a>'
+head, body = response.split('\n\n', 1)
+status = head.split('\n')[0].split()
+print('%s %s' % (status[1], status[2]))
+print('headers: %d' % (len(head.split('\n')) - 1))
+print('lines: %d' % len(body.split('\n')))
+print('words: %d' % len(body.split()))
+links = re.findall('href="([^"]+)"', body)
+print('links: %d' % len(links))
+for link in links:
+    print('link: %s' % link)

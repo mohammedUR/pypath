@@ -1,0 +1,402 @@
+    30→    30→        ar: 'مهندس تشغيل جديد يجلس معك أمام تطبيق المراسلة. سؤالاه: "أي خادم يشغّل مخزن المرفقات؟" و"إذا سقط مخزن المرفقات، هل تبقى رسائل النص تتدفق؟" أمامك مخطط الأصناف الجميل من الدرس الماضي — ولا يجيب عن أيٍّ من السؤالين. المخططات الساكنة تصف البنية، لا وقت التشغيل ولا النشر. هذا الدرس يعلّمك أن ترى النظام من عدة زوايا، ثم أن تكتب ما تراه حتى يجيب المستجدون عن أسئلتهم بأنفسهم.',
+    31→    31→        en: 'A new operations engineer sits with you in front of the messaging app. Their two questions: "which server runs the attachment store?" and "if the attachment store falls over, do text messages keep flowing?" In front of you is the beautiful class diagram from the last lesson — and it answers neither question. Static diagrams describe structure, not runtime and not deployment. This lesson teaches you to see the system from several angles, then to write down what you see so newcomers can answer their own questions.',
+    32→    32→      },
+    33→    33→    },
+    34→    34→    {
+    35→    35→      kind: 'predict',
+    36→    36→      code: `MODULES = {"messaging"}                     # one box in the development view
+    37→    37→PROCESSES = {"router", "sender", "sync"}    # three processes at runtime
+    38→    38→NODES = {"app-1", "app-2"}                  # two machines in the deployment view
+    39→    39→
+    40→    40→print("one thing, three views:", len(MODULES), len(PROCESSES), len(NODES))`,
+    41→    41→      question: {
+    42→    42→        ar: 'قبل التنفيذ: الشيء نفسه يُرى من ثلاثة مناظر. كم صندوقًا تمثل messaging في منظر التطوير، ومنظر التشغيل، ومنظر النشر؟',
+    43→    43→        en: 'Before running: the same thing seen through three views. How many boxes does messaging occupy in the development view, the process view, and the deployment view?',
+    44→    44→      },
+    45→    45→      reveal: {
+    46→    46→        ar: 'واحد وثلاثة واثنان: الصندوق الواحد في منظر التطوير ينشطر عند التشغيل إلى ثلاث عمليات ويهبط على جهازين في النشر. لذلك منظر لكل زاوية: مخطط واحد يجمع الثلاثة يخرج خاطئًا من كل زاوية.',
+    47→    47→        en: 'One, three, two: a single box in the development view splits into three processes at runtime and lands on two machines in deployment. Hence one view per angle: a diagram forcing them together is wrong from every angle.',
+    48→    48→      },
+    49→    49→    },
+    50→    50→    {
+    51→    51→      kind: 'concept',
+    52→    52→      heading: {
+    53→    53→        ar: 'لا مخطط واحد يكفي: مناظر لأسئلة مختلفة',
+    54→    54→        en: 'No Single Diagram Suffices: Views for Different Questions',
+    55→    55→      },
+    56→    56→      chunks: [
+    57→    57→        {
+    58→    58→          ar: 'لا يلتقط مخطط واحد نظامًا كاملًا، تمامًا كما لا تلتقط صورة واحدة مبنى كاملًا. أصحاب المصلحة يسألون أسئلة مختلفة: ما المسؤوليات؟ كيف يتصرف تحت الحمل؟ كيف أبني الشيفرة؟ أي خادم يشغّل ماذا؟ وكل سؤال تجيبه صورة مختلفة. المنظر view هو تمثيل للنظام من زاوية واحدة، وتجمع صيغة 4+1 الشهيرة هذه المناظر. المنظر المنطقي logical يعرض التجريدات الأساسية: الأصناف ومسؤولياتها — وهنا تسكن مخططات الأصناف. منظر العملية process يعرض النظام وقت التشغيل: العمليات، اتصالها، الاختناقات، الإنتاجية، التوافر. منظر التطوير development خريطة المبرمج: الوحدات والحزم والطبقات وما يجوز أن يعتمد على ماذا. والمنظر الفيزيائي deployment يوزع البرمجيات على العقد: ماذا يعمل أين. والـ +1 سيناريوهات: حالات استخدام قليلة تجول عبر المناظر الأربعة فتفحص اتساقها.',
+    59→    59→          en: 'A single diagram cannot capture a whole system any more than one photograph captures a building. Stakeholders ask different questions — what are the responsibilities? how does it behave under load? how do I build the code? which server runs what? — and each question is best answered by a different picture. A view is a representation of the system from one such perspective, and the 4+1 grouping ties them together. The logical view shows the key abstractions: classes and their responsibilities — class diagrams live here. The process view shows the system at runtime: processes, how they communicate, deadlocks, throughput, availability. The development view is the programmer\'s map: modules, packages, layers, what may depend on what. The physical or deployment view maps software onto nodes: what actually runs where. The +1 is scenarios — a few use cases walked through all four views, checking that they agree.',
+    60→    60→        },
+    61→    61→      ],
+    62→    62→    },
+    63→    63→    {
+    64→    64→      kind: 'concept',
+    65→    65→      heading: { ar: 'الهيكل مقابل المنظر: ثلاث عائلات', en: 'Structure versus View: Three Families' },
+    66→    66→      chunks: [
+    67→    67→        {
+    68→    68→          ar: 'فرّق بين كلمتين: الهيكل structure شيء واقعي في النظام — الوحدات الحقيقية وتبعياتها، وعمليات التشغيل الفعلية. والمنظر view تمثيلٌ لذلك الهيكل مرسوم لجمهور. أكثر الالتباسات المعمارية سببها الخلط بين ثلاث عائلات من الهياكل: هياكل الوحدات module تقسم النظام إلى وحدات كود — وحدات وأصناف وطبقات — بعلاقات جزء-من ويعتمد-على وهو-نوع. هياكل المكوّن والموصل component-and-connector تقسمه إلى وحدات لها حضور وقت التشغيل — عمليات وخدمات وعملاء وخوادم — تصلها موصلات: استدعاءات وقنوات وطوابير رسائل. وهياكل التوزيع allocation تخيط البرمجيات على بيئتها: عقد عتادية، وفرق تملك، وملفات مستودع. الفخ: الصندوق الواحد في منظر قد يكون عدة أشياء في آخر — وحدة messaging واحدة قد تكون ثلاث عمليات على جهازين. اجبر كل ذلك في مخطط واحد فتحصل على صورة خاطئة من كل زاوية. ارسم هيكلًا واحدًا لكل منظر، وسمِّ المنظر، وقل لمن هو.',
+    69→    69→          en: 'Keep two words apart: a structure is real — the actual modules and their dependencies, the actual runtime processes. A view is that structure drawn for an audience. Most architectural confusion is a failure to keep three structure families apart. Module structures divide the system into units of code — modules, classes, layers — with is-part-of, depends-on, and is-a relations. Component-and-connector structures divide it into units with runtime presence — processes, services, clients, servers — joined by connectors: calls, channels, message queues. Allocation structures map software onto its environment: onto nodes, onto owning teams, onto repository files. The trap: one box may be several things in another view — a single messaging module can be three processes at runtime on two machines. Force all that into one diagram and the picture is wrong from every angle. Draw one structure per view, name it, say who it is for.',
+    70→    70→        },
+    71→    71→      ],
+    72→    72→    },
+    73→    73→    {
+    74→    74→      kind: 'concept',
+    75→    75→      heading: {
+    76→    76→        ar: 'اكتبها حتى يجول فيها المستجدون',
+    77→    77→        en: 'Write It Down So Newcomers Can Navigate',
+    78→    78→      },
+    79→    79→      chunks: [
+    80→    80→        {
+    81→    81→          ar: 'في فريق، القرار المعماري بلا قيمة إن عاش في رأس صاحبه وحده. اكتبه — لا كتابًا، بل صفحات حية قليلة بجوار الشيفرة. مخطط مجدٍ: السياق والأهداف أولًا، وبخاصة متطلبات الجودة التي تقود كل ما بعدها؛ ثم القيود والقرارات المهمة، لكل قرار سبب من سطر واحد — تدوين لماذا هو ما يتيح لمهندس المستقبل أن يراجع ماذا بأمان؛ ثم قسم لكل منظر اخترته؛ ثم السيناريوهات المفتاحية تجول عبر المناظر؛ وأخيرًا المخاطر والأسئلة المفتوحة، فوثيقة تعترف بشكوكها أنفع من واحدة تتظاهر باليقين. وداخل منظر التطوير: طبقات تسمح للعليا بالاعتماد على الدنيا لا العكس؛ ونموذج المجال domain لا يعتمد على شيء تحته؛ والواجهة ملك للطبقة التي تحتاجها بينما تتحقق التنفيذات منها من الأسفل — انعكاس تبعية ملموس يجعل تبديل تفصيل متقلب مسًّا لوحدة واحدة.',
+    82→    82→          en: 'On a team, an architecture decision is worthless if it lives only in the head of the person who made it. Write it down — a few living pages next to the code, not a book. A serviceable outline: context and goals first, especially the quality requirements that drive everything after; then constraints and the significant decisions, each with a one-line rationale — recording why lets a future engineer revisit the what; then one section per view you chose; then key scenarios walked through the views; finally risks and open questions — a document that admits its doubts beats one pretending to certainty. Inside the development view: higher layers may depend on lower ones, never the reverse; the domain model depends on nothing below it; an interface belongs to the layer that needs it while implementations conform from below — so swapping a volatile detail touches one module.',
+    83→    83→        },
+    84→    84→      ],
+    85→    85→    },
+    86→    86→    {
+    87→    87→      kind: 'worked',
+    88→    88→      title: { ar: 'نظام واحد، ثلاثة جداول، ثلاثة أسئلة', en: 'One system, three tables, three questions' },
+    89→    89→      code: `MODULES = {                      # development view: what may depend on what
+    90→    90→    "ui": ["router", "domain"],
+    91→    91→    "router": ["domain", "transport"],
+    92→    92→    "domain": [],                # design rule: the domain depends on nothing
+    93→    93→    "storage": ["domain"],
+    94→    94→    "transport": [],
+    95→    95→}
+    96→    96→TALKS = {                        # process view: who talks to whom at runtime
+    97→    97→    "web_ui": ["gateway"],
+    98→    98→    "gateway": ["router", "store"],
+    99→    99→    "router": ["store"],
+   100→   100→    "store": [],
+   101→   101→}
+   102→   102→NODES = {                        # deployment view: what runs where
+   103→   103→    "client": ["web_ui"],
+   104→   104→    "server": ["gateway", "router"],
+   105→   105→    "backup": ["store"],
+   106→   106→}
+   107→   107→
+   108→   108→def runs_on(node):
+   109→   109→    return " ".join(sorted(NODES[node]))
+   110→   110→
+   111→   111→def who_talks_to(comp):
+   112→   112→    return " ".join(sorted(s for s, d in TALKS.items() if comp in d))
+   113→   113→
+   114→   114→print("views: module process deployment")
+   115→   115→print("backup runs:", runs_on("backup"))
+   116→   116→print("talks to store:", who_talks_to("store"))
+   117→   117→print("domain deps:", " ".join(MODULES["domain"]) or "none")`,
+   118→   118→      explanation: {
+   119→   119→        ar: 'ثلاثة جداول صغيرة وثلاثة أسئلة مختلفة: NODES يجيب مهندس العمليات (ماذا يعمل أين؟)، وTALKS يجيب من يسأل عن التفاعل وقت التشغيل، وMODULES يجيب المبرمج الجديد عن التبعيات. ولاحظ القاعدة المكتوبة في الجدول نفسه: domain لا يعتمد على شيء — قرار معماري مرئي في سطر فارغ.',
+   120→   120→        en: 'Three small tables, three different questions: NODES answers the operations engineer (what runs where), TALKS answers whoever asks about runtime interaction, MODULES answers the new programmer about dependencies. Notice the rule written into the table itself: domain depends on nothing — an architectural decision visible in one empty line.',
+   121→   121→      },
+   122→   122→    },
+   123→   123→    {
+   124→   124→      kind: 'exercise',
+   125→   125→      id: 'ex1.view-queries',
+   126→   126→      exKind: 'write_code',
+   127→   127→      required: true,
+   128→   128→      prompt: {
+   129→   129→        ar: 'أمامك النظام نفسه في ثلاثة جداول. أكمل الدالتين components_on وtalks_to ثم نفّذ السطور الثلاثة الأخيرة كما هي دون تغيير.',
+   130→   130→        en: 'Here is the same system in three tables. Complete components_on and talks_to, then run the last three lines unchanged.',
+   131→   131→      },
+   132→   132→      starterCode: `MODULES = {
+   133→   133→    "ui": ["router", "domain"],
+   134→   134→    "router": ["domain", "transport"],
+   135→   135→    "domain": [],
+   136→   136→    "storage": ["domain"],
+   137→   137→    "transport": [],
+   138→   138→}
+   139→   139→TALKS = {
+   140→   140→    "web_ui": ["gateway"],
+   141→   141→    "gateway": ["router", "store"],
+   142→   142→    "router": ["store"],
+   143→   143→    "store": [],
+   144→   144→}
+   145→   145→NODES = {
+   146→   146→    "client": ["web_ui"],
+   147→   147→    "server": ["gateway", "router"],
+   148→   148→    "backup": ["store"],
+   149→   149→}
+   150→   150→
+   151→   151→def components_on(node):
+   152→   152→    ...  # deployment view: the sorted list of components placed on node
+   153→   153→
+   154→   154→def talks_to(comp):
+   155→   155→    ...  # process view: sorted sources whose list contains comp
+   156→   156→
+   157→   157→print("server runs:", " ".join(components_on("server")))
+   158→   158→print("talks to store:", " ".join(talks_to("store")))
+   159→   159→print("router deps:", " ".join(MODULES["router"]))`,
+   160→   160→      solution: `MODULES = {
+   161→   161→    "ui": ["router", "domain"],
+   162→   162→    "router": ["domain", "transport"],
+   163→   163→    "domain": [],
+   164→   164→    "storage": ["domain"],
+   165→   165→    "transport": [],
+   166→   166→}
+   167→   167→TALKS = {
+   168→   168→    "web_ui": ["gateway"],
+   169→   169→    "gateway": ["router", "store"],
+   170→   170→    "router": ["store"],
+   171→   171→    "store": [],
+   172→   172→}
+   173→   173→NODES = {
+   174→   174→    "client": ["web_ui"],
+   175→   175→    "server": ["gateway", "router"],
+   176→   176→    "backup": ["store"],
+   177→   177→}
+   178→   178→
+   179→   179→def components_on(node):
+   180→   180→    return sorted(NODES[node])
+   181→   181→
+   182→   182→def talks_to(comp):
+   183→   183→    return sorted(src for src, dsts in TALKS.items() if comp in dsts)
+   184→   184→
+   185→   185→print("server runs:", " ".join(components_on("server")))
+   186→   186→print("talks to store:", " ".join(talks_to("store")))
+   187→   187→print("router deps:", " ".join(MODULES["router"]))`,
+   188→   188→      tests: [
+   189→   189→        {
+   190→   190→          id: 't1',
+   191→   191→          name: { ar: 'سطر النشر صحيح', en: 'deployment line is right' },
+   192→   192→          code: `assert 'server runs: gateway router' in __learner_output__, 'expected: server runs: gateway router | actual: %r' % __learner_output__`,
+   193→   193→        },
+   194→   194→        {
+   195→   195→          id: 't2',
+   196→   196→          name: { ar: 'سطر التشغيل صحيح', en: 'runtime line is right' },
+   197→   197→          code: `assert 'talks to store: gateway router' in __learner_output__, 'expected: talks to store: gateway router | actual: %r' % __learner_output__`,
+   198→   198→        },
+   199→   199→        {
+   200→   200→          id: 't3',
+   201→   201→          name: { ar: 'استعلام عقدة أخرى', en: 'another node query' },
+   202→   202→          code: `assert components_on("backup") == ["store"], 'expected: ["store"] | actual: %r' % components_on("backup")`,
+   203→   203→        },
+   204→   204→      ],
+   205→   205→      hints: [
+   206→   206→        { ar: 'components_on تعمل على منظر النشر وحده: أعد قائمة NODES[node] مرتبة أبجديًا.', en: 'components_on only touches the deployment view: return NODES[node] sorted alphabetically.' },
+   207→   207→        { ar: 'talks_to تبحث في منظر التشغيل: اجمع كل src قائمته تحوي comp ثم رتّبها.', en: 'talks_to searches the process view: collect every src whose list contains comp, then sort.' },
+   208→   208→        { ar: 'الصياغة: return sorted(src for src, dsts in TALKS.items() if comp in dsts).', en: 'The shape: return sorted(src for src, dsts in TALKS.items() if comp in dsts).' },
+   209→   209→        { ar: 'الناتج المطلوب: server runs: gateway router ثم talks to store: gateway router ثم router deps: domain transport.', en: 'Required output: server runs: gateway router, then talks to store: gateway router, then router deps: domain transport.' },
+   210→   210→      ],
+   211→   211→    },
+   212→   212→    {
+   213→   213→      kind: 'exercise',
+   214→   214→      id: 'ex2.which-view',
+   215→   215→      exKind: 'mcq',
+   216→   216→      required: true,
+   217→   217→      prompt: {
+   218→   218→        ar: 'تعطّل مخزن المرفقات فجأة. أي منظر يجيب عن سؤال: "هل تبقى رسائل النص تتدفق؟"',
+   219→   219→        en: 'The attachment store suddenly goes down. Which view answers: "do text messages keep flowing?"',
+   220→   220→      },
+   221→   221→      options: [
+   222→   222→        { id: 'a', text: { ar: 'منظر النشر deployment — يخبرنا أين يسكن المخزن', en: 'deployment view — tells us where the store lives' } },
+   223→   223→        { id: 'b', text: { ar: 'منظر العملية process — يعرض التفاعل وقت التشغيل والموصل غير المتزامن نحو المخزن', en: 'process view — shows runtime interaction, including the asynchronous connector toward the store' } },
+   224→   224→        { id: 'c', text: { ar: 'منظر التطوير development — يعرض تبعيات الوحدات وقت البناء', en: 'development view — shows build-time module dependencies' } },
+   225→   225→        { id: 'd', text: { ar: 'مخطط الأصناف — يعرض خصائص المخزن وعملياته', en: 'the class diagram — shows the store\'s attributes and operations' } },
+   226→   226→      ],
+   227→   227→      answer: 'b',
+   228→   228→      solution: 'b',
+   229→   229→      hints: [
+   230→   230→        { ar: 'السؤال عن سلوك وقت التشغيل: من يتبادل الرسائل مع من، ومن لا يحجب من.', en: 'The question is about runtime behavior: who exchanges messages with whom, and who does not block.' },
+   231→   231→        { ar: 'منظر النشر يجيب عن "أين" لا عن "ماذا يحدث حين يتعطل شيء".', en: 'The deployment view answers "where", not "what happens when something dies".' },
+   232→   232→        { ar: 'تبعيات البناء وخصائص الأصناف لا تحمل المعلومة المطلوبة أيضًا.', en: 'Build-time dependencies and class attributes do not carry this information either.' },
+   233→   233→        { ar: 'الإجابة: منظر العملية process — نفس منظر المكوّن والموصل.', en: 'The answer: the process view — the component-and-connector view.' },
+   234→   234→      ],
+   235→   235→    },
+   236→   236→    {
+   237→   237→      kind: 'exercise',
+   238→   238→      id: 'ex3.trace-inversion',
+   239→   239→      exKind: 'trace_output',
+   240→   240→      required: true,
+   241→   241→      prompt: {
+   242→   242→        ar: 'MessageRouter لا يعرف شيئًا عن أي ناقل بعينه: يتعامل مع من يوفر deliver، والتنفيذات تتحقق منه من الأسفل. تتبّع المخرج الحرفي.',
+   243→   243→        en: 'MessageRouter knows nothing about any particular transport: it deals with whatever provides deliver, and implementations conform from below. Trace the exact output.',
+   244→   244→      },
+   245→   245→      code: `class MessageRouter:
+   246→   246→    def __init__(self, transport):
+   247→   247→        self._transport = transport
+   248→   248→    def route(self, msg):
+   249→   249→        self._transport.deliver(msg["to"], msg["body"])
+   250→   250→
+   251→   251→class FakeTransport(list):
+   252→   252→    def deliver(self, to, body):
+   253→   253→        self.append(to)
+   254→   254→
+   255→   255→sent = FakeTransport()
+   256→   256→MessageRouter(sent).route({"to": "noor", "body": "hi"})
+   257→   257→MessageRouter(sent).route({"to": "sami", "body": "yo"})
+   258→   258→print("delivered:", len(sent))
+   259→   259→print("first:", sent[0])`,
+   260→   260→      answer: 'delivered: 2\nfirst: noor',
+   261→   261→      solution: 'delivered: 2\nfirst: noor',
+   262→   262→      hints: [
+   263→   263→        { ar: 'كل route يمرر body إلى deliver، لكن deliver في FakeTransport تضيف إلى إلى القائمة وتتجاهل body.', en: 'Each route passes body to deliver, but FakeTransport.deliver appends only to and ignores body.' },
+   264→   264→        { ar: 'استدعاءان، فطول القائمة 2.', en: 'Two calls, so the list length is 2.' },
+   265→   265→        { ar: 'FakeTransport ترث من list، فsent[0] هو أول عنصر أُلحق.', en: 'FakeTransport subclasses list, so sent[0] is the first appended element.' },
+   266→   266→        { ar: 'السطران: delivered: 2 ثم first: noor.', en: 'The two lines: delivered: 2 then first: noor.' },
+   267→   267→      ],
+   268→   268→    },
+   269→   269→    {
+   270→   270→      kind: 'exercise',
+   271→   271→      id: 'ex4.fill-scenarios',
+   272→   272→      exKind: 'fill_blank',
+   273→   273→      required: true,
+   274→   274→      prompt: {
+   275→   275→        ar: 'أكمل المصطلح: في نموذج 4+1، حالات الاستخدام القليلة التي تجول عبر المناظر الأربعة وتلحمها معًا تسمى ______ (كلمة إنجليزية واحدة).',
+   276→   276→        en: 'Complete the term: in the 4+1 model, the few use cases threaded through all four views, gluing them together, are called ______ (one English word).',
+   277→   277→      },
+   278→   278→      answer: 'scenarios',
+   279→   279→      solution: 'scenarios',
+   280→   280→      hints: [
+   281→   281→        { ar: 'هي الـ +1 في 4+1: الغراء الذي يفحص اتساق المناظر.', en: 'They are the +1 in 4+1: the glue that checks the views agree.' },
+   282→   282→        { ar: 'بمفردات الفصل 5 هي حالات استخدام كاملة: فاعل وتدفق.', en: 'In ch5 vocabulary they are full use cases: an actor and a flow.' },
+   283→   283→        { ar: 'وليست مخططات ولا قياسات — قصص يسير القارئ فيها عبر المناظر.', en: 'Not diagrams, not measures — stories a reader walks through the views.' },
+   284→   284→        { ar: 'الكلمة المطلوبة: scenarios.', en: 'The word: scenarios.' },
+   285→   285→      ],
+   286→   286→    },
+   287→   287→    {
+   288→   288→      kind: 'sandbox',
+   289→   289→      starterCode: `MODULES = {
+   290→   290→    "ui": ["router", "domain"],
+   291→   291→    "router": ["domain", "transport"],
+   292→   292→    "domain": [],
+   293→   293→    "storage": ["domain"],
+   294→   294→    "transport": [],
+   295→   295→}
+   296→   296→NODES = {
+   297→   297→    "client": ["web_ui"],
+   298→   298→    "server": ["gateway", "router"],
+   299→   299→    "backup": ["store"],
+   300→   300→}
+   301→   301→
+   302→   302→def components_on(node):
+   303→   303→    return sorted(NODES[node])
+   304→   304→
+   305→   305→print("server runs:", " ".join(components_on("server")))
+   306→   306→
+   307→   307→# Your turn: ops wants the attachment store on its own machine.
+   308→   308→# 1. Move "store" to a new "storage" node in NODES and re-print with
+   309→   309→#    components_on. Which view did you just edit?
+   310→   310→# 2. Now answer a runtime question instead: who talks to "store"?
+   311→   311→#    Write talks_to() over TALKS below and print it. Different view,
+   312→   312→#    different table, same system.
+   313→   313→TALKS = {
+   314→   314→    "web_ui": ["gateway"],
+   315→   315→    "gateway": ["router", "store"],
+   316→   316→    "router": ["store"],
+   317→   317→    "store": [],
+   318→   318→}`,
+   319→   319→      prompt: {
+   320→   320→        ar: 'انقل store إلى عقدة خاصة ثم أجب عن سؤال التشغيل "من يتحدث إلى store؟" من جدول آخر. لاحظ: كل سؤال عدّل منظرًا واحدًا فقط.',
+   321→   321→        en: 'Move store to its own node, then answer the runtime question "who talks to store?" from a different table. Notice: each question edits exactly one view.',
+   322→   322→      },
+   323→   323→    },
+   324→   324→    {
+   325→   325→      kind: 'quiz',
+   326→   326→      id: 'quiz',
+   327→   327→      items: [
+   328→   328→        {
+   329→   329→          id: 'q1',
+   330→   330→          question: {
+   331→   331→            ar: 'الـ +1 في نموذج 4+1: السيناريوهات المفتاحية تُستعار مباشرة من أدوات أي فصل سابق؟',
+   332→   332→            en: 'The +1 of the 4+1 model: which earlier chapter\'s tool do the key scenarios come straight from?',
+   333→   333→          },
+   334→   334→          options: [
+   335→   335→            { id: 'a', text: { ar: 'قصص المستخدم المقدَّرة بالنقاط من الفصل 4', en: 'User stories estimated in points from ch4' } },
+   336→   336→            { id: 'b', text: { ar: 'حالات الاستخدام المكتوبة في الفصل 5: فاعل وتدفق رئيسي وتدفقات بديلة', en: 'Use cases written in ch5: actor, main flow, alternative flows' } },
+   337→   337→            { id: 'c', text: { ar: 'اجتماعات سكرم اليومية من الفصل 2', en: 'Daily scrum meetings from ch2' } },
+   338→   338→            { id: 'd', text: { ar: 'مثلث القيود من الفصل 1', en: 'The iron triangle from ch1' } },
+   339→   339→          ],
+   340→   340→          answer: 'b',
+   341→   341→          explanation: {
+   342→   342→            ar: 'السيناريوهات حالات استخدام من الفصل 5: فاعل يسير في تدفق مألوف عبر المناظر الأربعة، فيفحص القارئ اتساقها ويكتشف كل منظر بدوره.',
+   343→   343→            en: 'Scenarios are ch5 use cases: an actor walks a familiar flow through all four views, checking consistency and letting each view play its part.',
+   344→   344→          },
+   345→   345→        },
+   346→   346→        {
+   347→   347→          id: 'q2',
+   348→   348→          question: {
+   349→   349→            ar: 'سؤال "أي خادم يشغّل ماذا؟" — أي منظر يجيب؟',
+   350→   350→            en: 'The question "which server runs what?" — which view answers it?',
+   351→   351→          },
+   352→   352→          options: [
+   353→   353→            { id: 'a', text: { ar: 'المنطقي logical', en: 'the logical view' } },
+   354→   354→            { id: 'b', text: { ar: 'العملية process', en: 'the process view' } },
+   355→   355→            { id: 'c', text: { ar: 'النشر deployment (الفيزيائي)', en: 'the deployment (physical) view' } },
+   356→   356→            { id: 'd', text: { ar: 'التطوير development', en: 'the development view' } },
+   357→   357→          ],
+   358→   358→          answer: 'c',
+   359→   359→          explanation: {
+   360→   360→            ar: 'منظر النشر يخيط البرمجيات على العقد: أي مكوّن يعمل على أي خادم وكيف تتصل العقد — سؤال مهندس العمليات بالضبط.',
+   361→   361→            en: 'The deployment view maps software onto nodes: which component runs on which server and how nodes network — exactly the operations engineer\'s question.',
+   362→   362→          },
+   363→   363→        },
+   364→   364→        {
+   365→   365→          id: 'q3',
+   366→   366→          question: {
+   367→   367→            ar: 'سؤال "ما المفاهيم الأساسية وما الذي تستطيع فعله؟" — أي منظر يجيب؟',
+   368→   368→            en: 'The question "what are the key concepts and what can they do?" — which view answers it?',
+   369→   369→          },
+   370→   370→          options: [
+   371→   371→            { id: 'a', text: { ar: 'المنطقي logical — الأصناف والعلاقات، وهنا تسكن مخططات الأصناف', en: 'the logical view — classes and relations, home of the class diagram' } },
+   372→   372→            { id: 'b', text: { ar: 'العملية process — العمليات والخيوط', en: 'the process view — processes and threads' } },
+   373→   373→            { id: 'c', text: { ar: 'النشر deployment — العقد والشبكة', en: 'the deployment view — nodes and networking' } },
+   374→   374→            { id: 'd', text: { ar: 'التطوير development — الحزم والبناء', en: 'the development view — packages and building' } },
+   375→   375→          ],
+   376→   376→          answer: 'a',
+   377→   377→          explanation: {
+   378→   378→            ar: 'المنظر المنطقي يعرض التجريدات التي يراها المستخدم النهائي: الأصناف ومسؤولياتها وعلاقاتها — عمل الدرس السابق يظهر هنا كمنظر واحد من أربعة.',
+   379→   379→            en: 'The logical view shows the end-user-facing abstractions: classes, responsibilities, relationships — the previous lesson\'s work appears here as one view of four.',
+   380→   380→          },
+   381→   381→        },
+   382→   382→        {
+   383→   383→          id: 'q4',
+   384→   384→          question: {
+   385→   385→            ar: 'أول قسم في وثيقة وصف المعمارية — والذي يوجد كل ما بعده لإرضائه:',
+   386→   386→            en: 'The first section of an architecture description — everything after it exists to satisfy it:',
+   387→   387→          },
+   388→   388→          options: [
+   389→   389→            { id: 'a', text: { ar: 'قسم المناظر', en: 'the views section' } },
+   390→   390→            { id: 'b', text: { ar: 'السياق والأهداف مع متطلبات الجودة', en: 'context and goals with the quality requirements' } },
+   391→   391→            { id: 'c', text: { ar: 'المخاطر والأسئلة المفتوحة', en: 'risks and open questions' } },
+   392→   392→            { id: 'd', text: { ar: 'السيناريوهات المفتاحية', en: 'key scenarios' } },
+   393→   393→          ],
+   394→   394→          answer: 'b',
+   395→   395→          explanation: {
+   396→   396→            ar: 'متطلبات الجودة — الحمل المستهدف، التوافر، الأمان، التغييرات المتوقعة — هي ما يقود شكل المعمارية؛ والقيم الثلاثة التالية تُشتق منها لا العكس.',
+   397→   397→            en: 'Quality requirements — target load, availability, security, expected changes — drive the architecture\'s shape; the remaining sections derive from them, not the reverse.',
+   398→   398→          },
+   399→   399→        },
+   400→   400→      ],
+   401→   401→    },
+   402→   402→    {
+   403→   403→      kind: 'pitfalls',
+   404→   404→      items: [
+   405→   405→        {
+   406→   406→          wrong: 'رسمت مخططًا واحدًا ضخمًا يظهر فيه كل شيء: الوحدات والعمليات والخوادم.',
+   407→   407→          right: 'ارسم هيكلًا واحدًا لكل منظر، وسمِّ المنظر وقل لمن هو؛ الصورة التي تعرض كل شيء تكون خاطئة من كل زاوية.',
+   408→   408→          note: {
+   409→   409→            ar: 'فصل المناظر هو حجة التعقيد نفسها التي بررت التجزيء — مطبقة على التوثيق.',
+   410→   410→            en: 'Separating views is the same complexity argument that justified modularity — applied to documentation.',
+   411→   411→          },
+   412→   412→        },
+   413→   413→        {
+   414→   414→          wrong: 'مخطط الأصناف كامل ومعتمد، إذن المعمارية موثقة.',
+   415→   415→          right: 'مخطط الأصناف هو المنظر المنطقي وحده؛ مهندس العمليات والمبرمج الجديد يحتاجان منظري النشر والتطوير أيضًا.',
+   416→   416→          note: {
+   417→   417→            ar: 'اختبر الوثيقة بسؤال حقيقي: هل يستطيع مهندس عمليات أن يجيب عن سؤاله منها؟',
+   418→   418→            en: 'Test the document with a real question: can an operations engineer answer theirs from it?',
+   419→   419→          },
+   420→   420→        },
+   421→   421→        {
+   422→   422→          wrong: 'وثيقة معمارية من مئة صفحة تُكتب مرة عند بدء المشروع ثم تُقفل.',
+   423→   423→          right: 'اجعلها صفحات حية قليلة بجوار الشيفرة تتحدث مع القرارات، وقسم المخاطر فيها يبقى صادقًا مع كل قرار جديد.',
+   424→   424→          note: {
+   425→   425→            ar: 'وثيقة تعترف بشكوكها أنفع من واحدة تتظاهر باليقين.',
+   426→   426→            en: 'A document that admits its doubts is more useful than one pretending certainty.',
+   427→   427→          },
+   428→   428→        },
+   429→   429→      ],
+
+[showing lines 30-429 of 471; use offset=430 with limit to continue reading]

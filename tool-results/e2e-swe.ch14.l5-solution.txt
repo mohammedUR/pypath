@@ -1,0 +1,54 @@
+from datetime import datetime
+
+stages = ['build', 'test', 'canary']
+
+runs = {
+    'r1': {'build': 'ok', 'test': 'ok'},
+    'r2': {'build': 'ok', 'test': 'FAIL'},
+    'r3': {'build': 'ok', 'test': 'ok'},
+}
+
+canary_errors = {'r1': [1, 2, 1, 2, 1], 'r2': [4, 6, 5], 'r3': [4, 6, 5]}
+ERROR_THRESHOLD = 4.0
+
+history = [
+    {'commit': datetime(2025, 3, 10, 9, 0), 'deploy': datetime(2025, 3, 10, 21, 0), 'failed': False},
+    {'commit': datetime(2025, 3, 11, 9, 0), 'deploy': datetime(2025, 3, 13, 9, 0), 'failed': True},
+    {'commit': datetime(2025, 3, 12, 9, 0), 'deploy': datetime(2025, 3, 12, 21, 0), 'failed': False},
+]
+
+def deliver(run_id):
+    run = runs[run_id]
+    passed = 0
+    for stage in stages:
+        if stage == 'canary':
+            samples = canary_errors[run_id]
+            mean = sum(samples) / len(samples)
+            status = 'ok' if mean <= ERROR_THRESHOLD else 'FAIL'
+        else:
+            status = run.get(stage, 'skipped')
+        print('%s: %s' % (stage, status))
+        if status != 'ok':
+            print('stopped: %s' % stage)
+            break
+        passed += 1
+    decision = 'promote' if passed == len(stages) else 'rollback'
+    print('stages passed: %d / decision: %s' % (passed, decision))
+    return (passed, decision)
+
+def dora_summary(history):
+    leads = []
+    for c in history:
+        leads.append((c['deploy'] - c['commit']).total_seconds() / 3600 / 24)
+    failed = 0
+    for c in history:
+        if c['failed']:
+            failed += 1
+    print('lead time: %.1f days' % (sum(leads) / len(leads)))
+    print('deploys: %d failed: %d' % (len(history), failed))
+    print('CFR: %.1f' % (failed / len(history)))
+
+for run_id in ['r1', 'r2', 'r3']:
+    deliver(run_id)
+
+dora_summary(history)

@@ -1,0 +1,195 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch8.l1",
+   "id": "ex2.trace-walk-root",
+   "code": "commits = {'c0': {'parent': None}, 'c1': {'parent': 'c0'}}\ncur = 'c1'\nprint(cur)\ncur = commits[cur]['parent']\nprint(cur)\ncur = commits[cur]['parent']\nprint(cur)",
+   "answer": "c1\nc0\nNone"
+  },
+  {
+   "lesson": "swe.ch8.l2",
+   "id": "ex2.trace-head-switch",
+   "code": "HEAD = 'main'\nbranches = {'main': 'c1', 'dev': 'c2'}\nprint(branches[HEAD])\nHEAD = 'dev'\nprint(branches[HEAD])",
+   "answer": "c1\nc2"
+  },
+  {
+   "lesson": "swe.ch8.l3",
+   "id": "ex2.trace-resolution",
+   "code": "index = {'app.py': 'unmerged', 'util.py': 'unmerged'}\nindex['app.py'] = 'resolved'\ncount = 0\nfor state in index.values():\n    if state == 'resolved':\n        count += 1\nprint(count)\nprint(index['util.py'])",
+   "answer": "1\nunmerged"
+  },
+  {
+   "lesson": "swe.ch8.l4",
+   "id": "ex2.trace-readme-headings",
+   "code": "readme = ['# Mini-Git', '', '## Setup', 'pip install -r requirements.txt', '', '## Run', 'python app.py']\nheadings = 0\nfor line in readme:\n    if line.startswith('#'):\n        headings += 1\nprint(headings)\nprint(readme[6])",
+   "answer": "3\npython app.py"
+  },
+  {
+   "lesson": "swe.ch8.l5",
+   "id": "ex1.trace-pointers",
+   "code": "commits = {'c1': {'parent': None, 'msg': 'init'}, 'c2': {'parent': 'c1', 'msg': 'readme'}}\nbranches = {'main': 'c2'}\nbranches['dev'] = branches['main']\ncommits['c3'] = {'parent': branches['dev'], 'msg': 'search'}\nbranches['dev'] = 'c3'\nprint(branches['main'])\nprint(branches['dev'])\nprint(commits['c1']['parent'])",
+   "answer": "c2\nc3\nNone"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch8.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "folder = {}\nfolder['report'] = 'Monday version'\nfolder['report'] = 'Tuesday version'\nprint(folder['report'])\n\nhistory = []\nhistory.append('Monday version')\nhistory.append('Tuesday version')\nprint(history[-1])\nprint(history[0])"
+  },
+  {
+   "lesson": "swe.ch8.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "commits = {\n    'c0': {'parent': None, 'msg': 'start project', 'author': 'ana'},\n    'c1': {'parent': 'c0', 'msg': 'add login page', 'author': 'omar'},\n    'c2': {'parent': 'c1', 'msg': 'fix redirect loop', 'author': 'ana'},\n}\n\ncur = 'c2'\nwhile cur is not None:\n    entry = commits[cur]\n    print('%s: %s (%s)' % (cur, entry['msg'], entry['author']))\n    cur = entry['parent']"
+  },
+  {
+   "lesson": "swe.ch8.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — امشِ تاريخًا أطول ومحاكِ التجهيز\n# Your playground — walk a longer history and simulate staging\n\ncommits = {\n    'c0': {'parent': None, 'msg': 'start project', 'author': 'ana'},\n    'c1': {'parent': 'c0', 'msg': 'add login page', 'author': 'omar'},\n    'c2': {'parent': 'c1', 'msg': 'fix redirect loop', 'author': 'ana'},\n    'c3': {'parent': 'c2', 'msg': 'update README', 'author': 'sara'},\n}\n\ncur = 'c3'\nwhile cur is not None:\n    entry = commits[cur]\n    print('%s: %s (%s)' % (cur, entry['msg'], entry['author']))\n    cur = entry['parent']\n\nstaging = {}\nstaging['app.py'] = 'staged'\nstaging['notes.txt'] = 'modified'\nprint('staged: %d' % sum(1 for s in staging.values() if s == 'staged'))\n\n# جرّب: أضف التزام c4 ابنًا لـ c3 برسالتك وامشِ منه\n# try: add a c4 commit as a child of c3 with your own message, then walk from it\n# جرّب: اطبع رسائل التزامات المؤلف ana فقط بتمرين تصفية من ch9\n# try: print only the messages of author ana with a ch9-style filter"
+  },
+  {
+   "lesson": "swe.ch8.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "branches = {'main': 'c1'}\nbranches['feature'] = branches['main']\nprint(branches['feature'])\nbranches['main'] = 'c2'\nprint(branches['feature'])\nprint(branches['main'])"
+  },
+  {
+   "lesson": "swe.ch8.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "commits = {\n    'c0': {'parent': None},\n    'c1': {'parent': 'c0'},\n    'c2': {'parent': 'c1'},\n    'c3': {'parent': 'c1'},\n}\nbranches = {'main': 'c2', 'feature': 'c3'}\n\ndef ancestors(tip):\n    seen = []\n    cur = tip\n    while cur is not None:\n        seen.append(cur)\n        cur = commits[cur]['parent']\n    return seen\n\nmain_line = ancestors(branches['main'])\nfeature_line = ancestors(branches['feature'])\nprint(main_line)\nfor cid in feature_line:\n    if cid in main_line:\n        print('base: %s' % cid)\n        break"
+  },
+  {
+   "lesson": "swe.ch8.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — فرّع ثم اسأل: انزلاق أم ثلاثي؟\n# Your playground — branch, then ask: fast-forward or three-way?\n\ncommits = {\n    'c0': {'parent': None},\n    'c1': {'parent': 'c0'},\n    'c2': {'parent': 'c1'},\n    'c3': {'parent': 'c1'},\n    'c4': {'parent': 'c3'},\n}\nbranches = {'main': 'c2', 'feature': 'c4'}\n\ndef is_fast_forward(main_tip, feature_tip):\n    cur = feature_tip\n    while cur is not None:\n        if cur == main_tip:\n            return True\n        cur = commits[cur]['parent']\n    return False\n\nprint('ff: %s' % is_fast_forward(branches['main'], branches['feature']))\n\ndef ancestors(tip):\n    seen = []\n    cur = tip\n    while cur is not None:\n        seen.append(cur)\n        cur = commits[cur]['parent']\n    return seen\n\nmain_line = ancestors(branches['main'])\nbase = None\nfor cid in ancestors(branches['feature']):\n    if cid in main_line:\n        base = cid\n        break\nprint('base: %s' % base)\n\n# جرّب: حرّك main إلى c4 وكرر — ماذا يصير الجواب ولماذا؟\n# try: move main to c4 and repeat — what happens to the answer and why?\n# جرّب: ارسم على الورق المخطط الناتج عن التزام دمج بين الفرعين\n# try: sketch on paper the graph a merge commit between the branches would make"
+  },
+  {
+   "lesson": "swe.ch8.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "file_by_ana = {'price': 'subtotal * 1.08'}\nfile_by_omar = {'price': 'subtotal * 1.095'}\nshared = dict(file_by_ana)\nshared.update(file_by_omar)\nprint(shared['price'])"
+  },
+  {
+   "lesson": "swe.ch8.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "mine = {'app.py': 'tax 1.08', 'main.py': 'loop fixed'}\ntheirs = {'app.py': 'tax 1.095', 'tests.py': 'new tests'}\n\ndef conflicting_files(mine, theirs):\n    result = []\n    for name in theirs:\n        if name in mine and mine[name] != theirs[name]:\n            result.append(name)\n    return result\n\nprint(conflicting_files(mine, theirs))"
+  },
+  {
+   "lesson": "swe.ch8.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — ماذا يتعارض وماذا يمرّ بصمت؟\n# Your playground — what conflicts and what merges silently?\n\nmine = {'app.py': 'tax 1.08', 'auth.py': 'session v2'}\ntheirs = {'app.py': 'tax 1.095', 'auth.py': 'session v2', 'tests.py': 'new'}\n\nconflicts = []\nsilent = []\nfor name in theirs:\n    if name in mine and mine[name] != theirs[name]:\n        conflicts.append(name)\n    else:\n        silent.append(name)\nprint('conflicts: %s' % ', '.join(sorted(conflicts)))\nprint('silent: %s' % ', '.join(sorted(silent)))\n\n# جرّب: اجعل auth.py مختلفة لدى الطرفين — إلى أي قائمة تنتقل؟\n# try: make auth.py differ between the sides — which list does it move to?\n# جرّب: احذف app.py من mine (مثّل حذف ملف) وراقب نتيجة الكشف\n# try: drop app.py from mine (simulate a deletion) and watch the detector"
+  },
+  {
+   "lesson": "swe.ch8.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "good = 'Fix redirect loop on expired session'\nbad = 'I was trying to fix the redirect loop that happened when the session expired and also updated some dependencies'\nprint(len(good) <= 50)\nprint(len(bad) <= 50)"
+  },
+  {
+   "lesson": "swe.ch8.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "def lint_subject(subject):\n    words = subject.split()\n    if len(subject) > 50:\n        return 'too long'\n    if words[0].lower() not in ['add', 'fix', 'refactor', 'update', 'remove', 'feat']:\n        return 'not imperative'\n    return 'ok'\n\nprint(lint_subject('Fix redirect loop on expired session'))\nprint(lint_subject('updated a bunch of files across the whole project this week'))\nprint(lint_subject('fixed the bug'))"
+  },
+  {
+   "lesson": "swe.ch8.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — README مصغّر ومدقق رسائل\n# Your playground — a miniature README and the message linter\n\nreadme = [\n    '# Mini-Git',\n    '',\n    'A tiny model of how Git thinks.',\n    '',\n    '## Setup',\n    'python3 -m venv .venv',\n    '',\n    '## Run',\n    'python app.py',\n]\nfor line in readme:\n    if line.startswith('#'):\n        print('HEADING: %s' % line)\nprint('lines: %d' % len(readme))\n\ndef lint_subject(subject):\n    words = subject.split()\n    if len(subject) > 50:\n        return 'too long'\n    if words[0].lower() not in ['add', 'fix', 'refactor', 'update', 'remove', 'feat']:\n        return 'not imperative'\n    return 'ok'\n\nprint(lint_subject('Add setup section to README'))\n\n# جرّب: أضف قسم '## Tests' وسطر تشغيل الاختبارات إلى readme\n# try: add a '## Tests' section with a test-run line to readme\n# جرّب: اكتب رسالتك لميزة بحث ثم مدققها — وجرّب بادئة feat: وراقب الحكم\n# try: write your own search-feature message, lint it — then try a feat: prefix and watch the verdict"
+  },
+  {
+   "lesson": "swe.ch8.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "commits = {'c1': {'parent': None, 'msg': 'init'}}\nbranches = {'main': 'c1'}\nbranches['dev'] = branches['main']\ncommits['c2'] = {'parent': branches['dev'], 'msg': 'wip'}\nbranches['dev'] = 'c2'\nprint(branches['main'])\nprint(branches['dev'])"
+  },
+  {
+   "lesson": "swe.ch8.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "commits = {\n    'c1': {'parent': None, 'msg': 'Add app skeleton'},\n    'c2': {'parent': 'c1', 'msg': 'Add search box'},\n    'c3': {'parent': 'c2', 'msg': 'Fix redirect loop'},\n}\nbranches = {'main': 'c2', 'dev': 'c3'}\n\ndef walk(tip):\n    chain = []\n    node = tip\n    while node is not None:\n        chain.append(node)\n        node = commits[node]['parent']\n    return chain\n\nprint('main: %s' % ' -> '.join(walk(branches['main'])))\nprint('dev: %s' % ' -> '.join(walk(branches['dev'])))\n\nmain_chain = walk(branches['main'])\ndev_set = set(walk(branches['dev']))\nbase = None\nfor cid in main_chain:\n    if cid in dev_set:\n        base = cid\n        break\nprint('merge base: %s' % base)"
+  },
+  {
+   "lesson": "swe.ch8.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — نموذج Git المصغّر بين يديك\n# Your playground — the Mini-Git model in your hands\n\nclass MiniGit:\n    def __init__(self):\n        self.commits = {}\n        self.branches = {'main': None}\n        self.head = 'main'\n        self.files = {}\n        self.next_id = 1\n\n    def change(self, fname, version):\n        self.files[fname] = version\n\n    def commit(self, msg):\n        cid = 'c%d' % self.next_id\n        self.next_id = self.next_id + 1\n        self.commits[cid] = {'id': cid, 'parent': self.branches[self.head], 'msg': msg, 'files': dict(self.files)}\n        self.branches[self.head] = cid\n        return cid\n\n    def branch(self, name):\n        self.branches[name] = self.branches[self.head]\n\n    def checkout(self, name):\n        self.head = name\n        tip = self.branches[name]\n        if tip is not None:\n            self.files = dict(self.commits[tip]['files'])\n\n\ng = MiniGit()\ng.change('app.py', 'v1')\nprint(g.commit('Add app'))\ng.branch('dev')\ng.checkout('dev')\ng.change('idea.py', 'v1')\nprint(g.commit('Spike an idea'))\ng.checkout('main')\nprint(g.commits[g.branches['main']]['msg'])\nprint(g.commits[g.branches['dev']]['msg'])\n\n# جرّب: أضف تابع log(self) يمشي parents من طرف الفرع الحالي ويطبع الأسطر\n# try: add a log(self) method walking parents from the current branch tip\n# جرّب: ابنِ فرعًا ثانيًا وتتبّع يدويًّا أي التزامات يرى كل فرع قبل التشغيل\n# try: build a second branch and trace by hand which commits each branch sees\n# جرّب: أضف تابع tag(self, name, cid) يجمع أسماء الإصدارات في قاموس self.tags\n# try: add a tag(self, name, cid) method collecting release names in a self.tags dict"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch8.l1",
+   "id": "ex3.mcq-three-areas",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "swe.ch8.l2",
+   "id": "ex3.mcq-ff-meaning",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "swe.ch8.l2",
+   "id": "ex4.numeric-merge-parents",
+   "answer": "2",
+   "solution": "2"
+  },
+  {
+   "lesson": "swe.ch8.l3",
+   "id": "ex3.mcq-conflict-cause",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "swe.ch8.l4",
+   "id": "ex3.mcq-commit-body",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "swe.ch8.l4",
+   "id": "ex4.numeric-subject-limit",
+   "answer": "50",
+   "solution": "50"
+  },
+  {
+   "lesson": "swe.ch8.l5",
+   "id": "ex3.mcq-branch-model",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "swe.ch8.l5",
+   "id": "ex4.numeric-log-walk",
+   "answer": "3",
+   "solution": "3"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch8.l1",
+   "id": "ex4.fill-commit",
+   "answer": "commit"
+  },
+  {
+   "lesson": "swe.ch8.l3",
+   "id": "ex4.fill-pull",
+   "answer": "pull"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch8.l5",
+   "id": "ex5.debug-stale-pointer",
+   "brokenCode": "class MiniGit:\n    def __init__(self):\n        self.commits = {}\n        self.branches = {'main': None}\n        self.head = 'main'\n        self.next_id = 1\n\n    def commit(self, msg):\n        cid = 'c%d' % self.next_id\n        self.next_id = self.next_id + 1\n        self.commits[cid] = {'id': cid, 'parent': self.branches[self.head], 'msg': msg}\n        # الخلل هنا: سجل التزامًا ونسي شيئًا / THE FLAW: recorded a commit and forgot something\n        return cid\n\n    def log(self):\n        lines = []\n        node = self.branches[self.head]\n        while node is not None:\n            lines.append('%s %s' % (node, self.commits[node]['msg']))\n            node = self.commits[node]['parent']\n        return lines\n\n\ng = MiniGit()\ng.commit('Add app skeleton')\ng.commit('Add search box')\nprint('commits: %d' % len(g.commits))\nfor line in g.log():\n    print(line)"
+  }
+ ]
+}

@@ -1,0 +1,592 @@
+   471→and models to capture the statistical aspects of the problem. At the same time it is also
+   472→indispensable to have at least a modicum of knowledge of the underlying hardware. The
+   473→current section is no substitute for a proper course on hardware and system design. Instead,
+   474→it might serve as a starting point for understanding why some algorithms are more efficient
+   475→than others and how to achieve good throughput. A good design can easily make a differ-
+   476→ence of an order of magnitude and, in turn, this can make the difference between being able
+   477→to train a network (e.g., in a week) and not at all (in 3 months, thus missing the deadline).
+   478→We will start by looking at computers. Then we will zoom in to look more carefully at
+   479→CPUs and GPUs. Lastly we zoom out to review how multiple computers are connected in
+   480→a server center or in the cloud.
+   481→t
+   482→Fig. 13.4.1
+   483→Latency Numbers that every programmer should know.
+   484→
+   485→===== صفحة الكتاب 600 =====
+   486→560
+   487→Computational Performance
+   488→188
+   489→189
+   490→190
+   491→Impatient readers may be able to get by with Fig. 13.4.1. It is taken from Colin Scott’s inter-
+   492→active post188 that gives a good overview of the progress over the past decade. The original
+   493→numbers are due to Jeff Dean’s Stanford talk from 2010189. The discussion below explains
+   494→some of the rationale for these numbers and how they can guide us in designing algorithms.
+   495→The discussion below is very high level and cursory. It is clearly no substitute for a proper
+   496→course but rather just meant to provide enough information for a statistical modeler to make
+   497→suitable design decisions. For an in-depth overview of computer architecture we refer the
+   498→reader to (Hennessy and Patterson, 2011) or a recent course on the subject, such as the one
+   499→by Arste Asanovic190.
+   500→13.4.1 Computers
+   501→Most deep learning researchers and practitioners have access to a computer with a fair
+   502→amount of memory, computation, some form of an accelerator such as a GPU, or multiples
+   503→thereof. A computer consists of the following key components:
+   504→• A processor (also referred to as a CPU) that is able to execute the programs we give it (in
+   505→addition to running an operating system and many other things), typically consisting
+   506→of 8 or more cores.
+   507→• Memory (RAM) to store and retrieve the results from computation, such as weight vec-
+   508→tors and activations, and training data.
+   509→• An Ethernet network connection (sometimes multiple) with speeds ranging from 1 GB/s
+   510→to 100 GB/s. On high end servers more advanced interconnects can be found.
+   511→• A high speed expansion bus (PCIe) to connect the system to one or more GPUs. Servers
+   512→have up to 8 accelerators, often connected in an advanced topology, while desktop
+   513→systems have 1 or 2, depending on the budget of the user and the size of the power
+   514→supply.
+   515→• Durable storage, such as a magnetic hard disk drive, a solid state drive, in many cases
+   516→connected using the PCIe bus. It provides efficient transfer of training data to the
+   517→system and storage of intermediate checkpoints as needed.
+   518→t
+   519→Fig. 13.4.2
+   520→Connectivity of components of a computer.
+   521→As Fig. 13.4.2 indicates, most components (network, GPU, and storage) are connected to
+   522→the CPU across the PCIe bus. It consists of multiple lanes that are directly attached to the
+   523→CPU. For instance AMD’s Threadripper 3 has 64 PCIe 4.0 lanes, each of which is capable
+   524→16 Gbit/s data transfer in both directions. The memory is directly attached to the CPU with
+   525→a total bandwidth of up to 100 GB/s.
+   526→When we run code on a computer we need to shuffle data to the processors (CPUs or GPUs),
+   527→
+   528→===== صفحة الكتاب 601 =====
+   529→561
+   530→Hardware
+   531→191
+   532→192
+   533→193
+   534→194
+   535→perform computation, and then move the results off the processor back to RAM and durable
+   536→storage. Hence, in order to get good performance we need to make sure that this works
+   537→seamlessly without any one of the systems becoming a major bottleneck. For instance, if
+   538→we cannot load images quickly enough the processor will not have any work to do. Likewise,
+   539→if we cannot move matrices quickly enough to the CPU (or GPU), its processing elements
+   540→will starve. Finally, if we want to synchronize multiple computers across the network, the
+   541→latter should not slow down computation. One option is to interleave communication and
+   542→computation. Let’s have a look at the various components in more detail.
+   543→13.4.2 Memory
+   544→At its most basic memory is used to store data that needs to be readily accessible. At
+   545→present CPU RAM is typically of the DDR4 191 variety, offering 20–25 GB/s bandwidth
+   546→per module. Each module has a 64-bit-wide bus. Typically pairs of memory modules are
+   547→used to allow for multiple channels. CPUs have between 2 and 4 memory channels, i.e.,
+   548→they have between 4 0GB/s and 100 GB/s peak memory bandwidth. Often there are two
+   549→banks per channel. For instance AMD’s Zen 3 Threadripper has 8 slots.
+   550→While these numbers are impressive, indeed, they only tell part of the story. When we
+   551→want to read a portion from memory we first need to tell the memory module where the
+   552→information can be found. That is, we first need to send the address to RAM. Once this
+   553→is accomplished we can choose to read just a single 64 bit record or a long sequence of
+   554→records. The latter is called burst read. In a nutshell, sending an address to memory and
+   555→setting up the transfer takes approximately 100 ns (details depend on the specific timing
+   556→coefficients of the memory chips used), every subsequent transfer takes only 0.2 ns. In
+   557→short, the first read is 500 times as expensive as subsequent ones! Note that we could
+   558→perform up to 10,000,000 random reads per second. This suggests that we avoid random
+   559→memory access as far as possible and use burst reads (and writes) instead.
+   560→Matters are a bit more complex when we take into account that we have multiple banks.
+   561→Each bank can read memory largely independently. This means two things. On the one
+   562→hand, the effective number of random reads is up to 4 times higher, provided that they are
+   563→spread evenly across memory. It also means that it is still a bad idea to perform random
+   564→reads since burst reads are 4 times faster, too. On the other hand, due to memory alignment
+   565→to 64 bit boundaries it is a good idea to align any data structures with the same boundaries.
+   566→Compilers do this pretty much automatically192 when the appropriate flags are set. Curious
+   567→readers are encouraged to review a lecture on DRAMs such as the one by Zeshan Chishti
+   568→193.
+   569→GPU memory is subject to even higher bandwidth requirements since they have many more
+   570→processing elements than CPUs. By and large there are two options to address them. The
+   571→first is to make the memory bus significantly wider. For instance, NVIDIA’s RTX 2080
+   572→Ti has a 352-bit-wide bus. This allows for much more information to be transferred at
+   573→the same time. Second, GPUs use specific high-performance memory. Consumer-grade
+   574→devices, such as NVIDIA’s RTX and Titan series typically use GDDR6194 chips with over
+   575→500 GB/s aggregate bandwidth. An alternative is to use HBM (high bandwidth memory)
+   576→modules. They use a very different interface and connect directly with GPUs on a dedicated
+   577→
+   578→===== صفحة الكتاب 602 =====
+   579→562
+   580→Computational Performance
+   581→silicon wafer. This makes them very expensive and their use is typically limited to high-end
+   582→server chips, such as the NVIDIA Volta V100 series of accelerators. Quite unsurprisingly,
+   583→GPU memory is generally much smaller than CPU memory due to the higher cost of the
+   584→former. For our purposes, by and large their performance characteristics are similar, just a
+   585→lot faster. We can safely ignore the details for the purpose of this book. They only matter
+   586→when tuning GPU kernels for high throughput.
+   587→13.4.3 Storage
+   588→We saw that some of the key characteristics of RAM are bandwidth and latency. The same
+   589→is true for storage devices, just that the differences can be even more extreme.
+   590→Hard Disk Drives
+   591→Hard disk drives (HDDs) have been in use for over half a century. In a nutshell they contain
+   592→a number of spinning platters with heads that can be positioned to read or write at any given
+   593→track. High-end disks hold up to 16 TB on 9 platters. One of the key benefits of HDDs
+   594→is that they are relatively inexpensive. One of their many downsides are their typically
+   595→catastrophic failure modes and their relatively high read latency.
+   596→To understand the latter, consider the fact that HDDs spin at around 7,200 RPM (revolutions
+   597→per minute). If they were much faster they would shatter due to the centrifugal force exerted
+   598→on the platters. This has a major downside when it comes to accessing a specific sector
+   599→on the disk: we need to wait until the platter has rotated in position (we can move the
+   600→heads but not accelerate the actual disks). Hence it can take over 8 ms until the requested
+   601→data is available. A common way this is expressed is to say that HDDs can operate at
+   602→approximately 100 IOPs (input/output operations per second). This number has essentially
+   603→remained unchanged for the past two decades. Worse still, it is equally difficult to increase
+   604→bandwidth (it is in the order of 100–200 MB/s). After all, each head reads a track of bits,
+   605→hence the bit rate only scales with the square root of the information density. As a result,
+   606→HDDs are quickly becoming relegated to archival storage and low-grade storage for very
+   607→large datasets.
+   608→Solid State Drives
+   609→Solid state drives (SSDs) use flash memory to store information persistently. This allows
+   610→for much faster access to stored records. Modern SSDs can operate at 100,000 to 500,000
+   611→IOPs, i.e., up to 3 orders of magnitude faster than HDDs. Furthermore, their bandwidth
+   612→can reach 1–3GB/s, i.e., one order of magnitude faster than HDDs. These improvements
+   613→sound almost too good to be true. Indeed, they come with the following caveats, due to the
+   614→way SSDs are designed.
+   615→• SSDs store information in blocks (256 KB or larger). They can only be written as a whole,
+   616→which takes significant time. Consequently bit-wise random writes on SSD have very
+   617→poor performance. Likewise, writing data in general takes significant time since the
+   618→block has to be read, erased and then rewritten with new information. By now SSD
+   619→
+   620→===== صفحة الكتاب 603 =====
+   621→563
+   622→Hardware
+   623→controllers and firmware have developed algorithms to mitigate this. Nonetheless,
+   624→writes can be much slower, in particular for QLC (quad level cell) SSDs. The key
+   625→for improved performance is to maintain a queue of operations, to prefer reads and to
+   626→write in large blocks if possible.
+   627→• The memory cells in SSDs wear out relatively quickly (often already after a few thousand
+   628→writes). Wear-level protection algorithms are able to spread the degradation over many
+   629→cells. That said, it is not recommended to use SSDs for swapping files or for large
+   630→aggregations of log-files.
+   631→• Lastly, the massive increase in bandwidth has forced computer designers to attach SSDs
+   632→directly to the PCIe bus. The drives capable of handling this, referred to as NVMe
+   633→(Non Volatile Memory enhanced), can use up to 4 PCIe lanes. This amounts to up to
+   634→8GB/s on PCIe 4.0.
+   635→Cloud Storage
+   636→Cloud storage provides a configurable range of performance. That is, the assignment of
+   637→storage to virtual machines is dynamic, both in terms of quantity and in terms of speed,
+   638→as chosen by users. We recommend that users increase the provisioned number of IOPs
+   639→whenever latency is too high, e.g., during training with many small records.
+   640→13.4.4 CPUs
+   641→Central processing units (CPUs) are the centerpiece of any computer. They consist of a
+   642→number of key components: processor cores that are able to execute machine code, a bus
+   643→connecting them (the specific topology differs significantly between processor models, gen-
+   644→erations, and vendors), and caches to allow for higher bandwidth and lower latency memory
+   645→access than what is possible by reads from main memory. Lastly, almost all modern CPUs
+   646→contain vector processing units to aid with high performance linear algebra and convolu-
+   647→tions, as they are common in media processing and machine learning.
+   648→t
+   649→Fig. 13.4.3
+   650→Intel Skylake consumer quad-core CPU.
+   651→Fig. 13.4.3 depicts an Intel Skylake consumer-grade quad-core CPU. It has an integrated
+   652→
+   653→===== صفحة الكتاب 604 =====
+   654→564
+   655→Computational Performance
+   656→195
+   657→GPU, caches, and a ringbus connecting the four cores. Peripherals, such as Ethernet, WiFi,
+   658→Bluetooth, SSD controller, and USB, are either part of the chipset or directly attached
+   659→(PCIe) to the CPU.
+   660→Microarchitecture
+   661→Each of the processor cores consists of a rather sophisticated set of components. While
+   662→details differ between generations and vendors, the basic functionality is pretty much stan-
+   663→dard. The front-end loads instructions and tries to predict which path will be taken (e.g.,
+   664→for control flow). Instructions are then decoded from assembly code to microinstructions.
+   665→Assembly code is often not the lowest level code that a processor executes. Instead, com-
+   666→plex instructions may be decoded into a set of more lower level operations. These are then
+   667→processed by the actual execution core. Often the latter is capable of performing many op-
+   668→erations simultaneously. For instance, the ARM Cortex A77 core of Fig. 13.4.4 is able to
+   669→perform up to 8 operations simultaneously.
+   670→t
+   671→Fig. 13.4.4
+   672→ARM Cortex A77 Microarchitecture.
+   673→This means that efficient programs might be able to perform more than one instruction per
+   674→clock cycle, provided that they can be carried out independently. Not all units are created
+   675→equal. Some specialize in integer instructions whereas others are optimized for floating
+   676→point performance. To increase throughput, the processor might also follow multiple code
+   677→paths simultaneously in a branching instruction and then discard the results of the branches
+   678→not taken. This is why branch prediction units matter (on the front-end) such that only the
+   679→most promising paths are pursued.
+   680→Vectorization
+   681→Deep learning is extremely compute-hungry. Hence, to make CPUs suitable for machine
+   682→learning, one needs to perform many operations in one clock cycle. This is achieved via
+   683→vector units. They have different names: on ARM they are called NEON, on x86 they (a
+   684→recent generation) are referred to as AVX2195 units. A common aspect is that they are able
+   685→to perform SIMD (single instruction multiple data) operations. Fig. 13.4.5 shows how 8
+   686→short integers can be added in one clock cycle on ARM.
+   687→
+   688→===== صفحة الكتاب 605 =====
+   689→565
+   690→Hardware
+   691→t
+   692→Fig. 13.4.5
+   693→128 bit NEON vectorization.
+   694→196
+   695→Depending on architecture choices, such registers are up to 512 bits long, allowing for the
+   696→combination of up to 64 pairs of numbers. For instance, we might be multiplying two
+   697→numbers and adding them to a third, which is also known as a fused multiply-add. Intel’s
+   698→OpenVino 196 uses these to achieve respectable throughput for deep learning on server-
+   699→grade CPUs. Note, though, that this number is entirely dwarfed by what GPUs are capable
+   700→of achieving. For instance, NVIDIA’s RTX 2080 Ti has 4,352 CUDA cores, each of which
+   701→is capable of processing such an operation at any time.
+   702→Cache
+   703→Consider the following situation: we have a modest CPU core with 4 cores as depicted in
+   704→Fig. 13.4.3 above, running at 2 GHz frequency. Moreover, let’s assume that we have an IPC
+   705→(instructions per clock) count of 1 and that the units have AVX2 with 256-bit width enabled.
+   706→Let’s furthermore assume that at least one of the registers used for AVX2 operations needs
+   707→to be retrieved from memory. This means that the CPU consumes 4 × 256 bit = 128 bytes
+   708→of data per clock cycle. Unless we are able to transfer 2 × 109 × 128 = 256 × 109 bytes
+   709→to the processor per second the processing elements are going to starve. Unfortunately the
+   710→memory interface of such a chip only supports 20–40 GB/s data transfer, i.e., one order of
+   711→magnitude less. The fix is to avoid loading new data from memory as far as possible and
+   712→rather to cache it locally on the CPU. This is where caches come in handy. Commonly the
+   713→following names or concepts are used:
+   714→• Registers are strictly speaking not part of the cache. They help stage instructions. That
+   715→said, CPU registers are memory locations that a CPU can access at clock speed with-
+   716→out any delay penalty. CPUs have tens of registers. It is up to the compiler (or pro-
+   717→grammer) to use registers efficiently. For instance the C programming language has a
+   718→register keyword.
+   719→• L1 caches are the first line of defense against high memory bandwidth requirements.
+   720→L1 caches are tiny (typical sizes might be 32–64 KB) and often split into data and
+   721→instructions caches. When data is found in the L1 cache, access is very fast. If they
+   722→cannot be found there, the search progresses down the cache hierarchy.
+   723→• L2 caches are the next stop. Depending on architecture design and processor size they
+   724→might be exclusive. They might be accessible only by a given core or shared among
+   725→multiple cores. L2 caches are larger (typically 256–512 KB per core) and slower than
+   726→
+   727→===== صفحة الكتاب 606 =====
+   728→566
+   729→Computational Performance
+   730→L1. Furthermore, to access something in L2 we first need to check to realize that the
+   731→data is not in L1, which adds a small amount of extra latency.
+   732→• L3 caches are shared among multiple cores and can be quite large. AMD’s Epyc 3 server
+   733→CPUs have a whopping 256 MB of cache spread across multiple chiplets. More typical
+   734→numbers are in the 4–8 MB range.
+   735→Predicting which memory elements will be needed next is one of the key optimization pa-
+   736→rameters in chip design. For instance, it is advisable to traverse memory in a forward direc-
+   737→tion since most caching algorithms will try to read ahead rather than backwards. Likewise,
+   738→keeping memory access patterns local is a good way of improving performance.
+   739→Adding caches is a double-edge sword. On the one hand they ensure that the processor
+   740→cores do not starve of data. At the same time they increase chip size, using up area that
+   741→otherwise could have been spent on increasing processing power. Moreover, cache misses
+   742→can be expensive. Consider the worst case scenario, false sharing, as depicted in Fig. 13.4.6.
+   743→A memory location is cached on processor 0 when a thread on processor 1 requests the
+   744→data. To obtain it, processor 0 needs to stop what it is doing, write the information back
+   745→to main memory and then let processor 1 read it from memory. During this operation both
+   746→processors wait. Quite potentially such code runs more slowly on multiple processors when
+   747→compared with an efficient single-processor implementation. This is one more reason for
+   748→why there is a practical limit to cache sizes (besides their physical size).
+   749→t
+   750→Fig. 13.4.6
+   751→False sharing (image courtesy of Intel).
+   752→13.4.5 GPUs and other Accelerators
+   753→It is not an exaggeration to claim that deep learning would not have been successful without
+   754→GPUs. By the same token, it is quite reasonable to argue that GPU manufacturers’ fortunes
+   755→have increased significantly due to deep learning. This co-evolution of hardware and al-
+   756→gorithms has led to a situation where for better or worse deep learning is the preferable
+   757→statistical modeling paradigm. Hence it pays to understand the specific benefits that GPUs
+   758→and related accelerators such as the TPU (Jouppi et al., 2017).
+   759→Of note is a distinction that is often made in practice: accelerators are optimized either for
+   760→training or inference. For the latter we only need to compute the forward propagation in
+   761→a network. No storage of intermediate data is needed for backpropagation. Moreover, we
+   762→may not need very precise computation (FP16 or INT8 typically suffice). On the other hand,
+   763→
+   764→===== صفحة الكتاب 607 =====
+   765→567
+   766→Hardware
+   767→197
+   768→during training all intermediate results need storage to compute gradients. Moreover, ac-
+   769→cumulating gradients requires higher precision to avoid numerical underflow (or overflow).
+   770→This means that FP16 (or mixed precision with FP32) is the minimum requirement. All
+   771→of this necessitates faster and larger memory (HBM2 vs. GDDR6) and more processing
+   772→power. For instance, NVIDIA’s Turing 197 T4 GPUs are optimized for inference whereas
+   773→the V100 GPUs are preferable for training.
+   774→Recall vectorization as illustrated in Fig. 13.4.5. Adding vector units to a processor core
+   775→allowed us to increase throughput significantly. For example, in the example in Fig. 13.4.5
+   776→we were able to perform 16 operations simultaneously. First, what if we added operations
+   777→that optimized not just operations between vectors but also between matrices? This strategy
+   778→led to tensor cores (to be covered shortly). Second, what if we added many more cores?
+   779→In a nutshell, these two strategies summarize the design decisions in GPUs. Fig. 13.4.7
+   780→gives an overview of a basic processing block. It contains 16 integer and 16 floating point
+   781→units. In addition to that, two tensor cores accelerate a narrow subset of additional op-
+   782→erations relevant for deep learning. Each streaming multiprocessor consists of four such
+   783→blocks.
+   784→t
+   785→Fig. 13.4.7
+   786→NVIDIA Turing processing block (image courtesy of NVIDIA).
+   787→Next, 12 streaming multiprocessors are grouped into graphics processing clusters which
+   788→make up the high-end TU102 processors. Ample memory channels and an L2 cache com-
+   789→plement the setup. Fig. 13.4.8 has the relevant details. One of the reasons for designing
+   790→such a device is that individual blocks can be added or removed as needed to allow for more
+   791→compact chips and to deal with yield issues (faulty modules might not be activated). Fortu-
+   792→nately programming such devices is well hidden from the casual deep learning researcher
+   793→beneath layers of CUDA and framework code. In particular, more than one of the programs
+   794→might well be executed simultaneously on the GPU, provided that there are available re-
+   795→sources. Nonetheless it pays to be aware of the limitations of the devices to avoid picking
+   796→models that do not fit into device memory.
+   797→A last aspect that is worth mentioning in more detail are tensor cores. They are an example
+   798→of a recent trend of adding more optimized circuits that are specifically effective for deep
+   799→learning. For instance, the TPU added a systolic array (Kung, 1988) for fast matrix multipli-
+   800→
+   801→===== صفحة الكتاب 608 =====
+   802→568
+   803→Computational Performance
+   804→t
+   805→Fig. 13.4.8
+   806→NVIDIA Turing architecture (image courtesy of NVIDIA)
+   807→198
+   808→cation. There the design was to support a very small number (one for the first generation of
+   809→TPUs) of large operations. Tensor cores are at the other end. They are optimized for small
+   810→operations involving between 4 × 4 and 16 × 16 matrices, depending on their numerical
+   811→precision. Fig. 13.4.9 gives an overview of the optimizations.
+   812→t
+   813→Fig. 13.4.9
+   814→NVIDIA tensor cores in Turing (image courtesy of NVIDIA).
+   815→Obviously when optimizing for computation we end up making certain compromises. One
+   816→of them is that GPUs are not very good at handling interrupts and sparse data. While there
+   817→are notable exceptions, such as Gunrock198 (Wang et al., 2016), the access pattern of sparse
+   818→matrices and vectors do not go well with the high bandwidth burst read operations where
+   819→
+   820→===== صفحة الكتاب 609 =====
+   821→569
+   822→Hardware
+   823→199
+   824→200
+   825→201
+   826→202
+   827→203
+   828→204
+   829→GPUs excel. Matching both goals is an area of active research. See e.g., DGL199, a library
+   830→tuned for deep learning on graphs.
+   831→13.4.6 Networks and Buses
+   832→Whenever a single device is insufficient for optimization we need to transfer data to and
+   833→from it to synchronize processing. This is where networks and buses come in handy. We
+   834→have a number of design parameters: bandwidth, cost, distance, and flexibility. On one end
+   835→we have WiFi that has a pretty good range, is very easy to use (no wires, after all), cheap but
+   836→it offers comparatively mediocre bandwidth and latency. No machine learning researcher
+   837→within their right mind would use it to build a cluster of servers. In what follows we focus
+   838→on interconnects that are suitable for deep learning.
+   839→• PCIe is a dedicated bus for very high bandwidth point-to-point connections (up to 32
+   840→GB/s on PCIe 4.0 in a 16-lane slot) per lane. Latency is in the order of single-digit
+   841→microseconds (5 μs). PCIe links are precious. Processors only have a limited number
+   842→of them: AMD’s EPYC 3 has 128 lanes, Intel’s Xeon has up to 48 lanes per chip;
+   843→on desktop-grade CPUs the numbers are 20 (Ryzen 9) and 16 (Core i9) respectively.
+   844→Since GPUs have typically 16 lanes, this limits the number of GPUs that can connect
+   845→to the CPU at full bandwidth. After all, they need to share the links with other high
+   846→bandwidth peripherals such as storage and Ethernet. Just like with RAM access, large
+   847→bulk transfers are preferable due to reduced packet overhead.
+   848→• Ethernet is the most commonly used way of connecting computers. While it is signifi-
+   849→cantly slower than PCIe, it is very cheap and resilient to install and covers much longer
+   850→distances. Typical bandwidth for low-grade servers is 1 GBit/s. Higher-end devices
+   851→(e.g., C5 instances 200 in the cloud) offer between 10 and 100 GBit/s bandwidth. As
+   852→in all previous cases data transmission has significant overheads. Note that we al-
+   853→most never use raw Ethernet directly but rather a protocol that is executed on top of
+   854→the physical interconnect (such as UDP or TCP/IP). This adds further overhead. Like
+   855→PCIe, Ethernet is designed to connect two devices, e.g., a computer and a switch.
+   856→• Switches allow us to connect multiple devices in a manner where any pair of them can
+   857→carry out a (typically full bandwidth) point-to-point connection simultaneously. For
+   858→instance, Ethernet switches might connect 40 servers at high cross-sectional band-
+   859→width. Note that switches are not unique to traditional computer networks. Even PCIe
+   860→lanes can be switched201 . This occurs, e.g., to connect a large number of GPUs to a
+   861→host processor, as is the case for the P2 instances202.
+   862→• NVLink is an alternative to PCIe when it comes to very high bandwidth interconnects.
+   863→It offers up to 300 Gbit/s data transfer rate per link. Server GPUs (Volta V100) have
+   864→six links whereas consumer-grade GPUs (RTX 2080 Ti) have only one link, operating
+   865→at a reduced 100 Gbit/s rate. We recommend to use NCCL 203 to achieve high data
+   866→transfer between GPUs.
+   867→13.4.7 More Latency Numbers
+   868→
+   869→===== صفحة الكتاب 610 =====
+   870→570
+   871→Computational Performance
+   872→205
+   873→The summary in Table 13.4.1 and Table 13.4.2 are from Eliot Eshelman204 who maintains
+   874→an updated version of the numbers as a GitHub gist205.
+   875→Table 13.4.1: Common Latency Numbers.
+   876→Action
+   877→Time
+   878→Notes
+   879→L1 cache reference/hit
+   880→1.5 ns
+   881→4 cycles
+   882→Floating-point add/mult/FMA
+   883→1.5 ns
+   884→4 cycles
+   885→L2 cache reference/hit
+   886→5 ns
+   887→12 ~ 17 cycles
+   888→Branch mispredict
+   889→6 ns
+   890→15 ~ 20 cycles
+   891→L3 cache hit (unshared cache)
+   892→16 ns
+   893→42 cycles
+   894→L3 cache hit (shared in another core)
+   895→25 ns
+   896→65 cycles
+   897→Mutex lock/unlock
+   898→25 ns
+   899→L3 cache hit (modified in another core)
+   900→29 ns
+   901→75 cycles
+   902→L3 cache hit (on a remote CPU socket)
+   903→40 ns
+   904→100 ~ 300 cycles (40 ~ 116 ns)
+   905→QPI hop to a another CPU (per hop)
+   906→40 ns
+   907→64MB memory ref. (local CPU)
+   908→46 ns
+   909→TinyMemBench on Broadwell E5-2690v4
+   910→64MB memory ref. (remote CPU)
+   911→70 ns
+   912→TinyMemBench on Broadwell E5-2690v4
+   913→256MB memory ref. (local CPU)
+   914→75 ns
+   915→TinyMemBench on Broadwell E5-2690v4
+   916→Intel Optane random write
+   917→94 ns
+   918→UCSD Non-Volatile Systems Lab
+   919→256MB memory ref. (remote CPU)
+   920→120 ns
+   921→TinyMemBench on Broadwell E5-2690v4
+   922→Intel Optane random read
+   923→305 ns
+   924→UCSD Non-Volatile Systems Lab
+   925→Send 4KB over 100 Gbps HPC fabric
+   926→1 μs
+   927→MVAPICH2 over Intel Omni-Path
+   928→Compress 1KB with Google Snappy
+   929→3 μs
+   930→Send 4KB over 10 Gbps ethernet
+   931→10 μs
+   932→Write 4KB randomly to NVMe SSD
+   933→30 μs
+   934→DC P3608 NVMe SSD (QOS 99% is 500μs)
+   935→Transfer 1MB to/from NVLink GPU
+   936→30 μs
+   937→~33GB/s on NVIDIA 40GB NVLink
+   938→Transfer 1MB to/from PCI-E GPU
+   939→80 μs
+   940→~12GB/s on PCIe 3.0 x16 link
+   941→Read 4KB randomly from NVMe SSD
+   942→120 μs
+   943→DC P3608 NVMe SSD (QOS 99%)
+   944→Read 1MB sequentially from NVMe SSD
+   945→208 μs
+   946→~4.8GB/s DC P3608 NVMe SSD
+   947→Write 4KB randomly to SATA SSD
+   948→500 μs
+   949→DC S3510 SATA SSD (QOS 99.9%)
+   950→Read 4KB randomly from SATA SSD
+   951→500 μs
+   952→DC S3510 SATA SSD (QOS 99.9%)
+   953→Round trip within same data center
+   954→500 μs
+   955→One-way ping is ~250μs
+   956→Read 1MB sequentially from SATA SSD
+   957→2 ms
+   958→~550MB/s DC S3510 SATA SSD
+   959→Read 1MB sequentially from disk
+   960→5 ms
+   961→~200MB/s server HDD
+   962→Random Disk Access (seek+rotation)
+   963→10 ms
+   964→Send packet CA->Netherlands->CA
+   965→150 ms
+   966→Table 13.4.2: Latency Numbers for NVIDIA Tesla GPUs.
+   967→
+   968→===== صفحة الكتاب 611 =====
+   969→571
+   970→Hardware
+   971→Action
+   972→Time
+   973→Notes
+   974→GPU Shared Memory access
+   975→30 ns
+   976→30~90 cycles (bank conflicts add la-
+   977→tency)
+   978→GPU Global Memory access
+   979→200
+   980→ns
+   981→200~800 cycles
+   982→Launch CUDA kernel on GPU
+   983→10 μs
+   984→Host CPU instructs GPU to start kernel
+   985→Transfer
+   986→1MB
+   987→to/from
+   988→NVLink
+   989→GPU
+   990→30 μs
+   991→~33GB/s on NVIDIA 40GB NVLink
+   992→Transfer 1MB to/from PCI-E GPU
+   993→80 μs
+   994→~12GB/s on PCI-Express x16 link
+   995→13.4.8 Summary
+   996→• Devices have overheads for operations. Hence it is important to aim for a small number
+   997→of large transfers rather than many small ones. This applies to RAM, SSDs, networks
+   998→and GPUs.
+   999→• Vectorization is key for performance. Make sure you are aware of the specific abilities
+  1000→of your accelerator. E.g., some Intel Xeon CPUs are particularly good for INT8 op-
+  1001→erations, NVIDIA Volta GPUs excel at FP16 matrix-matrix operations and NVIDIA
+  1002→Turing shines at FP16, INT8, and INT4 operations.
+  1003→• Numerical overflow due to small data types can be a problem during training (and to a
+  1004→lesser extent during inference).
+  1005→• Aliasing can significantly degrade performance. For instance, memory alignment on 64
+  1006→bit CPUs should be done with respect to 64 bit boundaries. On GPUs it is a good idea
+  1007→to keep convolution sizes aligned, e.g., to tensor cores.
+  1008→• Match your algorithms to the hardware (e.g., memory footprint, and bandwidth). Great
+  1009→speedup (orders of magnitude) can be achieved when fitting the parameters into caches.
+  1010→• We recommend that you sketch out the performance of a novel algorithm on paper before
+  1011→verifying the experimental results. Discrepancies of an order-of-magnitude or more
+  1012→are reasons for concern.
+  1013→• Use profilers to debug performance bottlenecks.
+  1014→• Training and inference hardware have different sweet spots in terms of price and perfor-
+  1015→mance.
+  1016→13.4.9 Exercises
+  1017→1. Write C code to test whether there is any difference in speed between accessing memory
+  1018→aligned or misaligned relative to the external memory interface. Hint: be careful of
+  1019→caching effects.
+  1020→2. Test the difference in speed between accessing memory in sequence or with a given
+  1021→stride.
+  1022→
+  1023→===== صفحة الكتاب 612 =====
+  1024→572
+  1025→Computational Performance
+  1026→206
+  1027→3. How could you measure the cache sizes on a CPU?
+  1028→4. How would you lay out data across multiple memory channels for maximum bandwidth?
+  1029→How would you lay it out if you had many small threads?
+  1030→5. An enterprise-class HDD is spinning at 10,000 rpm. What is the absolutely minimum
+  1031→time an HDD needs to spend worst case before it can read data (you can assume that
+  1032→heads move almost instantaneously)? Why are 2.5” HDDs becoming popular for com-
+  1033→mercial servers (relative to 3.5” and 5.25” drives)?
+  1034→6. Assume that an HDD manufacturer increases the storage density from 1 Tbit per square
+  1035→inch to 5 Tbit per square inch. How much information can you store on a ring on a 2.5”
+  1036→HDD? Is there a difference between the inner and outer tracks?
+  1037→7. Going from 8 bit to 16 bit data types increases the amount of silicon approximately by
+  1038→four times. Why? Why might NVIDIA have added INT4 operations to their Turing
+  1039→GPUs?
+  1040→8. How much faster is it to read forward through memory vs. reading backwards? Does
+  1041→this number differ between different computers and CPU vendors? Why? Write C code
+  1042→and experiment with it.
+  1043→9. Can you measure the cache size of your disk? What is it for a typical HDD? Do SSDs
+  1044→need a cache?
+  1045→10. Measure the packet overhead when sending messages across the Ethernet. Look up the
+  1046→difference between UDP and TCP/IP connections.
+  1047→11. Direct memory access allows devices other than the CPU to write (and read) directly to
+  1048→(from) memory. Why is this a good idea?
+  1049→12. Look at the performance numbers for the Turing T4 GPU. Why does the performance
+  1050→“only” double as you go from FP16 to INT8 and INT4?
+  1051→13. What is the shortest time it should take for a packet on a round trip between San Fran-
+  1052→cisco and Amsterdam? Hint: you can assume that the distance is 10,000 km.
+  1053→Discussions206.
+  1054→13.5 Training on Multiple GPUs
+  1055→So far we discussed how to train models efficiently on CPUs and GPUs. We even showed
+  1056→how deep learning frameworks allow one to parallelize computation and communication
+  1057→automatically between them in Section 13.3. We also showed in Section 6.7 how to list
+  1058→all the available GPUs on a computer using the nvidia-smi command. What we did not
+  1059→discuss is how to actually parallelize deep learning training. Instead, we implied in pass-
+  1060→ing that one would somehow split the data across multiple devices and make it work. The
+
+[showing lines 471-1060 of 1722; use offset=1061 with limit to continue reading]

@@ -1,0 +1,452 @@
+     1→
+     2→===== صفحة الكتاب 414 =====
+     3→Chapter 15 — Maintenance and Evolution
+     4→Where we are. Chapter 14 carried a verified change the last mile into production and taught you to keep it
+     5→flowing — pipelines, progressive deployment, containers, names, certificates, and the DORA evidence that
+     6→delivery performance matters. This chapter is about everything after the celebration: the years a successful
+     7→system spends being fixed, adapted, extended, and refactored, usually by people who did not write it.
+     8→Deployment begins the longest phase of a successful system’s life. Most professional effort goes into evolving
+     9→systems that have been in production for years, not into building new ones — and this chapter is about the code
+    10→you will inherit.
+    11→The industry has names for that work. Corrective maintenance fixes defects. Adaptive maintenance responds to
+    12→a changing environment — a new OS version, a deprecated API, a new regulation — where the code did nothing
+    13→wrong but the world moved. Perfective maintenance adds the features and improvements users keep asking a
+    14→living system for. And preventative maintenance — refactoring, debt paydown — improves structure now so
+    15→that all the other kinds stay affordable later. A widely cited historical rule of thumb places maintenance, taken
+    16→together, at roughly 60 percent of a system’s lifetime cost — the share varies substantially by system, by
+    17→organization, and by what gets classified as maintenance, but the direction is not in doubt.1 Read that number
+    18→again: the phase this book spent fourteen chapters preparing you for is the minority of the money, which is reason
+    19→enough to treat evolving code as the main event of an engineering career rather than the cleanup after it.
+    20→15.1 What Makes Code Legacy
+    21→Colloquially, “legacy” means old. The working definition that matters is different: legacy code is code without
+    22→tests — or, in its more visceral form, code you are afraid to change. Age is incidental. A module written last
+    23→month with no tests, no documentation, and one departed author is legacy; a fifteen-year-old module with a
+    24→thorough suite is not, because the suite makes change safe. The defining property is that the system’s actual
+    25→behavior is not pinned down anywhere except in the code itself — so any change might break something, you
+    26→cannot know what, and you cannot know cheaply. Fear sets in, fear breeds avoidance, avoidance means changes
+    27→are bolted on in the least invasive (and least clean) way possible, and the code gets worse precisely because
+    28→everyone is being careful. Breaking that spiral is a skill, and it starts with an inversion of the testing you learned in
+    29→Chapter 10.
+    30→The tests-first definition comes from Michael Feathers, whose Working Effectively with Legacy Code also names
+    31→the only two ways there are to change legacy code.2 Edit and pray: study the code, make the change, look around
+    32→manually for anything you broke, deploy, and hope. Cover and modify: first build tests that cover the code you
+    33→must touch, then make the change and let the tests detect any behavior you altered without meaning to. This book
+    34→
+    35→===== صفحة الكتاب 415 =====
+    36→has been teaching the second way all along; here it finally gets its name. Cover-and-modify starts with a search,
+    37→not an edit: locate your change points — the specific places in the code where your change must actually land —
+    38→because those are the places the test coverage has to grip before you touch anything. The next two sections are
+    39→cover-and-modify in practice.
+    40→15.2 Characterization Tests
+    41→Chapter 10’s tests were built from a specification: the oracle (§10.1.4) told you what the right answer should be.
+    42→Legacy code has no trustworthy spec — the comments lie, the documentation describes version 2, and the original
+    43→requirements are three pivots old. So you flip the direction of inference. A characterization test documents what
+    44→the code actually does now: you call the function with an input, observe the output, and write that observation
+    45→down as the expected value. The running system itself becomes the oracle.
+    46→This feels like cheating — you are asserting the code does whatever it does, bugs included. But the test’s job is to
+    47→pin down current behavior, not to verify correctness, so that your upcoming changes cannot alter it
+    48→unknowingly. Users, and other code, may well depend on the current behavior, strange corners and all. The
+    49→practical loop: write a test with a deliberately wrong expected value, run it, read the actual value from the failure
+    50→message, and promote that actual value into the assertion. Probe the edges — empty inputs, nulls, boundary values
+    51→— until you have a net of pinned behavior around everything your change might disturb. When a characterization
+    52→test exposes something that is plainly a bug, resist fixing it in the same breath: record it, finish building the net,
+    53→and change behavior as its own deliberate, separately reviewed step. One commit should refactor or fix, never
+    54→ambiguously both.
+    55→Applied to a fee-code lookup inherited with the clinic scheduler, the loop leaves this trail:
+    56→Characterizing assumes you can find your way around, and with an inherited codebase that takes a deliberate
+    57→workflow. Read what the previous team left behind first — the tests above all: a passing test is executable
+    58→def legacy_fee_code(visit_type):                    # inherited: no docs, no tests
+    59→return {"exam": "E10", "lab": "L20", "vaccine": "V30"}.get(visit_type, "E10")
+    60→def test_probe_unknown_type():
+    61→assert legacy_fee_code("phone") == "XXX"
+    62→# deliberately wrong
+    63→# FAILED: AssertionError: assert 'E10' == 'XXX'
+    64→def test_unknown_type_bills_as_exam():              # observed value, promoted
+    65→assert legacy_fee_code("phone") == "E10"
+    66→def test_empty_type_bills_as_exam():                # edge probe: pinned, bug or not
+    67→assert legacy_fee_code("") == "E10"
+    68→
+    69→===== صفحة الكتاب 416 =====
+    70→documentation that stays synchronized with the behavior it actually checks, though what it checks may be
+    71→incomplete or no longer what anyone intends. Then read any design documents. On documentation, note the
+    72→distinction: an architecture description (§6.5) is the formal design artifact, but tests, commit history, and mockups
+    73→are living informal documentation, and agile teams weight the informal kind heavily because it stays closer to the
+    74→code. Next, generate a class or dependency diagram — most languages have tools that extract one — to see the
+    75→shape of the system before you dive into any single file. Then get the application and its test suite running locally,
+    76→against a cloned or fixture copy of the database, before touching anything: a system you cannot run is a system
+    77→you cannot characterize. Only then write characterization tests at your intended change points, and begin.
+    78→Modern tooling has also shifted the comprehension half of legacy work. Understanding what a gnarly function
+    79→actually does — the prerequisite for characterizing it — has always been the slowest, loneliest part of the job. AI
+    80→assistants (§13.2) are genuinely strong here: summarizing an unfamiliar module, proposing what a function’s edge
+    81→cases might be, drafting candidate characterization tests for you to verify against the running code. The
+    82→verification discipline of Chapter 13 still governs — an AI’s account of legacy behavior is a hypothesis, and the
+    83→running system remains the only oracle — but as a hypothesis generator for code no living person understands, it
+    84→removes a real bottleneck.
+    85→15.3 Refactoring Under Green Tests
+    86→With behavior pinned, you can refactor. Chapter 2 introduced refactoring inside the red–green–refactor loop
+    87→(§2.3.2): improving the design of existing code without changing its behavior, protected by green tests. Legacy
+    88→work follows the same feedback loop, but it begins by building the green net around existing behavior first.
+    89→Because the code is difficult to change safely, the team must apply the loop more cautiously. The craft is to move
+    90→in steps so small that each one is obviously behavior-preserving — rename, extract a function, inline a variable,
+    91→move a method — running the suite after every step. If the bar goes red, the last step is the culprit; undo it and
+    92→take a smaller one. Named, cataloged refactoring moves (Fowler’s catalog is the standard reference) matter
+    93→because each has known mechanics and known traps; a sequence of safe moves composes into a transformation
+    94→you would never dare attempt as one leap.3
+    95→Where should you aim the moves? Code smells are surface symptoms that suggest — not prove — a deeper
+    96→design problem: a long method, a large class that does too many things, a stretch of duplicated code, magic
+    97→numbers (unexplained literals like 65 scattered through the logic), deeply nested conditionals, a long parameter
+    98→list. A smell is a prompt to look closer, not a verdict; sometimes the long method really is the clearest way to write
+    99→that logic. For functions in particular, a compact health checklist is SOFA: keep each function Short, doing One
+   100→thing, taking Few arguments, and written at a single level of Abstraction. Some smells can even be measured:
+   101→cyclomatic complexity counts the independent decision paths through a function — built on the control-flow
+   102→analysis of Chapter 10 — turning “this method feels tangled” into a number a pipeline can watch.
+   103→The named moves map onto the smells. Beyond rename, extract, inline, and move: replace magic number with
+   104→named constant (speed > SPEED_LIMIT explains itself; speed > 65 does not); introduce guard clauses — early
+   105→
+   106→===== صفحة الكتاب 417 =====
+   107→returns for the exceptional cases — to flatten deeply nested conditionals; remove duplication, applying Chapter
+   108→6’s DRY principle, while staying alert for code that merely looks similar but serves different purposes; decompose
+   109→large class, splitting along clusters of fields and methods that change together; replace temp with query, turning
+   110→a scattered computed variable into one well-named method; and introduce parameter object, bundling
+   111→arguments that always travel together into a single type that can then attract the behavior that uses it.
+   112→The clinic scheduler’s booking check shows two of those smells at once:
+   113→Replace the magic 8 with a named constant, run the suite, flatten the nesting with guard clauses, run it again —
+   114→the tests stay green after each move:
+   115→Legacy code adds a chicken-and-egg problem the catalog alone cannot solve: the worst code cannot be tested
+   116→without refactoring (dependencies are hard-wired, everything talks to the database) and cannot be safely
+   117→refactored without tests. To break the cycle, make only the enabling changes required to add a test: introduce a
+   118→parameter or extract an interface around a hard-wired dependency so a test double can replace it (Chapter 10).
+   119→Stop once the behavior can be tested, then proceed under that protection.
+   120→def can_book(patient, slot, booked_today):
+   121→if patient is not None:
+   122→if slot.open:
+   123→if booked_today < 8:
+   124→return True
+   125→else:
+   126→return False
+   127→else:
+   128→return False
+   129→else:
+   130→return False
+   131→MAX_DAILY_BOOKINGS = 8
+   132→def can_book(patient, slot, booked_today):
+   133→if patient is None:
+   134→return False
+   135→if not slot.open:
+   136→return False
+   137→return booked_today < MAX_DAILY_BOOKINGS
+   138→
+   139→===== صفحة الكتاب 418 =====
+   140→15.4 Repository Stewardship
+   141→The habit of leaving a repository better than you found it is sometimes called the Boy Scout Rule.4 It does not
+   142→mean perfecting every file you open or disguising a rewrite inside an ordinary change. Repository stewardship
+   143→extends responsibility beyond the feature or defect named in the ticket to the condition of the surrounding system.
+   144→Small improvements compound just as small shortcuts do. A clearer name reduces the cost of the next reading. A
+   145→characterization test protects the next modification. Removing a stale comment prevents the next engineer from
+   146→trusting a false explanation. Simplifying one tangled branch makes the next defect easier to isolate. None
+   147→transforms the system alone, but repeated across a team and over years, they determine whether the repository
+   148→becomes easier or harder to change.
+   149→The guardrails are the same as the rest of this chapter: understand the behavior before changing it, protect it with
+   150→tests, work in small steps, and keep each change coherent enough to review and reverse. Improve the code you
+   151→already have reason to touch. Record larger problems instead of pretending they can be repaired safely on the side.
+   152→This is the review-time principle of §9.3 turned into a daily working habit — deliver the change you were asked
+   153→for, and leave the system better prepared for the change that comes next.
+   154→15.5 Technical Debt
+   155→The economics underneath all of this has a name. Technical debt is the metaphor for the future cost incurred
+   156→when you take a shortcut today: like financial debt, it lets you move faster now in exchange for interest — and the
+   157→interest is that every future change to that code costs more than it would have.5 The metaphor’s precision is its
+   158→virtue. Debt is a deal, not simply “bad code” — and sometimes the deal is a good one. Deliberate debt is a
+   159→conscious trade — “we hard-code the tax rule to make the pilot; we log a ticket to generalize it” — the
+   160→engineering equivalent of a startup loan, rational whenever learning fast matters more than building clean,
+   161→provided you track it and service it. Inadvertent debt is the interest you pay on shortcuts you never knew you
+   162→took — from inexperience, from requirements that shifted under a once-correct design, or from Chapter 1’s crunch
+   163→pitfall, where scope silently absorbed through overtime gets paid for later in weakened structure. Nobody chose it,
+   164→so nobody tracks it, so it compounds.
+   165→Unmanaged, debt’s interest payments consume a team’s entire capacity: each feature takes longer, which raises
+   166→pressure, which invites new shortcuts, which raises interest again. The management is not “never borrow” — it is
+   167→to borrow knowingly, keep the debts visible (a debt register in the backlog, reviewed like any other work), and pay
+   168→down principal where you actually pay interest: the high-churn code you touch weekly, not the ugly module
+   169→nobody has opened in years. Refactoring (§15.3) is the repayment mechanism, and the pipeline (§14.2) is what
+   170→makes repayment safe enough to do continuously.
+   171→
+   172→===== صفحة الكتاب 419 =====
+   173→15.6 Strangler Fig versus Big-Bang Rewrite
+   174→What about a system so far gone that the team wants to start over? Chapter 2’s troubled browser rewrite (§2.6.3)
+   175→showed how a big-bang rewrite concentrates risk: you discard the accumulated knowledge embedded in code
+   176→that handles a thousand edge cases, you run two systems (one frozen, one imaginary) for the duration, and the new
+   177→system’s first real validation comes at the end, all at once. The delivery-era alternative is the strangler fig pattern,
+   178→named for the fig that grows around a host tree, roots itself, and gradually replaces the host it envelops.6 You place
+   179→an interception layer — a routing facade — in front of the legacy system, then peel off one capability at a time:
+   180→build the new implementation, route that slice of traffic to it, verify it in production (a canary, §14.3.2, at the
+   181→granularity of a feature), and retire the old code path. At every moment, you have one working system — part old,
+   182→part new — and every increment of the rewrite is validated by real use within weeks of being written. The rewrite
+   183→becomes a sequence of small, reversible deployments instead of one giant irreversible bet: the whole argument of
+   184→Chapter 14, applied to the biggest change a team ever makes.
+   185→15.7 Conclusion
+   186→Evolution is where Chapter 6’s “design for change” either pays its dividend or collects its debt: systems built with
+   187→seams, interfaces, and tests bend under years of change; systems without them become the legacy code someone
+   188→else must characterize, strangle, and replace. The chapter’s working sequence is practical: preserve current
+   189→behavior with characterization tests, refactor while the tests remain green, address technical debt deliberately, and
+   190→use incremental replacement when a rewrite is justified. Underneath all of it runs the habit of §15.4 — steward the
+   191→repository, leaving it a little better prepared for the next change than you found it. Chapter 14’s compression was a
+   192→rule about making change — keep it small, keep its path to users automatic; this chapter adds the long-run
+   193→corollary: keep the code changeable — because the one certainty about a successful system is that it will have to
+   194→change for longer than anyone who built it expects.
+   195→Sources
+   196→1 Robert L. Glass, Frequently Forgotten Fundamental Facts about Software Engineering (IEEE Software, 2001). doi.org.
+   197→2 Michael Feathers, Working Effectively with Legacy Code (Prentice Hall, 2004). informit.com.
+   198→3 Martin Fowler, Catalog of Refactorings. refactoring.com.
+   199→4 Robert C. Martin, The Boy Scout Rule, in Kevlin Henney (ed.), 97 Things Every Programmer Should Know (O’Reilly, 2010) —
+   200→the widely cited one-page statement of “leave the code cleaner than you found it.” The collection is released under a Creative
+   201→Commons license. 97-things-every-x-should-know.gitbooks.io.
+   202→5 Ward Cunningham, The WyCash Portfolio Management System (OOPSLA experience report, 1992). c2.com.
+   203→6 Martin Fowler, StranglerFigApplication (2004). martinfowler.com.
+   204→
+   205→===== صفحة الكتاب 420 =====
+   206→Key takeaways are summarized above in §15.7.
+   207→Continue to the Exercises.
+   208→Go deeper with the Open Resources for this chapter.
+   209→
+   210→===== صفحة الكتاب 421 =====
+   211→
+   212→===== صفحة الكتاب 422 =====
+   213→Chapter 15 — Exercises
+   214→Exercises are graded by depth: [warm‑up] checks understanding, [analysis] asks you to reason. Several require
+   215→actual work — a real characterization suite, a real refactoring, a real repository — not just prose. Show the work,
+   216→not only the answer.
+   217→Concepts
+   218→1. [warm‑up] Classify each of these as deliberate or inadvertent technical debt (§15.5), and justify: (a) hard-
+   219→coding a single currency to make a demo deadline, with a backlog ticket to internationalize; (b) a data
+   220→model that made sense before the requirements pivoted; (c) copy-pasting a function at 2 a.m. during crunch
+   221→to avoid touching a shared module.
+   222→Analysis
+   223→2. [analysis] Write a characterization test. You inherit this undocumented, untested function, which
+   224→production code calls from several places:
+   225→(a) Following §15.2, write a suite of characterization tests, in your language’s test framework, that pins the
+   226→current behavior for at least six input classes, including a missing value ( None, null, or nil, whichever
+   227→your tab uses), empty string, whitespace-only, over-length, hyphenated, and a non-alphanumeric input
+   228→under both strict values. (b) Identify one behavior your probing reveals that looks like a bug, and explain
+   229→— citing §15.2 — why you should pin it rather than fix it in the same change. (c) State which single line
+   230→you would be most afraid to “clean up” without this suite, and why.
+   231→3. [analysis] Refactor under green. With the characterization suite from exercise 2 in place, refactor your
+   232→language’s norm_code in small, named, behavior-preserving moves (§15.3): at minimum, extract the
+   233→normalization steps (trim/uppercase/strip hyphens) into their own function, and remove the duplicated
+   234→def norm_code(s, strict=False):
+   235→if s is None:
+   236→return "" if not strict else None
+   237→s = s.strip().upper().replace("-", "")
+   238→if len(s) > 8:
+   239→s = s[:8]
+   240→if strict and not s.isalnum():
+   241→raise ValueError(s)
+   242→return s or ("" if not strict else None)
+   243→
+   244→===== صفحة الكتاب 423 =====
+   245→strict/empty handling so the “what counts as invalid” decision lives in exactly one place. Rules: one move
+   246→at a time, suite green after every move, no behavior change (the suite is the referee — including any pinned
+   247→bug). Report each move by its catalog name, and state after which move you would commit, and why there
+   248→rather than at the end.
+   249→4. [analysis] Build a technical-debt register. The clinic-app team’s codebase carries these known liabilities:
+   250→(a) the authorization check is copy-pasted into three request handlers; (b) the ORM is two major versions
+   251→behind and the old version stops receiving security patches next year; (c) a hand-rolled date parser has a
+   252→known daylight-saving bug that two downstream call sites silently work around; (d) the billing module has
+   253→no tests at all; (e) a feature flag from a promotion that ended last year still guards dead code in the checkout
+   254→path. Build a debt register (§15.5): for each item, classify it (deliberate or inadvertent), name the interest it
+   255→charges (what it costs the team per sprint, concretely) and the principal (what paying it off would take).
+   256→Then order the five for paydown, justify the order — and identify the one item you would argue is not
+   257→worth paying down this term, and why.
+   258→5. [analysis] Your organization proposes a two-year big-bang rewrite of a ten-year-old billing system. Using
+   259→§15.6 and the browser-rewrite case of §2.6.3, write a one-page counter-proposal for a strangler-fig
+   260→migration: what the interception layer would be, which capability you would peel off first (and why that
+   261→one), how each slice gets validated, and what the organization can do at month six under your plan that it
+   262→cannot do under the rewrite.
+   263→6. [analysis] Maintain, strangle, or rewrite? A regional insurer runs a 12-year-old policy-administration
+   264→system: the domain rules change perhaps twice a year (regulatory updates), the last production incident was
+   265→fourteen months ago, two of the original developers still maintain it, and test coverage is thin everywhere
+   266→except the premium calculator — but one subsystem, the customer-facing quote portal, needs features the
+   267→old architecture makes painful. Management is being pitched a full rewrite. Write a one-page
+   268→recommendation that honestly weighs all three options — continued maintenance, a strangler migration
+   269→(§15.6), and the rewrite — against criteria you state explicitly (rate of change, incident history, knowledge
+   270→retention, test coverage, where the pain actually is). Note that in this scenario the cheapest option may be
+   271→the right one for most of the system; your recommendation may differ by subsystem, and should say so.
+   272→7. [analysis] Find the change points and seams in a real codebase. Pick a codebase you did not write — your
+   273→team project’s oldest module, or an open-source project you use — and invent one plausible change request
+   274→for it. Before touching anything, report: (a) the change points — the specific files and functions where the
+   275→change must land (§15.1); (b) the seam you would use to get tests in place — the spot where you can alter
+   276→or intercept behavior without editing the code you are about to change (a constructor parameter, an
+   277→interface boundary, an environment hook); (c) the first characterization test you would write there (§15.2),
+   278→with its actual input; and (d) one place you would refuse to modify until it had more coverage, and what
+   279→that refusal would cost.
+   280→
+   281→===== صفحة الكتاب 424 =====
+   282→8. [analysis] Repository stewardship. Choose one pull request from your team project or another repository.
+   283→Identify one small improvement you made — or could safely make — beyond the requested behavior: a
+   284→clearer name, a stronger test, a corrected document, a simplified branch, removed duplication, or an
+   285→improved build check. Explain why the improvement is relevant to the change (not an unrelated detour),
+   286→how you verified it preserved behavior (§15.2, §15.3), and name one larger cleanup you deliberately left
+   287→for a separate issue because including it would have made the change harder to review or reverse (§15.4,
+   288→§15.5).
+   289→
+   290→===== صفحة الكتاب 425 =====
+   291→
+   292→===== صفحة الكتاب 426 =====
+   293→Chapter 15 — Open Resources
+   294→Free, open-licensed, or freely accessible materials that reinforce this chapter. Types: 📘 open text · 🎓 course ·
+   295→📄 primary source / standard · 🎥 video · 🛠 tool. Licenses vary and are noted where known. Each entry notes its
+   296→license or access terms; when in doubt, check the linked page.
+   297→Legacy code, refactoring, and technical debt
+   298→📘 Martin Fowler — “StranglerFigApplication” —
+   299→martinfowler.com/bliki/StranglerFigApplication.html. The original naming of §15.6’s incremental-
+   300→replacement pattern, with the fig-tree metaphor from its source. Access: free to read.
+   301→📘 Refactoring catalog — refactoring.com/catalog (Fowler’s official catalog of named moves and
+   302→mechanics) and refactoring.guru (a free-to-read tutorial treatment with examples). The named, small,
+   303→behavior-preserving steps of §15.3. Access: both free to read online; the full Refactoring book is
+   304→commercial.
+   305→📄 Ward Cunningham — “The WyCash Portfolio Management System” (OOPSLA 1992 experience
+   306→report) — widely mirrored, e.g. via c2.com. The four-paragraph origin of the technical-debt metaphor
+   307→(§15.5), worth reading to see how much the original meaning — debt as deliberate, to be repaid with
+   308→refactoring — matches this chapter’s framing. Access: free on the author’s site.
+   309→📄 Robert L. Glass — “Frequently Forgotten Fundamental Facts about Software Engineering”
+   310→(IEEE Software, 2001) — doi.org. Source for the chapter intro’s maintenance-cost figure: maintenance
+   311→typically consumes 40 to 80 percent (60 percent average) of software costs. Access: paywalled at IEEE;
+   312→widely assigned in courses, and author copies circulate.
+   313→📘 Michael Feathers — Working Effectively with Legacy Code (Prentice Hall, 2004) — informit.com.
+   314→The source of §15.1’s tests-first definition of legacy code and the edit-and-pray/cover-and-modify
+   315→distinction. Not openly licensed — listed here as the standard citation.
+   316→📘 Robert C. Martin — “The Boy Scout Rule”, in 97 Things Every Programmer Should Know (ed.
+   317→Kevlin Henney, O’Reilly, 2010) — 97-things-every-x-should-know.gitbooks.io. The one-page statement
+   318→behind §15.4’s repository-stewardship habit — “leave the code cleaner than you found it.” Access: the
+   319→collection is released under Creative Commons.
+   320→License note
+   321→Linked resources remain under their own licenses (noted above where known); this page is licensed CC BY-SA
+   322→4.0.
+   323→
+   324→===== صفحة الكتاب 427 =====
+   325→
+   326→===== صفحة الكتاب 428 =====
+   327→Appendix A — The Team Project
+   328→Where we are. The chapters of this book each teach a discipline in isolation: process, requirements, design,
+   329→testing, metrics. This appendix is where those disciplines stop being separate lessons and become one
+   330→experience. Over a semester you and three or four teammates will build a working system for a real user.
+   331→The project gives you repeated practice with the ideas introduced throughout the book. The project is the
+   332→spine that the concepts hang from, and it is deliberately structured around four deliverables: a proposal, two
+   333→status reports (a skeletal system, then a viable one), and a comprehensive final report.
+   334→A course project is not a bigger homework assignment. Homework has a known answer, a solitary author, and a
+   335→deadline measured in days. A project has an ambiguous goal, a shifting scope, several authors who must agree,
+   336→and a horizon measured in months. These differences are intentional: they expose the coordination, changing
+   337→requirements, and sustained complexity that a short individual assignment cannot reproduce. Everything that
+   338→makes software engineering hard — coordination, changing requirements, complexity that outgrows any one head
+   339→— only appears at team scale and project length. You cannot learn it from a problem set. You can only learn it by
+   340→living through a small, safe version of the real thing, which is what this appendix is for.
+   341→A.1 Overview
+   342→A.1.1 Goals for a Project
+   343→Before you choose what to build, be clear about why you are building it. The project has three goals, and they
+   344→sometimes pull in different directions.
+   345→The first goal is to ship something real. By the end of the term you should have a system that a genuine user can
+   346→run and benefit from — not a demo that works only on your laptop with the right input typed carefully. “Real” is
+   347→the standard because only a real system exposes the problems this book is about. A toy that no one depends on
+   348→never forces you to handle bad input, never accumulates the kind of coupling that makes change expensive, and
+   349→never generates the defect data you will analyze in Chapter 12.
+   350→The second goal is to practice the disciplines deliberately. It is entirely possible to ship a working system by
+   351→heroics — one strong programmer, many late nights, no tests, no design. Company A in Chapter 1 did exactly that,
+   352→and it worked for three months. The project asks more of you: to write down requirements before coding them, to
+   353→sketch an architecture before committing to it, to write tests that make change safe, and to measure your own
+   354→process. You are being graded not only on the artifact but on the engineering that produced it.
+   355→The third goal is to learn to work as a team — which is a skill, not a personality trait, and one that employers
+   356→consistently rank among the attributes they most want to see in new graduates.1 A team that communicates well
+   357→
+   358→===== صفحة الكتاب 429 =====
+   359→and distributes work fairly will usually out-build a team of stronger individuals who do not.
+   360→Tip. Pick a project you can finish, not one you can imagine. A scheduling tool for a campus club that you
+   361→complete, test, and measure teaches you more than an ambitious “social network for X” that stalls at 40
+   362→percent. Scope is a design decision; make it early and make it small.
+   363→Choose a problem with a real user you can talk to — a campus office, a club, a small nonprofit, a lab, even a
+   364→specific classmate with a recurring annoyance. A reachable user is worth more than an exciting idea, because
+   365→Chapters 3 through 5 all depend on being able to ask someone what they need and to show someone what you
+   366→built.
+   367→A.1.2 The Team Experience
+   368→Most of the difficulty in a team project is not technical. It is human: who does what, how you keep each other
+   369→informed, and what happens when someone does not deliver. Address these on purpose, in the first week, because
+   370→the default — hoping it works out — reliably does not.
+   371→Roles. A team of four or five does not need a rigid hierarchy, but it does need ownership so that every important
+   372→responsibility has exactly one name attached to it. A lightweight set of roles that maps onto the process in Chapter
+   373→2:
+   374→A coordinator (or Scrum-style facilitator) who runs standups, keeps the board honest, and unblocks
+   375→people. It is a servant job that rotates well, not a boss.
+   376→A customer liaison who owns the relationship with your real user, schedules the conversations, and speaks
+   377→for the user when the team debates priorities (Chapters 3–4).
+   378→An architecture/integration owner who keeps the pieces fitting together and guards the module
+   379→boundaries you agreed on (Chapters 6–7).
+   380→A quality owner who sets up CI, keeps the test suite green, and watches the metrics (Chapters 9–12).
+   381→Everyone writes code and everyone tests; roles say who worries about a concern, not who is allowed to touch it.
+   382→Rotate at least once mid-semester so no one graduates having only ever done one thing.
+   383→Communication. Agree on three channels and their purpose: a synchronous one for fast questions (chat), an
+   384→asynchronous one of record for decisions (issues, a shared doc, or pull-request discussion), and a recurring
+   385→meeting — even fifteen minutes twice a week — where each person answers the three standup questions: what I
+   386→finished, what I am doing next, what is blocking me. Write decisions down where the whole team can find them
+   387→later. An architecture chosen in a hallway and remembered by one person is a liability.
+   388→
+   389→===== صفحة الكتاب 430 =====
+   390→Pitfall. The most common failure mode is silent divergence: two people build against different assumptions
+   391→for a week because neither surfaced a question. Cheap, frequent communication is not overhead — it is how
+   392→you keep a small mistake from compounding into a week of rework. Software is discrete (Chapter 1): a
+   393→wrong assumption does not degrade gracefully, it just breaks.
+   394→Psychological safety. Cheap communication only happens where people feel safe doing it. Psychological safety
+   395→is the shared belief that you can raise a problem, admit a mistake, or ask a “basic” question without expecting
+   396→punishment or embarrassment.2 Research on team performance identifies it as a major factor in effective
+   397→collaboration. In Google’s Project Aristotle, a multi-year study of 180 internal teams, psychological safety was the
+   398→most important team dynamic the researchers identified.3 Its absence appears in familiar ways: everyone reports
+   399→being “fine” in standup, delays remain hidden until a deadline, or one teammate quietly redoes another’s work
+   400→instead of discussing the problem. You build it with concrete habits, not slogans. Whoever is leading admits their
+   401→own mistakes first, which licenses everyone else’s honesty. Thank people for surfacing bad news early — early is
+   402→exactly when bad news is cheap, and the thanks is what makes it happen again. And critique the work, never the
+   403→person: “this function needs tests” opens a discussion; “you never test anything” closes one. The trust these habits
+   404→produce has a name — vulnerability-based trust, built by admitting what you do not know — and it is precisely
+   405→what this appendix’s peer-feedback rituals (the visible board, the weekly log, the team reviews) are training you
+   406→in.4
+   407→Conflict and uneven contribution. Disagreement about technical direction is healthy and should be resolved
+   408→with evidence: a spike, a small experiment, a look at the metrics. Make the call, write down why, and move on. Do
+   409→not let a decision stay open because the team is avoiding the discomfort of choosing.
+   410→Uneven contribution is the harder problem, and every team hits some version of it. Deal with it early, factually,
+   411→and kindly. When someone is behind, the first assumption should be a fixable cause — they are blocked, over-
+   412→committed in another course, or unclear on the task — not a character flaw. Make work visible (a board where
+   413→every task has an owner and a status makes contribution impossible to fake or to overlook), so that “who is doing
+   414→what” is a matter of record rather than resentment. If a genuine imbalance persists after you have raised it directly,
+   415→escalate to your instructor early rather than absorbing it into a bitter final week. Most course rubrics — including
+   416→the final report in this appendix — include an individual-contribution component so that fair effort is recognized
+   417→and free-riding is not.
+   418→Tip. Keep a shared, running log of who did what, updated weekly, not reconstructed from memory at the
+   419→end. It makes the individual-contributions section of your final report honest and painless, and it turns a
+   420→potential argument into a lookup.
+   421→
+   422→===== صفحة الكتاب 431 =====
+   423→A.1.3 Coupling the Classroom and Project Experiences
+   424→This course is designed as two parallel tracks — a concepts track (the chapters) and a project track (this
+   425→appendix) — that are tightly coupled early and deliberately loosened later. Understanding that shape will help you
+   426→plan your semester.
+   427→For the first four weeks the tracks move in lockstep, because that is when a mistake is cheapest to correct and
+   428→when you most need the theory to steer the project. In week 1 you form teams alongside Chapter 1. In week 2 you
+   429→choose a process and stand up your repository and board alongside Chapter 2. In week 3 you write your proposal
+   430→while Chapter 3 teaches user requirements, so the requirements you write are the real ones for your system, not
+   431→exercises. In week 4 you build and estimate a backlog while Chapter 4 teaches analysis and prioritization. The
+   432→lecture on Monday is the technique; the project on Friday is the practice. Learning and doing reinforce each other
+   433→while the stakes are low.
+   434→After the requirements are stable, the coupling loosens on purpose. The concepts track keeps advancing on its own
+   435→schedule — design and patterns (Chapters 6–7), static checking and testing (Chapters 9–10), metrics (Chapter 12)
+   436→— while your team iterates at whatever cadence fits your process and your lives. You will pull each concept into
+   437→the project as you need it rather than exactly the week it is lectured, which is how real engineering works: you
+   438→learn a technique when a problem demands it. The status reports in weeks 7 and 11 are the checkpoints that keep
+   439→the loosely-coupled tracks from drifting too far apart, and the final report in week 14 is where everything
+   440→reconverges.
+   441→The full week-by-week mapping lives in the course plans; the timeline below shows how the four project
+   442→deliverables sit on top of it. Courses that run the project on a sprint cadence should read Running the Project on
+   443→Two-Week Sprints, which overlays these same four milestones on a two-week rhythm.
+   444→
+   445→===== صفحة الكتاب 432 =====
+   446→A.2 Project Proposal
+   447→The proposal (due around week 3) is where your team commits to a problem, a user, and a plausible scope. The
+   448→proposal establishes that the team has identified a real problem and developed a plausible starting plan. It remains
+   449→revisable as requirements change during the project (Chapter 1).
+   450→A good proposal answers five questions concretely:
+
+[showing lines 1-450 of 2437; use offset=451 with limit to continue reading]

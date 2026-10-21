@@ -1,0 +1,208 @@
+[
+ {
+  "lesson": "swe.ch9.l1",
+  "id": "ex1.severity-score",
+  "solution": "FINDINGS = [\n    ('critical', 'lock acquired but never released'),\n    ('major', 'name misleads the reader'),\n    ('minor', 'spacing inconsistent'),\n    ('major', 'error path leaks the file handle'),\n]\nWEIGHTS = {'critical': 3, 'major': 2, 'minor': 1}\n\ndef score(findings):\n    total = 0\n    for sev, desc in findings:\n        total = total + WEIGHTS[sev]\n    return total\n\nprint('findings: %d' % len(FINDINGS))\nprint('score: %d' % score(FINDINGS))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "مقياس القائمة المعطاة يساوي 8",
+     "en": "The given list scores 8"
+    },
+    "code": "assert score(FINDINGS) == 8, 'expected: 8 | actual: %r' % (score(FINDINGS),)",
+    "expected": "8"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الدالة تعمم على قائمة أخرى",
+     "en": "The function generalizes to another list"
+    },
+    "code": "assert score([('critical', 'x'), ('minor', 'y')]) == 4, 'expected: 4 | actual: %r' % (score([('critical', 'x'), ('minor', 'y')]),)",
+    "expected": "4"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سطرا التقرير مطبوعان منسقين",
+     "en": "Both report lines are printed formatted"
+    },
+    "code": "assert 'findings: 4' in __learner_output__ and 'score: 8' in __learner_output__, 'expected: findings: 4 then score: 8 | actual: %r' % __learner_output__",
+    "expected": "findings: 4 then score: 8"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch9.l2",
+  "id": "ex1.comment-classifier",
+  "solution": "COMMENTS = [\n    'nit: rename x to total',\n    'blocking: this drops the last item',\n    'does this handle the empty list?',\n    'nit: add a space after the comma',\n    'question: why 79 and not 88?',\n]\n\ndef classify(comment):\n    if comment.startswith('nit:'):\n        return 'nit'\n    if comment.startswith('blocking:'):\n        return 'blocking'\n    if comment.endswith('?'):\n        return 'question'\n    return 'note'\n\ndef classify_comments(comments):\n    counts = {'nit': 0, 'blocking': 0, 'question': 0, 'note': 0}\n    for c in comments:\n        k = classify(c)\n        counts[k] = counts[k] + 1\n    return counts\n\ncounts = classify_comments(COMMENTS)\nfor k in ['blocking', 'question', 'nit', 'note']:\n    print('%s: %d' % (k, counts.get(k, 0)))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "العدادات الصحيحة لقائمة الفريق",
+     "en": "Correct counters for the team list"
+    },
+    "code": "assert classify_comments(COMMENTS) == {'nit': 2, 'blocking': 1, 'question': 2, 'note': 0}, 'expected: {nit: 2, blocking: 1, question: 2, note: 0} | actual: %r' % (classify_comments(COMMENTS),)",
+    "expected": "{nit: 2, blocking: 1, question: 2, note: 0}"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "قاعدة السؤال تعمل وحدها",
+     "en": "The question rule works standalone"
+    },
+    "code": "assert classify('does this handle the empty list?') == 'question', 'expected: question | actual: %r' % (classify('does this handle the empty list?'),)",
+    "expected": "question"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "قاعدة البادئة تسبق غيرها",
+     "en": "The prefix rules come first"
+    },
+    "code": "assert classify('nit: rename x to total') == 'nit' and classify('blocking: this drops the last item') == 'blocking', 'expected: nit and blocking | actual: %r %r' % (classify('nit: rename x to total'), classify('blocking: this drops the last item'))",
+    "expected": "nit and blocking"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "التقرير مطبوع منسقاً",
+     "en": "The report is printed formatted"
+    },
+    "code": "assert 'blocking: 1' in __learner_output__ and 'question: 2' in __learner_output__ and 'nit: 2' in __learner_output__, 'expected: blocking: 1, question: 2, nit: 2 | actual: %r' % __learner_output__",
+    "expected": "blocking: 1, question: 2, nit: 2"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch9.l3",
+  "id": "ex1.missing-docs",
+  "solution": "import ast\n\nSAMPLE = '''def ok_total(a, b):\n    \"\"\"Return the sum of a and b.\"\"\"\n    return a + b\n\ndef hidden(path):\n    return path\n\ndef greet(name):\n    \"\"\"Say hello.\"\"\"\n    print('hello ' + name)\n'''\n\ndef missing_docs(source):\n    tree = ast.parse(source)\n    missing = []\n    for node in ast.walk(tree):\n        if isinstance(node, ast.FunctionDef) and ast.get_docstring(node) is None:\n            missing.append(node.name)\n    return missing\n\nmissing = missing_docs(SAMPLE)\nprint('functions without docstring: %d' % len(missing))\nprint(missing[0])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الدالة الوحيدة المخالفة هي hidden",
+     "en": "The sole offender is hidden"
+    },
+    "code": "assert missing_docs(SAMPLE) == ['hidden'], 'expected: [hidden] | actual: %r' % (missing_docs(SAMPLE),)",
+    "expected": "[hidden]"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "تعمم على عينة صغيرة بلا توثيق",
+     "en": "Generalizes to a small undocumented sample"
+    },
+    "code": "assert missing_docs('def f():\\n    return 1\\n') == ['f'], 'expected: [f] | actual: %r' % (missing_docs('def f():\\n    return 1\\n'),)",
+    "expected": "[f]"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الدالة الموثقة لا تُلمس",
+     "en": "A documented function is never flagged"
+    },
+    "code": "assert missing_docs('def g():\\n    \"\"\"docs\"\"\"\\n    return 2\\n') == [], 'expected: [] | actual: %r' % (missing_docs('def g():\\n    \"\"\"docs\"\"\"\\n    return 2\\n'),)",
+    "expected": "[]"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "التقرير مطبوع منسقاً",
+     "en": "The report is printed formatted"
+    },
+    "code": "assert 'functions without docstring: 1' in __learner_output__ and 'hidden' in __learner_output__, 'expected: functions without docstring: 1 then hidden | actual: %r' % __learner_output__",
+    "expected": "functions without docstring: 1 then hidden"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch9.l4",
+  "id": "ex2.project-mini-linter",
+  "solution": "import ast\n\nSAMPLE = '''def load(path):\n    # TODO: validate the path before opening it\n    try:\n        return open(path).read()\n    except:\n        return ''\n    # a long padded note aaaaaa bbbbbb cccccc dddddd eeeeee ffffff gggggg hhhhhh\n    # another long padded note iiiiii jjjjjj kkkkkk llllll mmmmmm nnnnnn oooooo pppppp qqqqqq\n'''\n\ndef lint(source):\n    tree = ast.parse(source)\n    bare = 0\n    for node in ast.walk(tree):\n        if isinstance(node, ast.ExceptHandler) and node.type is None:\n            bare = bare + 1\n    long_lines = []\n    todos = 0\n    for number, line in enumerate(source.split('\\n'), start=1):\n        if len(line) > 79:\n            long_lines.append(number)\n        todos = todos + line.count('TODO') + line.count('FIXME')\n    return {'bare': bare, 'long': long_lines, 'todos': todos}\n\n\nreport = lint(SAMPLE)\nprint('bare except: %d' % report['bare'])\nprint('long lines: %d' % len(report['long']))\nprint('long at: %s' % report['long'])\nprint('todos: %d' % report['todos'])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "السائق يطبع أسطر التقرير الأربعة بالترتيب",
+     "en": "The driver prints the four report lines in order"
+    },
+    "code": "assert 'bare except: 1' in __learner_output__ and 'long lines: 2' in __learner_output__ and 'long at: [7, 8]' in __learner_output__ and 'todos: 1' in __learner_output__, 'expected: bare except: 1 / long lines: 2 / long at: [7, 8] / todos: 1 | actual: %r' % __learner_output__",
+    "expected": "bare except: 1 / long lines: 2 / long at: [7, 8] / todos: 1"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "التقرير: لقطة واحدة وقائمة [7, 8] ووسم واحد",
+     "en": "The report: one bare clause, the [7, 8] list, one marker"
+    },
+    "code": "assert report['bare'] == 1 and report['long'] == [7, 8] and report['todos'] == 1, 'expected: bare 1, long [7, 8], todos 1 | actual: %r' % report",
+    "expected": "bare 1, long [7, 8], todos 1"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "شيفرة نظيفة كلها أصفار — لا إنذارات كاذبة",
+     "en": "Clean code gives all zeros — no false positives"
+    },
+    "code": "assert lint('def ok():\\n    return 1\\n') == {'bare': 0, 'long': [], 'todos': 0}, 'expected: all-zero report | actual: %r' % lint('def ok():\\n    return 1\\n')",
+    "expected": "all-zero report"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "القاعدة تلتقط except مجردة في شيفرة أخرى",
+     "en": "The rule catches a bare except in other code"
+    },
+    "code": "r2 = lint('try:\\n    run()\\nexcept:\\n    pass\\n')\nassert r2['bare'] == 1 and r2['long'] == [] and r2['todos'] == 0, 'expected: bare 1 only | actual: %r' % r2",
+    "expected": "bare 1 only"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "عدّ الورود لا الأسطر: TODO مرتين في سطر واحد تجمع 2",
+     "en": "Occurrences not lines: TODO twice on one line counts 2"
+    },
+    "code": "r3 = lint('x = 1  # TODO fix and TODO track\\n')\nassert r3['todos'] == 2 and r3['bare'] == 0, 'expected: todos 2 | actual: %r' % r3['todos']",
+    "expected": "todos 2"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch9.l4",
+  "id": "ex5.debug-wrong-node",
+  "solution": "import ast\n\nSAMPLE = '''def load(path):\n    try:\n        return open(path).read()\n    except:\n        return ''\n'''\n\ndef count_bare(source):\n    tree = ast.parse(source)\n    bare = 0\n    for node in ast.walk(tree):\n        if isinstance(node, ast.ExceptHandler) and node.type is None:\n            bare = bare + 1\n    return bare\n\nbare = count_bare(SAMPLE)\nprint('bare except: %d' % bare)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "التقرير يعلن البند المجرد: bare except: 1",
+     "en": "The report announces the bare clause: bare except: 1"
+    },
+    "code": "assert 'bare except: 1' in __learner_output__, 'expected: bare except: 1 | actual: %r' % __learner_output__",
+    "expected": "bare except: 1"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "العدّ نفسه صحيح: bare يساوي 1",
+     "en": "The count itself is right: bare equals 1"
+    },
+    "code": "assert bare == 1, 'expected: 1 | actual: %r' % bare",
+    "expected": "1"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "بلا إنذارات كاذبة: سطر إسناد نظيف يعطي 0 وبند مجرد صريح يعطي 1",
+     "en": "No false positives: a clean assignment line gives 0 and an explicit bare clause gives 1"
+    },
+    "code": "assert count_bare('x = 1\\n') == 0, 'expected: 0 | actual: %r' % count_bare('x = 1\\n')\nassert count_bare('try:\\n    a()\\nexcept:\\n    pass\\n') == 1, 'expected: 1 | actual: %r' % count_bare('try:\\n    a()\\nexcept:\\n    pass\\n')",
+    "expected": "0 for x = 1 and 1 for the bare clause"
+   }
+  ]
+ }
+]

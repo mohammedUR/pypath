@@ -1,0 +1,342 @@
+     1→
+     2→===== صفحة الكتاب 287 =====
+     3→Chapter 11 — Software Security
+     4→Where we are. Security has surfaced in almost every chapter of this book, always as one concern among
+     5→many. Chapter 3 had you draw attack trees and walk a STRIDE checklist to ask what an adversary wants
+     6→(§3.7). Chapter 6 had you write security as a quality-attribute scenario, so “the system shall be secure”
+     7→became something you could measure (§6.1.4). Chapter 9’s static analysis traced tainted input into a query,
+     8→and Chapter 10’s tests probed the error paths an attacker lives on — and Chapter 14 will turn many of these
+     9→checks into automated pipeline gates. Security must be addressed throughout the software lifecycle —
+    10→requirements, design, implementation, dependencies, testing, and deployment. This chapter brings those
+    11→practices together.
+    12→For most of this book, “does it work?” has meant “does it do what the user needs?” Security asks a sharper
+    13→question: does the system do only that, even when someone is actively trying to make it do something else? Most
+    14→other quality attributes assume a cooperative world — users who supply reasonable inputs, dependencies that
+    15→behave, networks that deliver what was sent. Security assumes the opposite: an intelligent adversary studying your
+    16→system for the one input, the one dependency, the one forgotten default that turns your feature into their foothold.
+    17→That adversarial framing is what makes security different, and it is why the defenses in this chapter run from the
+    18→first design sketch all the way to code you have already shipped.
+    19→Principle. Security is not a phase. A vulnerability can be designed in during requirements, coded in during
+    20→implementation, imported through a dependency, or introduced by a deployment — so every earlier
+    21→discipline in this book is also a security control. The cheapest defense is the one you made impossible by
+    22→design; the most expensive is the one you patch after a breach.
+    23→11.1 Security Is a Lifecycle Property
+    24→11.1.1 The CIA Triad
+    25→The classic way to name what security protects is the CIA triad — three properties every system holds in some
+    26→measure:
+    27→Confidentiality — only authorized parties can read data. A patient’s diagnosis should be visible to their
+    28→clinician and to no one else.
+    29→Integrity — data and code are not altered by unauthorized parties, and unauthorized changes are
+    30→detectable. An attacker who cannot read a record may still do real harm by silently changing it — a dosage,
+    31→a balance, a build artifact.
+    32→
+    33→===== صفحة الكتاب 288 =====
+    34→Availability — the system is up and responsive when legitimate users need it. This is the same availability
+    35→Chapter 14 will trade against consistency in the CAP theorem; a denial-of-service attack is an availability
+    36→attack, and downtime you did not choose is a security failure as much as a reliability one.
+    37→The triad is a lens for asking “secure against what?” A leaked mailing list is a confidentiality failure; a tampered
+    38→firmware update is an integrity failure; a ransomware lockout is an availability failure. Naming the property under
+    39→threat keeps a security conversation concrete instead of a vague wish to “be secure.”
+    40→11.1.2 Threat, Vulnerability, Exploit
+    41→Three words get used loosely in casual talk and must be kept distinct in engineering.
+    42→A vulnerability is a weakness in the system — a missing bounds check, an unescaped query, an over-privileged
+    43→account, a dependency with a known flaw. A threat is a potential source of harm: the actor or event that might act
+    44→against you — a criminal crew, a disgruntled insider, an automated bot sweeping the internet. An exploit is the
+    45→concrete technique or code that turns a specific vulnerability into an actual compromise.
+    46→The distinction is practical. You rarely get to choose your threats — the internet supplies a steady background of
+    47→them — but you own every vulnerability in your system, and you can retire one before any exploit for it exists.
+    48→Risk is where the three meet: a vulnerability that no threat can reach is low risk, and a severe threat aimed at a
+    49→weakness you have already closed is harmless. Security work is the ongoing business of shrinking the overlap.
+    50→11.1.3 Defense in Depth and Shifting Left
+    51→No single control is perfect, so serious systems assume each one will eventually fail and place several independent
+    52→layers between an attacker and what matters. Defense in depth is that layering: a network perimeter, a hardened
+    53→host, an application that validates its inputs and checks authorization on every request, and encrypted data with
+    54→tightly held keys. An attacker who slips past one layer meets another, and the layers are chosen to fail
+    55→independently — a flaw that defeats the firewall should not also defeat input validation.
+    56→
+    57→===== صفحة الكتاب 289 =====
+    58→
+    59→===== صفحة الكتاب 290 =====
+    60→The other structural idea is when security work happens. The same economics Chapter 9 gave for defects applies
+    61→with force to vulnerabilities: the earlier you catch one, the cheaper it is to fix. A trust-boundary mistake caught in a
+    62→design review costs an afternoon; the same mistake caught after a breach costs an incident, a disclosure, and
+    63→sometimes the company. Shifting left means moving security activity toward the start of the lifecycle — threat
+    64→modeling during requirements, secure design reviews before code, static and dependency scanning on every
+    65→commit — instead of leaving it to a penetration test the week before launch. Everything in this chapter is arranged
+    66→along that leftward pull.
+    67→11.1.4 Security as a Quality Attribute
+    68→Because security is a system property you can reason about early, it belongs in the same toolbox as the other
+    69→quality attributes. Chapter 6 taught you to make a vague quality testable by writing a quality-attribute scenario
+    70→(§6.1.4): a source, a stimulus, and a measurable response. Security scenarios read the same way — “an
+    71→unauthenticated attacker submits ten thousand login attempts; the system locks the account and alerts an operator
+    72→within one minute” — and they turn “be secure” into something a design can be checked against. Chapter 3’s
+    73→attack trees (§3.7.1) are the adversary’s half of the same practice: model the attacker’s goal as a tree of sub-goals,
+    74→and each leaf is a scenario your design must answer. Threat modeling is, at its core, the requirements and design
+    75→work of Chapters 3 and 6, done with an adversary in the room.
+    76→11.2 The OWASP Top 10
+    77→Design thinking tells you how to reason about threats; it does not tell you which threats are actually hurting real
+    78→systems right now. For that, the field’s most widely used reference is the OWASP Top 10, published by OWASP, a
+    79→nonprofit foundation devoted to software security.1 The Top 10 is an awareness document: a ranked list of the ten
+    80→most critical categories of web-application security risk, assembled from empirical data — hundreds of thousands
+    81→of real reported vulnerabilities — combined with a survey of practitioners. It is revised roughly every four years,
+    82→and each revision is itself a snapshot of how the industry’s risk profile has moved.
+    83→The current edition is the OWASP Top 10:2025. It was first announced as a release candidate at the OWASP
+    84→Global AppSec conference in Washington, D.C., in November 20252 and finalized shortly afterward; as of this
+    85→writing the canonical owasp.org/Top10/ URL points to the 2025 edition and OWASP lists it as the current
+    86→released version.1 The ten categories, in rank order, are:3
+    87→A01:2025 — Broken Access Control
+    88→A02:2025 — Security Misconfiguration
+    89→A03:2025 — Software Supply Chain Failures
+    90→A04:2025 — Cryptographic Failures
+    91→A05:2025 — Injection
+    92→A06:2025 — Insecure Design
+    93→A07:2025 — Authentication Failures
+    94→
+    95→===== صفحة الكتاب 291 =====
+    96→A08:2025 — Software or Data Integrity Failures
+    97→A09:2025 — Security Logging and Alerting Failures
+    98→A10:2025 — Mishandling of Exceptional Conditions
+    99→Compared with the previous OWASP Top 10:2021,4 the changes tell a story.5 Two categories are new. A03:2025
+   100→Software Supply Chain Failures is a broadened successor to 2021’s “Vulnerable and Outdated Components” —
+   101→the scope now covers breakdowns anywhere in building, distributing, or updating software, not only components
+   102→with a published CVE — and its promotion to third place is the clearest signal in the document that the industry’s
+   103→attention has moved to the supply chain (the subject of §11.4). A10:2025 Mishandling of Exceptional
+   104→Conditions is entirely new: it names the security bugs that hide in bad error handling — fail-open logic, crashes,
+   105→leaked stack traces — and it pairs naturally with Chapter 14’s CrowdStrike case study, where an unhandled
+   106→condition inside kernel code took down millions of machines (§14.3.5).
+   107→The rest of the diff is renaming and reranking. Server-Side Request Forgery, a standalone category in 2021, is no
+   108→longer its own entry — it now lives inside A01 Broken Access Control. A handful of categories were renamed for
+   109→emphasis (“Identification and Authentication Failures” became simply “Authentication Failures”; “Security
+   110→Logging and Monitoring Failures” became “…and Alerting Failures,” to stress that a log nobody acts on is
+   111→worthless). And the ranks shifted: Security Misconfiguration rose to #2, while Injection — long the archetypal
+   112→web vulnerability — fell to #5, a sign of how much modern frameworks now prevent it by default.
+   113→Pitfall. Treating the Top 10 as a checklist to tick off. OWASP built it as an awareness document — the
+   114→categories are broad groupings of many underlying weaknesses, and “we handled all ten” is not a security
+   115→claim. Worse, memorizing the list encourages reasoning at the wrong altitude: SSRF moving under Broken
+   116→Access Control and cross-site scripting living under Injection are reminders that categories are buckets of
+   117→weaknesses, not one-bug-one-slot. Reason about the specific weakness in front of you, use the Top 10 to
+   118→make sure no whole class of risk has been forgotten, and expect the list itself to change with the next edition.
+   119→11.2.1 A01: Broken Access Control
+   120→Access control enforces the policy that users can only act within their intended permissions. When it breaks, users
+   121→read, modify, or destroy data that should be beyond their reach — which is why OWASP ranks it #1.6 The failures
+   122→are often mundane: an API that returns another patient’s record because it trusts an ID in the URL without
+   123→checking who is asking (an insecure direct object reference); an admin page reachable by anyone who guesses its
+   124→path; a permission check performed in the browser, where the attacker controls everything, instead of on the
+   125→server. The 2025 edition folds both Server-Side Request Forgery and Cross-Site Request Forgery into this
+   126→category, on the reasoning that both are ultimately the system being tricked into acting outside its intended
+   127→authority.
+   128→
+   129→===== صفحة الكتاب 292 =====
+   130→The defense is a design stance, not a patch: deny by default, decide authorization on the server for every request,
+   131→and derive the acting user’s identity from an authenticated session rather than from any value the client can set.
+   132→Access control is also the security attribute least visible to ordinary feature testing: the system appears to work
+   133→while granting access to unauthorized users. Authorization therefore needs explicit design review and dedicated
+   134→scenarios such as those in §11.1.4.
+   135→11.2.2 A05: Injection
+   136→Injection is what happens when untrusted input is handed to an interpreter and part of that input gets executed as
+   137→a command rather than treated as data.7 SQL injection is the canonical case, and it remains the standard teaching
+   138→example because it is easy to demonstrate, historically devastating, and completely preventable. Cross-site
+   139→scripting — injecting attacker-controlled script into a page other users load — is classified here too: same
+   140→mechanism, a different interpreter (the browser).
+   141→Picture the clinic scheduler looking up a patient’s appointments by name. The natural, disastrous way to build the
+   142→query is to paste the name straight into the SQL text:
+   143→The functions look nearly identical, but only the parameterized version keeps user input separate from the SQL
+   144→command. In the first, the boundary between code (the query) and data (the name) is a string the attacker can
+   145→rewrite; a crafted name like Robert'); DROP TABLE appointments; -- closes the quote, ends the statement, and
+   146→appends one of their own. In the second, the ? placeholder is a parameterized query: the SQL text is fixed and
+   147→compiled first, and the name is bound in afterward as pure data that can never change the query’s structure. This is
+   148→the mechanism Chapter 9’s data-flow analyzers hunt for — tainted input flowing into a query — and the fix is the
+   149→same everywhere, in every language and every interpreter.
+   150→# UNSAFE: the name is concatenated into the SQL text, so an input like
+   151→#   Robert'); DROP TABLE appointments; --  is parsed as SQL, not as a name.
+   152→def find_unsafe(db, name):
+   153→query = "SELECT * FROM appointments WHERE patient_name = '" + name + "'"
+   154→return db.execute(query).fetchall()  # A05:2025 Injection
+   155→# SAFE: the ? placeholder binds the name as a parameter; the database never
+   156→# parses it as SQL, so the same malicious input is just an unmatched name.
+   157→def find_safe(db, name):
+   158→query = "SELECT * FROM appointments WHERE patient_name = ?"
+   159→return db.execute(query, (name,)).fetchall()
+   160→
+   161→===== صفحة الكتاب 293 =====
+   162→Principle. Never build a command by concatenating untrusted input into it. Keep code and data separate by
+   163→construction — parameterized queries for databases, safe templating with output encoding for HTML,
+   164→argument arrays rather than shell strings for subprocesses. Injection is a solved problem; it survives only
+   165→where someone reached for string concatenation instead.
+   166→11.2.3 A06: Insecure Design
+   167→Some vulnerabilities cannot be coded away, because the flaw is in the design itself. OWASP defines Insecure
+   168→Design as “missing or ineffective control design” — a category for weaknesses that a perfect implementation
+   169→would faithfully preserve.8 A password-reset flow that lets anyone reset an account by answering a question
+   170→whose answer is public is not a coding bug; every line may be correct, and the system is still insecure because the
+   171→design never included the control it needed. No amount of static analysis or line-by-line code review finds this,
+   172→because there is no defect on any single line to find.
+   173→This is the category that binds security to the rest of software engineering. It says some security problems are
+   174→requirements and architecture problems, caught earliest by the threat modeling of Chapter 3 and the design review
+   175→of Chapter 9 — before code exists. Insecure Design is the standing argument against treating security as a coding-
+   176→time concern: the most expensive vulnerabilities are decided at the whiteboard.
+   177→11.2.4 Learning by Doing, for Free
+   178→Reading about vulnerabilities builds recognition; exploiting and then fixing them builds understanding, and the
+   179→best resources for that cost nothing. OWASP Juice Shop is a deliberately insecure single-page web application,
+   180→free and open source, with more than a hundred hacking challenges spanning the whole Top 10 — you attack a
+   181→realistic app in a safe sandbox.9 OWASP WebGoat is a free, deliberately insecure application built around guided
+   182→lessons, walking you step by step through vulnerabilities like SQL injection in an offline environment.10 And the
+   183→PortSwigger Web Security Academy offers a large body of free training material plus interactive labs, written by
+   184→the team behind the Burp Suite testing proxy.11
+   185→These combine into a complete loop that costs a student nothing: read a category on the OWASP site, exploit it in
+   186→Juice Shop or WebGoat, fix it using the matching page from the free OWASP Cheat Sheet Series,12 and confirm
+   187→your fix against a requirement from the OWASP Application Security Verification Standard (ASVS), a free
+   188→checklist of testable security controls.13 Learn, attack, defend, verify — the same red-to-green rhythm Chapter 10
+   189→taught, aimed at security.
+   190→11.3 Finding Vulnerabilities, from Manual to Autonomous
+   191→Knowing the categories, how do you find your instances of them? Chapter 14 will introduce the three scanner
+   192→families that automate the search (§14.6.1); this section previews them briefly and then turns to what is genuinely
+   193→
+   194→===== صفحة الكتاب 294 =====
+   195→new — security tools that use large language models to find, confirm, and even fix vulnerabilities on their own.
+   196→11.3.1 SAST, DAST, and SCA
+   197→The three families divide the work by what they look at. Static application security testing (SAST) is the
+   198→security-focused end of the static analysis of Chapter 9 (§9.4): it reads source code without running it, hunting
+   199→vulnerable patterns — injection sinks, unsafe deserialization, hard-coded secrets. Dynamic application security
+   200→testing (DAST) attacks the running application from the outside, the way an adversary would, probing endpoints
+   201→with hostile inputs and knowing nothing of the source. Software composition analysis (SCA) examines neither
+   202→your code nor your running app but your dependency manifest, checking every third-party package against
+   203→databases of known vulnerabilities.
+   204→The three are complementary because each sees what the others cannot, and all three carry Chapter 9’s warning
+   205→about false positives and false negatives (§9.4.2): a scanner that floods developers with false alarms trains them
+   206→to ignore it, and then its true findings are lost in the noise. A security scanner earns action only by keeping its
+   207→signal high enough to be worth reading.
+   208→11.3.2 AI Enters the Loop
+   209→A wave of tools now applies large language models to security. They are beginning to help find, explain, and
+   210→sometimes propose fixes for vulnerabilities — but, as the rest of this section stresses, their outputs still require
+   211→authorization, specialist security tooling, and human validation rather than standing on their own. Three of them
+   212→occupy distinct points in the design space worth keeping apart.
+   213→The first fixes known findings. GitHub Copilot Autofix combines CodeQL code scanning with LLM-generated
+   214→fix suggestions: when the scanner flags an alert, the model proposes a concrete patch for the developer to review.
+   215→It became generally available in August 2024; GitHub reported that it produced fixes for more than 90% of alert
+   216→types across JavaScript, TypeScript, Java, and Python, and that during the beta developers using it remediated
+   217→vulnerabilities roughly three times faster overall — about seven times faster for cross-site scripting and twelve
+   218→times faster for SQL injection — than by hand. It runs on all public repositories on GitHub.com without a separate
+   219→subscription; private repositories need a code-security license.14 Autofix does not find new classes of bug; it
+   220→shortens the distance from a known alert to a merged fix.
+   221→The second hunts for unknown bugs. Big Sleep, a collaboration between Google Project Zero and Google
+   222→DeepMind that grew out of the earlier “Project Naptime” framework, is an AI agent that searches real code for
+   223→vulnerabilities. In late 2024 Google described it finding an exploitable stack buffer underflow in the widely used
+   224→SQLite database engine — a flaw Google characterized as the first real-world vulnerability discovered by an AI
+   225→agent, caught in a development branch and fixed before it reached a release.15 In 2025 Google reported that Big
+   226→Sleep, combined with threat intelligence, helped identify and pre-empt in-the-wild exploitation of a separate
+   227→
+   228→===== صفحة الكتاب 295 =====
+   229→critical SQLite vulnerability, CVE-2025-6965, that had been known only to attackers.16 These are early results,
+   230→but they show AI moving from fixing flagged bugs to discovering unknown ones.
+   231→The third validates by attacking. Strix is an open-source project (from the developer UseStrix) that describes itself
+   232→as “autonomous AI penetration testing agents that act just like real hackers — they run your code dynamically,
+   233→find vulnerabilities, and validate them through actual proofs-of-concept.”17 Its design is what makes it interesting
+   234→for a software-engineering course. Strix runs a multi-agent architecture — specialized agents work different
+   235→targets in parallel and share what they find — and it arms those agents with real tooling: an HTTP interception
+   236→proxy, browser automation for client-side attacks, shell and Python environments for building exploits, plus static
+   237→and dynamic analysis. It is model-agnostic, driving whichever LLM provider you configure, and it ships as a pip-
+   238→installable command-line tool that sandboxes agent execution in Docker containers, with a mode that scopes a
+   239→scan to the diff in a pull request so it can run inside CI.17 Help Net Security’s coverage corroborated the graph-
+   240→based multi-agent design when the project drew attention in late 2025.18
+   241→The critical design difference from a static linter is validation. A SAST tool reports a “possible SQL injection”;
+   242→Strix tries to actually exploit it and reports a working proof-of-concept or nothing. That closes the false-positive
+   243→gap from the other side — a confirmed exploit is evidence, not a guess. It also opens a different set of hazards that
+   244→a first course must name plainly.
+   245→Pitfall. Autonomous attack tools are power tools, and they cut both ways. Three rules are non-negotiable.
+   246→First, authorization. Strix’s own documentation is blunt: “Only test apps you own or have permission to
+   247→test. You are responsible for using Strix ethically and legally.” Running an autonomous exploit agent against
+   248→a system you are not authorized to test can be a crime; scope, written permission, and rules of engagement
+   249→come before any scan. Second, validation is still yours. A finding — even one with a proof-of-concept — is
+   250→the start of triage, not the end: reproduce it, judge its real business impact, and remember that these agents
+   251→can over-report, miss logic flaws, and hallucinate. Third, they do not replace secure design. An agent that
+   252→finds a vulnerability late is far more expensive than a design decision that made the bug impossible; treat
+   253→Strix, Big Sleep, and Autofix as authorized-testing and research tools that complement threat modeling, least
+   254→privilege, and input validation — never as substitutes for them. Adopt any of them the way Chapter 9 said to
+   255→adopt a static analyzer: as a tool whose output you must keep trusting, which means keeping it honest.
+   256→11.4 The Software Supply Chain: A World of Weak Links
+   257→Every technique so far assumes the code under review is your code. It mostly is not. The single largest shift in
+   258→what “your software” means is that a modern application is overwhelmingly assembled from open-source
+   259→components you did not write, chosen by people who are not on your team, updated on a schedule you do not
+   260→control. This section is the intellectual center of the chapter, because it is where security stops being about the
+   261→code you can read and becomes about the trust you extend.
+   262→
+   263→===== صفحة الكتاب 296 =====
+   264→11.4.1 The Scale Problem
+   265→Start with your own habit. When you run npm install or pip install, you pull in not just the package you
+   266→named but everything it depends on, and everything those depend on, down through a tree most developers never
+   267→inspect. The numbers are stark. Hastings’ 2024 dissertation on supply-chain attacks reports that open-source
+   268→software is used in 99% of software applications, that a simple “hello-world” Ruby on Rails application requires
+   269→966 packages across three package managers, and that a React project pulls in 1,213 — the vast majority of them
+   270→transitive dependencies nobody on the team ever chose.19 Black Duck’s 2026 Open Source Security and Risk
+   271→Analysis report, based on audits of hundreds of commercial codebases, puts hard current figures on the same
+   272→picture: as of the 2026 report, open source appears in 98% of codebases, 64% of the components in a typical
+   273→codebase are transitive — pulled in indirectly, selected by no one on the team — and 93% of codebases contain
+   274→components with no development activity in over two years.20 The same report found an average of 581 known
+   275→vulnerabilities per codebase, with 78% of codebases carrying at least one high-risk vulnerability and 44% carrying
+   276→a critical one.20
+   277→The reframe for a student is immediate: the package manifest at the root of your sprint project is a trust decision,
+   278→not a convenience. Most of the code you ship is other people’s, and its vulnerabilities are your vulnerabilities.
+   279→Pitfall. Automatic updates are a supply-chain attack vector. The same semantic-versioning ranges you learn
+   280→as good practice — accept any compatible patch or minor release — can also create supply-chain risk: your
+   281→build may automatically accept a malicious patch or minor release as soon as an attacker publishes one. As
+   282→Hastings’ dissertation puts the inversion: “It used to be patch on a Friday to prevent a breach on Monday.
+   283→Now, it is patch on Friday and a breach on Monday.”19 The defenses are cultural before they are technical:
+   284→pin exact versions with a lockfile, review dependency-update pull requests like any other change, and treat a
+   285→new dependency as an engineering decision with a threat model attached.
+   286→11.4.2 Weak Links
+   287→Why is the open-source supply chain so exposed? Because trust in it flows through people, and people are the
+   288→weakest link. The dissertation adopts the term weak links from research by Zahan and colleagues, who studied the
+   289→npm ecosystem and identified structural weaknesses in how packages are maintained — including maintainers
+   290→whose account-recovery email ran through expired domains anyone could re-register — and found, strikingly, that
+   291→compromising about twenty high-profile developer accounts could poison roughly half of the npm ecosystem.21 A
+   292→tiny number of overextended, under-supported maintainers hold up an enormous amount of the world’s software.
+   293→The dissertation’s blunt summary of the adoption mindset is worth keeping: open-source components “might be
+   294→free, but they are free as in puppy.”19 A package is an ongoing responsibility to vet, monitor, and patch — a living
+   295→thing you have taken into your home. OWASP recognized the whole problem in 2025 by promoting it to a
+   296→dedicated Top 10 category, A03:2025 Software Supply Chain Failures, whose scope deliberately spans
+   297→
+   298→===== صفحة الكتاب 297 =====
+   299→dependencies, build systems, and distribution infrastructure — the entire attack surface from source to build to
+   300→distribution to dependency.22 The two case studies below are opposite failure modes on that same surface.
+   301→There is a subtler weak link worth naming, because it attacks the incentives that keep the commons healthy rather
+   302→than any one package. Open source works as a bargain: you may use this code freely, and in return you honor its
+   303→license — you keep the attribution, you share alike where the license says so, you give something back. A satirical
+   304→site called MALUS dramatizes what happens when that bargain is abandoned. It advertises, deadpan, a service
+   305→that feeds your dependency manifest to an AI, “recreates” each library as “legally distinct” code stripped of every
+   306→attribution and copyleft obligation, and hands it back under a proprietary license — “finally, liberation from open
+   307→source license obligations.”23 The site is a joke; the pressure it names is not. If firms could launder away the
+   308→reciprocity that open source runs on — taking the value while shedding the obligation — the volunteers who
+   309→maintain the world’s dependencies would have even less reason to keep doing unpaid, thankless work, and the
+   310→pool of overextended maintainers you will meet in the xz story (§11.4.3) would only thin further. Security tooling
+   311→can verify a component’s provenance; it cannot, by itself, sustain the human ecosystem that produces components
+   312→worth verifying. That sustainability is a supply-chain security concern too.
+   313→Pitfall. Treating open-source components as a free resource to extract rather than a commons to sustain is a
+   314→slow-acting supply-chain risk. Every dependency you take on rests on a maintainer’s continued willingness
+   315→to maintain it; honoring licenses, reporting bugs, upstreaming fixes, and — where you can — funding the
+   316→projects you depend on are how you keep the components you rely on alive and watched, not charity.
+   317→
+   318→===== صفحة الكتاب 298 =====
+   319→11.4.3 Two Case Studies
+   320→Case study. Log4Shell (CVE-2021-44228), December 2021. Apache Log4j is a logging library so common
+   321→that it sits, usually as a transitive dependency, inside a large fraction of the Java software on earth. On
+   322→December 10, 2021, a vulnerability was published with the maximum possible CVSS base score of 10.0.24
+   323→The cause was a feature almost nobody knew was on: Log4j versions from 2.0-beta9 through 2.14.1 would,
+   324→by default, interpret special lookup syntax inside the strings they logged, and one lookup type (JNDI) could
+   325→be pointed at an attacker-controlled server to download and execute arbitrary code. Because applications log
+   326→untrusted input all the time — a username, a search term, a User-Agent header — an attacker could trigger
+   327→remote code execution simply by getting a malicious string logged, with no privileges and no user
+   328→interaction.24
+   329→Log4Shell was catastrophic for a supply-chain reason: the dangerous behavior lived in a ubiquitous
+   330→transitive dependency, so countless teams were vulnerable through software they never realized contained
+   331→Log4j at all. Remediation was staged — 2.15.0 disabled the behavior, 2.16.0 removed it — and the urgency
+   332→was extraordinary: CISA added Log4Shell to its Known Exploited Vulnerabilities catalog with a federal
+   333→remediation deadline of December 24, 2021,25 two weeks after disclosure. The lesson is that you cannot
+   334→patch a dependency you do not know you have — which is the argument for the software bills of materials
+   335→in §11.4.5.
+   336→
+   337→===== صفحة الكتاب 299 =====
+   338→Case study. The xz-utils backdoor (CVE-2024-3094), March 2024. Where Log4Shell was an accident, xz
+   339→was an attack — a patient, multi-year campaign to plant a backdoor in software the world runs by default.
+   340→xz-utils is a compression library that ships in essentially every Linux distribution, and liblzma is linked,
+
+[showing lines 1-340 of 672; use offset=341 with limit to continue reading]

@@ -1,0 +1,322 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * py4e.ch11.l4 — "Character Classes and Repetition / فئات المحارف والتكرار"
+ * Aligned with PY4E ch11 s1 (مطابقة المحارف) + s3 (تنفيذ عمليتي البحث والاستخراج معًا)
+ * as a deep-dive application lesson.
+ * All expression is original.
+ * Note: ? quantifier, {n,m} bounds and lazy (?) matching go beyond the extracted
+ * Arabic source text (which ends mid-chapter) — authored per task spec, flagged
+ * for the M5 Arabic proofread pass.
+ */
+const lesson = {
+  id: 'py4e.ch11.l4',
+  version: 1,
+  part: 'I',
+  track: 'P1',
+  book: 'PY4E',
+  chapter: 11,
+  title: { ar: 'فئات المحارف والتكرار', en: 'Character Classes and Repetition' },
+  estimatedMinutes: 18,
+  prerequisites: ['py4e.ch11.l3'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'في ثلاثة دروس استعملت رموزاً استعرتها من الكتاب: \\S و[0-9.] و+ — واليوم تفتح القاموس الكامل: فئات تصف أي مجموعة محارف تختارها، واختصارات جاهزة للأشهر منها، ومكررات تمتد من صفر إلى عدد تحدده بنفسك. بهذه القطع يصير النمط برنامجاً مصغراً. بنهاية الدرس ستكون قادرًا على: كتابة فئات بمديات مثل [a-z0-9]، واستعمال \\d و\\w و\\s و\\S والنقطة wildcard، واختيار * أو + أو ? أو {n,m} بحسب السؤال، وترويض الطموح greedy بالقانع lazy.',
+        en: 'Across three lessons you borrowed symbols from the book: \\S, [0-9.] and + — today the full dictionary opens: classes describing any character group you pick, ready-made shorthands for the famous ones, and repeaters stretching from zero to a count you set. With these pieces a pattern becomes a miniature program. By the end of this lesson you will be able to: write ranged classes like [a-z0-9], wield \\d and \\w and \\s and \\S and the wildcard dot, choose * or + or ? or {n,m} to fit the question, and tame greedy matching with lazy.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "import re\nprint(re.findall(r'\\d+', 'room 12, floor 3'))\nprint(re.findall(r'\\w+', 'room 12, floor 3'))",
+      question: {
+        ar: 'السلسلة واحدة والنمطان مختلفان: \\d+ و\\w+. أيهما يلتقط أكثر، ولماذا بقيت الفاصلة خارج الحصاد؟',
+        en: 'One string, two patterns: \\d+ and \\w+. Which harvests more, and why did the comma stay outside the crop?',
+      },
+      reveal: {
+        ar: "\\d+ التقط ['12', '3'] — أرقاماً فقط؛ و\\w+ التقط ['room', '12', 'floor', '3'] — حروفاً وأرقاماً وشرطات سفلية. الفاصلة ليست من صفتي الفئتين فكأنها سياج يقطع الحصاد عنده، كما قطع split الكلمات في الفصل الثامن عند الفراغ. الفئة تحدد صفة المحارف المقبولة، والمكرر يحدد كم منها تحتاج.",
+        en: "\\d+ caught ['12', '3'] — digits only; \\w+ caught ['room', '12', 'floor', '3'] — letters, digits and underscores. The comma belongs to neither class, so it acts like a fence cutting the harvest, the way split cut words at blanks in chapter 8. The class defines which characters qualify; the repeater defines how many you need.",
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'فئات المحارف: قائمة مقبولاتك', en: 'Character classes: your accepted list' },
+      chunks: [
+        {
+          ar: 'الأقواس المربعة تصف فئة: مجموعة محارف يكفي واحد منها ليمر المطابقة. المدى بالشرطة يختصر: [a-z] كل الحروف الصغيرة، و[0-9] كل الأرقام، و[a-zA-Z0-9] الثلاثة معاً — وهو نمط البريد المصقول من الدرس الماضي. وداخل الفئة تتحول الرموز الخاصة إلى محارف عادية: النقطة في [0-9.] نقطة عشرية حقيقية، بينما خارج الفئة تطابق أي محرف. لهذا يصف الكتاب النقطة داخل الأقواس بأنها تدل فعلاً على الأرقام ذات الفاصلة العشرية.',
+          en: 'Square brackets describe a class: a set of characters where any single one passes the match. Ranges abbreviate with a dash: [a-z] all lowercase letters, [0-9] all digits, [a-zA-Z0-9] all three together — last lesson\u2019s refined address pattern. Inside a class special symbols turn into plain characters: the dot in [0-9.] is a genuine decimal point, while outside the class it matches any character. That is why the book says the dot inside brackets truly denotes decimal numbers.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الاختصارات: \\d و\\w و\\s و\\S والنقطة', en: 'Shorthands: \\d, \\w, \\s, \\S and the dot' },
+      chunks: [
+        {
+          ar: 'الفئات الشهيرة لها اختصارات بحرف واحد مسبوق بشرطة مائلة: \\d أي رقم وهي اختصار [0-9]، و\\w أي محرف كلمة — حرف أو رقم أو شرطة سفلية — و\\s أي محرف فراغ: مسافة أو سطر جديد أو جدولة. وقلب كل منها حرفها الكبير: \\S أي محرف ليس فراغاً — النمط الذي حصد البريد درسين كاملين. أما النقطة . خارج الأقواس فتطابق أي محرف قطعاً: لذلك طابق F..m: كلمات From وFxxm وF12m كلها — أقوى الفئات وأكثرها خطورة لأنها لا ترفض شيئاً.',
+          en: 'The famous classes have one-letter shorthands preceded by a backslash: \\d any digit, shorthand for [0-9]; \\w any word character — letter, digit or underscore; \\s any whitespace character — blank, newline or tab. Each has its uppercase opposite: \\S any character that is not whitespace — the pattern that harvested mail for two whole lessons. And the dot . outside brackets matches absolutely any character: that is why F..m: matched From, Fxxm and F12m alike — the broadest class and the most dangerous, for it refuses nothing.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'المكررات: من * إلى {n,m} ومشكلة الطمع', en: 'Repeaters: from * to {n,m} and the greed problem' },
+      chunks: [
+        {
+          ar: 'المكرر يطبق على ما قبله مباشرة — محرف أو فئة: * صفر أو أكثر، + واحد أو أكثر، ? صفر أو واحد، و{n,m} من n إلى m مرة — فالنمط \\d{2,4} يقبض أرقاماً بين خانتين وأربع. الفرق الحرج بين * و+ هو السؤال: هل يجوز أن يكون لا شيء؟ بريد يحتاج محرفاً قبل @ فنستعمل +، وتباعد محارف اختياري فنستعمل *.',
+          en: 'A repeater applies to whatever precedes it — one character or one class: * zero-or-more, + one-or-more, ? zero-or-one, and {n,m} from n to m times — so \\d{2,4} grabs numbers of two to four digits. The crucial difference between * and + is the question: is nothing allowed? An address needs a character before @ so we use +; optional spacing takes *.',
+        },
+        {
+          ar: 'وهناك صفة أخطر: * و+ طموحة greedy — تمسك أكبر قدر ممكن قبل أن تكتمل. الكتاب أثبتها بمثال النقطتين المتعددات: في سطر فيه ثلاث عناوين، وصلت From:.+@ حتى إشارة @ الأخيرة لا الأولى. ولمن يريد أول موقف فقط تضاف ? بعد المكرر فيصير قانعاً lazy يتوقف عند أول مطابقة ممكنة — From:.+?@ يقف عند أول @. هذه الصفة من توثيق المكتبة أكثر منها من نص الفصل — ونعم بها حين تحتاج ضبط الحصاد.',
+          en: 'And there is a deadlier trait: * and + are greedy — they hold the largest possible span before completing. The book proved it with the double colon example: in a line of three addresses, From:.+@ reached the last @ sign, not the first. For those wanting the first position only, a ? is added after the repeater, making it lazy — stopping at the earliest possible match: From:.+?@ halts at the first @. This trait comes from the library documentation more than the chapter text — and it serves beautifully when you need a disciplined harvest.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'الطموح والقانع: نفس السطر، حسادان مختلفان', en: 'Greedy vs lazy: same line, two different harvests' },
+      code: "import re\nline = 'From: stephen.marquard@uct.ac.za, csev@umich.edu, and cwen@iupui.edu'\nprint(re.search(r'From:.+@', line).group())\nprint(re.search(r'From:.+?@', line).group())\nprint(re.findall(r'\\d{2,4}', 'years 1998, 2004 and 8'))",
+      explanation: {
+        ar: 'النمط الطموح From:.+@ مسح السطر حتى آخر إشارة @ في التقط حقلين كاملين وعناوين منتصف السطر معه. أما إضافة ? وحدها — From:.+?@ — فأوقفته عند أول @ فسلم أول عنوان منتصف التعبير فقط. ثم \\d{2,4} على سنوات مكتوبة: أمسكت 1998 و2004 ورفضت 8 لأنها أقل من خانتين — الحد الأدنى عمل. نفس الفئة، ثلاثة سلوكيات، والقرار لك.',
+        en: 'The greedy pattern From:.+@ swept the line to the last @ sign, dragging two whole fields and mid-line addresses along. A single added ? — From:.+?@ — stopped it at the first @, delivering only the first mid-pattern address. Then \\d{2,4} over written years: it caught 1998 and 2004 and refused 8 for falling below two digits — the lower bound worked. Same class, three behaviors, and the choice is yours.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.times-classes',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: "النص معطى في المحرر. استخرج بصيغة الوقت كاملة باستخدام re.findall بالنمط r'\\d{2}:\\d{2}:\\d{2}' في قائمة اسمها times، ثم اطبع times ثم اطبع times[0]. المتوقع: قائمة تحوي ['09:14:16', '18:44:02'] ثم 09:14:16.",
+        en: "The text is given in the editor. Extract full clock times with re.findall and the pattern r'\\d{2}:\\d{2}:\\d{2}' into a list named times, then print times and print times[0]. Expected: the list ['09:14:16', '18:44:02'] then 09:14:16.",
+      },
+      starterCode: "s = 'Seen at 09:14:16 and again at 18:44:02'\nimport re\n# النمط: خانتان ثم : ثم خانتان ثم : ثم خانتان / pattern: two digits, :, two digits, :, two digits\n",
+      solution: "import re\ns = 'Seen at 09:14:16 and again at 18:44:02'\ntimes = re.findall(r'\\d{2}:\\d{2}:\\d{2}', s)\nprint(times)\nprint(times[0])",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'times تحوي وقتين كاملين', en: 'times holds exactly two full times' },
+          code: "assert times == ['09:14:16', '18:44:02'], 'expected: two times | actual: %r' % (times,)",
+          expected: 'two times',
+        },
+        {
+          id: 't2',
+          name: { ar: 'النمط مقيّد بخانتين لا أكثر', en: 'The pattern is pinned to two digits' },
+          code: "assert all(len(t) == 8 for t in times), 'expected: every time 8 chars | actual: %r' % (times,)",
+          expected: 'every time 8 chars',
+        },
+        {
+          id: 't3',
+          name: { ar: 'الوقت الأول مطبوع', en: 'The first time is printed' },
+          code: "assert '09:14:16' in __learner_output__ and '18:44:02' in __learner_output__, ('expected: both times | actual: %r' % __learner_output__)",
+          expected: 'both times',
+        },
+      ],
+      hints: [
+        { ar: '\\d{2} خانتان بالضبط — والنقطتان في النمط تسبق كل مجموعة.', en: '\\d{2} is exactly two digits — and the colon precedes each group in the pattern.' },
+        { ar: 'النقطتان ":" في النمط ليستا رمزاً خاصاً — محرف عادي يطابق نفسه حرفياً، و{2} هي التي تشدد خانتين لكل مجموعة.', en: 'The ":" in the pattern is no special symbol — an ordinary character matching itself literally, while {2} pins two digits per group.' },
+        { ar: "الهيكل:\nimport re\ns = ...\ntimes = re.findall(r'\\d{2}:\\d{2}:\\d{2}', s)\nprint(times)\nprint(times[0])", en: "The skeleton:\nimport re\ns = ...\ntimes = re.findall(r'\\d{2}:\\d{2}:\\d{2}', s)\nprint(times)\nprint(times[0])" },
+        { ar: "import re\ns = 'Seen at 09:14:16 and again at 18:44:02'\ntimes = re.findall(r'\\d{2}:\\d{2}:\\d{2}', s)\nprint(times)\nprint(times[0])", en: "import re\ns = 'Seen at 09:14:16 and again at 18:44:02'\ntimes = re.findall(r'\\d{2}:\\d{2}:\\d{2}', s)\nprint(times)\nprint(times[0])" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-classes',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرْجه بالضبط — سطرًا لكل طباعة — دون تشغيله.',
+        en: 'Read the code and predict its exact output — one line per print — without running it.',
+      },
+      code: "import re\nx = re.findall(r'\\d+', 'a1b22c333')\nprint(len(x))\nprint(x[1])\nprint(len(re.findall(r'\\w+', 'hi there, ok')))\nprint(bool(re.search(r'\\d{3}', 'ab12c')))",
+      solution: '3\n22\n3\nFalse',
+      answer: '3\n22\n3\nFalse',
+      hints: [
+        { ar: '\\d+ تقسم الأرقام المتجاورة كل واحدة كتلة: 1 ثم 22 ثم 333.', en: '\\d+ splits adjacent digits into blocks: 1, then 22, then 333.' },
+        { ar: '\\w+ على "hi there, ok": المسافة والفاصلة تقطعان الكلمات — كم كلمة؟', en: '\\w+ over "hi there, ok": the space and comma cut the words — how many words?' },
+        { ar: '\\d{3} تطلب ثلاثة أرقام متتالية — وab12c فيها رقمان متجاوران لا ثلاثة.', en: '\\d{3} demands three consecutive digits — ab12c has two adjacent digits, not three.' },
+        { ar: 'الخرْج:\n3\n22\n3\nFalse', en: 'The output:\n3\n22\n3\nFalse' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-class-dot',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'داخل الأقواس المربعة [0-9.] — ماذا تعني النقطة؟',
+        en: 'Inside the square brackets [0-9.] — what does the dot mean?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'نقطة عشرية حرفية — محرف عادي من الفئة', en: 'A literal decimal dot — an ordinary class character' } },
+        { id: 'b', text: { ar: 'أي محرف كما خارج الأقواس', en: 'Any character, same as outside brackets' } },
+        { id: 'c', text: { ar: 'صفر أو أكثر من ما قبلها', en: 'Zero or more of what precedes it' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'تذكّر حماية الفئة: داخل الأقواس تتحول الرموز الخاصة إلى محارف عادية.', en: 'Remember the class refuge: inside brackets special symbols turn into plain characters.' },
+        { ar: 'لهذا وصفت [0-9.] الأرقام ذات الفاصلة العشرية في أسطر الثقة.', en: 'That is how [0-9.] described the decimal numbers in confidence lines.' },
+        { ar: 'أما خارج الفئة فالنقطة أي-محرف — والفرق بين الموضعين جوهر الدرس.', en: 'Outside the class the dot is any-character — the difference between the two positions is the lesson\u2019s core.' },
+        { ar: 'الجواب: نقطة عشرية حرفية.', en: 'Answer: a literal decimal dot.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.numeric-digit-blocks',
+      exKind: 'numeric',
+      required: true,
+      prompt: {
+        ar: 'بلا تشغيل: كم عنصراً في القائمة re.findall(r"\\d+", "box 7 of 42 in 2024")؟',
+        en: 'Without running: how many elements does re.findall(r"\\d+", "box 7 of 42 in 2024") return?',
+      },
+      answer: '3',
+      solution: '3',
+      tolerance: 0,
+      hints: [
+        { ar: 'كتلة الأرقام المتجاورة كتلة واحدة: اذكرهم بالترتيب.', en: 'A run of adjacent digits is one block: name them in order.' },
+        { ar: '7 وحدها، ثم 42، ثم 2024 — هل بينها أي أرقام متلاصقة مع غيرها؟', en: '7 alone, then 42, then 2024 — is any digit glued to a non-digit neighbor?' },
+        { ar: 'المسافات تقطع الكتل كما قطعت الكلمات في split.', en: 'Spaces cut the blocks the way split cut words.' },
+        { ar: 'الجواب: 3', en: 'Answer: 3' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: '# ملعبك الحرّ — فئات ومكررات\n# Your playground — classes and repeaters\n\nimport re\n\nprint(re.findall(r"[a-z]+", "Code 42 lines and 3 Bugs"))\nprint(re.findall(r"[A-Za-z]+", "Code 42 lines and 3 Bugs"))\nprint(re.findall(r"\\w+@\\w+", "mail csev@umich or kate@ex"))\nprint(re.findall(r"o*", "cool"))\nprint(re.findall(r"o+", "cool"))\nprint(re.findall(r"\\d{2,4}", "12 123 1234 12345 5"))',
+      prompt: {
+        ar: 'جرّب بنفسك: قارن o* مع o+ على cool لترى أثر الصفر مقابل الواحد، وقارن [a-z]+ مع [A-Za-z]+ لترى الحروف الكبيرة ترفض أو تقبل، واقرأ خرج \\d{2,4} على 12345 و5 لتفهم الحدود العليا والدنيا. لا اختبار هنا — فضولك فقط.',
+        en: 'Try it yourself: compare o* with o+ on cool to see zero-vs-one at work; compare [a-z]+ with [A-Za-z]+ to watch capitals refused then accepted; read the \\d{2,4} output over 12345 and 5 to feel both bounds. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'أي الفرق الجوهري بين * و+؟',
+            en: 'What is the essential difference between * and +?',
+          },
+          options: [
+            { id: 'a', text: { ar: '* تقبل الغياب التام (صفر) و+ تطلب واحدًا على الأقل', en: '* accepts total absence (zero); + demands at least one' } },
+            { id: 'b', text: { ar: '* للمحارف و+ للفئات', en: '* is for characters; + is for classes' } },
+            { id: 'c', text: { ar: 'لا فرق — كلتاهما تطابق كل شيء', en: 'No difference — both match everything' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'في sandbox كانت o* تطابق حتى المواضع الخالية بينما o+ اشترطت حرف o واحدًا على الأقل — والاختيار بينهما سؤال: هل يجوز ألا يكون هناك شيء؟',
+            en: 'In the sandbox o* matched even empty positions while o+ required at least one o — choosing between them is the question: is nothing allowed?',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ومن الفصل السادس: .group() في worked أعادت جزءاً من السلسلة كسلسلة جديدة — أي عملية من الفصل السادس تفعل الشيء نفسه؟',
+            en: 'From chapter 6: .group() in the worked example returned part of the string as a new string — which chapter-6 operation does the same?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'التجزئة s[0:2] — تعيد نسخة جديدة من قطعة', en: 'Slicing s[0:2] — returns a fresh copy of a piece' } },
+            { id: 'b', text: { ar: 's[0] = "x" — تعدل الأصل في موضعه', en: 's[0] = "x" — edits the original in place' } },
+            { id: 'c', text: { ar: 'len(s) — تعيد عدداً', en: 'len(s) — returns a number' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'السلاسل غير قابلة للتعديل منذ الفصل السادس: كل قطع عنها نسخة جديدة — وgroup وfindall في هذا الفصل يورثان العادة نفسها.',
+            en: 'Strings have been immutable since chapter 6: every cut is a fresh copy — and group and findall inherit that same habit this chapter.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'ومن الفصل الثامن: بعد findall كتبنا if len(x) > 0 قبل x[0] — ما اسم تلك العادة؟',
+            en: 'From chapter 8: after findall we wrote if len(x) > 0 before x[0] — what is that habit called?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الوصاية — حماية الفهرسة بفحص القائمة الفارغة', en: 'The guardian — protecting indexing with an empty-list check' } },
+            { id: 'b', text: { ar: 'التمييز DSU', en: 'The DSU decoration' } },
+            { id: 'c', text: { ar: 'التجزئة', en: 'Slicing' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'قائمة findall الفارغة لا تحذّر — وx[0] عليها يرمي IndexError؛ الوصاية التي حمت أسطر romeo في الفصل الثامن تحمي اليوم حصاد findall.',
+            en: 'An empty findall list never warns — and indexing it throws IndexError; the guardian that protected romeo\u2019s lines in chapter 8 now guards the findall harvest.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'في worked وصلت From:.+@ حتى آخر @ — ما الذي يجعلها تقف عند أول @؟',
+            en: 'In the worked example From:.+@ reached the last @ — what makes it stop at the first?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'إضافة ? بعد المكرر: From:.+?@ — القانع lazy', en: 'Adding ? after the repeater: From:.+?@ — going lazy' } },
+            { id: 'b', text: { ar: 'استبدال + بـ **', en: 'Replacing + with **' } },
+            { id: 'c', text: { ar: 'حذف المرساة', en: 'Dropping the anchor' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'علامة ? بعد المكرر تقلب سلوكه من الطمع إلى القناعة فيكتفي بأول موضع ممكن — من توثيق مكتبة re.',
+            en: 'A ? after the repeater flips its behavior from greedy to lazy, settling for the earliest possible position — straight from the re library docs.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: "re.findall(r'\\s+@\\s+', s)",
+          right: "re.findall(r'\\S+@\\S+', s)",
+          note: {
+            ar: 'الحرف الكبير والصغير قلبان للمعنى: \\s فراغ و\\S ليس فراغاً. النمط بالصغير يبحث عن مسافات تطوق @ فلن يجد بريداً — والقائمة تعود فارغة بصمت.',
+            en: 'Case flips meaning: \\s is whitespace, \\S is not-whitespace. The lowercase pattern hunts spaces crowding the @ and finds no mail — the list comes back empty in silence.',
+          },
+        },
+        {
+          wrong: "re.findall('5.00', 'paid 5.00 and lost 5X00')",
+          right: "re.findall(r'5\\.00', 'paid 5.00 and lost 5X00')",
+          note: {
+            ar: 'النقطة خارج الفئة أي-محرف: 5.00 طابقت حتى 5X00! لمطابقة نقطة حقيقية اهربها: 5\\.00 — أو احبسها في فئة [5.00] حين يخدمك ذلك.',
+            en: 'Outside a class the dot is any-character: 5.00 even matched 5X00! To match a real dot, escape it: 5\\.00 — or cage it in a class when that serves you.',
+          },
+        },
+        {
+          wrong: "re.search(r'From:.+@', line).group()",
+          right: "re.search(r'From:.+?@', line).group()",
+          note: {
+            ar: '+ الطموحة تشرب السطر حتى آخر @ فتحمل عناوين كاملة ليست مطابقتك. القانع .+? يكفيك أول موقف — والفئات الأدق من الدرس الماضي حل أعمق.',
+            en: 'Greedy + drinks the line to the last @, hauling addresses that are not your match. Lazy .+? settles for the first — and the finer classes of last lesson remain the deeper cure.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'الفئة [a-z0-9] تجمع مقبولاتك بمديات، وداخلها تتحول الرموز الخاصة إلى محارف عادية — النقطة نقطة.', en: 'The class [a-z0-9] gathers your accepted characters by ranges, and inside it special symbols turn plain — a dot is a dot.' },
+        { ar: 'الاختصارات: \\d رقم و\\w محرف كلمة و\\s فراغ — وحروفها الكبيرة النقيض، والنقطة خارج الفئة أي محرف.', en: 'Shorthands: \\d digit, \\w word character, \\s whitespace — capitals are the opposites, and the dot outside a class matches anything.' },
+        { ar: 'المكرر يطبق على ما قبله: * صفر فأكثر، + واحد فأكثر، ? صفر أو واحد، {n,m} مدى محدد.', en: 'A repeater applies to what precedes it: * zero-or-more, + one-or-more, ? zero-or-one, {n,m} a bounded range.' },
+        { ar: '* و+ طموحة تمسك الأقصى — و? بعدهما تجعلها قانعة تقف عند أول مطابقة.', en: '* and + are greedy, grabbing the maximum — a ? after them makes them lazy, stopping at the first match.' },
+      ],
+      reflectPrompt: {
+        ar: 'صمّم نمطاً يلتقط أرقام هواتف بصيغة ثلاث خانات شرطة أربع خانات مثل 555-1234 — ثم جرّبه على نص فيه 55512 و555-12 وراقب ما يقبله وما يرفضه، واضبط الحدود بـ {n,m}.',
+        en: 'Design a pattern catching phone numbers shaped as three digits, a dash, four digits — like 555-1234. Then try it on text holding 55512 and 555-12, watch what it accepts and refuses, and tighten the bounds with {n,m}.',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'PY4E', section: 'py4e.ch11.s1', pages: 'ص173 / pp.173' },
+        { book: 'PY4E', section: 'py4e.ch11.s3', pages: 'ص178 / pp.178' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'PY4E', section: 'py4e.ch11.s1', pages: 'ص173 / pp.173' },
+    { book: 'PY4E', section: 'py4e.ch11.s3', pages: 'ص178 / pp.178' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

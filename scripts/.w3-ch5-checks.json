@@ -1,0 +1,158 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch5.l1",
+   "id": "ex3.trace-record",
+   "code": "uc = {\"actor\": \"Cardholder\", \"goal\": \"Withdraw cash\",\n      \"preconditions\": [\"ATM has cash\"],\n      \"steps\": [\"The Cardholder enters a PIN.\",\n                \"The system dispenses the cash.\"]}\nprint(\"actor:\", uc[\"actor\"])\nprint(\"goal:\", uc[\"goal\"])\nprint(\"steps:\", len(uc[\"steps\"]))\ninside = uc[\"actor\"] in (\"ATM software\", \"database\", \"PIN pad\")\nprint(\"actor outside the system:\", not inside)",
+   "answer": "actor: Cardholder\ngoal: Withdraw cash\nsteps: 2\nactor outside the system: True"
+  },
+  {
+   "lesson": "swe.ch5.l2",
+   "id": "ex2.trace-resume",
+   "code": "alts = {\"A1\": (4, \"resume at 4\"), \"A2\": (4, \"end use case\"),\n        \"A3\": (8, \"resume at 6\"), \"B1\": (\"4-8\", \"end use case\")}\nfor name in sorted(alts):\n    at, outcome = alts[name]\n    print(name, \"at step\", at, \"->\", outcome)",
+   "answer": "A1 at step 4 -> resume at 4\nA2 at step 4 -> end use case\nA3 at step 8 -> resume at 6\nB1 at step 4-8 -> end use case"
+  },
+  {
+   "lesson": "swe.ch5.l3",
+   "id": "ex3.trace-notation",
+   "code": "notation = {\"actor\": \"stick figure\", \"use case\": \"oval\",\n            \"system boundary\": \"box\", \"association\": \"plain line\"}\nfor key in (\"actor\", \"use case\", \"system boundary\", \"association\"):\n    print(key, \"=\", notation[key])",
+   "answer": "actor = stick figure\nuse case = oval\nsystem boundary = box\nassociation = plain line"
+  },
+  {
+   "lesson": "swe.ch5.l4",
+   "id": "ex2.trace-relationships",
+   "code": "base = \"Withdraw Cash\"\nshared = \"Authenticate Cardholder\"\noptional = \"Assess Withdrawal Fee\"\nprint(\"include:\", base, \"always performs\", shared)\nprint(\"extend:\", optional, \"adds to\", base, \"only when out-of-network\")\nprint(\"dependency: base names included; extender names base\")",
+   "answer": "include: Withdraw Cash always performs Authenticate Cardholder\nextend: Assess Withdrawal Fee adds to Withdraw Cash only when out-of-network\ndependency: base names included; extender names base"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch5.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "story = \"As a cardholder, I want to withdraw cash\"\ngaps = [\"how is identity proven?\",\n        \"what if the balance is low?\",\n        \"when does the card come back?\"]\nprint(\"words in story:\", len(story.split()))\nfor g in gaps:\n    print(\"story is silent on:\", g)"
+  },
+  {
+   "lesson": "swe.ch5.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "REQUIRED_FIELDS = (\"actor\", \"goal\", \"preconditions\", \"steps\")\n\ndef validate_uc(uc):\n    \"\"\"Return (ok, problems) for one use-case record.\"\"\"\n    problems = []\n    for field in REQUIRED_FIELDS:\n        if not uc.get(field):\n            problems.append(\"missing:\" + field)\n    for i, s in enumerate(uc.get(\"steps\", []), 1):\n        low = s.lower()\n        if \"cardholder\" not in low and \"system\" not in low:\n            problems.append(f\"step {i}: who acts?\")\n    return (len(problems) == 0, problems)\n\ngood = {\"actor\": \"Cardholder\", \"goal\": \"Withdraw cash\",\n        \"preconditions\": [\"ATM in service\", \"card is valid\"],\n        \"steps\": [\"The Cardholder inserts a card.\",\n                  \"The system validates the PIN.\",\n                  \"The system dispenses the cash.\"]}\nbad = {\"actor\": \"\", \"goal\": \"Click the withdraw button\", \"steps\": []}\n\nfor name, uc in ((\"good\", good), (\"bad\", bad)):\n    ok, problems = validate_uc(uc)\n    print(name, \"OK\" if ok else \"BROKEN\", problems)"
+  },
+  {
+   "lesson": "swe.ch5.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "REQUIRED_FIELDS = (\"actor\", \"goal\", \"preconditions\", \"steps\")\n\ndef validate_uc(uc):\n    problems = [\"missing:\" + f for f in REQUIRED_FIELDS if not uc.get(f)]\n    return (not problems, problems)\n\nmy_uc = {\"actor\": \"Bank Employee\",\n         \"goal\": \"Reload cash cassettes\",\n         \"preconditions\": [\"shift started\"],\n         \"steps\": [\"The Bank Employee opens the cassette bay.\",\n                   \"The system logs the refill.\"]}\n\nok, problems = validate_uc(my_uc)\nprint(my_uc[\"actor\"], \"->\", my_uc[\"goal\"], \":\", \"OK\" if ok else problems)\n\n# Try: empty the preconditions list, or change a step so nobody acts,\n# then re-run. Add a third record for Check Balance and validate it too."
+  },
+  {
+   "lesson": "swe.ch5.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "basic = [\"insert card\", \"enter PIN\", \"enter amount\", \"take cash\"]\nbreaks = [\"wrong PIN\", \"insufficient funds\", \"machine out of cash\", \"network lost\"]\nprint(\"happy path:\", len(basic), \"steps\")\nprint(\"ways it breaks:\", len(breaks))\nfor b in breaks:\n    print(\"-\", b)"
+  },
+  {
+   "lesson": "swe.ch5.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "MAIN = [\"insert card\", \"read card, prompt for PIN\", \"enter PIN\",\n        \"validate PIN with bank\", \"enter amount\", \"dispense cash\", \"return card\"]\n\nALTS = {\n    (4, \"pin wrong\"): {\"name\": \"A1 incorrect PIN\",\n                       \"steps\": [\"show attempts left\", \"re-prompt PIN\"],\n                       \"resume\": 4},\n    (5, \"low balance\"): {\"name\": \"A3 insufficient funds\",\n                         \"steps\": [\"show message\"],\n                         \"resume\": 5},\n}\n\ndef walk(events):\n    \"\"\"events: {step_number: condition}; steps without an event are 'ok'.\"\"\"\n    events = dict(events)\n    path = []\n    i = 1\n    guard = 0\n    while i <= len(MAIN) and guard < 30:\n        guard += 1\n        cond = events.get(i, \"ok\")\n        if cond != \"ok\" and (i, cond) in ALTS:\n            alt = ALTS[(i, cond)]\n            path.append(f\"step{i} ALT({alt['name']})\")\n            for s in alt[\"steps\"]:\n                path.append(f\"step{i}: {s}\")\n            del events[i]\n            i = alt[\"resume\"]\n        else:\n            path.append(f\"step{i} ok\")\n            i += 1\n    return \" -> \".join(path)\n\nprint(walk({4: \"pin wrong\", 5: \"low balance\"}))"
+  },
+  {
+   "lesson": "swe.ch5.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "MAIN = [\"open app\", \"choose item\", \"pay\", \"confirm\"]\nALTS = {}\n# Try: ALTS[(2, \"sold out\")] = {\"name\": \"A1 sold out\",\n#         \"steps\": [\"show similar items\"], \"resume\": 2}\n\ndef walk(events):\n    events = dict(events)\n    path, i, guard = [], 1, 0\n    while i <= len(MAIN) and guard < 30:\n        guard += 1\n        cond = events.get(i, \"ok\")\n        if cond != \"ok\" and (i, cond) in ALTS:\n            alt = ALTS[(i, cond)]\n            path.append(f\"step{i} ALT({alt['name']})\")\n            for s in alt[\"steps\"]:\n                path.append(f\"step{i}: {s}\")\n            del events[i]\n            i = alt[\"resume\"]\n        else:\n            path.append(f\"step{i} ok\")\n            i += 1\n    return \" -> \".join(path)\n\nprint(walk({}))\n# Try: print(walk({2: \"sold out\"})) after uncommenting A1 above."
+  },
+  {
+   "lesson": "swe.ch5.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "UI_WORDS = (\"button\", \"field\", \"tap\", \"hash\", \"SHA-256\")\nsteps = [\n    \"The Cardholder authenticates.\",\n    \"The Cardholder taps ENTER; the system SHA-256-hashes the digits.\",\n    \"The Cardholder enters a PIN; the system validates it.\",\n]\nfor i, s in enumerate(steps, 1):\n    hits = [w for w in UI_WORDS if w in s]\n    print(f\"step{i}\", \"ui-leaks:\" + \",\".join(hits) if hits else \"clean-so-far\")"
+  },
+  {
+   "lesson": "swe.ch5.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "VERBS = (\"insert\", \"enter\", \"select\", \"confirm\", \"dispense\",\n         \"return\", \"print\", \"read\", \"display\", \"prompt\", \"validate\")\nUI_WORDS = (\"button\", \"click\", \"field\", \"tap\", \"hash\")\n\ndef lint_step(step):\n    words = step.split()\n    problems = []\n    if not words or words[0].lower() not in VERBS:\n        problems.append(\"no-verb-start\")\n    leaks = [w for w in UI_WORDS if w in step.lower()]\n    if leaks:\n        problems.append(\"ui:\" + \",\".join(leaks))\n    return problems\n\nsteps = [\"Insert a bank card.\",\n         \"Click the Withdraw button.\",\n         \"SHA-256-hash the typed digits.\",\n         \"Dispense the cash.\"]\nfor i, s in enumerate(steps, 1):\n    verdict = lint_step(s) or [\"clean\"]\n    print(f\"step{i}:\", \" \".join(verdict))\nprint(\"clean:\", sum(1 for s in steps if not lint_step(s)), \"/\", len(steps))"
+  },
+  {
+   "lesson": "swe.ch5.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "VERBS = (\"insert\", \"enter\", \"select\", \"confirm\", \"dispense\",\n         \"return\", \"print\", \"read\", \"display\", \"prompt\", \"validate\")\nUI_WORDS = (\"button\", \"click\", \"field\", \"tap\", \"hash\")\n\ndef lint_step(step):\n    problems = []\n    if not step.split() or step.split()[0].lower() not in VERBS:\n        problems.append(\"no-verb-start\")\n    leaks = [w for w in UI_WORDS if w in step.lower()]\n    if leaks:\n        problems.append(\"ui:\" + \",\".join(leaks))\n    return problems\n\nmine = [\"Enter a PIN.\", \"Validate the PIN with the bank.\", \"Print a receipt.\"]\nfor i, s in enumerate(mine, 1):\n    print(f\"step{i}:\", \" \".join(lint_step(s) or [\"clean\"]))\n# Try adding: 'Tap the Submit button.'  or a too-vague one: 'Authenticate.'\n# then re-run and read each verdict."
+  },
+  {
+   "lesson": "swe.ch5.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "withdraw_auth = \"validate PIN, 3 tries max\"\nbalance_auth = \"validate PIN, 5 tries max\"   # drifted copy!\nprint(\"same rule?\", withdraw_auth == balance_auth)\nprint(\"cost of copies: they drift\")"
+  },
+  {
+   "lesson": "swe.ch5.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "REGISTRY = {\n    \"Authenticate Cardholder\": {\"steps\": [\"Read card\", \"Validate PIN\"]},\n    \"Check Balance\": {\"steps\": [\"Include Authenticate Cardholder\", \"Show balance\"]},\n}\n\ndef trace(name, indent=\"\"):\n    for s in REGISTRY[name][\"steps\"]:\n        if s.startswith(\"Include \"):\n            print(indent + \"-> include:\", s[len(\"Include \"):])\n            trace(s[len(\"Include \"):], indent + \"  \")\n        else:\n            print(indent + \"-\", s)\n\ntrace(\"Check Balance\")"
+  },
+  {
+   "lesson": "swe.ch5.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "REGISTRY = {\n    \"Authenticate Cardholder\": {\"steps\": [\"Read card\", \"Validate PIN\"]},\n    \"Withdraw Cash\": {\"steps\": [\"Include Authenticate Cardholder\",\n                                \"Dispense cash\"]},\n    \"Reload Cash Cassettes\": {\"steps\": [\"Open the bay\", \"Refill\", \"Log refill\"]},\n}\n\ndef trace(name, indent=\"\"):\n    for s in REGISTRY[name][\"steps\"]:\n        if s.startswith(\"Include \"):\n            print(indent + \"-> include:\", s[len(\"Include \"):])\n            trace(s[len(\"Include \"):], indent + \"  \")\n        else:\n            print(indent + \"-\", s)\n\ntrace(\"Withdraw Cash\")\ntrace(\"Reload Cash Cassettes\")\n# Try: add a 'Retrieve Captured Cards' case, or a second case that also\n# includes Authenticate Cardholder, then re-run."
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch5.l1",
+   "id": "ex2.mcq-goal",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch5.l2",
+   "id": "ex3.mcq-bounded",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch5.l2",
+   "id": "ex4.numeric-resume",
+   "answer": "6",
+   "solution": "6"
+  },
+  {
+   "lesson": "swe.ch5.l3",
+   "id": "ex2.mcq-diagram",
+   "answer": "c",
+   "solution": "c"
+  },
+  {
+   "lesson": "swe.ch5.l4",
+   "id": "ex3.mcq-include-extend",
+   "answer": "b",
+   "solution": "b"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch5.l1",
+   "id": "ex4.fill-primary",
+   "answer": "primary"
+  },
+  {
+   "lesson": "swe.ch5.l3",
+   "id": "ex4.fill-postcondition",
+   "answer": "postcondition"
+  },
+  {
+   "lesson": "swe.ch5.l4",
+   "id": "ex4.fill-include",
+   "answer": "include"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch5.l4",
+   "id": "ex5.debug-extend-always",
+   "brokenCode": "REGISTRY = {\n    \"Authenticate Cardholder\": {\"steps\": [\"Read the card\", \"Prompt for PIN\"]},\n    \"Assess Withdrawal Fee\": {\n        \"steps\": [\"Check the network\", \"Add a fee note\"],\n        \"extends\": (\"Withdraw Cash\", \"AmountConfirmed\", \"out-of-network\"),\n    },\n    \"Withdraw Cash\": {\n        \"steps\": [\"Include Authenticate Cardholder\",\n                  \"point:AmountConfirmed\", \"Dispense cash\"],\n    },\n}\n\ndef run(use_case, conditions=None):\n    conditions = dict(conditions or {})\n    out = []\n\n    def walk(name, prefix):\n        for i, s in enumerate(REGISTRY[name][\"steps\"], 1):\n            tag = f\"{prefix}{i}\"\n            if s.startswith(\"Include \"):\n                sub = s[len(\"Include \"):]\n                out.append(f\"{tag} include>{sub}\")\n                walk(sub, tag + \".\")\n            elif s.startswith(\"point:\"):\n                point = s[len(\"point:\"):]\n                for other in sorted(REGISTRY):\n                    ext = REGISTRY[other].get(\"extends\")\n                    if ext and ext[0] == name and ext[1] == point:\n                        # BUG: ext[2] (the condition) is never compared,\n                        # so the extension ALWAYS runs.\n                        out.append(f\"{tag} extend>{other}\")\n                        walk(other, tag + \".\")\n            else:\n                out.append(f\"{tag} {s}\")\n\n    walk(use_case, \"U\")\n    return out\n\nt1 = run(\"Withdraw Cash\", {})\nt2 = run(\"Withdraw Cash\", {\"AmountConfirmed\": \"out-of-network\"})\nprint(\"== S1 ==\")\nfor line in t1:\n    print(line)\nprint(\"== S2 ==\")\nfor line in t2:\n    print(line)\nprint(\"summary:\",\n      \"S1 lines=%d extend=%d\" % (len(t1), sum(\"extend>\" in x for x in t1)),\n      \"|\",\n      \"S2 lines=%d extend=%d\" % (len(t2), sum(\"extend>\" in x for x in t2)))"
+  }
+ ]
+}

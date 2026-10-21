@@ -1,0 +1,27 @@
+class Team:
+    def __init__(self, nam):
+        self.name = nam
+        self.players = list()
+
+    def add_player(self, player):
+        self.players.append(player)
+
+    def describe(self):
+        print('team: %s' % self.name)
+        print('players: %d' % len(self.players))
+
+
+class Coach(Team):
+    def lead(self):
+        print('Coach of %s' % self.name)
+
+
+red = Team('red')
+red.add_player('ana')
+red.add_player('bo')
+red.describe()
+
+blue = Coach('blue')
+blue.add_player('cy')
+blue.describe()
+blue.lead()

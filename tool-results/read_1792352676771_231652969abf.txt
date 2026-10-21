@@ -1,0 +1,472 @@
+   941→@d2l.add_to_class(d2l.Classifier)
+   942→#@save
+   943→def loss(self, Y_hat, Y, averaged=True):
+   944→Y_hat = Y_hat.reshape((-1, Y_hat.shape[-1]))
+   945→Y = Y.reshape((-1,))
+   946→return F.cross_entropy(
+   947→Y_hat, Y, reduction='mean' if averaged else 'none')
+   948→4.5.3 Training
+   949→Next we train our model. We use Fashion-MNIST images, flattened to 784-dimensional
+   950→feature vectors.
+   951→data = d2l.FashionMNIST(batch_size=256)
+   952→model = SoftmaxRegression(num_outputs=10, lr=0.1)
+   953→trainer = d2l.Trainer(max_epochs=10)
+   954→trainer.fit(model, data)
+   955→As before, this algorithm converges to a solution that is reasonably accurate, albeit this time
+   956→with fewer lines of code than before.
+   957→4.5.4 Summary
+   958→High-level APIs are very convenient at hiding from their user potentially dangerous aspects,
+   959→such as numerical stability. Moreover, they allow users to design models concisely with
+   960→
+   961→===== صفحة الكتاب 187 =====
+   962→147
+   963→Generalization in Classiﬁcation
+   964→99
+   965→very few lines of code. This is both a blessing and a curse. The obvious benefit is that it
+   966→makes things highly accessible, even to engineers who never took a single class of statistics
+   967→in their life (in fact, they are part of the target audience of the book). But hiding the sharp
+   968→edges also comes with a price: a disincentive to add new and different components on your
+   969→own, since there is little muscle memory for doing it. Moreover, it makes it more difficult
+   970→to fix things whenever the protective padding of a framework fails to cover all the corner
+   971→cases entirely. Again, this is due to lack of familiarity.
+   972→As such, we strongly urge you to review both the bare bones and the elegant versions of
+   973→many of the implementations that follow. While we emphasize ease of understanding, the
+   974→implementations are nonetheless usually quite performant (convolutions are the big excep-
+   975→tion here). It is our intention to allow you to build on these when you invent something new
+   976→that no framework can give you.
+   977→4.5.5 Exercises
+   978→1. Deep learning uses many different number formats, including FP64 double precision
+   979→(used extremely rarely), FP32 single precision, BFLOAT16 (good for compressed rep-
+   980→resentations), FP16 (very unstable), TF32 (a new format from NVIDIA), and INT8.
+   981→Compute the smallest and largest argument of the exponential function for which the
+   982→result does not lead to numerical underflow or overflow.
+   983→2. INT8 is a very limited format consisting of nonzero numbers from 1 to 255. How could
+   984→you extend its dynamic range without using more bits? Do standard multiplication and
+   985→addition still work?
+   986→3. Increase the number of epochs for training. Why might the validation accuracy decrease
+   987→after a while? How could we fix this?
+   988→4. What happens as you increase the learning rate? Compare the loss curves for several
+   989→learning rates. Which one works better? When?
+   990→Discussions99.
+   991→4.6 Generalization in Classification
+   992→So far, we have focused on how to tackle multiclass classification problems by training
+   993→(linear) neural networks with multiple outputs and softmax functions. Interpreting our
+   994→model’s outputs as probabilistic predictions, we motivated and derived the cross-entropy
+   995→loss function, which calculates the negative log likelihood that our model (for a fixed set
+   996→of parameters) assigns to the actual labels. And finally, we put these tools into practice
+   997→by fitting our model to the training set. However, as always, our goal is to learn general
+   998→patterns, as assessed empirically on previously unseen data (the test set). High accuracy
+   999→on the training set means nothing. Whenever each of our inputs is unique (and indeed this
+  1000→is true for most high-dimensional datasets), we can attain perfect accuracy on the training
+  1001→
+  1002→===== صفحة الكتاب 188 =====
+  1003→148
+  1004→Linear Neural Networks for Classiﬁcation
+  1005→set by just memorizing the dataset on the first training epoch, and subsequently looking up
+  1006→the label whenever we see a new image. And yet, memorizing the exact labels associated
+  1007→with the exact training examples does not tell us how to classify new examples. Absent
+  1008→further guidance, we might have to fall back on random guessing whenever we encounter
+  1009→new examples.
+  1010→A number of burning questions demand immediate attention:
+  1011→1. How many test examples do we need to give a good estimate of the accuracy of our
+  1012→classifiers on the underlying population?
+  1013→2. What happens if we keep evaluating models on the same test repeatedly?
+  1014→3. Why should we expect that fitting our linear models to the training set should fare any
+  1015→better than our naive memorization scheme?
+  1016→Whereas Section 3.6 introduced the basics of overfitting and generalization in the context of
+  1017→linear regression, this chapter will go a little deeper, introducing some of the foundational
+  1018→ideas of statistical learning theory. It turns out that we often can guarantee generalization
+  1019→a priori: for many models, and for any desired upper bound on the generalization gap 𝜖,
+  1020→we can often determine some required number of samples 𝑛such that if our training set
+  1021→contains at least 𝑛samples, our empirical error will lie within 𝜖of the true error, for any
+  1022→data generating distribution. Unfortunately, it also turns out that while these sorts of guar-
+  1023→antees provide a profound set of intellectual building blocks, they are of limited practical
+  1024→utility to the deep learning practitioner. In short, these guarantees suggest that ensuring
+  1025→generalization of deep neural networks a priori requires an absurd number of examples
+  1026→(perhaps trillions or more), even when we find that, on the tasks we care about, deep neural
+  1027→networks typically generalize remarkably well with far fewer examples (thousands). Thus
+  1028→deep learning practitioners often forgo a priori guarantees altogether, instead employing
+  1029→methods that have generalized well on similar problems in the past, and certifying gen-
+  1030→eralization post hoc through empirical evaluations. When we get to Chapter 5, we will
+  1031→revisit generalization and provide a light introduction to the vast scientific literature that
+  1032→has sprung in attempts to explain why deep neural networks generalize in practice.
+  1033→4.6.1 The Test Set
+  1034→Since we have already begun to rely on test sets as the gold standard method for assessing
+  1035→generalization error, let’s get started by discussing the properties of such error estimates.
+  1036→Let’s focus on a fixed classifier 𝑓, without worrying about how it was obtained. Moreover
+  1037→suppose that we possess a fresh dataset of examples D = (x(𝑖), 𝑦(𝑖))
+  1038→𝑛
+  1039→𝑖=1 that were not used
+  1040→to train the classifier 𝑓. The empirical error of our classifier 𝑓on D is simply the fraction
+  1041→of instances for which the prediction 𝑓(x(𝑖)) disagrees with the true label 𝑦(𝑖), and is given
+  1042→by the following expression:
+  1043→𝜖D( 𝑓) = 1
+  1044→𝑛
+  1045→𝑛
+  1046→Õ
+  1047→𝑖=1
+  1048→1( 𝑓(x(𝑖)) ≠𝑦(𝑖)).
+  1049→(4.6.1)
+  1050→By contrast, the population error is the expected fraction of examples in the underlying pop-
+  1051→ulation (some distribution 𝑃(𝑋,𝑌) characterized by probability density function 𝑝(x, 𝑦))
+  1052→
+  1053→===== صفحة الكتاب 189 =====
+  1054→149
+  1055→Generalization in Classiﬁcation
+  1056→for which our classifier disagrees with the true label:
+  1057→𝜖( 𝑓) = 𝐸(x,𝑦)∼𝑃1( 𝑓(x) ≠𝑦) =
+  1058→∫∫
+  1059→1( 𝑓(x) ≠𝑦)𝑝(x, 𝑦) 𝑑x𝑑𝑦.
+  1060→(4.6.2)
+  1061→While 𝜖( 𝑓) is the quantity that we actually care about, we cannot observe it directly, just
+  1062→as we cannot directly observe the average height in a large population without measuring
+  1063→every single person. We can only estimate this quantity based on samples. Because our
+  1064→test set D is statistically representative of the underlying population, we can view 𝜖D( 𝑓)
+  1065→as a statistical estimator of the population error 𝜖( 𝑓). Moreover, because our quantity of
+  1066→interest 𝜖( 𝑓) is an expectation (of the random variable 1( 𝑓(𝑋) ≠𝑌)) and the corresponding
+  1067→estimator 𝜖D( 𝑓) is the sample average, estimating the population error is simply the classic
+  1068→problem of mean estimation, which you may recall from Section 2.6.
+  1069→An important classical result from probability theory called the central limit theorem guar-
+  1070→antees that whenever we possess 𝑛random samples 𝑎1, ..., 𝑎𝑛drawn from any distribution
+  1071→with mean 𝜇and standard deviation 𝜎, then, as the number of samples 𝑛approaches infin-
+  1072→ity, the sample average ˆ𝜇approximately tends towards a normal distribution centered at the
+  1073→true mean and with standard deviation 𝜎/√𝑛. Already, this tells us something important:
+  1074→as the number of examples grows large, our test error 𝜖D( 𝑓) should approach the true error
+  1075→𝜖( 𝑓) at a rate of O(1/√𝑛). Thus, to estimate our test error twice as precisely, we must
+  1076→collect four times as large a test set. To reduce our test error by a factor of one hundred, we
+  1077→must collect ten thousand times as large a test set. In general, such a rate of O(1/√𝑛) is
+  1078→often the best we can hope for in statistics.
+  1079→Now that we know something about the asymptotic rate at which our test error 𝜖D( 𝑓)
+  1080→converges to the true error 𝜖( 𝑓), we can zoom in on some important details. Recall that
+  1081→the random variable of interest 1( 𝑓(𝑋) ≠𝑌) can only take values 0 and 1 and thus is
+  1082→a Bernoulli random variable, characterized by a parameter indicating the probability that
+  1083→it takes value 1. Here, 1 means that our classifier made an error, so the parameter of our
+  1084→random variable is actually the true error rate 𝜖( 𝑓). The variance 𝜎2 of a Bernoulli depends
+  1085→on its parameter (here, 𝜖( 𝑓)) according to the expression 𝜖( 𝑓)(1 −𝜖( 𝑓)). While 𝜖( 𝑓) is
+  1086→initially unknown, we know that it cannot be greater than 1. A little investigation of this
+  1087→function reveals that our variance is highest when the true error rate is close to 0.5 and can
+  1088→be far lower when it is close to 0 or close to 1. This tells us that the asymptotic standard
+  1089→deviation of our estimate 𝜖D( 𝑓) of the error 𝜖( 𝑓) (over the choice of the 𝑛test samples)
+  1090→cannot be any greater than
+  1091→p
+  1092→0.25/𝑛.
+  1093→If we ignore the fact that this rate characterizes behavior as the test set size approaches
+  1094→infinity rather than when we possess finite samples, this tells us that if we want our test
+  1095→error 𝜖D( 𝑓) to approximate the population error 𝜖( 𝑓) such that one standard deviation
+  1096→corresponds to an interval of ±0.01, then we should collect roughly 2500 samples. If we
+  1097→want to fit two standard deviations in that range and thus be 95% confident that 𝜖D( 𝑓) ∈
+  1098→𝜖( 𝑓) ± 0.01, then we will need 10,000 samples!
+  1099→This turns out to be the size of the test sets for many popular benchmarks in machine learn-
+  1100→ing. You might be surprised to find out that thousands of applied deep learning papers get
+  1101→published every year making a big deal out of error rate improvements of 0.01 or less. Of
+  1102→
+  1103→===== صفحة الكتاب 190 =====
+  1104→150
+  1105→Linear Neural Networks for Classiﬁcation
+  1106→course, when the error rates are much closer to 0, then an improvement of 0.01 can indeed
+  1107→be a big deal.
+  1108→One pesky feature of our analysis thus far is that it really only tells us about asymptotics,
+  1109→i.e., how the relationship between 𝜖D and 𝜖evolves as our sample size goes to infinity.
+  1110→Fortunately, because our random variable is bounded, we can obtain valid finite sample
+  1111→bounds by applying an inequality due to Hoeffding (1963):
+  1112→𝑃(𝜖D( 𝑓) −𝜖( 𝑓) ≥𝑡) < exp
+  1113→
+  1114→−2𝑛𝑡2
+  1115→.
+  1116→(4.6.3)
+  1117→Solving for the smallest dataset size that would allow us to conclude with 95% confidence
+  1118→that the distance 𝑡between our estimate 𝜖D( 𝑓) and the true error rate 𝜖( 𝑓) does not exceed
+  1119→0.01, you will find that roughly 15,000 examples are required as compared to the 10,000
+  1120→examples suggested by the asymptotic analysis above. If you go deeper into statistics you
+  1121→will find that this trend holds generally. Guarantees that hold even in finite samples are
+  1122→typically slightly more conservative. Note that in the scheme of things, these numbers
+  1123→are not so far apart, reflecting the general usefulness of asymptotic analysis for giving us
+  1124→ballpark figures even if they are not guarantees we can take to court.
+  1125→4.6.2 Test Set Reuse
+  1126→In some sense, you are now set up to succeed at conducting empirical machine learning
+  1127→research. Nearly all practical models are developed and validated based on test set perfor-
+  1128→mance and you are now a master of the test set. For any fixed classifier 𝑓, you know how
+  1129→to evaluate its test error 𝜖D( 𝑓), and know precisely what can (and cannot) be said about its
+  1130→population error 𝜖( 𝑓).
+  1131→So let’s say that you take this knowledge and prepare to train your first model 𝑓1. Knowing
+  1132→just how confident you need to be in the performance of your classifier’s error rate you apply
+  1133→our analysis above to determine an appropriate number of examples to set aside for the test
+  1134→set. Moreover, let’s assume that you took the lessons from Section 3.6 to heart and made
+  1135→sure to preserve the sanctity of the test set by conducting all of your preliminary analysis,
+  1136→hyperparameter tuning, and even selection among multiple competing model architectures
+  1137→on a validation set. Finally you evaluate your model 𝑓1 on the test set and report an unbiased
+  1138→estimate of the population error with an associated confidence interval.
+  1139→So far everything seems to be going well. However, that night you wake up at 3am with
+  1140→a brilliant idea for a new modeling approach. The next day, you code up your new model,
+  1141→tune its hyperparameters on the validation set and not only are you getting your new model
+  1142→𝑓2 to work but its error rate appears to be much lower than 𝑓1’s. However, the thrill of
+  1143→discovery suddenly fades as you prepare for the final evaluation. You do not have a test
+  1144→set!
+  1145→Even though the original test set D is still sitting on your server, you now face two formidable
+  1146→problems. First, when you collected your test set, you determined the required level of pre-
+  1147→cision under the assumption that you were evaluating a single classifier 𝑓. However, if
+  1148→you get into the business of evaluating multiple classifiers 𝑓1, ..., 𝑓𝑘on the same test set,
+  1149→you must consider the problem of false discovery. Before, you might have been 95% sure
+  1150→
+  1151→===== صفحة الكتاب 191 =====
+  1152→151
+  1153→Generalization in Classiﬁcation
+  1154→that 𝜖D( 𝑓) ∈𝜖( 𝑓) ± 0.01 for a single classifier 𝑓and thus the probability of a misleading
+  1155→result was a mere 5%. With 𝑘classifiers in the mix, it can be hard to guarantee that there
+  1156→is not even one among them whose test set performance is misleading. With 20 classifiers
+  1157→under consideration, you might have no power at all to rule out the possibility that at least
+  1158→one among them received a misleading score. This problem relates to multiple hypothesis
+  1159→testing, which despite a vast literature in statistics, remains a persistent problem plaguing
+  1160→scientific research.
+  1161→If that is not enough to worry you, there is a special reason to distrust the results that you
+  1162→get on subsequent evaluations. Recall that our analysis of test set performance rested on
+  1163→the assumption that the classifier was chosen absent any contact with the test set and thus
+  1164→we could view the test set as drawn randomly from the underlying population. Here, not
+  1165→only are you testing multiple functions, the subsequent function 𝑓2 was chosen after you
+  1166→observed the test set performance of 𝑓1. Once information from the test set has leaked
+  1167→to the modeler, it can never be a true test set again in the strictest sense. This problem is
+  1168→called adaptive overfitting and has recently emerged as a topic of intense interest to learning
+  1169→theorists and statisticians (Dwork et al., 2015). Fortunately, while it is possible to leak all
+  1170→information out of a holdout set, and the theoretical worst case scenarios are bleak, these
+  1171→analyses may be too conservative. In practice, take care to create real test sets, to consult
+  1172→them as infrequently as possible, to account for multiple hypothesis testing when reporting
+  1173→confidence intervals, and to dial up your vigilance more aggressively when the stakes are
+  1174→high and your dataset size is small. When running a series of benchmark challenges, it is
+  1175→often good practice to maintain several test sets so that after each round, the old test set can
+  1176→be demoted to a validation set.
+  1177→4.6.3 Statistical Learning Theory
+  1178→Put simply, test sets are all that we really have, and yet this fact seems strangely unsatisfy-
+  1179→ing. First, we seldom possess a true test set—unless we are the ones creating the dataset,
+  1180→someone else has probably already evaluated their own classifier on our ostensible “test
+  1181→set”. And even when we have first dibs, we soon find ourselves frustrated, wishing we
+  1182→could evaluate our subsequent modeling attempts without the gnawing feeling that we can-
+  1183→not trust our numbers. Moreover, even a true test set can only tell us post hoc whether a
+  1184→classifier has in fact generalized to the population, not whether we have any reason to expect
+  1185→a priori that it should generalize.
+  1186→With these misgivings in mind, you might now be sufficiently primed to see the appeal of
+  1187→statistical learning theory, the mathematical subfield of machine learning whose practi-
+  1188→tioners aim to elucidate the fundamental principles that explain why/when models trained
+  1189→on empirical data can/will generalize to unseen data. One of the primary aims of statistical
+  1190→learning researchers has been to bound the generalization gap, relating the properties of the
+  1191→model class to the number of samples in the dataset.
+  1192→Learning theorists aim to bound the difference between the empirical error 𝜖S( 𝑓S) of a
+  1193→learned classifier 𝑓S, both trained and evaluated on the training set S, and the true error
+  1194→𝜖( 𝑓S) of that same classifier on the underlying population. This might look similar to
+  1195→the evaluation problem that we just addressed but there is a major difference. Earlier, the
+  1196→
+  1197→===== صفحة الكتاب 192 =====
+  1198→152
+  1199→Linear Neural Networks for Classiﬁcation
+  1200→classifier 𝑓was fixed and we only needed a dataset for evaluative purposes. And indeed,
+  1201→any fixed classifier does generalize: its error on a (previously unseen) dataset is an unbiased
+  1202→estimate of the population error. But what can we say when a classifier is trained and
+  1203→evaluated on the same dataset? Can we ever be confident that the training error will be
+  1204→close to the testing error?
+  1205→Suppose that our learned classifier 𝑓S must be chosen from some pre-specified set of func-
+  1206→tions F . Recall from our discussion of test sets that while it is easy to estimate the error of a
+  1207→single classifier, things get hairy when we begin to consider collections of classifiers. Even
+  1208→if the empirical error of any one (fixed) classifier will be close to its true error with high
+  1209→probability, once we consider a collection of classifiers, we need to worry about the possi-
+  1210→bility that just one of them will receive a badly estimated error. The worry is that we might
+  1211→pick such a classifier and thereby grossly underestimate the population error. Moreover,
+  1212→even for linear models, because their parameters are continuously valued, we are typically
+  1213→choosing from an infinite class of functions (|F | = ∞).
+  1214→One ambitious solution to the problem is to develop analytic tools for proving uniform
+  1215→convergence, i.e., that with high probability, the empirical error rate for every classifier
+  1216→in the class 𝑓∈F will simultaneously converge to its true error rate. In other words,
+  1217→we seek a theoretical principle that would allow us to state that with probability at least
+  1218→1 −𝛿(for some small 𝛿) no classifier’s error rate 𝜖( 𝑓) (among all classifiers in the class
+  1219→F ) will be misestimated by more than some small amount 𝛼. Clearly, we cannot make
+  1220→such statements for all model classes F . Recall the class of memorization machines that
+  1221→always achieve empirical error 0 but never outperform random guessing on the underlying
+  1222→population.
+  1223→In a sense the class of memorizers is too flexible. No such a uniform convergence result
+  1224→could possibly hold. On the other hand, a fixed classifier is useless—it generalizes perfectly,
+  1225→but fits neither the training data nor the test data. The central question of learning has
+  1226→thus historically been framed as a trade-off between more flexible (higher variance) model
+  1227→classes that better fit the training data but risk overfitting, versus more rigid (higher bias)
+  1228→model classes that generalize well but risk underfitting. A central question in learning
+  1229→theory has been to develop the appropriate mathematical analysis to quantify where a model
+  1230→sits along this spectrum, and to provide the associated guarantees.
+  1231→In a series of seminal papers, Vapnik and Chervonenkis extended the theory on the con-
+  1232→vergence of relative frequencies to more general classes of functions (Vapnik and Cher-
+  1233→vonenkis, 1964, Vapnik and Chervonenkis, 1968, Vapnik and Chervonenkis, 1971, Vap-
+  1234→nik and Chervonenkis, 1981, Vapnik and Chervonenkis, 1991, Vapnik and Chervonenkis,
+  1235→1974). One of the key contributions of this line of work is the Vapnik–Chervonenkis (VC)
+  1236→dimension, which measures (one notion of) the complexity (flexibility) of a model class.
+  1237→Moreover, one of their key results bounds the difference between the empirical error and
+  1238→the population error as a function of the VC dimension and the number of samples:
+  1239→𝑃 𝑅[𝑝, 𝑓] −𝑅emp[X, Y, 𝑓] < 𝛼 ≥1 −𝛿for 𝛼≥𝑐
+  1240→p
+  1241→(VC −log 𝛿)/𝑛.
+  1242→(4.6.4)
+  1243→Here 𝛿> 0 is the probability that the bound is violated, 𝛼is the upper bound on the
+  1244→generalization gap, and 𝑛is the dataset size. Lastly, 𝑐> 0 is a constant that depends only
+  1245→
+  1246→===== صفحة الكتاب 193 =====
+  1247→153
+  1248→Generalization in Classiﬁcation
+  1249→on the scale of the loss that can be incurred. One use of the bound might be to plug in
+  1250→desired values of 𝛿and 𝛼to determine how many samples to collect. The VC dimension
+  1251→quantifies the largest number of data points for which we can assign any arbitrary (binary)
+  1252→labeling and for each find some model 𝑓in the class that agrees with that labeling. For
+  1253→example, linear models on 𝑑-dimensional inputs have VC dimension 𝑑+ 1. It is easy to
+  1254→see that a line can assign any possible labeling to three points in two dimensions, but not
+  1255→to four. Unfortunately, the theory tends to be overly pessimistic for more complex models
+  1256→and obtaining this guarantee typically requires far more examples than are actually needed
+  1257→to achieve the desired error rate. Note also that fixing the model class and 𝛿, our error rate
+  1258→again decays with the usual O(1/√𝑛) rate. It seems unlikely that we could do better in
+  1259→terms of 𝑛. However, as we vary the model class, VC dimension can present a pessimistic
+  1260→picture of the generalization gap.
+  1261→4.6.4 Summary
+  1262→The most straightforward way to evaluate a model is to consult a test set comprised of pre-
+  1263→viously unseen data. Test set evaluations provide an unbiased estimate of the true error
+  1264→and converge at the desired O(1/√𝑛) rate as the test set grows. We can provide approx-
+  1265→imate confidence intervals based on exact asymptotic distributions or valid finite sample
+  1266→confidence intervals based on (more conservative) finite sample guarantees. Indeed test
+  1267→set evaluation is the bedrock of modern machine learning research. However, test sets are
+  1268→seldom true test sets (used by multiple researchers again and again). Once the same test set
+  1269→is used to evaluate multiple models, controlling for false discovery can be difficult. This
+  1270→can cause huge problems in theory. In practice, the significance of the problem depends on
+  1271→the size of the holdout sets in question and whether they are merely being used to choose
+  1272→hyperparameters or if they are leaking information more directly. Nevertheless, it is good
+  1273→practice to curate real test sets (or multiple) and to be as conservative as possible about how
+  1274→often they are used.
+  1275→Hoping to provide a more satisfying solution, statistical learning theorists have developed
+  1276→methods for guaranteeing uniform convergence over a model class. If indeed every model’s
+  1277→empirical error simultaneously converges to its true error, then we are free to choose the
+  1278→model that performs best, minimizing the training error, knowing that it too will perform
+  1279→similarly well on the holdout data. Crucially, any one of such results must depend on some
+  1280→property of the model class. Vladimir Vapnik and Alexey Chernovenkis introduced the VC
+  1281→dimension, presenting uniform convergence results that hold for all models in a VC class.
+  1282→The training errors for all models in the class are (simultaneously) guaranteed to be close
+  1283→to their true errors, and guaranteed to grow even closer at O(1/√𝑛) rates. Following the
+  1284→revolutionary discovery of VC dimension, numerous alternative complexity measures have
+  1285→been proposed, each facilitating an analogous generalization guarantee. See Boucheron
+  1286→et al. (2005) for a detailed discussion of several advanced ways of measuring function
+  1287→complexity. Unfortunately, while these complexity measures have become broadly useful
+  1288→tools in statistical theory, they turn out to be powerless (as straightforwardly applied) for
+  1289→explaining why deep neural networks generalize. Deep neural networks often have millions
+  1290→of parameters (or more), and can easily assign random labels to large collections of points.
+  1291→Nevertheless, they generalize well on practical problems and, surprisingly, they often gen-
+  1292→
+  1293→===== صفحة الكتاب 194 =====
+  1294→154
+  1295→Linear Neural Networks for Classiﬁcation
+  1296→100
+  1297→eralize better, when they are larger and deeper, despite incurring higher VC dimensions. In
+  1298→the next chapter, we will revisit generalization in the context of deep learning.
+  1299→4.6.5 Exercises
+  1300→1. If we wish to estimate the error of a fixed model 𝑓to within 0.0001 with probability
+  1301→greater than 99.9%, how many samples do we need?
+  1302→2. Suppose that somebody else possesses a labeled test set D and only makes available the
+  1303→unlabeled inputs (features). Now suppose that you can only access the test set labels by
+  1304→running a model 𝑓(with no restrictions placed on the model class) on each of the un-
+  1305→labeled inputs and receiving the corresponding error 𝜖D( 𝑓). How many models would
+  1306→you need to evaluate before you leak the entire test set and thus could appear to have
+  1307→error 0, regardless of your true error?
+  1308→3. What is the VC dimension of the class of fifth-order polynomials?
+  1309→4. What is the VC dimension of axis-aligned rectangles on two-dimensional data?
+  1310→Discussions100.
+  1311→4.7 Environment and Distribution Shift
+  1312→In the previous sections, we worked through a number of hands-on applications of machine
+  1313→learning, fitting models to a variety of datasets. And yet, we never stopped to contemplate
+  1314→either where data came from in the first place or what we ultimately plan to do with the
+  1315→outputs from our models. Too often, machine learning developers in possession of data
+  1316→rush to develop models without pausing to consider these fundamental issues.
+  1317→Many failed machine learning deployments can be traced back to this failure. Sometimes
+  1318→models appear to perform marvelously as measured by test set accuracy but fail catastroph-
+  1319→ically in deployment when the distribution of data suddenly shifts. More insidiously, some-
+  1320→times the very deployment of a model can be the catalyst that perturbs the data distribution.
+  1321→Say, for example, that we trained a model to predict who will repay rather than default on a
+  1322→loan, finding that an applicant’s choice of footwear was associated with the risk of default
+  1323→(Oxfords indicate repayment, sneakers indicate default). We might be inclined thereafter
+  1324→to grant a loan to any applicant wearing Oxfords and to deny all applicants wearing sneak-
+  1325→ers.
+  1326→In this case, our ill-considered leap from pattern recognition to decision-making and our
+  1327→failure to critically consider the environment might have disastrous consequences. For
+  1328→starters, as soon as we began making decisions based on footwear, customers would catch
+  1329→on and change their behavior. Before long, all applicants would be wearing Oxfords, with-
+  1330→out any coincident improvement in credit-worthiness. Take a minute to digest this because
+  1331→
+  1332→===== صفحة الكتاب 195 =====
+  1333→155
+  1334→Environment and Distribution Shift
+  1335→similar issues abound in many applications of machine learning: by introducing our model-
+  1336→based decisions to the environment, we might break the model.
+  1337→While we cannot possibly give these topics a complete treatment in one section, we aim here
+  1338→to expose some common concerns, and to stimulate the critical thinking required to detect
+  1339→such situations early, mitigate damage, and use machine learning responsibly. Some of the
+  1340→solutions are simple (ask for the “right” data), some are technically difficult (implement a
+  1341→reinforcement learning system), and others require that we step outside the realm of sta-
+  1342→tistical prediction altogether and grapple with difficult philosophical questions concerning
+  1343→the ethical application of algorithms.
+  1344→4.7.1 Types of Distribution Shift
+  1345→To begin, we stick with the passive prediction setting considering the various ways that data
+  1346→distributions might shift and what might be done to salvage model performance. In one clas-
+  1347→sic setup, we assume that our training data was sampled from some distribution 𝑝𝑆(x, 𝑦)
+  1348→but that our test data will consist of unlabeled examples drawn from some different distri-
+  1349→bution 𝑝𝑇(x, 𝑦). Already, we must confront a sobering reality. Absent any assumptions on
+  1350→how 𝑝𝑆and 𝑝𝑇relate to each other, learning a robust classifier is impossible.
+  1351→Consider a binary classification problem, where we wish to distinguish between dogs and
+  1352→cats. If the distribution can shift in arbitrary ways, then our setup permits the pathological
+  1353→case in which the distribution over inputs remains constant: 𝑝𝑆(x) = 𝑝𝑇(x), but the labels
+  1354→are all flipped: 𝑝𝑆(𝑦| x) = 1 −𝑝𝑇(𝑦| x). In other words, if God can suddenly decide that
+  1355→in the future all “cats” are now dogs and what we previously called “dogs” are now cats—
+  1356→without any change in the distribution of inputs 𝑝(x), then we cannot possibly distinguish
+  1357→this setting from one in which the distribution did not change at all.
+  1358→Fortunately, under some restricted assumptions on the ways our data might change in the fu-
+  1359→ture, principled algorithms can detect shift and sometimes even adapt on the fly, improving
+  1360→on the accuracy of the original classifier.
+  1361→Covariate Shift
+  1362→Among categories of distribution shift, covariate shift may be the most widely studied.
+  1363→Here, we assume that while the distribution of inputs may change over time, the labeling
+  1364→function, i.e., the conditional distribution 𝑃(𝑦| x) does not change. Statisticians call this
+  1365→covariate shift because the problem arises due to a shift in the distribution of the covari-
+  1366→ates (features). While we can sometimes reason about distribution shift without invoking
+  1367→causality, we note that covariate shift is the natural assumption to invoke in settings where
+  1368→we believe that x causes 𝑦.
+  1369→Consider the challenge of distinguishing cats and dogs. Our training data might consist of
+  1370→images of the kind in Fig. 4.7.1.
+  1371→At test time we are asked to classify the images in Fig. 4.7.2.
+  1372→The training set consists of photos, while the test set contains only cartoons. Training on a
+  1373→
+  1374→===== صفحة الكتاب 196 =====
+  1375→156
+  1376→Linear Neural Networks for Classiﬁcation
+  1377→t
+  1378→Fig. 4.7.1
+  1379→Training data for distinguishing cats and dogs (illustrations: Lafeez Hossain / 500px /
+  1380→Getty Images; ilkermetinkursova / iStock / Getty Images Plus; GlobalP / iStock / Getty
+  1381→Images Plus; Musthafa Aboobakuru / 500px / Getty Images).
+  1382→t
+  1383→Fig. 4.7.2
+  1384→Test data for distinguishing cats and dogs (illustrations: SIBAS_minich / iStock / Getty
+  1385→Images Plus; Ghrzuzudu / iStock / Getty Images Plus; id-work / DigitalVision Vectors /
+  1386→Getty Images; Yime / iStock / Getty Images Plus).
+  1387→dataset with substantially different characteristics from the test set can spell trouble absent
+  1388→a coherent plan for how to adapt to the new domain.
+  1389→Label Shift
+  1390→Label shift describes the converse problem. Here, we assume that the label marginal 𝑃(𝑦)
+  1391→can change but the class-conditional distribution 𝑃(x | 𝑦) remains fixed across domains.
+  1392→Label shift is a reasonable assumption to make when we believe that 𝑦causes x. For ex-
+  1393→ample, we may want to predict diagnoses given their symptoms (or other manifestations),
+  1394→even as the relative prevalence of diagnoses are changing over time. Label shift is the ap-
+  1395→propriate assumption here because diseases cause symptoms. In some degenerate cases the
+  1396→label shift and covariate shift assumptions can hold simultaneously. For example, when the
+  1397→label is deterministic, the covariate shift assumption will be satisfied, even when 𝑦causes
+  1398→x. Interestingly, in these cases, it is often advantageous to work with methods that flow
+  1399→from the label shift assumption. That is because these methods tend to involve manipulat-
+  1400→ing objects that look like labels (often low-dimensional), as opposed to objects that look
+  1401→like inputs, which tend to be high-dimensional in deep learning.
+  1402→
+  1403→===== صفحة الكتاب 197 =====
+  1404→157
+  1405→Environment and Distribution Shift
+  1406→Concept Shift
+  1407→We may also encounter the related problem of concept shift, which arises when the very
+  1408→definitions of labels can change. This sounds weird—a cat is a cat, no? However, other
+  1409→categories are subject to changes in usage over time. Diagnostic criteria for mental illness,
+  1410→what passes for fashionable, and job titles, are all subject to considerable amounts of con-
+
+[showing lines 941-1410 of 1812; use offset=1411 with limit to continue reading]

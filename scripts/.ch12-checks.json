@@ -1,0 +1,222 @@
+{
+ "traces": [
+  {
+   "lesson": "py4e.ch12.l1",
+   "id": "ex2.trace-head",
+   "code": "head = 'HTTP/1.1 200 OK\\nServer: Apache'\nlines = head.split('\\n')\nprint(len(lines))\nprint(lines[0].split()[1])\nprint('Content-Type: text/plain'.split(': ')[1])",
+   "answer": "2\n200\ntext/plain"
+  },
+  {
+   "lesson": "py4e.ch12.l2",
+   "id": "ex2.trace-small-fetch",
+   "code": "response = 'HTTP/1.1 200 OK\\nContent-Type: text/plain\\n\\nArise fair sun'\nhead, body = response.split('\\n\\n', 1)\nprint(len(head.split('\\n')))\nprint(len(body.split()))\nprint(body.split()[0])",
+   "answer": "2\n3\nArise"
+  },
+  {
+   "lesson": "py4e.ch12.l3",
+   "id": "ex2.trace-bytes",
+   "code": "x = b'AB'\nprint(len(x))\nprint(x.decode())\nprint('AB'.encode() == b'AB')",
+   "answer": "2\nAB\nTrue"
+  },
+  {
+   "lesson": "py4e.ch12.l4",
+   "id": "ex2.trace-urlparse",
+   "code": "from urllib.parse import urlparse\np = urlparse('https://docs.python.org/3/index.html')\nprint(p.scheme)\nprint(p.netloc)\nprint(p.path)",
+   "answer": "https\ndocs.python.org\n/3/index.html"
+  },
+  {
+   "lesson": "py4e.ch12.l5",
+   "id": "ex2.trace-two-links",
+   "code": "import re\nhtml = '<a href=\"a.htm\">x</a><a href=\"b.htm\">y</a>'\nfound = re.findall('href=\"([^\"]+)\"', html)\nprint(len(found))\nprint(found[1])",
+   "answer": "2\nb.htm"
+  },
+  {
+   "lesson": "py4e.ch12.l6",
+   "id": "ex1.trace-recap",
+   "code": "from urllib.parse import urlparse\nprint(urlparse('http://data.pr4e.org/x.txt').path)\nresponse = 'HTTP/1.1 404 Not Found\\n\\nmissing page'\nhead, body = response.split('\\n\\n', 1)\nprint(head.split('\\n')[0].split()[1])\nprint(len(body.split()))",
+   "answer": "/x.txt\n404\n2"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "py4e.ch12.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "line = 'HTTP/1.1 200 OK'\nprint(line.split()[1])"
+  },
+  {
+   "lesson": "py4e.ch12.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "response = 'HTTP/1.1 200 OK\\nDate: Wed, 11 Apr 2018 18:52:55 GMT\\nServer: Apache\\nContent-Type: text/plain\\nContent-Length: 48\\n\\nBut soft what light through yonder window breaks'\nhead, body = response.split('\\n\\n', 1)\nstatus = head.split('\\n')[0].split()\nprint(status[1])\nprint(status[2])\nprint(len(head.split('\\n')) - 1)\nprint(len(body.split()))"
+  },
+  {
+   "lesson": "py4e.ch12.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — ردود تحت المجهر\n# Your playground — responses under the microscope\n\nresponse = 'HTTP/1.1 200 OK\\nDate: Mon, 01 Jan 2024 00:00:00 GMT\\nServer: Apache\\nContent-Type: text/html\\n\\n<h1>Hello</h1>'\nhead, body = response.split('\\n\\n', 1)\nprint(head)\nprint('---')\nprint(body)\nprint(head.split('\\n')[0].split()[1])\nprint(len(head.split('\\n')) - 1)"
+  },
+  {
+   "lesson": "py4e.ch12.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "request = 'GET http://data.pr4e.org/romeo.txt HTTP/1.0\\r\\n\\r\\n'\nprint(request.count('\\r\\n'))"
+  },
+  {
+   "lesson": "py4e.ch12.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "response = 'HTTP/1.1 200 OK\\nServer: Apache\\nContent-Type: text/plain\\n\\nBut soft what light through yonder window breaks\\nIt is the east and Juliet is the sun'\nhead, body = response.split('\\n\\n', 1)\nprint('status: %s' % head.split('\\n')[0].split()[1])\nprint('lines: %d' % len(body.split('\\n')))\nprint('words: %d' % len(body.split()))"
+  },
+  {
+   "lesson": "py4e.ch12.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — متصفحك أنت\n# Your playground — a browser of your own\n\nresponse = 'HTTP/1.1 200 OK\\nServer: Apache\\n\\nIt is the east and Juliet is the sun'\nhead, body = response.split('\\n\\n', 1)\nlines = body.split('\\n')\nprint(lines)\nprint(len(lines))\nprint(len(body.split()))\nprint(body.count('sun'))\nprint(body.upper())"
+  },
+  {
+   "lesson": "py4e.ch12.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "data = b'Hello'\nprint(data.decode())\nprint(len(data))"
+  },
+  {
+   "lesson": "py4e.ch12.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "response = b'HTTP/1.1 200 OK\\r\\nContent-Type: image/jpeg\\r\\nContent-Length: 10\\r\\n\\r\\nPICTURE123'\npos = response.find(b'\\r\\n\\r\\n')\nhead = response[:pos].decode()\nbody = response[pos + 4:]\nprint(pos)\nprint(head.split('\\r\\n')[0].split()[1])\nprint(len(body))\nprint(body.decode())"
+  },
+  {
+   "lesson": "py4e.ch12.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — بايتات في كل اتجاه\n# Your playground — bytes in every direction\n\nword = b'Juliet'\nprint(word)\nprint(len(word))\nprint(word.decode())\nprint(word.decode().lower())\nprint('Romeo'.encode())\nprint(word + b' & ' + 'Romeo'.encode())\n\nresp = b'A\\r\\nB\\r\\n\\r\\nC'\npos = resp.find(b'\\r\\n\\r\\n')\nprint(pos)\nprint(resp[:pos])\nprint(resp[pos + 4:])"
+  },
+  {
+   "lesson": "py4e.ch12.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "from urllib.parse import urlparse\nparts = urlparse('https://data.pr4e.org/romeo.txt')\nprint(parts.scheme)\nprint(parts.netloc)"
+  },
+  {
+   "lesson": "py4e.ch12.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "from urllib.parse import urlparse\nurls = ['http://data.pr4e.org/romeo.txt', 'https://www.py4e.com/code3']\nfor u in urls:\n    parts = urlparse(u)\n    print('%s|%s|%s' % (parts.scheme, parts.netloc, parts.path))\npage = 'HTTP/1.1 200 OK\\nContent-Type: text/html\\n\\n<a href=\"page2.htm\">next</a>'\nout = open('page-l12.html', 'w')\nout.write(page)\nout.close()\nfhand = open('page-l12.html')\nraw = fhand.read()\nfhand.close()\nhead, body = raw.split('\\n\\n', 1)\nprint('status: %s' % head.split('\\n')[0].split()[1])\nprint('type: %s' % head.split('\\n')[1].split(': ')[1])\nprint(body)"
+  },
+  {
+   "lesson": "py4e.ch12.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — روابط بلا شبكة\n# Your playground — links without a network\n\nfrom urllib.parse import urlparse\n\nfor u in ['http://data.pr4e.org/romeo.txt', 'https://www.py4e.com', 'ftp://files.example.com/pub/x.zip']:\n    parts = urlparse(u)\n    print(parts.scheme, parts.netloc, parts.path)\n\np = urlparse('https://docs.python.org')\nprint(p.path == '')\n\npage = 'HTTP/1.1 200 OK\\n\\nRomeo and Juliet'\nhead, body = page.split('\\n\\n', 1)\nprint(len(body.split()))"
+  },
+  {
+   "lesson": "py4e.ch12.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import re\nhtml = '<a href=\"page1.htm\">one</a>'\nlinks = re.findall('href=\"([^\"]+)\"', html)\nprint(len(links))\nprint(links[0])"
+  },
+  {
+   "lesson": "py4e.ch12.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import re\nhtml = '<h1>The First Page</h1>\\n<p>If you like, you can switch to the\\n<a href=\"http://www.dr-chuck.com/page2.htm\">Second Page</a>.\\nOr jump to <a href=\"http://www.py4e.com\">the book</a>.</p>'\nlinks = re.findall('href=\"(http[s]?://.+?)\"', html)\nprint('links: %d' % len(links))\nfor link in links:\n    print(link)"
+  },
+  {
+   "lesson": "py4e.ch12.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — كن محرك بحث\n# Your playground — be a search engine\n\nimport re\n\nhtml = '<a href=\"http://a.com/x.htm\">A</a> <a href=\"https://b.com\">B</a> <a href=\"c.htm\">C</a>'\nprint(re.findall('href=\"(http[s]?://.+?)\"', html))\nprint(re.findall('href=\"([^\"]+)\"', html))\nprint(len(re.findall('<a ', html)))\n\npage = 'HTTP/1.1 200 OK\\n\\n' + html\nprint(page.split('\\n\\n', 1)[1][:20])"
+  },
+  {
+   "lesson": "py4e.ch12.l6",
+   "kind": "predict",
+   "id": "predict",
+   "code": "response = 'HTTP/1.1 200 OK\\n\\nRomeo and Juliet'\nhead, body = response.split('\\n\\n', 1)\nprint(len(body.split()))"
+  },
+  {
+   "lesson": "py4e.ch12.l6",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import re\nresponse = 'HTTP/1.1 200 OK\\nDate: Mon, 01 Jan 2024 00:00:00 GMT\\nServer: Apache\\nContent-Type: text/html\\n\\nRomeo loves Juliet\\n<a href=\"http://www.py4e.com\">next page</a>\\n<a href=\"http://www.dr-chuck.com\">author</a>'\nhead, body = response.split('\\n\\n', 1)\nstatus = head.split('\\n')[0].split()\nprint('%s %s' % (status[1], status[2]))\nprint('headers: %d' % (len(head.split('\\n')) - 1))\nprint('lines: %d' % len(body.split('\\n')))\nprint('words: %d' % len(body.split()))\nlinks = re.findall('href=\"([^\"]+)\"', body)\nprint('links: %d' % len(links))\nfor link in links:\n    print('link: %s' % link)"
+  },
+  {
+   "lesson": "py4e.ch12.l6",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — متصفحك الخاص\n# Your playground — your own browser\n\nimport re\nresponse = 'HTTP/1.1 404 Not Found\\nServer: nginx\\n\\n<h1>Lost page</h1>\\n<a href=\"/home.htm\">back home</a>'\nhead, body = response.split('\\n\\n', 1)\nstatus = head.split('\\n')[0].split()\nprint('%s %s' % (status[1], status[2]))\nprint('headers: %d' % (len(head.split('\\n')) - 1))\nprint('links: %d' % len(re.findall('href=\"([^\"]+)\"', body)))\nprint(re.findall('href=\"([^\"]+)\"', body))"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "py4e.ch12.l1",
+   "id": "ex3.mcq-404",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch12.l2",
+   "id": "ex3.mcq-recv",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch12.l3",
+   "id": "ex3.mcq-wb",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch12.l4",
+   "id": "ex3.mcq-urlopen",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch12.l5",
+   "id": "ex3.mcq-bs4",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch12.l6",
+   "id": "ex3.mcq-boundary",
+   "answer": "a",
+   "solution": "a"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "py4e.ch12.l1",
+   "id": "ex4.fill-get",
+   "answer": "GET"
+  },
+  {
+   "lesson": "py4e.ch12.l2",
+   "id": "ex4.fill-recv",
+   "answer": "recv"
+  },
+  {
+   "lesson": "py4e.ch12.l3",
+   "id": "ex4.fill-decode",
+   "answer": "decode"
+  },
+  {
+   "lesson": "py4e.ch12.l4",
+   "id": "ex4.fill-parse",
+   "answer": "parse"
+  },
+  {
+   "lesson": "py4e.ch12.l5",
+   "id": "ex4.fill-href",
+   "answer": "href"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "py4e.ch12.l6",
+   "id": "ex5.debug-boundary",
+   "brokenCode": "import re\nresponse = 'HTTP/1.1 200 OK\\nDate: Mon, 01 Jan 2024 00:00:00 GMT\\nServer: Apache\\nContent-Type: text/html\\nContent-Length: 97\\n\\nArise fair sun\\n<a href=\"http://www.py4e.com\">book</a>\\n<a href=\"http://www.dr-chuck.com\">chuck</a>'\n# قسّمت عند أول نهاية سطر — يبدو منطقيًا / split at the first line end — seemed logical\nhead, body = response.split('\\n', 1)\nstatus = head.split()\nprint('%s %s' % (status[1], status[2]))\nprint('headers: %d' % (len(body.split('\\n')) - 1))\nprint('words: %d' % len(body.split()))\nlinks = re.findall('href=\"([^\"]+)\"', body)\nprint('links: %d' % len(links))"
+  }
+ ]
+}

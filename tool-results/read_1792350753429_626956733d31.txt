@@ -1,0 +1,554 @@
+   655→examples according to how likely they are, or to sample synthetic examples from the
+   656→learned distribution. Early deep learning breakthroughs in generative modeling came
+   657→with the invention of variational autoencoders (Kingma and Welling, 2014, Rezende
+   658→et al., 2014) and continued with the development of generative adversarial networks
+   659→(Goodfellow et al., 2014). More recent advances include normalizing flows (Dinh et
+   660→al., 2014, Dinh et al., 2017) and diffusion models (Ho et al., 2020, Sohl-Dickstein et
+   661→al., 2015, Song and Ermon, 2019, Song et al., 2021).
+   662→A further development in unsupervised learning has been the rise of self-supervised learn-
+   663→ing, techniques that leverage some aspect of the unlabeled data to provide supervision. For
+   664→text, we can train models to “fill in the blanks” by predicting randomly masked words us-
+   665→ing their surrounding words (contexts) in big corpora without any labeling effort (Devlin
+   666→et al., 2018)! For images, we may train models to tell the relative position between two
+   667→cropped regions of the same image (Doersch et al., 2015), to predict an occluded part of an
+   668→image based on the remaining portions of the image, or to predict whether two examples
+   669→are perturbed versions of the same underlying image. Self-supervised models often learn
+   670→representations that are subsequently leveraged by fine-tuning the resulting models on some
+   671→downstream task of interest.
+   672→1.3.3 Interacting with an Environment
+   673→So far, we have not discussed where data actually comes from, or what actually happens
+   674→when a machine learning model generates an output. That is because supervised learning
+   675→and unsupervised learning do not address these issues in a very sophisticated way. In each
+   676→case, we grab a big pile of data upfront, then set our pattern recognition machines in motion
+   677→without ever interacting with the environment again. Because all the learning takes place
+   678→after the algorithm is disconnected from the environment, this is sometimes called offline
+   679→learning. For example, supervised learning assumes the simple interaction pattern depicted
+   680→in Fig. 1.3.6.
+   681→This simplicity of offline learning has its charms. The upside is that we can worry about
+   682→pattern recognition in isolation, with no concern about complications arising from interac-
+   683→tions with a dynamic environment. But this problem formulation is limiting. If you grew
+   684→up reading Asimov’s Robot novels, then you probably picture artificially intelligent agents
+   685→capable not only of making predictions, but also of taking actions in the world. We want
+   686→to think about intelligent agents, not just predictive models. This means that we need to
+   687→think about choosing actions, not just making predictions. In contrast to mere predictions,
+   688→actions actually impact the environment. If we want to train an intelligent agent, we must
+   689→
+   690→===== صفحة الكتاب 58 =====
+   691→18
+   692→Introduction
+   693→t
+   694→Fig. 1.3.6
+   695→Collecting data for supervised learning from an environment.
+   696→account for the way its actions might impact the future observations of the agent, and so
+   697→offline learning is inappropriate.
+   698→Considering the interaction with an environment opens a whole set of new modeling ques-
+   699→tions. The following are just a few examples.
+   700→• Does the environment remember what we did previously?
+   701→• Does the environment want to help us, e.g., a user reading text into a speech recognizer?
+   702→• Does the environment want to beat us, e.g., spammers adapting their emails to evade
+   703→spam filters?
+   704→• Does the environment have shifting dynamics? For example, would future data always
+   705→resemble the past or would the patterns change over time, either naturally or in re-
+   706→sponse to our automated tools?
+   707→These questions raise the problem of distribution shift, where training and test data are
+   708→different. An example of this, that many of us may have met, is when taking exams written
+   709→by a lecturer, while the homework was composed by their teaching assistants. Next, we
+   710→briefly describe reinforcement learning, a rich framework for posing learning problems in
+   711→which an agent interacts with an environment.
+   712→1.3.4 Reinforcement Learning
+   713→If you are interested in using machine learning to develop an agent that interacts with an
+   714→environment and takes actions, then you are probably going to wind up focusing on re-
+   715→inforcement learning. This might include applications to robotics, to dialogue systems,
+   716→and even to developing artificial intelligence (AI) for video games. Deep reinforcement
+   717→learning, which applies deep learning to reinforcement learning problems, has surged in
+   718→popularity. The breakthrough deep Q-network, that beat humans at Atari games using only
+   719→the visual input (Mnih et al., 2015), and the AlphaGo program, which dethroned the world
+   720→champion at the board game Go (Silver et al., 2016), are two prominent examples.
+   721→Reinforcement learning gives a very general statement of a problem in which an agent inter-
+   722→acts with an environment over a series of time steps. At each time step, the agent receives
+   723→some observation from the environment and must choose an action that is subsequently
+   724→transmitted back to the environment via some mechanism (sometimes called an actuator),
+   725→when, after each loop, the agent receives a reward from the environment. This process is
+   726→
+   727→===== صفحة الكتاب 59 =====
+   728→19
+   729→Kinds of Machine Learning Problems
+   730→illustrated in Fig. 1.3.7. The agent then receives a subsequent observation, and chooses a
+   731→subsequent action, and so on. The behavior of a reinforcement learning agent is governed
+   732→by a policy. In brief, a policy is just a function that maps from observations of the environ-
+   733→ment to actions. The goal of reinforcement learning is to produce good policies.
+   734→t
+   735→Fig. 1.3.7
+   736→The interaction between reinforcement learning and an environment.
+   737→It is hard to overstate the generality of the reinforcement learning framework. For example,
+   738→supervised learning can be recast as reinforcement learning. Say we had a classification
+   739→problem. We could create a reinforcement learning agent with one action corresponding
+   740→to each class. We could then create an environment which gave a reward that was exactly
+   741→equal to the loss function from the original supervised learning problem.
+   742→Further, reinforcement learning can also address many problems that supervised learning
+   743→cannot. For example, in supervised learning, we always expect that the training input comes
+   744→associated with the correct label. But in reinforcement learning, we do not assume that,
+   745→for each observation the environment tells us the optimal action. In general, we just get
+   746→some reward. Moreover, the environment may not even tell us which actions led to the
+   747→reward.
+   748→Consider the game of chess. The only real reward signal comes at the end of the game when
+   749→we either win, earning a reward of, say, 1, or when we lose, receiving a reward of, say,
+   750→−1. So reinforcement learners must deal with the credit assignment problem: determining
+   751→which actions to credit or blame for an outcome. The same goes for an employee who gets
+   752→a promotion on October 11. That promotion likely reflects a number of well-chosen actions
+   753→over the previous year. Getting promoted in the future requires figuring out which actions
+   754→along the way led to the earlier promotions.
+   755→Reinforcement learners may also have to deal with the problem of partial observability.
+   756→That is, the current observation might not tell you everything about your current state. Say
+   757→your cleaning robot found itself trapped in one of many identical closets in your house.
+   758→Rescuing the robot involves inferring its precise location which might require considering
+   759→earlier observations prior to it entering the closet.
+   760→Finally, at any given point, reinforcement learners might know of one good policy, but
+   761→there might be many other better policies that the agent has never tried. The reinforcement
+   762→learner must constantly choose whether to exploit the best (currently) known strategy as a
+   763→policy, or to explore the space of strategies, potentially giving up some short-term reward
+   764→in exchange for knowledge.
+   765→The general reinforcement learning problem has a very general setting. Actions affect sub-
+   766→
+   767→===== صفحة الكتاب 60 =====
+   768→20
+   769→Introduction
+   770→23
+   771→24
+   772→25
+   773→26
+   774→sequent observations. Rewards are only observed when they correspond to the chosen ac-
+   775→tions. The environment may be either fully or partially observed. Accounting for all this
+   776→complexity at once may be asking too much. Moreover, not every practical problem ex-
+   777→hibits all this complexity. As a result, researchers have studied a number of special cases
+   778→of reinforcement learning problems.
+   779→When the environment is fully observed, we call the reinforcement learning problem a
+   780→Markov decision process. When the state does not depend on the previous actions, we call
+   781→it a contextual bandit problem. When there is no state, just a set of available actions with
+   782→initially unknown rewards, we have the classic multi-armed bandit problem.
+   783→1.4 Roots
+   784→We have just reviewed a small subset of problems that machine learning can address. For
+   785→a diverse set of machine learning problems, deep learning provides powerful tools for their
+   786→solution. Although many deep learning methods are recent inventions, the core ideas be-
+   787→hind learning from data have been studied for centuries. In fact, humans have held the
+   788→desire to analyze data and to predict future outcomes for ages, and it is this desire that is
+   789→at the root of much of natural science and mathematics. Two examples are the Bernoulli
+   790→distribution, named after Jacob Bernoulli (1655–1705) 23 , and the Gaussian distribution
+   791→discovered by Carl Friedrich Gauss (1777–1855)24. Gauss invented, for instance, the least
+   792→mean squares algorithm, which is still used today for a multitude of problems from insur-
+   793→ance calculations to medical diagnostics. Such tools enhanced the experimental approach
+   794→in the natural sciences—for instance, Ohm’s law relating current and voltage in a resistor
+   795→is perfectly described by a linear model.
+   796→Even in the middle ages, mathematicians had a keen intuition of estimates. For instance,
+   797→the geometry book of Jacob Köbel (1460–1533) 25 illustrates averaging the length of 16
+   798→adult men’s feet to estimate the typical foot length in the population (Fig. 1.4.1).
+   799→As a group of individuals exited a church, 16 adult men were asked to line up in a row
+   800→and have their feet measured. The sum of these measurements was then divided by 16 to
+   801→obtain an estimate for what now is called one foot. This “algorithm” was later improved to
+   802→deal with misshapen feet; The two men with the shortest and longest feet were sent away,
+   803→averaging only over the remainder. This is among the earliest examples of a trimmed mean
+   804→estimate.
+   805→Statistics really took off with the availability and collection of data. One of its pioneers,
+   806→Ronald Fisher (1890–1962) 26 , contributed significantly to its theory and also its applica-
+   807→tions in genetics. Many of his algorithms (such as linear discriminant analysis) and con-
+   808→cepts (such as the Fisher information matrix) still hold a prominent place in the founda-
+   809→tions of modern statistics. Even his data resources had a lasting impact. The Iris dataset
+   810→that Fisher released in 1936 is still sometimes used to demonstrate machine learning algo-
+   811→rithms. Fisher was also a proponent of eugenics, which should remind us that the morally
+   812→
+   813→===== صفحة الكتاب 61 =====
+   814→21
+   815→Roots
+   816→t
+   817→Fig. 1.4.1
+   818→Estimating the length of a foot.
+   819→27
+   820→28
+   821→29
+   822→dubious use of data science has as long and enduring a history as its productive use in
+   823→industry and the natural sciences.
+   824→Other influences for machine learning came from the information theory of Claude Shan-
+   825→non (1916–2001)27 and the theory of computation proposed by Alan Turing (1912–1954)
+   826→28. Turing posed the question “can machines think?” in his famous paper Computing Ma-
+   827→chinery and Intelligence (Turing, 1950). Describing what is now known as the Turing test,
+   828→he proposed that a machine can be considered intelligent if it is difficult for a human evalu-
+   829→ator to distinguish between the replies from a machine and those of a human, based purely
+   830→on textual interactions.
+   831→Further influences came from neuroscience and psychology. After all, humans clearly ex-
+   832→hibit intelligent behavior. Many scholars have asked whether one could explain and pos-
+   833→sibly reverse engineer this capacity. One of the first biologically inspired algorithms was
+   834→formulated by Donald Hebb (1904–1985) 29 . In his groundbreaking book The Organiza-
+   835→tion of Behavior (Hebb, 1949), he posited that neurons learn by positive reinforcement.
+   836→This became known as the Hebbian learning rule. These ideas inspired later work, such
+   837→as Rosenblatt’s perceptron learning algorithm, and laid the foundations of many stochastic
+   838→gradient descent algorithms that underpin deep learning today: reinforce desirable behav-
+   839→ior and diminish undesirable behavior to obtain good settings of the parameters in a neural
+   840→network.
+   841→
+   842→===== صفحة الكتاب 62 =====
+   843→22
+   844→Introduction
+   845→Biological inspiration is what gave neural networks their name. For over a century (dating
+   846→back to the models of Alexander Bain, 1873, and James Sherrington, 1890), researchers
+   847→have tried to assemble computational circuits that resemble networks of interacting neurons.
+   848→Over time, the interpretation of biology has become less literal, but the name stuck. At its
+   849→heart lie a few key principles that can be found in most networks today:
+   850→• The alternation of linear and nonlinear processing units, often referred to as layers.
+   851→• The use of the chain rule (also known as backpropagation) for adjusting parameters in
+   852→the entire network at once.
+   853→After initial rapid progress, research in neural networks languished from around 1995 until
+   854→2005. This was mainly due to two reasons. First, training a network is computationally
+   855→very expensive. While random-access memory was plentiful at the end of the past century,
+   856→computational power was scarce. Second, datasets were relatively small. In fact, Fisher’s
+   857→Iris dataset from 1936 was still a popular tool for testing the efficacy of algorithms. The
+   858→MNIST dataset with its 60,000 handwritten digits was considered huge.
+   859→Given the scarcity of data and computation, strong statistical tools such as kernel methods,
+   860→decision trees, and graphical models proved empirically superior in many applications.
+   861→Moreover, unlike neural networks, they did not require weeks to train and provided pre-
+   862→dictable results with strong theoretical guarantees.
+   863→1.5 The Road to Deep Learning
+   864→Much of this changed with the availability of massive amounts of data, thanks to the World
+   865→Wide Web, the advent of companies serving hundreds of millions of users online, a dis-
+   866→semination of low-cost, high-quality sensors, inexpensive data storage (Kryder’s law), and
+   867→cheap computation (Moore’s law). In particular, the landscape of computation in deep
+   868→learning was revolutionized by advances in GPUs that were originally engineered for com-
+   869→puter gaming. Suddenly algorithms and models that seemed computationally infeasible
+   870→were within reach. This is best illustrated in tab_intro_decade.
+   871→:Dataset vs. computer memory and computational power
+   872→Table 1.5.1: label:tab_intro_decade
+   873→
+   874→===== صفحة الكتاب 63 =====
+   875→23
+   876→The Road to Deep Learning
+   877→Decade Dataset
+   878→Mem-
+   879→ory
+   880→Floating point calculations per
+   881→second
+   882→1970
+   883→100 (Iris)
+   884→1 KB
+   885→100 KF (Intel 8080)
+   886→1980
+   887→1 K (house prices in Boston)
+   888→100
+   889→KB
+   890→1 MF (Intel 80186)
+   891→1990
+   892→10 K (optical character recog-
+   893→nition)
+   894→10 MB
+   895→10 MF (Intel 80486)
+   896→2000
+   897→10 M (web pages)
+   898→100
+   899→MB
+   900→1 GF (Intel Core)
+   901→2010
+   902→10 G (advertising)
+   903→1 GB
+   904→1 TF (NVIDIA C2050)
+   905→2020
+   906→1 T (social network)
+   907→100
+   908→GB
+   909→1 PF (NVIDIA DGX-2)
+   910→Note that random-access memory has not kept pace with the growth in data. At the same
+   911→time, increases in computational power have outpaced the growth in datasets. This means
+   912→that statistical models need to become more memory efficient, and so they are free to spend
+   913→more computer cycles optimizing parameters, thanks to the increased compute budget.
+   914→Consequently, the sweet spot in machine learning and statistics moved from (generalized)
+   915→linear models and kernel methods to deep neural networks. This is also one of the rea-
+   916→sons why many of the mainstays of deep learning, such as multilayer perceptrons (McCul-
+   917→loch and Pitts, 1943), convolutional neural networks (LeCun et al., 1998), long short-term
+   918→memory (Hochreiter and Schmidhuber, 1997), and Q-Learning (Watkins and Dayan, 1992),
+   919→were essentially “rediscovered” in the past decade, after lying comparatively dormant for
+   920→considerable time.
+   921→The recent progress in statistical models, applications, and algorithms has sometimes been
+   922→likened to the Cambrian explosion: a moment of rapid progress in the evolution of species.
+   923→Indeed, the state of the art is not just a mere consequence of available resources applied
+   924→to decades-old algorithms. Note that the list of ideas below barely scratches the surface of
+   925→what has helped researchers achieve tremendous progress over the past decade.
+   926→• Novel methods for capacity control, such as dropout (Srivastava et al., 2014), have helped
+   927→to mitigate overfitting. Here, noise is injected (Bishop, 1995) throughout the neural
+   928→network during training.
+   929→• Attention mechanisms solved a second problem that had plagued statistics for over a
+   930→century: how to increase the memory and complexity of a system without increasing
+   931→the number of learnable parameters. Researchers found an elegant solution by using
+   932→what can only be viewed as a learnable pointer structure (Bahdanau et al., 2014).
+   933→Rather than having to remember an entire text sequence, e.g., for machine translation
+   934→in a fixed-dimensional representation, all that needed to be stored was a pointer to the
+   935→intermediate state of the translation process. This allowed for significantly increased
+   936→accuracy for long sequences, since the model no longer needed to remember the entire
+   937→sequence before commencing the generation of a new one.
+   938→• Built solely on attention mechanisms, the Transformer architecture (Vaswani et al., 2017)
+   939→
+   940→===== صفحة الكتاب 64 =====
+   941→24
+   942→Introduction
+   943→30
+   944→has demonstrated superior scaling behavior: it performs better with an increase in
+   945→dataset size, model size, and amount of training compute (Kaplan et al., 2020). This
+   946→architecture has demonstrated compelling success in a wide range of areas, such as
+   947→natural language processing (Brown et al., 2020, Devlin et al., 2018), computer vision
+   948→(Dosovitskiy et al., 2021, Liu et al., 2021), speech recognition (Gulati et al., 2020),
+   949→reinforcement learning (Chen et al., 2021), and graph neural networks (Dwivedi and
+   950→Bresson, 2020). For example, a single Transformer pretrained on modalities as diverse
+   951→as text, images, joint torques, and button presses can play Atari, caption images, chat,
+   952→and control a robot (Reed et al., 2022).
+   953→• Modeling probabilities of text sequences, language models can predict text given other
+   954→text. Scaling up the data, model, and compute has unlocked a growing number of
+   955→capabilities of language models to perform desired tasks via human-like text genera-
+   956→tion based on input text (Anil et al., 2023, Brown et al., 2020, Chowdhery et al., 2022,
+   957→Hoffmann et al., 2022, OpenAI, 2023, Rae et al., 2021, Touvron et al., 2023a, Touvron
+   958→et al., 2023b). For instance, aligning language models with human intent (Ouyang et
+   959→al., 2022), OpenAI’s ChatGPT 30 allows users to interact with it in a conversational
+   960→way to solve problems, such as code debugging and creative writing.
+   961→• Multi-stage designs, e.g., via the memory networks (Sukhbaatar et al., 2015) and the neu-
+   962→ral programmer-interpreter (Reed and De Freitas, 2015) permitted statistical modelers
+   963→to describe iterative approaches to reasoning. These tools allow for an internal state of
+   964→the deep neural network to be modified repeatedly, thus carrying out subsequent steps
+   965→in a chain of reasoning, just as a processor can modify memory for a computation.
+   966→• A key development in deep generative modeling was the invention of generative adver-
+   967→sarial networks (Goodfellow et al., 2014). Traditionally, statistical methods for density
+   968→estimation and generative models focused on finding proper probability distributions
+   969→and (often approximate) algorithms for sampling from them. As a result, these algo-
+   970→rithms were largely limited by the lack of flexibility inherent in the statistical models.
+   971→The crucial innovation in generative adversarial networks was to replace the sampler
+   972→by an arbitrary algorithm with differentiable parameters. These are then adjusted in
+   973→such a way that the discriminator (effectively a two-sample test) cannot distinguish
+   974→fake from real data. Through the ability to use arbitrary algorithms to generate data,
+   975→density estimation was opened up to a wide variety of techniques. Examples of gal-
+   976→loping zebras (Zhu et al., 2017) and of fake celebrity faces (Karras et al., 2017) are
+   977→each testimony to this progress. Even amateur doodlers can produce photorealistic
+   978→images just based on sketches describing the layout of a scene (Park et al., 2019).
+   979→• Furthermore, while the diffusion process gradually adds random noise to data samples,
+   980→diffusion models (Ho et al., 2020, Sohl-Dickstein et al., 2015) learn the denoising pro-
+   981→cess to gradually construct data samples from random noise, reversing the diffusion
+   982→process. They have started to replace generative adversarial networks in more recent
+   983→deep generative models, such as in DALL-E 2 (Ramesh et al., 2022) and Imagen (Sa-
+   984→haria et al., 2022) for creative art and image generation based on text descriptions.
+   985→• In many cases, a single GPU is insufficient for processing the large amounts of data
+   986→
+   987→===== صفحة الكتاب 65 =====
+   988→25
+   989→Success Stories
+   990→31
+   991→32
+   992→33
+   993→34
+   994→35
+   995→36
+   996→37
+   997→38
+   998→39
+   999→40
+  1000→41
+  1001→42
+  1002→available for training. Over the past decade the ability to build parallel and distributed
+  1003→training algorithms has improved significantly. One of the key challenges in designing
+  1004→scalable algorithms is that the workhorse of deep learning optimization, stochastic
+  1005→gradient descent, relies on relatively small minibatches of data to be processed. At
+  1006→the same time, small batches limit the efficiency of GPUs. Hence, training on 1,024
+  1007→GPUs with a minibatch size of, say, 32 images per batch amounts to an aggregate
+  1008→minibatch of about 32,000 images. Work, first by Li (2017) and subsequently by You
+  1009→et al. (2017) and Jia et al. (2018) pushed the size up to 64,000 observations, reducing
+  1010→training time for the ResNet-50 model on the ImageNet dataset to less than 7 minutes.
+  1011→By comparison, training times were initially of the order of days.
+  1012→• The ability to parallelize computation has also contributed to progress in reinforcement
+  1013→learning. This has led to significant progress in computers achieving superhuman
+  1014→performance on tasks like Go, Atari games, Starcraft, and in physics simulations (e.g.,
+  1015→using MuJoCo) where environment simulators are available. See, e.g., Silver et al.
+  1016→(2016) for a description of such achievements in AlphaGo. In a nutshell, reinforcement
+  1017→learning works best if plenty of (state, action, reward) tuples are available. Simulation
+  1018→provides such an avenue.
+  1019→• Deep learning frameworks have played a crucial role in disseminating ideas. The first
+  1020→generation of open-source frameworks for neural network modeling consisted of Caffe
+  1021→31 , Torch 32 , and Theano 33 . Many seminal papers were written using these tools.
+  1022→These have now been superseded by TensorFlow34 (often used via its high-level API
+  1023→Keras 35 ), CNTK 36 , Caffe 2 37 , and Apache MXNet 38 . The third generation of
+  1024→frameworks consists of so-called imperative tools for deep learning, a trend that was
+  1025→arguably ignited by Chainer 39 , which used a syntax similar to Python NumPy to
+  1026→describe models. This idea was adopted by both PyTorch 40 , the Gluon API 41 of
+  1027→MXNet, and JAX42.
+  1028→The division of labor between system researchers building better tools and statistical mod-
+  1029→elers building better neural networks has greatly simplified things. For instance, training a
+  1030→linear logistic regression model used to be a nontrivial homework problem, worthy to give
+  1031→to new machine learning Ph.D. students at Carnegie Mellon University in 2014. By now,
+  1032→this task can be accomplished with under 10 lines of code, putting it firmly within the reach
+  1033→of any programmer.
+  1034→1.6 Success Stories
+  1035→Artificial intelligence has a long history of delivering results that would be difficult to ac-
+  1036→complish otherwise. For instance, mail sorting systems using optical character recognition
+  1037→have been deployed since the 1990s. This is, after all, the source of the famous MNIST
+  1038→dataset of handwritten digits. The same applies to reading checks for bank deposits and
+  1039→scoring creditworthiness of applicants. Financial transactions are checked for fraud auto-
+  1040→
+  1041→===== صفحة الكتاب 66 =====
+  1042→26
+  1043→Introduction
+  1044→matically. This forms the backbone of many e-commerce payment systems, such as PayPal,
+  1045→Stripe, AliPay, WeChat, Apple, Visa, and MasterCard. Computer programs for chess have
+  1046→been competitive for decades. Machine learning feeds search, recommendation, personal-
+  1047→ization, and ranking on the Internet. In other words, machine learning is pervasive, albeit
+  1048→often hidden from sight.
+  1049→It is only recently that AI has been in the limelight, mostly due to solutions to problems that
+  1050→were considered intractable previously and that are directly related to consumers. Many of
+  1051→such advances are attributed to deep learning.
+  1052→• Intelligent assistants, such as Apple’s Siri, Amazon’s Alexa, and Google’s assistant, are
+  1053→able to respond to spoken requests with a reasonable degree of accuracy. This in-
+  1054→cludes menial jobs, like turning on light switches, and more complex tasks, such as
+  1055→arranging barber’s appointments and offering phone support dialog. This is likely the
+  1056→most noticeable sign that AI is affecting our lives.
+  1057→• A key ingredient in digital assistants is their ability to recognize speech accurately. The
+  1058→accuracy of such systems has gradually increased to the point of achieving parity with
+  1059→humans for certain applications (Xiong et al., 2018).
+  1060→• Object recognition has likewise come a long way. Identifying the object in a picture was
+  1061→a fairly challenging task in 2010. On the ImageNet benchmark researchers from NEC
+  1062→Labs and University of Illinois at Urbana-Champaign achieved a top-five error rate
+  1063→of 28% (Lin et al., 2010). By 2017, this error rate was reduced to 2.25% (Hu et al.,
+  1064→2018). Similarly, stunning results have been achieved for identifying birdsong and for
+  1065→diagnosing skin cancer.
+  1066→• Prowess in games used to provide a measuring stick for human ability. Starting from
+  1067→TD-Gammon, a program for playing backgammon using temporal difference rein-
+  1068→forcement learning, algorithmic and computational progress has led to algorithms for
+  1069→a wide range of applications. Compared with backgammon, chess has a much more
+  1070→complex state space and set of actions. DeepBlue beat Garry Kasparov using mas-
+  1071→sive parallelism, special-purpose hardware and efficient search through the game tree
+  1072→(Campbell et al., 2002). Go is more difficult still, due to its huge state space. AlphaGo
+  1073→reached human parity in 2015, using deep learning combined with Monte Carlo tree
+  1074→sampling (Silver et al., 2016). The challenge in Poker was that the state space is large
+  1075→and only partially observed (we do not know the opponents’ cards). Libratus exceeded
+  1076→human performance in Poker using efficiently structured strategies (Brown and Sand-
+  1077→holm, 2017).
+  1078→• Another indication of progress in AI is the advent of self-driving vehicles. While full
+  1079→autonomy is not yet within reach, excellent progress has been made in this direction,
+  1080→with companies such as Tesla, NVIDIA, and Waymo shipping products that enable
+  1081→partial autonomy. What makes full autonomy so challenging is that proper driving
+  1082→requires the ability to perceive, to reason and to incorporate rules into a system. At
+  1083→present, deep learning is used primarily in the visual aspect of these problems. The
+  1084→rest is heavily tuned by engineers.
+  1085→
+  1086→===== صفحة الكتاب 67 =====
+  1087→27
+  1088→The Essence of Deep Learning
+  1089→This barely scratches the surface of significant applications of machine learning. For in-
+  1090→stance, robotics, logistics, computational biology, particle physics, and astronomy owe
+  1091→some of their most impressive recent advances at least in parts to machine learning, which
+  1092→is thus becoming a ubiquitous tool for engineers and scientists.
+  1093→Frequently, questions about a coming AI apocalypse and the plausibility of a singularity
+  1094→have been raised in non-technical articles. The fear is that somehow machine learning
+  1095→systems will become sentient and make decisions, independently of their programmers,
+  1096→that directly impact the lives of humans. To some extent, AI already affects the livelihood
+  1097→of humans in direct ways: creditworthiness is assessed automatically, autopilots mostly
+  1098→navigate vehicles, decisions about whether to grant bail use statistical data as input. More
+  1099→frivolously, we can ask Alexa to switch on the coffee machine.
+  1100→Fortunately, we are far from a sentient AI system that could deliberately manipulate its
+  1101→human creators. First, AI systems are engineered, trained, and deployed in a specific, goal-
+  1102→oriented manner. While their behavior might give the illusion of general intelligence, it is a
+  1103→combination of rules, heuristics and statistical models that underlie the design. Second, at
+  1104→present, there are simply no tools for artificial general intelligence that are able to improve
+  1105→themselves, reason about themselves, and that are able to modify, extend, and improve their
+  1106→own architecture while trying to solve general tasks.
+  1107→A much more pressing concern is how AI is being used in our daily lives. It is likely that
+  1108→many routine tasks, currently fulfilled by humans, can and will be automated. Farm robots
+  1109→will likely reduce the costs for organic farmers but they will also automate harvesting op-
+  1110→erations. This phase of the industrial revolution may have profound consequences for large
+  1111→swaths of society, since menial jobs provide much employment in many countries. Fur-
+  1112→thermore, statistical models, when applied without care, can lead to racial, gender, or age
+  1113→bias and raise reasonable concerns about procedural fairness if automated to drive conse-
+  1114→quential decisions. It is important to ensure that these algorithms are used with care. With
+  1115→what we know today, this strikes us as a much more pressing concern than the potential of
+  1116→malevolent superintelligence for destroying humanity.
+  1117→1.7 The Essence of Deep Learning
+  1118→Thus far, we have talked in broad terms about machine learning. Deep learning is the subset
+  1119→of machine learning concerned with models based on many-layered neural networks. It is
+  1120→deep in precisely the sense that its models learn many layers of transformations. While this
+  1121→might sound narrow, deep learning has given rise to a dizzying array of models, techniques,
+  1122→problem formulations, and applications. Many intuitions have been developed to explain
+  1123→the benefits of depth. Arguably, all machine learning has many layers of computation, the
+  1124→first consisting of feature processing steps. What differentiates deep learning is that the
+  1125→operations learned at each of the many layers of representations are learned jointly from
+  1126→data.
+  1127→
+  1128→===== صفحة الكتاب 68 =====
+  1129→28
+  1130→Introduction
+  1131→The problems that we have discussed so far, such as learning from the raw audio signal, the
+  1132→raw pixel values of images, or mapping between sentences of arbitrary lengths and their
+  1133→counterparts in foreign languages, are those where deep learning excels and traditional
+  1134→methods falter. It turns out that these many-layered models are capable of addressing low-
+  1135→level perceptual data in a way that previous tools could not. Arguably the most significant
+  1136→commonality in deep learning methods is end-to-end training. That is, rather than assem-
+  1137→bling a system based on components that are individually tuned, one builds the system and
+  1138→then tunes their performance jointly. For instance, in computer vision scientists used to
+  1139→separate the process of feature engineering from the process of building machine learn-
+  1140→ing models. The Canny edge detector (Canny, 1987) and Lowe’s SIFT feature extractor
+  1141→(Lowe, 2004) reigned supreme for over a decade as algorithms for mapping images into
+  1142→feature vectors. In bygone days, the crucial part of applying machine learning to these
+  1143→problems consisted of coming up with manually-engineered ways of transforming the data
+  1144→into some form amenable to shallow models. Unfortunately, there is only so much that
+  1145→humans can accomplish by ingenuity in comparison with a consistent evaluation over mil-
+  1146→lions of choices carried out automatically by an algorithm. When deep learning took over,
+  1147→these feature extractors were replaced by automatically tuned filters that yielded superior
+  1148→accuracy.
+  1149→Thus, one key advantage of deep learning is that it replaces not only the shallow models at
+  1150→the end of traditional learning pipelines, but also the labor-intensive process of feature engi-
+  1151→neering. Moreover, by replacing much of the domain-specific preprocessing, deep learning
+  1152→has eliminated many of the boundaries that previously separated computer vision, speech
+  1153→recognition, natural language processing, medical informatics, and other application areas,
+  1154→thereby offering a unified set of tools for tackling diverse problems.
+  1155→Beyond end-to-end training, we are experiencing a transition from parametric statistical
+  1156→descriptions to fully nonparametric models. When data is scarce, one needs to rely on sim-
+  1157→plifying assumptions about reality in order to obtain useful models. When data is abundant,
+  1158→these can be replaced by nonparametric models that better fit the data. To some extent, this
+  1159→mirrors the progress that physics experienced in the middle of the previous century with
+  1160→the availability of computers. Rather than solving by hand parametric approximations of
+  1161→how electrons behave, one can now resort to numerical simulations of the associated par-
+  1162→tial differential equations. This has led to much more accurate models, albeit often at the
+  1163→expense of interpretation.
+  1164→Another difference from previous work is the acceptance of suboptimal solutions, dealing
+  1165→with nonconvex nonlinear optimization problems, and the willingness to try things before
+  1166→proving them. This new-found empiricism in dealing with statistical problems, combined
+  1167→with a rapid influx of talent has led to rapid progress in the development of practical algo-
+  1168→rithms, albeit in many cases at the expense of modifying and re-inventing tools that existed
+  1169→for decades.
+  1170→In the end, the deep learning community prides itself on sharing tools across academic and
+  1171→corporate boundaries, releasing many excellent libraries, statistical models, and trained
+  1172→networks as open source. It is in this spirit that the notebooks forming this book are freely
+  1173→available for distribution and use. We have worked hard to lower the barriers of access for
+  1174→
+  1175→===== صفحة الكتاب 69 =====
+  1176→29
+  1177→Summary
+  1178→43
+  1179→anyone wishing to learn about deep learning and we hope that our readers will benefit from
+  1180→this.
+  1181→1.8 Summary
+  1182→Machine learning studies how computer systems can leverage experience (often data) to
+  1183→improve performance at specific tasks. It combines ideas from statistics, data mining, and
+  1184→optimization. Often, it is used as a means of implementing AI solutions. As a class of
+  1185→machine learning, representational learning focuses on how to automatically find the ap-
+  1186→propriate way to represent data. Considered as multi-level representation learning through
+  1187→learning many layers of transformations, deep learning replaces not only the shallow mod-
+  1188→els at the end of traditional machine learning pipelines, but also the labor-intensive process
+  1189→of feature engineering. Much of the recent progress in deep learning has been triggered
+  1190→by an abundance of data arising from cheap sensors and Internet-scale applications, and
+  1191→by significant progress in computation, mostly through GPUs. Furthermore, the availabil-
+  1192→ity of efficient deep learning frameworks has made design and implementation of whole
+  1193→system optimization significantly easier, and this is a key component in obtaining high
+  1194→performance.
+  1195→1.9 Exercises
+  1196→1. Which parts of code that you are currently writing could be “learned”, i.e., improved
+  1197→by learning and automatically determining design choices that are made in your code?
+  1198→Does your code include heuristic design choices? What data might you need to learn
+  1199→the desired behavior?
+  1200→2. Which problems that you encounter have many examples for their solution, yet no spe-
+  1201→cific way for automating them? These may be prime candidates for using deep learning.
+  1202→3. Describe the relationships between algorithms, data, and computation. How do char-
+  1203→acteristics of the data and the current available computational resources influence the
+  1204→appropriateness of various algorithms?
+  1205→4. Name some settings where end-to-end training is not currently the default approach but
+  1206→where it might be useful.
+  1207→Discussions43.
+  1208→

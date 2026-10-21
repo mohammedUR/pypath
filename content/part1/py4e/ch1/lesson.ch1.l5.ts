@@ -1,0 +1,287 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * py4e.ch1.l5 — "Program Building Blocks and Errors / مكوّنات البرامج والأخطاء"
+ * Aligned with PY4E ch1 s9 (المكوّنات الأساسية للبرامج), s10 (ما الأخطاء التي
+ * يمكن أن نواجهها؟). All expression is original.
+ */
+const lesson = {
+  id: 'py4e.ch1.l5',
+  version: 1,
+  part: 'I',
+  track: 'P1',
+  book: 'PY4E',
+  chapter: 1,
+  title: { ar: 'مكوّنات البرامج والأخطاء', en: 'Program Building Blocks and Errors' },
+  estimatedMinutes: 20,
+  prerequisites: ['py4e.ch1.l4'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'كل وصفة طبخ في العالم هي نفس الشيء: مكونات تدخل، خطوات بترتيب، أحيانًا قرار («إن كان العجين سائلًا أضف دقيقًا»)، وأحيانًا تكرار («اعجن حتى تمتزج»). البرامج ليست مختلفة — وهذا الدرس يعطيك قاموس مكوّناتها. وعندما تحرق الكعكة؟ لا تلوم الفرن: اقرأ الوصفة من جديد.',
+        en: 'Every recipe in the world is the same thing: ingredients come in, steps in order, sometimes a decision (“if the dough is runny, add flour”), sometimes repetition (“knead until combined”). Programs are no different — this lesson hands you their dictionary. And when you burn the cake? Do not blame the oven: re-read the recipe.',
+      },
+    },
+    {
+      kind: 'predict',
+      expectedError: 'NameError',  // intentional crash-teaching; verified by checks replay
+      code: "print(hello)",
+      question: {
+        ar: 'لا علامات تنصيص هذه المرة، وننطقها هكذا بثقة. متى سيتوقف البرنامج: قبل أن يبدأ، أم في منتصف الطريق؟',
+        en: 'No quotes this time, and we say it with confidence. When will the program stop: before it starts, or halfway through?',
+      },
+      reveal: {
+        ar: 'في منتصف الطريق! القواعد سليمة (قوسان وتنصيص… لا انتظر: لا تنصيص، لكن شكل السطر سليم قواعديًا)، فبدأ التنفيذ فعليًا ثم وقع عند hello: NameError — اسم غير معروف. هذا خطأ وقت التشغيل: الكود يبدأ ثم يتعثر عند السطر المخل. لو وضعت "hello" بين تنصيص لسارت الأمور.',
+        en: 'Halfway through! The grammar is fine (two parentheses, well-formed line), so execution actually starts — then trips over hello: NameError, an unknown name. That is a runtime error: the code starts, then stumbles at the offending line. Put "hello" in quotes and everything sails through.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'المكوّنات الأساسية لكل برنامج', en: 'The basic building blocks of every program' },
+      chunks: [
+        {
+          ar: 'هذه ليست خاصة ببايثون — هي جزء من كل لغة برمجة على وجه الأرض: الدخل (إحضار البيانات من الخارج: لوحة مفاتيح، ملف، حساس)، الخرج (عرض النتائج: شاشة، ملف، مكبر صوت)، التنفيذ التسلسلي (الأوامر تُنفَّذ واحدًا تلو الآخر بترتيبها).',
+          en: 'These are not Python-specific — they are part of every programming language on Earth: input (bringing data in from outside: keyboard, file, sensor), output (showing results: screen, file, speaker), and sequential execution (commands run one by one, in order).',
+        },
+        {
+          ar: 'ثم تأتي الثلاثية التي تجعل البرامج ذكية: التنفيذ الشرطي (تحقّق من شرط ونفّذ أو تخطَّ: سنتعلمه في الفصل الثالث)، التنفيذ التكراري (كرّر مجموعة تعليمات مع تغييرات)، وإعادة الاستخدام (سمِّ مجموعة تعليمات واستدعها عند اللزوم). قد تبدو لك هذه المفاهيم ساذجة كتعريف المشي «وضع قدم أمام الأخرى» — لكن السر هو في دمجها بمهارة.',
+          en: 'Then comes the trio that makes programs smart: conditional execution (check a condition, run or skip — arriving in chapter 3), repetition (run a set of instructions again and again with changes), and reuse (name a set of instructions and call it when needed). These may sound naive, like defining walking as “putting one foot in front of the other” — but the magic is in combining them skillfully.',
+        },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.steps-program',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'اطبع ثلاث خطوات من روتين صباحك — كل خطوة في سطر تبدأ برقمها، مثل: 1 أفتح النافذة. الأرقام 1 و2 و3 يجب أن تظهر في الخرْج.',
+        en: 'Print three steps of your morning routine — each step on a line starting with its number, like: 1 open the window. The digits 1, 2 and 3 must appear in the output.',
+      },
+      starterCode: '# ثلاثة أسطر: 1 ثم 2 ثم 3 / three lines: 1 then 2 then 3\n',
+      solution: "print('1 أفتح النافذة')\nprint('2 أغسل وجهي')\nprint('3 أجهز القهوة')",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'ثلاثة أسطر على الأقل', en: 'At least three lines' },
+          code: "lines = [l for l in __learner_output__.splitlines() if l.strip()]\nassert len(lines) >= 3, 'expected: at least 3 lines | actual: %d' % len(lines)",
+          expected: '3 أسطر / 3 lines',
+        },
+        {
+          id: 't2',
+          name: { ar: 'تظهر الأرقام 1 و2 و3', en: 'The digits 1, 2 and 3 appear' },
+          code: "assert '1' in __learner_output__ and '2' in __learner_output__ and '3' in __learner_output__, 'expected: 1, 2 and 3 in output | actual: %r' % __learner_output__",
+          expected: '1، 2، 3 / 1, 2, 3',
+        },
+      ],
+      hints: [
+        { ar: 'ثلاثة استدعاءات print، واحد لكل خطوة.', en: 'Three print calls, one per step.' },
+        { ar: 'ضع الرقم داخل النص المطبوع: "1 ...".', en: 'Put the digit inside the printed text: "1 ...".' },
+        { ar: 'الهيكل:\nprint("1 الخطوة الأولى")\nprint("2 الخطوة الثانية")\nprint("3 الخطوة الثالثة")', en: 'The skeleton:\nprint("1 first step")\nprint("2 second step")\nprint("3 third step")' },
+        { ar: "print('1 أفتح النافذة')\nprint('2 أغسل وجهي')\nprint('3 أجهز القهوة')", en: "print('1 open the window')\nprint('2 wash my face')\nprint('3 make the coffee')" },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'ثلاثة أخطاء سترافقها دائمًا', en: 'Three kinds of errors you will always meet' },
+      chunks: [
+        {
+          ar: 'الأخطاء القواعدية (Syntax errors): أول ما سترتكبه وأسهلها إصلاحًا — يعني أنها مخالفة لقواعد اللغة نفسها، كقوس ناقص أو نسيان التنصيص. بايثون تفحصها قبل التنفيذ وتشير إلى السطر المشتبه به؛ إن لم تجد الخطأ عند الإشارة فابحث صاعدًا عن الأسطر قبله.',
+          en: 'Syntax errors: the first ones you will make and the easiest to fix — they violate the grammar of the language itself, like a missing parenthesis or forgotten quotes. Python checks them before execution and points at the suspect line; if you find nothing there, search upward through earlier lines.',
+        },
+        {
+          ar: 'الأخطاء المنطقية (Logic errors): القواعد سليمة لكن ترتيب التعليمات خاطئ — كمن يروي: فتحت زجاجة الماء، شربت، وضعتها في الحقيبة، ثم أغلقتها! وأخطاء دلالية (Semantic errors): البرنامج سليم قواعديًا ومرتب منطقيًا لكنه لا يفعل ما قصدت — كتوجيهات مطعم صحيحة النصوص تُوصلك إلى مزرعة. هذه الأخطاء لا توقف البرنامج: تنفيذه ينجح والنتيجة تخون.',
+          en: 'Logic errors: the grammar is fine but the order of instructions is wrong — like saying: I opened the bottle, drank, put it in my bag, then closed it! And semantic errors: the program is grammatically correct and logically ordered but does not do what you meant — like restaurant directions, each sentence perfect, that deliver you to a farm. These errors do not stop the program: the run succeeds and the result betrays you.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'برنامج مكوّن بالكامل من تسلسل', en: 'A program made purely of sequence' },
+      code: "print('الخطوة 1: اجمع البيانات — هذا الدخل')\nprint('الخطوة 2: عالجها بالترتيب — هذا التنفيذ التسلسلي')\nprint('الخطوة 3: اعرض النتيجة — هذا الخرج')",
+      explanation: {
+        ar: 'برامجنا حتى الآن برنامج تسلسلي خالص: دخل رمزي (تعليمة تشرح)، معالجة بالترتيب، خرج على الشاشة. الشرط والتكرار سيضافان في الفصول القادمة وسيغيّران كل شيء — لكن التسلسل يبقى العمود الفقري تحت كل ذلك.',
+        en: 'Our programs so far are purely sequential: symbolic input (an instruction that explains), processing in order, output on the screen. Conditionals and repetition arrive in coming chapters and change everything — but sequence remains the backbone beneath it all.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.mcq-semantic',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'برنامج يعمل حتى النهاية بلا أي رسالة خطأ، لكنه يطبع نتيجة خاطئة تمامًا. أي نوع من الأخطاء؟',
+        en: 'A program runs to the end with no error message at all, but prints a completely wrong result. Which kind of error?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'قواعدي (SyntaxError)', en: 'Syntax error (SyntaxError)' } },
+        { id: 'b', text: { ar: 'دلالي (Semantic) أو منطقي (Logic)', en: 'Semantic or logic error' } },
+        { id: 'c', text: { ar: 'لا يوجد خطأ — النتيجة صحيحة وحدسنا خاطئ', en: 'No error — the result is right and our intuition is wrong' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'لو كان قواعديًا لما بدأ التنفيذ أصلًا.', en: 'If it were a syntax error, execution would never have started.' },
+        { ar: 'الرسائل تظهر للأخطاء القواعدية ووقت التشغيل — أما النتيجة الخاطئة الصامتة فلها نوعان: ترتيب خاطئ أو معنى خاطئ.', en: 'Messages appear for syntax and runtime errors — a silently wrong result is one of two kinds: wrong order or wrong meaning.' },
+        { ar: 'البرنامج «ناجح تقنيًا وخائن للقصد» — هذا توقيع الأخطاء المنطقية والدلالية.', en: '“Technically successful, intent-betraying” — the signature of logic and semantic errors.' },
+        { ar: 'الجواب: دلالي أو منطقي — وكلاهما لا يظهر له رسالة.', en: 'Answer: semantic or logic — neither produces a message.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.fill-sequential',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'أكمل: البنية التي تُنفَّذ فيها الأوامر واحدًا تلو الآخر حسب ترتيبها تسمى التنفيذ ______.',
+        en: 'Fill in (Arabic): the structure where commands run one by one in their written order is called ______ execution.',
+      },
+      answer: 'التسلسلي',
+      solution: 'التسلسلي',
+      hints: [
+        { ar: 'هي الحالة الوحيدة التي تعرفها برامجنا حتى الآن.', en: 'It is the only mode our programs have known so far.' },
+        { ar: 'هي كل ما تعرفه برامجنا حتى الآن.', en: 'It is all our programs have known so far.' },
+        { ar: 'جذرها كلمة «تسلسل»: شيء يتبع شيءً بلا قفز.', en: 'Its root is the word sequence (تسلسل).' },
+        { ar: 'الجواب: التسلسلي.', en: 'Answer: التسلسلي (sequential).' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      expectedError: 'NameError',  // intentional crash-teaching; verified by checks replay
+      starterCode: '# ملعبك الحرّ — كسر مقصود ومصلح\n# Your playground — break on purpose, then fix\n\nprint("قبل الانهيار")\nprint(here_be_dragons)\nprint("لن أُنفَّذ أبدًا")',
+      prompt: {
+        ar: 'جرّب بنفسك: شغّل الكود ولاحظ أين توقف، وأي أسطر طُبعت وأيها لم تطبع. ثم ضع التنصيص حول here_be_dragons وشغّل مجددًا. هكذا يخبرك الخطأ أين يسكن.',
+        en: 'Try it yourself: run the code and watch where it stops — which lines printed and which did not. Then wrap here_be_dragons in quotes and run again. This is how an error tells you where it lives.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'نعود للدرس الماضي: print("مرحبا"  بلا قوس إغلاق — ماذا يحدث عند التشغيل؟',
+            en: 'Back to the last lesson: print("مرحبا" with no closing parenthesis — what happens when it runs?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'يُطبع مرحبا ثم يتوقف', en: 'مرحبا prints, then it stops' } },
+            { id: 'b', text: { ar: 'لا يُنفَّذ شيء: خطأ قواعدي يُكشف قبل التنفيذ', en: 'Nothing runs: a syntax error caught before execution' } },
+            { id: 'c', text: { ar: 'يُطبع مرحبا ثلاث مرات', en: 'مرحبا prints three times' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'الأخطاء القواعدية تمنع التنفيذ كليًا: بايثون تفحص القواعد أولًا، وإن لم تُسلم لم تعمل حتى السطر الأول.',
+            en: 'Syntax errors block execution entirely: Python checks grammar first, and if it does not pass, not even line one runs.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: '«فتحت الزجاجة، شربت، وضعتها في الحقيبة، ثم أغلقتها» — هذا مثال الكتاب على أي نوع من الأخطاء؟',
+            en: '“I opened the bottle, drank, put it in my bag, then closed it” — the book uses this story for which kind of error?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'خطأ قواعدي', en: 'Syntax error' } },
+            { id: 'b', text: { ar: 'خطأ منطقي — كل خطوة صحيحة لكن الترتيب خاطئ', en: 'Logic error — each step is fine, the order is wrong' } },
+            { id: 'c', text: { ar: 'خطأ في لوحة المفاتيح', en: 'A keyboard error' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'الترتيب هو المشكلة: التعليمات سليمة واحدة واحدة، لكن تسلسلها يلغي النتيجة. أشهر أخطاء المبتدئين بعد القواعدية.',
+            en: 'Order is the problem: each instruction is fine, but the sequence voids the result. The most common error after syntax ones.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'لوحة المفاتيح والشاشة: أيهما جهاز دخل (input) وأيهما جهاز خرج (output)؟',
+            en: 'Keyboard and screen: which is an input device and which is an output device?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'المفاتيح دخل، الشاشة خرج', en: 'Keyboard = input, screen = output' } },
+            { id: 'b', text: { ar: 'الشاشة دخل، المفاتيح خرج', en: 'Screen = input, keyboard = output' } },
+            { id: 'c', text: { ar: 'كلاهما خرج', en: 'Both are output' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الدخل يوصل بياناتك إلى الحاسوب (مفاتيح، فأرة، ميكروفون)، والخرج يوصل نتائج الحاسوب إليك (شاشة، مكبر صوت).',
+            en: 'Input carries your data into the computer (keyboard, mouse, microphone); output carries results back to you (screen, speakers).',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'أي مكوّن من المكوّنات الخمسة «يكرر مجموعة تعليمات مع تغييرات»؟',
+            en: 'Which of the building blocks “repeats a set of instructions with changes”?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'التنفيذ التكراري', en: 'Repetition' } },
+            { id: 'b', text: { ar: 'التنفيذ التسلسلي', en: 'Sequential execution' } },
+            { id: 'c', text: { ar: 'إعادة الاستخدام', en: 'Reuse' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'التكراري يكرر (حلقات for وwhile قادمة قريبًا)، والشرطي يقرر، وإعادة الاستخدام تسمّي التعليمات وتستدعيها.',
+            en: 'Repetition repeats (for and while loops coming soon), conditional decides, and reuse names instructions to call them.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: "primt('تم')",
+          right: "print('تم')",
+          note: {
+            ar: 'خطأ تهجئة الكلمة المحجوزة يظهر كـ NameError: name «primt» is not defined — بايثون لا تصحح تهجئتك ولا تخمّن قصدك. انظر إلى الكلمة الأولى من رسالة الخطأ دائمًا.',
+            en: 'A misspelled reserved word shows up as NameError: name “primt” is not defined — Python never fixes spelling or guesses intent. Always read the first word of the error message.',
+          },
+        },
+        {
+          wrong: "print('الخطوة 2') print('الخطوة 1')",
+          right: "print('الخطوة 2')\nprint('الخطوة 1')",
+          note: {
+            ar: 'تعليمة واحدة لكل سطر: وضع استدعاءين في سطر واحد خطأ قواعدي. والأهم: الترتيب — التنفيذ التسلسلي يطبع ما كتبته أولًا أولًا، حتى لو كان رقمه 2.',
+            en: 'One statement per line: two calls on one line is a syntax error. And the bigger lesson: order — sequential execution prints what you wrote first, first, even if it is numbered 2.',
+          },
+        },
+        {
+          wrong: "print(hello)",
+          right: "print('hello')",
+          note: {
+            ar: 'بدون تنصيص، بايثون تبحث عن متغيّر اسمه hello فتتعثر برسالة NameError في منتصف البرنامج. النص المطلوب طباعته حرفيًا يحتاج علامتي تنصيص.',
+            en: 'Without quotes, Python looks for a variable named hello and trips mid-program with NameError. Text you want printed literally needs quotes.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'كل برنامج من مكوّنات: دخل، خرج، تنفيذ تسلسلي، تنفيذ شرطي، تكرار، وإعادة استخدام.', en: 'Every program combines building blocks: input, output, sequential execution, conditional execution, repetition, and reuse.' },
+        { ar: 'الأخطاء ثلاثة: قواعدية تكشف قبل التنفيذ، منطقية في الترتيب، دلالية في المعنى — الأخيرة لا تظهر لها رسالة.', en: 'Three errors: syntax (caught before running), logic (wrong order), semantic (wrong meaning — no message at all).' },
+        { ar: 'رسالة الخطأ صديقة: تسمي نوع المشكلة وتشير إلى مكانها التقريبي. اقرأها قبل أن تغيّر شيئًا.', en: 'An error message is a friend: it names the problem type and points roughly at its place. Read it before changing anything.' },
+      ],
+      reflectPrompt: {
+        ar: 'أي نوع من الأخطاء الثلاثة بدا لك أخطر؟ وهل تغيّرت نظرتك إليه بعد أن عرفت اسمه وسلوكه؟',
+        en: 'Which of the three error kinds seemed scariest to you? Has your view changed now that you know its name and behavior?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'PY4E', section: 'py4e.ch1.s9', pages: 'ص14 / pp.14' },
+        { book: 'PY4E', section: 'py4e.ch1.s10', pages: 'ص15 / pp.15' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'PY4E', section: 'py4e.ch1.s9', pages: 'ص14 / pp.14' },
+    { book: 'PY4E', section: 'py4e.ch1.s10', pages: 'ص15 / pp.15' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

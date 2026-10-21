@@ -1,0 +1,442 @@
+   972→5.5 Generalization in Deep Learning
+   973→In Chapter 3 and Chapter 4, we tackled regression and classification problems by fitting
+   974→linear models to training data. In both cases, we provided practical algorithms for finding
+   975→the parameters that maximized the likelihood of the observed training labels. And then,
+   976→towards the end of each chapter, we recalled that fitting the training data was only an in-
+   977→termediate goal. Our real quest all along was to discover general patterns on the basis
+   978→of which we can make accurate predictions even on new examples drawn from the same
+   979→underlying population. Machine learning researchers are consumers of optimization algo-
+   980→rithms. Sometimes, we must even develop new optimization algorithms. But at the end
+   981→of the day, optimization is merely a means to an end. At its core, machine learning is a
+   982→statistical discipline and we wish to optimize training loss only insofar as some statistical
+   983→principle (known or unknown) leads the resulting models to generalize beyond the training
+   984→set.
+   985→On the bright side, it turns out that deep neural networks trained by stochastic gradient de-
+   986→scent generalize remarkably well across myriad prediction problems, spanning computer
+   987→vision; natural language processing; time series data; recommender systems; electronic
+   988→health records; protein folding; value function approximation in video games and board
+   989→games; and numerous other domains. On the downside, if you were looking for a straight-
+   990→forward account of either the optimization story (why we can fit them to training data) or
+   991→the generalization story (why the resulting models generalize to unseen examples), then you
+   992→might want to pour yourself a drink. While our procedures for optimizing linear models
+   993→and the statistical properties of the solutions are both described well by a comprehensive
+   994→body of theory, our understanding of deep learning still resembles the wild west on both
+   995→fronts.
+   996→Both the theory and practice of deep learning are rapidly evolving, with theorists adopting
+   997→new strategies to explain what’s going on, even as practitioners continue to innovate at
+   998→
+   999→===== صفحة الكتاب 230 =====
+  1000→190
+  1001→Multilayer Perceptrons
+  1002→a blistering pace, building arsenals of heuristics for training deep networks and a body of
+  1003→intuitions and folk knowledge that provide guidance for deciding which techniques to apply
+  1004→in which situations.
+  1005→The summary of the present moment is that the theory of deep learning has produced
+  1006→promising lines of attack and scattered fascinating results, but still appears far from a com-
+  1007→prehensive account of both (i) why we are able to optimize neural networks and (ii) how
+  1008→models learned by gradient descent manage to generalize so well, even on high-dimensional
+  1009→tasks. However, in practice, (i) is seldom a problem (we can always find parameters that will
+  1010→fit all of our training data) and thus understanding generalization is far the bigger problem.
+  1011→On the other hand, even absent the comfort of a coherent scientific theory, practitioners
+  1012→have developed a large collection of techniques that may help you to produce models that
+  1013→generalize well in practice. While no pithy summary can possibly do justice to the vast
+  1014→topic of generalization in deep learning, and while the overall state of research is far from
+  1015→resolved, we hope, in this section, to present a broad overview of the state of research and
+  1016→practice.
+  1017→5.5.1 Revisiting Overfitting and Regularization
+  1018→According to the “no free lunch” theorem of Wolpert and Macready (1995), any learn-
+  1019→ing algorithm generalizes better on data with certain distributions, and worse with other
+  1020→distributions. Thus, given a finite training set, a model relies on certain assumptions: to
+  1021→achieve human-level performance it may be useful to identify inductive biases that reflect
+  1022→how humans think about the world. Such inductive biases show preferences for solutions
+  1023→with certain properties. For example, a deep MLP has an inductive bias towards building
+  1024→up a complicated function by the composition of simpler functions.
+  1025→With machine learning models encoding inductive biases, our approach to training them
+  1026→typically consists of two phases: (i) fit the training data; and (ii) estimate the generalization
+  1027→error (the true error on the underlying population) by evaluating the model on holdout data.
+  1028→The difference between our fit on the training data and our fit on the test data is called the
+  1029→generalization gap and when this is large, we say that our models overfit to the training data.
+  1030→In extreme cases of overfitting, we might exactly fit the training data, even when the test
+  1031→error remains significant. And in the classical view, the interpretation is that our models are
+  1032→too complex, requiring that we either shrink the number of features, the number of nonzero
+  1033→parameters learned, or the size of the parameters as quantified. Recall the plot of model
+  1034→complexity compared with loss (Fig. 3.6.1) from Section 3.6.
+  1035→However deep learning complicates this picture in counterintuitive ways. First, for classifi-
+  1036→cation problems, our models are typically expressive enough to perfectly fit every training
+  1037→example, even in datasets consisting of millions (Zhang et al., 2021). In the classical pic-
+  1038→ture, we might think that this setting lies on the far right extreme of the model complexity
+  1039→axis, and that any improvements in generalization error must come by way of regulariza-
+  1040→tion, either by reducing the complexity of the model class, or by applying a penalty, severely
+  1041→constraining the set of values that our parameters might take. But that is where things start
+  1042→to get weird.
+  1043→
+  1044→===== صفحة الكتاب 231 =====
+  1045→191
+  1046→Generalization in Deep Learning
+  1047→Strangely, for many deep learning tasks (e.g., image recognition and text classification) we
+  1048→are typically choosing among model architectures, all of which can achieve arbitrarily low
+  1049→training loss (and zero training error). Because all models under consideration achieve
+  1050→zero training error, the only avenue for further gains is to reduce overfitting. Even stranger,
+  1051→it is often the case that despite fitting the training data perfectly, we can actually reduce
+  1052→the generalization error further by making the model even more expressive, e.g., adding
+  1053→layers, nodes, or training for a larger number of epochs. Stranger yet, the pattern relating
+  1054→the generalization gap to the complexity of the model (as captured, for example, in the depth
+  1055→or width of the networks) can be non-monotonic, with greater complexity hurting at first
+  1056→but subsequently helping in a so-called “double-descent” pattern (Nakkiran et al., 2021).
+  1057→Thus the deep learning practitioner possesses a bag of tricks, some of which seemingly
+  1058→restrict the model in some fashion and others that seemingly make it even more expressive,
+  1059→and all of which, in some sense, are applied to mitigate overfitting.
+  1060→Complicating things even further, while the guarantees provided by classical learning the-
+  1061→ory can be conservative even for classical models, they appear powerless to explain why
+  1062→it is that deep neural networks generalize in the first place. Because deep neural networks
+  1063→are capable of fitting arbitrary labels even for large datasets, and despite the use of famil-
+  1064→iar methods such as ℓ2 regularization, traditional complexity-based generalization bounds,
+  1065→e.g., those based on the VC dimension or Rademacher complexity of a hypothesis class
+  1066→cannot explain why neural networks generalize.
+  1067→5.5.2 Inspiration from Nonparametrics
+  1068→Approaching deep learning for the first time, it is tempting to think of them as parametric
+  1069→models. After all, the models do have millions of parameters. When we update the models,
+  1070→we update their parameters. When we save the models, we write their parameters to disk.
+  1071→However, mathematics and computer science are riddled with counterintuitive changes of
+  1072→perspective, and surprising isomorphisms between seemingly different problems. While
+  1073→neural networks clearly have parameters, in some ways it can be more fruitful to think of
+  1074→them as behaving like nonparametric models. So what precisely makes a model nonpara-
+  1075→metric? While the name covers a diverse set of approaches, one common theme is that
+  1076→nonparametric methods tend to have a level of complexity that grows as the amount of
+  1077→available data grows.
+  1078→Perhaps the simplest example of a nonparametric model is the 𝑘-nearest neighbor algorithm
+  1079→(we will cover more nonparametric models later, for example in Section 11.2). Here, at
+  1080→training time, the learner simply memorizes the dataset. Then, at prediction time, when
+  1081→confronted with a new point x, the learner looks up the 𝑘nearest neighbors (the 𝑘points
+  1082→x′
+  1083→𝑖that minimize some distance 𝑑(x, x′
+  1084→𝑖)). When 𝑘= 1, this algorithm is called 1-nearest
+  1085→neighbors, and the algorithm will always achieve a training error of zero. That however,
+  1086→does not mean that the algorithm will not generalize. In fact, it turns out that under some
+  1087→mild conditions, the 1-nearest neighbor algorithm is consistent (eventually converging to
+  1088→the optimal predictor).
+  1089→Note that 1-nearest neighbor requires that we specify some distance function 𝑑, or equiva-
+  1090→lently, that we specify some vector-valued basis function 𝜙(x) for featurizing our data. For
+  1091→
+  1092→===== صفحة الكتاب 232 =====
+  1093→192
+  1094→Multilayer Perceptrons
+  1095→any choice of the distance metric, we will achieve zero training error and eventually reach
+  1096→an optimal predictor, but different distance metrics 𝑑encode different inductive biases and
+  1097→with a finite amount of available data will yield different predictors. Different choices of
+  1098→the distance metric 𝑑represent different assumptions about the underlying patterns and the
+  1099→performance of the different predictors will depend on how compatible the assumptions are
+  1100→with the observed data.
+  1101→In a sense, because neural networks are over-parametrized, possessing many more parame-
+  1102→ters than are needed to fit the training data, they tend to interpolate the training data (fitting
+  1103→it perfectly) and thus behave, in some ways, more like nonparametric models. More re-
+  1104→cent theoretical research has established deep connection between large neural networks
+  1105→and nonparametric methods, notably kernel methods. In particular, Jacot et al. (2018)
+  1106→demonstrated that in the limit, as multilayer perceptrons with randomly initialized weights
+  1107→grow infinitely wide, they become equivalent to (nonparametric) kernel methods for a spe-
+  1108→cific choice of the kernel function (essentially, a distance function), which they call the
+  1109→neural tangent kernel. While current neural tangent kernel models may not fully explain
+  1110→the behavior of modern deep networks, their success as an analytical tool underscores the
+  1111→usefulness of nonparametric modeling for understanding the behavior of over-parametrized
+  1112→deep networks.
+  1113→5.5.3 Early Stopping
+  1114→While deep neural networks are capable of fitting arbitrary labels, even when labels are
+  1115→assigned incorrectly or randomly (Zhang et al., 2021), this capability only emerges over
+  1116→many iterations of training. A new line of work (Rolnick et al., 2017) has revealed that
+  1117→in the setting of label noise, neural networks tend to fit cleanly labeled data first and only
+  1118→subsequently to interpolate the mislabeled data. Moreover, it has been established that this
+  1119→phenomenon translates directly into a guarantee on generalization: whenever a model has
+  1120→fitted the cleanly labeled data but not randomly labeled examples included in the training
+  1121→set, it has in fact generalized (Garg et al., 2021).
+  1122→Together these findings help to motivate early stopping, a classic technique for regularizing
+  1123→deep neural networks. Here, rather than directly constraining the values of the weights, one
+  1124→constrains the number of epochs of training. The most common way to determine the
+  1125→stopping criterion is to monitor validation error throughout training (typically by checking
+  1126→once after each epoch) and to cut off training when the validation error has not decreased
+  1127→by more than some small amount 𝜖for some number of epochs. This is sometimes called a
+  1128→patience criterion. As well as the potential to lead to better generalization in the setting of
+  1129→noisy labels, another benefit of early stopping is the time saved. Once the patience criterion
+  1130→is met, one can terminate training. For large models that might require days of training
+  1131→simultaneously across eight or more GPUs, well-tuned early stopping can save researchers
+  1132→days of time and can save their employers many thousands of dollars.
+  1133→Notably, when there is no label noise and datasets are realizable (the classes are truly sep-
+  1134→arable, e.g., distinguishing cats from dogs), early stopping tends not to lead to significant
+  1135→improvements in generalization. On the other hand, when there is label noise, or intrinsic
+  1136→
+  1137→===== صفحة الكتاب 233 =====
+  1138→193
+  1139→Generalization in Deep Learning
+  1140→variability in the label (e.g., predicting mortality among patients), early stopping is crucial.
+  1141→Training models until they interpolate noisy data is typically a bad idea.
+  1142→5.5.4 Classical Regularization Methods for Deep Networks
+  1143→In Chapter 3, we described several classical regularization techniques for constraining the
+  1144→complexity of our models. In particular, Section 3.7 introduced a method called weight
+  1145→decay, which consists of adding a regularization term to the loss function in order to penalize
+  1146→large values of the weights. Depending on which weight norm is penalized this technique
+  1147→is known either as ridge regularization (for ℓ2 penalty) or lasso regularization (for an ℓ1
+  1148→penalty). In the classical analysis of these regularizers, they are considered as sufficiently
+  1149→restrictive on the values that the weights can take to prevent the model from fitting arbitrary
+  1150→labels.
+  1151→In deep learning implementations, weight decay remains a popular tool. However, re-
+  1152→searchers have noted that typical strengths of ℓ2 regularization are insufficient to prevent the
+  1153→networks from interpolating the data (Zhang et al., 2021) and thus the benefits if interpreted
+  1154→as regularization might only make sense in combination with the early stopping criterion.
+  1155→Absent early stopping, it is possible that just like the number of layers or number of nodes
+  1156→(in deep learning) or the distance metric (in 1-nearest neighbor), these methods may lead to
+  1157→better generalization not because they meaningfully constrain the power of the neural net-
+  1158→work but rather because they somehow encode inductive biases that are better compatible
+  1159→with the patterns found in datasets of interests. Thus, classical regularizers remain popular
+  1160→in deep learning implementations, even if the theoretical rationale for their efficacy may be
+  1161→radically different.
+  1162→Notably, deep learning researchers have also built on techniques first popularized in classi-
+  1163→cal regularization contexts, such as adding noise to model inputs. In the next section we will
+  1164→introduce the famous dropout technique (invented by Srivastava et al. (2014)), which has
+  1165→become a mainstay of deep learning, even as the theoretical basis for its efficacy remains
+  1166→similarly mysterious.
+  1167→5.5.5 Summary
+  1168→Unlike classical linear models, which tend to have fewer parameters than examples, deep
+  1169→networks tend to be over-parametrized, and for most tasks are capable of perfectly fitting
+  1170→the training set. This interpolation regime challenges many hard fast-held intuitions. Func-
+  1171→tionally, neural networks look like parametric models. But thinking of them as nonpara-
+  1172→metric models can sometimes be a more reliable source of intuition. Because it is often
+  1173→the case that all deep networks under consideration are capable of fitting all of the train-
+  1174→ing labels, nearly all gains must come by mitigating overfitting (closing the generalization
+  1175→gap). Paradoxically, the interventions that reduce the generalization gap sometimes appear
+  1176→to increase model complexity and at other times appear to decrease complexity. However,
+  1177→these methods seldom decrease complexity sufficiently for classical theory to explain the
+  1178→generalization of deep networks, and why certain choices lead to improved generalization
+  1179→remains for the most part a massive open question despite the concerted efforts of many
+  1180→brilliant researchers.
+  1181→
+  1182→===== صفحة الكتاب 234 =====
+  1183→194
+  1184→Multilayer Perceptrons
+  1185→106
+  1186→5.5.6 Exercises
+  1187→1. In what sense do traditional complexity-based measures fail to account for generalization
+  1188→of deep neural networks?
+  1189→2. Why might early stopping be considered a regularization technique?
+  1190→3. How do researchers typically determine the stopping criterion?
+  1191→4. What important factor seems to differentiate cases when early stopping leads to big
+  1192→improvements in generalization?
+  1193→5. Beyond generalization, describe another benefit of early stopping.
+  1194→Discussions106.
+  1195→5.6 Dropout
+  1196→Let’s think briefly about what we expect from a good predictive model. We want it to pe-
+  1197→form well on unseen data. Classical generalization theory suggests that to close the gap
+  1198→between train and test performance, we should aim for a simple model. Simplicity can
+  1199→come in the form of a small number of dimensions. We explored this when discussing the
+  1200→monomial basis functions of linear models in Section 3.6. Additionally, as we saw when
+  1201→discussing weight decay (ℓ2 regularization) in Section 3.7, the (inverse) norm of the param-
+  1202→eters also represents a useful measure of simplicity. Another useful notion of simplicity
+  1203→is smoothness, i.e., that the function should not be sensitive to small changes to its inputs.
+  1204→For instance, when we classify images, we would expect that adding some random noise to
+  1205→the pixels should be mostly harmless.
+  1206→Bishop (1995) formalized this idea when he proved that training with input noise is equiva-
+  1207→lent to Tikhonov regularization. This work drew a clear mathematical connection between
+  1208→the requirement that a function be smooth (and thus simple), and the requirement that it be
+  1209→resilient to perturbations in the input.
+  1210→Then, Srivastava et al. (2014) developed a clever idea for how to apply Bishop’s idea to the
+  1211→internal layers of a network, too. Their idea, called dropout, involves injecting noise while
+  1212→computing each internal layer during forward propagation, and it has become a standard
+  1213→technique for training neural networks. The method is called dropout because we literally
+  1214→drop out some neurons during training. Throughout training, on each iteration, standard
+  1215→dropout consists of zeroing out some fraction of the nodes in each layer before calculating
+  1216→the subsequent layer.
+  1217→To be clear, we are imposing our own narrative with the link to Bishop. The original pa-
+  1218→per on dropout offers intuition through a surprising analogy to sexual reproduction. The
+  1219→authors argue that neural network overfitting is characterized by a state in which each layer
+  1220→
+  1221→===== صفحة الكتاب 235 =====
+  1222→195
+  1223→Dropout
+  1224→relies on a specific pattern of activations in the previous layer, calling this condition co-
+  1225→adaptation. Dropout, they claim, breaks up co-adaptation just as sexual reproduction is
+  1226→argued to break up co-adapted genes. While such an justification of this theory is cer-
+  1227→tainly up for debate, the dropout technique itself has proved enduring, and various forms of
+  1228→dropout are implemented in most deep learning libraries.
+  1229→The key challenge is how to inject this noise. One idea is to inject it in an unbiased manner
+  1230→so that the expected value of each layer—while fixing the others—equals the value it would
+  1231→have taken absent noise. In Bishop’s work, he added Gaussian noise to the inputs to a linear
+  1232→model. At each training iteration, he added noise sampled from a distribution with mean
+  1233→zero 𝜖∼N (0, 𝜎2) to the input x, yielding a perturbed point x′ = x + 𝜖. In expectation,
+  1234→𝐸[x′] = x.
+  1235→In standard dropout regularization, one zeros out some fraction of the nodes in each layer
+  1236→and then debiases each layer by normalizing by the fraction of nodes that were retained (not
+  1237→dropped out). In other words, with dropout probability 𝑝, each intermediate activation ℎis
+  1238→replaced by a random variable ℎ′ as follows:
+  1239→ℎ′ =
+  1240→(
+  1241→0
+  1242→with probability 𝑝
+  1243→ℎ
+  1244→1−𝑝
+  1245→otherwise
+  1246→(5.6.1)
+  1247→By design, the expectation remains unchanged, i.e., 𝐸[ℎ′] = ℎ.
+  1248→import torch
+  1249→from torch import nn
+  1250→from d2l import torch as d2l
+  1251→5.6.1 Dropout in Practice
+  1252→Recall the MLP with a hidden layer and five hidden units from Fig. 5.1.1. When we apply
+  1253→dropout to a hidden layer, zeroing out each hidden unit with probability 𝑝, the result can
+  1254→be viewed as a network containing only a subset of the original neurons. In Fig. 5.6.1, ℎ2
+  1255→and ℎ5 are removed. Consequently, the calculation of the outputs no longer depends on ℎ2
+  1256→or ℎ5 and their respective gradient also vanishes when performing backpropagation. In this
+  1257→way, the calculation of the output layer cannot be overly dependent on any one element of
+  1258→ℎ1, . . . , ℎ5.
+  1259→t
+  1260→Fig. 5.6.1
+  1261→MLP before and after dropout.
+  1262→
+  1263→===== صفحة الكتاب 236 =====
+  1264→196
+  1265→Multilayer Perceptrons
+  1266→Typically, we disable dropout at test time. Given a trained model and a new example,
+  1267→we do not drop out any nodes and thus do not need to normalize. However, there are
+  1268→some exceptions: some researchers use dropout at test time as a heuristic for estimating the
+  1269→uncertainty of neural network predictions: if the predictions agree across many different
+  1270→dropout outputs, then we might say that the network is more confident.
+  1271→5.6.2 Implementation from Scratch
+  1272→To implement the dropout function for a single layer, we must draw as many samples from a
+  1273→Bernoulli (binary) random variable as our layer has dimensions, where the random variable
+  1274→takes value 1 (keep) with probability 1 −𝑝and 0 (drop) with probability 𝑝. One easy way
+  1275→to implement this is to first draw samples from the uniform distribution 𝑈[0, 1]. Then we
+  1276→can keep those nodes for which the corresponding sample is greater than 𝑝, dropping the
+  1277→rest.
+  1278→In the following code, we implement a dropout_layer function that drops out the elements
+  1279→in the tensor input X with probability dropout, rescaling the remainder as described above:
+  1280→dividing the survivors by 1.0-dropout.
+  1281→def dropout_layer(X, dropout):
+  1282→assert 0 <= dropout <= 1
+  1283→if dropout == 1: return torch.zeros_like(X)
+  1284→mask = (torch.rand(X.shape) > dropout).float()
+  1285→return mask * X / (1.0 - dropout)
+  1286→We can test out the dropout_layer function on a few examples. In the following lines of
+  1287→code, we pass our input X through the dropout operation, with probabilities 0, 0.5, and 1,
+  1288→respectively.
+  1289→X = torch.arange(16, dtype = torch.float32).reshape((2, 8))
+  1290→print('dropout_p = 0:', dropout_layer(X, 0))
+  1291→print('dropout_p = 0.5:', dropout_layer(X, 0.5))
+  1292→print('dropout_p = 1:', dropout_layer(X, 1))
+  1293→dropout_p = 0: tensor([[ 0.,
+  1294→1.,
+  1295→2.,
+  1296→3.,
+  1297→4.,
+  1298→5.,
+  1299→6.,
+  1300→7.],
+  1301→[ 8.,
+  1302→9., 10., 11., 12., 13., 14., 15.]])
+  1303→dropout_p = 0.5: tensor([[ 0.,
+  1304→2.,
+  1305→0.,
+  1306→6.,
+  1307→8.,
+  1308→0.,
+  1309→0.,
+  1310→0.],
+  1311→[16., 18., 20., 22., 24., 26., 28., 30.]])
+  1312→dropout_p = 1: tensor([[0., 0., 0., 0., 0., 0., 0., 0.],
+  1313→[0., 0., 0., 0., 0., 0., 0., 0.]])
+  1314→Defining the Model
+  1315→The model below applies dropout to the output of each hidden layer (following the activation
+  1316→function). We can set dropout probabilities for each layer separately. A common choice is
+  1317→to set a lower dropout probability closer to the input layer. We ensure that dropout is only
+  1318→active during training.
+  1319→
+  1320→===== صفحة الكتاب 237 =====
+  1321→197
+  1322→Dropout
+  1323→class DropoutMLPScratch(d2l.Classifier):
+  1324→def __init__(self, num_outputs, num_hiddens_1, num_hiddens_2,
+  1325→dropout_1, dropout_2, lr):
+  1326→super().__init__()
+  1327→self.save_hyperparameters()
+  1328→self.lin1 = nn.LazyLinear(num_hiddens_1)
+  1329→self.lin2 = nn.LazyLinear(num_hiddens_2)
+  1330→self.lin3 = nn.LazyLinear(num_outputs)
+  1331→self.relu = nn.ReLU()
+  1332→def forward(self, X):
+  1333→H1 = self.relu(self.lin1(X.reshape((X.shape[0], -1))))
+  1334→if self.training:
+  1335→H1 = dropout_layer(H1, self.dropout_1)
+  1336→H2 = self.relu(self.lin2(H1))
+  1337→if self.training:
+  1338→H2 = dropout_layer(H2, self.dropout_2)
+  1339→return self.lin3(H2)
+  1340→Training
+  1341→The following is similar to the training of MLPs described previously.
+  1342→hparams = {'num_outputs':10, 'num_hiddens_1':256, 'num_hiddens_2':256,
+  1343→'dropout_1':0.5, 'dropout_2':0.5, 'lr':0.1}
+  1344→model = DropoutMLPScratch(**hparams)
+  1345→data = d2l.FashionMNIST(batch_size=256)
+  1346→trainer = d2l.Trainer(max_epochs=10)
+  1347→trainer.fit(model, data)
+  1348→5.6.3 Concise Implementation
+  1349→With high-level APIs, all we need to do is add a Dropout layer after each fully connected
+  1350→layer, passing in the dropout probability as the only argument to its constructor. During
+  1351→training, the Dropout layer will randomly drop out outputs of the previous layer (or equiv-
+  1352→alently, the inputs to the subsequent layer) according to the specified dropout probability.
+  1353→When not in training mode, the Dropout layer simply passes the data through during test-
+  1354→ing.
+  1355→
+  1356→===== صفحة الكتاب 238 =====
+  1357→198
+  1358→Multilayer Perceptrons
+  1359→class DropoutMLP(d2l.Classifier):
+  1360→def __init__(self, num_outputs, num_hiddens_1, num_hiddens_2,
+  1361→dropout_1, dropout_2, lr):
+  1362→super().__init__()
+  1363→self.save_hyperparameters()
+  1364→self.net = nn.Sequential(
+  1365→nn.Flatten(), nn.LazyLinear(num_hiddens_1), nn.ReLU(),
+  1366→nn.Dropout(dropout_1), nn.LazyLinear(num_hiddens_2), nn.ReLU(),
+  1367→nn.Dropout(dropout_2), nn.LazyLinear(num_outputs))
+  1368→Next, we train the model.
+  1369→model = DropoutMLP(**hparams)
+  1370→trainer.fit(model, data)
+  1371→5.6.4 Summary
+  1372→Beyond controlling the number of dimensions and the size of the weight vector, dropout is
+  1373→yet another tool for avoiding overfitting. Often tools are used jointly. Note that dropout is
+  1374→used only during training: it replaces an activation ℎwith a random variable with expected
+  1375→value ℎ.
+  1376→5.6.5 Exercises
+  1377→1. What happens if you change the dropout probabilities for the first and second layers?
+  1378→In particular, what happens if you switch the ones for both layers? Design an experi-
+  1379→ment to answer these questions, describe your results quantitatively, and summarize the
+  1380→qualitative takeaways.
+  1381→2. Increase the number of epochs and compare the results obtained when using dropout
+  1382→with those when not using it.
+  1383→3. What is the variance of the activations in each hidden layer when dropout is and is not
+  1384→applied? Draw a plot to show how this quantity evolves over time for both models.
+  1385→4. Why is dropout not typically used at test time?
+  1386→5. Using the model in this section as an example, compare the effects of using dropout and
+  1387→
+  1388→===== صفحة الكتاب 239 =====
+  1389→199
+  1390→Predicting House Prices on Kaggle
+  1391→107
+  1392→108
+  1393→weight decay. What happens when dropout and weight decay are used at the same time?
+  1394→Are the results additive? Are there diminished returns (or worse)? Do they cancel each
+  1395→other out?
+  1396→6. What happens if we apply dropout to the individual weights of the weight matrix rather
+  1397→than the activations?
+  1398→7. Invent another technique for injecting random noise at each layer that is different from
+  1399→the standard dropout technique. Can you develop a method that outperforms dropout on
+  1400→the Fashion-MNIST dataset (for a fixed architecture)?
+  1401→Discussions107.
+  1402→5.7 Predicting House Prices on Kaggle
+  1403→Now that we have introduced some basic tools for building and training deep networks and
+  1404→regularizing them with techniques including weight decay and dropout, we are ready to
+  1405→put all this knowledge into practice by participating in a Kaggle competition. The house
+  1406→price prediction competition is a great place to start. The data is fairly generic and do not
+  1407→exhibit exotic structure that might require specialized models (as audio or video might).
+  1408→This dataset, collected by De Cock (2011), covers house prices in Ames, Iowa from the
+  1409→period 2006–2010. It is considerably larger than the famous Boston housing dataset108 of
+  1410→Harrison and Rubinfeld (1978), boasting both more examples and more features.
+  1411→In this section, we will walk you through details of data preprocessing, model design, and
+
+[showing lines 972-1411 of 1743; use offset=1412 with limit to continue reading]

@@ -1,0 +1,396 @@
+/**
+ * swe.appa.l3 — التقرير النهائي وتقييم مستودعك / The Final Report and Grading Your Repository
+ * Sections: swe.A.s5 Comprehensive Final Report (ص474-480 / pp.474-480)
+ *           + swe.A.s6 Grading Your Own Repository (ص450 / p.450)
+ * Runnable design: claim-to-evidence audit + weighted repository self-grading rubric with
+ * missing-evidence list — short ASCII lines verified under CPython.
+ * Deterministic only: no input(), no exit(), no random, no unittest.main.
+ */
+import { Lesson } from '@/lib/content/schema';
+
+const lesson = {
+  id: 'swe.appa.l3',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 16,
+  title: {
+    ar: 'التقرير النهائي وتقييم مستودعك',
+    en: 'The Final Report and Grading Your Repository',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['swe.appa.l2'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'أسبوعه الأخير. فريقٌ جار يكتب تقريره النهائي من الذاكرة: يبحث في المحادثات عن رقم التغطية، ويسأل من أصلح العيب الثالث، ويعيد تخمين ما حدث في السبرنت الثاني. فريقٌ آخر يجلس ويتجمع فقط: تقريره هو ملف يجمع سجلات السبرنتات التي كتبها وهو يعمل. التقرير الأول حفريات أثرية؛ الثاني تجميع. أيّهما ستكتب؟',
+        en: 'The last week. One team writes its final report from memory: digging through chats for the coverage number, asking who fixed defect three, re-guessing what happened in sprint two. Another team simply assembles: its report is a file that gathers the sprint records written along the way. The first report is archaeology; the second is assembly. Which one will you write?',
+      },
+    },
+    {
+      kind: 'predict',
+      code: `claims = {'coverage 80 percent': 'CI report', 'CD every merge': '', 'auth works': 'test + PR 12'}
+unbacked = [c for c, e in claims.items() if not e]
+print('unbacked claims:', unbacked)`,
+      question: {
+        ar: 'ثلاثة ادعاءات في تقرير، لكل منها خانة دليل. قبل التشغيل: أي ادعاء سيسقط في قائمة غير المدعومة؟',
+        en: 'Three report claims, each with an evidence slot. Before running: which claim will land in the unbacked list?',
+      },
+      reveal: {
+        ar: "يدَّعي ['CD every merge'] قائمة غير المدعومة — خانة دليله فارغة. القاعدة: كل ادعاء في التقرير النهائي يجب أن يكون مرئيًا في النظام المنشور أو المستودع؛ ما لا يظهر للمعيِّن لا يُحسب.",
+        en: "The unbacked list catches ['CD every merge'] — its evidence slot is empty. The rule: every claim in the final report must be visible in the deployed system or the repository; what the grader cannot see does not count.",
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'التقرير النهائي: كل ادعاء بدليل', en: 'The final report: every claim with its evidence' },
+      chunks: [
+        {
+          ar: 'التقرير النهائي هو عملكم الرأسمالي، وهو أصل التقييم. يربط الفصل كله: المتطلبات من الفصلين 3-5، والمعمارية من 6-7، والعملية من 2، والاختبارات من 10، والمقاييس من 12. أقسامه: المشكلة والمستخدمون وتطور فهمهم منذ المقترح، والمتطلبات النهائية بأولويتها مع الصدق في ما تغير ولماذا، والمعمارية كما بُنيت بقراراتها ومقايضاتها، والعملية كما عيشتموها لا كما تخيلتموها، واستراتيجية الاختبار ومقاييس الجودة، والنتائج مقابل definition of done الذي كتبتموه في المقترح، ثم استعادت الأفكار. القاعدة الحاكمة: كل ادعاء بدليل — لقطة أو سجل أو مخرج اختبار.',
+          en: 'The final report is your capstone artifact and the main thing you are assessed on. It ties the whole course together: requirements from Chapters 3-5, architecture from 6-7, process from 2, testing from 10, metrics from 12. Its sections: the problem and users and how your understanding evolved since the proposal; the final prioritized requirements, honest about what changed and why; the architecture as built, with decisions and trade-offs; the process as you actually lived it; the test strategy and quality metrics; results measured against the definition of done from your proposal; then the retrospective. The governing rule: every claim carries evidence — a screenshot, a log, a test output.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'قياسات صادقة وحدود مُعلنة', en: 'Honest numbers and stated limits' },
+      chunks: [
+        {
+          ar: 'قسم الجودة يطلب أخلاقيات الإحصاء من الفصل 12: إحصاء وصفي واتجاهات وأعداد خام أولًا، ولا فترة ثقة إلا إذا سمحت بياناتكم بمشاهدات مستقلة كافية — وقلوا ذلك صراحةً عندما لا تسمح. مشروع فصل يعطي مشاهدات قليلة غير متساوية القياس وغير مستقلة؛ تسمية هذه الحدود جزء من التحليل نفسه. الجملة المكتوبة عن حدود أرقامكم تكسب اعتمادًا أكثر من دقة زائفة. لا تختاروا الرقم الوحيد المُبهج من لوحة القياس واتركوا البقية.',
+          en: 'The quality section demands the statistics ethic from Chapter 12: descriptive statistics, trends, and raw counts first; a confidence interval only if your data provide enough independent observations — and say so explicitly when they do not. A semester project yields few, unevenly measured, non-independent observations; naming those limits is part of the analysis itself. A stated limitation earns more credit than pseudo-precision. Do not cherry-pick the single flattering figure from your dashboard and leave the rest.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'قيّم مستودعك بنفسك: تتبّع وسجل أصول', en: 'Grade your own repository: traceability and provenance' },
+      chunks: [
+        {
+          ar: 'قبل العرض النهائي تُسجِّلون مستودعكم ببطاقة تقييم — في بداية المرحلة ثم مرة أخرى قبل العرض — وتضعون البطاقتين في التقرير مع قصة ما تغيّر: أي نتائج الأدوات أصلحتموها، وأيها لم تصلحوه ولماذا، وأيها دحضتموه بدليل لا تستطيع الأداة رؤيته. الخلاف المدافَع عنه بحجة يساوي هنا الإصلاح نفسه. خلف ذلك هدفان: تتبع كامل من المتطلب إلى الكود إلى الاختبار إلى التقرير، وسجل أصول AI حي في README يوثق أين ساعد الذكاء الاصطناعي، بروابط المحادثات، وكيف تحققتم من كل تغيير بمساعدته قبل أن يُشحن.',
+          en: 'Before the final demo you score your own repository with a scorecard — once at the start of the phase and again before the demo — and include both scorecards in the report with an account of what changed: which findings you fixed, which you chose not to fix and why, and which you refuted with evidence the tool could not see. A defended disagreement counts as much as a fix. Behind it sit two goals: full traceability from requirement to code to test to report, and a living AI-use provenance log in the README documenting where AI assisted, with transcript links, and how each AI-assisted change was verified before it shipped.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'بطاقة تقييم المستودع', en: 'The repository scorecard' },
+      code: `RUBRIC = [
+    ('requirements traceable to code', 20, True),
+    ('tests back each claim', 20, True),
+    ('AI use log current', 10, True),
+    ('scorecard findings triaged', 15, False),
+    ('final demo path polished', 15, True),
+    ('honest limitations section', 20, False),
+]
+score = 0
+missing = []
+for item, weight, ok in RUBRIC:
+    if ok:
+        score += weight
+    else:
+        missing.append(item)
+print('score:', score)
+print('missing evidence:')
+for item in missing:
+    print('- ' + item)`,
+      explanation: {
+        ar: 'ستة بنود بأوزان مجموعها 100. البند المكتمل يضيف وزنه؛ والبند بلا دليل يسقط في قائمة ما ينقص — triage للنتائج وقسم حدود صادق هنا. score: 65 ليست علامة فشل؛ إنها خطة عمل مرتبة بالوزن: 20 نقطة لقسم الحدود تعني أن الصدق أغلى بند ناقص.',
+        en: 'Six items whose weights sum to 100. A met item adds its weight; an item without evidence lands in the missing list — triaged findings and an honest limitations section here. score: 65 is not a failing grade; it is a work plan sorted by weight: 20 points for limitations means honesty is the most valuable missing item.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.evidence-audit',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'مراجعة أخيرة قبل التسليم: عندك قائمة CLAIMS من أزواج (الادعاء، الدليل). اطبع لكل ادعاء سطرًا بالضبط بالشكل: الادعاء: backed إذا كانت خانة الدليل غير فارغة، أو الادعاء: unbacked إن كانت فارغة. في النهاية اطبع unbacked: يليه عدد الادعاءات غير المدعومة.',
+        en: 'A final review before submission: you get a CLAIMS list of (claim, evidence) pairs. Print one line per claim exactly as: claim: backed when the evidence slot is non-empty, or claim: unbacked when it is empty. At the end print unbacked: with the count of unbacked claims.',
+      },
+      starterCode: `CLAIMS = [
+    ('users can book online', 'deployed URL works'),
+    ('coverage 80 percent', 'CI report'),
+    ('CD deploys every merge', ''),
+    ('defects down to 3', 'tracker export'),
+    ('AI use documented', ''),
+]
+# TODO: one line per claim: '<claim>: backed' or '<claim>: unbacked'
+# then 'unbacked: <count>'
+...`,
+      solution: `CLAIMS = [
+    ('users can book online', 'deployed URL works'),
+    ('coverage 80 percent', 'CI report'),
+    ('CD deploys every merge', ''),
+    ('defects down to 3', 'tracker export'),
+    ('AI use documented', ''),
+]
+unbacked = []
+for claim, evidence in CLAIMS:
+    state = 'backed' if evidence else 'unbacked'
+    print(claim + ': ' + state)
+    if not evidence:
+        unbacked.append(claim)
+print('unbacked:', len(unbacked))`,
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'عدد غير المدعوم', en: 'unbacked count' },
+          code: `assert 'unbacked: 2' in __learner_output__, 'expected: unbacked: 2 | actual: %r' % __learner_output__`,
+          expected: 'unbacked: 2',
+        },
+        {
+          id: 't2',
+          name: { ar: 'ادعاء CD غير مدعوم', en: 'CD claim is unbacked' },
+          code: `assert 'CD deploys every merge: unbacked' in __learner_output__, 'expected: CD deploys every merge: unbacked | actual: %r' % __learner_output__`,
+          expected: 'CD deploys every merge: unbacked',
+        },
+        {
+          id: 't3',
+          name: { ar: 'ادعاء مدعوم صحيح', en: 'a backed claim is marked' },
+          code: `assert 'coverage 80 percent: backed' in __learner_output__, 'expected: coverage 80 percent: backed | actual: %r' % __learner_output__`,
+          expected: 'coverage 80 percent: backed',
+        },
+      ],
+      hints: [
+        { ar: 'الدليل الفارغ نص فارغ: not evidence يميز backed عن unbacked.', en: 'An empty evidence is the empty string: not evidence separates backed from unbacked.' },
+        { ar: 'اجمع غير المدعومة في قائمة أثناء الحلقة، ثم اطبع طولها.', en: 'Collect unbacked claims into a list during the loop, then print its length.' },
+        { ar: 'الهيكل: حلقة for على CLAIMS مع تفريع، ثم سطر unbacked: في النهاية.', en: 'Skeleton: a for loop over CLAIMS with a branch, then the unbacked: line at the end.' },
+        { ar: 'السطر: print(claim + ": " + state) — النقطتان الرأسيتان بعد الادعاء مباشرة.', en: 'The line: print(claim + ": " + state) — the colon right after the claim.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-rubric',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود: بطاقة مصغّرة بأربعة بنود وثلاثة مكتملة. اكتب المخرجات الكاملة بدقة، سطرًا سطرًا.',
+        en: 'Read the code: a miniature scorecard with four items, three of them met. Write the exact output, line by line.',
+      },
+      code: `weights = {'trace': 30, 'tests': 30, 'log': 20, 'limits': 20}
+met = ['trace', 'tests', 'log']
+score = sum(weights[k] for k in met)
+print('met:', len(met), 'of', len(weights))
+print('score:', str(score) + '/100')`,
+      solution: `weights = {'trace': 30, 'tests': 30, 'log': 20, 'limits': 20}
+met = ['trace', 'tests', 'log']
+score = sum(weights[k] for k in met)
+print('met:', len(met), 'of', len(weights))
+print('score:', str(score) + '/100')`,
+      answer: 'met: 3 of 4\nscore: 80/100',
+      hints: [
+        { ar: 'الأوزان: trace وtests ثلاثون لكل منهما، وlog وlimits عشرون لكل منهما.', en: 'The weights: trace and tests are 30 each, log and limits are 20 each.' },
+        { ar: 'met لا تشمل limits، فوزنها 20 لا يدخل المجموع.', en: 'met excludes limits, so its weight of 20 stays out of the sum.' },
+        { ar: 'المجموع: 30 + 30 + 20.', en: 'The sum: 30 + 30 + 20.' },
+        { ar: 'السطر الأول: met: 3 of 4 — ثلاثة بنود من أربعة.', en: 'The first line: met: 3 of 4 — three items out of four.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-disagree',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'الأداة رفعت تحذيرًا تعتقدون أنه إيجابية كاذبة، ولديكم دليل تشرحون به ذلك. ماذا يفعل ببطاقة التقييم؟',
+        en: 'A tool raised a finding you believe is a false positive, and you have the evidence to explain why. What does that do to your scorecard?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'لا شيء — يجب إصلاح كل تحذير حرفيًا وإلا سقطت النقطة', en: 'Nothing — every warning must be fixed literally or the points fall' } },
+        { id: 'b', text: { ar: 'خلاف مدافَع عنه بدليل لا تستطيع الأداة رؤيته يساوي الإصلاح نفسه', en: 'A defended disagreement, with evidence the tool cannot see, counts as much as a fix' } },
+        { id: 'c', text: { ar: 'يُحذف التحذير من السجل حتى لا يفسد الصورة', en: 'The finding is removed from the log so it does not spoil the picture' } },
+        { id: 'd', text: { ar: 'يُلغى سطر الأداة كله من بطاقة التقييم', en: 'The tool row is removed from the scorecard entirely' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'تذكّر التمرين 12 في صفحة Project Exercises: البطاقتان تُرفقان مع قصة ما تغيّر.', en: 'Recall exercise 12 on the Project Exercises page: both scorecards are attached with an account of what changed.' },
+        { ar: 'الفئات الثلاث: أصلحتموه، أم لم تصلحوه ولماذا، أم دحضتموه بدليل.', en: 'Three buckets: fixed, consciously not fixed and why, or refuted with evidence.' },
+        { ar: 'الأدوات لا ترى كل شيء — فهمكم للسياق جزء من التحليل.', en: 'Tools cannot see everything — your understanding of context is part of the analysis.' },
+        { ar: 'الخيار الصحيح يمنح الخلاف الموثق نفس وزن الإصلاح.', en: 'The right option gives a documented disagreement the same weight as a fix.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-provenance',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'سجل حي في README يوثق أين ساعد الـ AI في العمل، مع روابط المحادثات وكيف تحققتم من كل تغيير قبل الشحن — هذا هو سجل ___. اكتب الكلمة الإنجليزية واحدة.',
+        en: 'A living README record documenting where AI assisted the work, with transcript links and how each change was verified before shipping — this is the AI-use ___ log. Write the single English word.',
+      },
+      answer: 'provenance',
+      solution: 'provenance',
+      hints: [
+        { ar: 'الكلمة تعني أصل الشيء وسلسلة ما مرّ به قبل أن يصل.', en: 'The word means where something came from and the chain it passed through.' },
+        { ar: 'وردت في الفصل 13 عند توثيق استخدام أدوات الذكاء الاصطناعي بمسؤولية.', en: 'It appeared in Chapter 13 on documenting AI-assisted work responsibly.' },
+        { ar: 'روابط المحادثات هي الدليل الذي يجعل السجل أكثر من قائمة أدوات.', en: 'Transcript links are what make the log more than a list of tools.' },
+        { ar: 'الجواب: provenance.', en: 'The answer: provenance.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: `START = [('trace', 20, False), ('tests', 20, True), ('ai_log', 10, True),
+         ('triage', 15, False), ('demo', 15, True), ('limits', 20, False)]
+NOW = [('trace', 20, True), ('tests', 20, True), ('ai_log', 10, True),
+       ('triage', 15, True), ('demo', 15, True), ('limits', 20, False)]
+
+def score(rubric):
+    return sum(w for _, w, ok in rubric if ok)
+
+print('score at phase start:', score(START))
+print('score before demo:', score(NOW))
+print('what changed: trace + triage fixed; limitations still open')`,
+      prompt: {
+        ar: 'ملعب البطاقتين: بطاقة بداية المرحلة وبطاقة ما قبل العرض. جرّب: 1) اجعل limits صحيحة في NOW — كم يصبح الفارق؟ 2) أسقط بندًا من NOW ولاحظ الوزن المفقود. 3) أضف بندًا من عندك بوزن 5 وحافظ على أن المجموع الكلي 100.',
+        en: 'Playground for the two scorecards: one at phase start, one before the demo. Try: 1) flip limits to True in NOW — what is the new gap? 2) drop an item from NOW and watch the lost weight. 3) add one item of your own worth 5 and keep the total at 100.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'swe.appa.l3.quiz',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'في قسم مقاييس الجودة، متى يُقبل ذكر فترة ثقة (confidence interval)؟',
+            en: 'In the quality-metrics section, when may you report a confidence interval?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'دائمًا — فهي تمنح التقرير مظهر الاحتراف', en: 'Always — it makes the report look professional' } },
+            { id: 'b', text: { ar: 'فقط إذا وفّرت بياناتكم مشاهدات مستقلة كافية، مع التصريح بذلك صراحةً', en: 'Only if your data provide enough independent observations — stated explicitly' } },
+            { id: 'c', text: { ar: 'كلما قلّت العينات زادت حاجتكم إليها', en: 'The smaller the sample, the more you need one' } },
+            { id: 'd', text: { ar: 'لا يُذكر أبدًا في تقارير الفرق', en: 'Never in team reports' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'هذه أخلاقيات الفصل 12: الإحصاء الوصفي والأعداد الخام أولًا، والاستدلالي فقط حين تبرره عينات مستقلة كافية — وحدود مشروع فصل قليلة وغير مستقلة غالبًا، وذكر ذلك يكسب اعتمادًا أكثر من دقة زائفة.',
+            en: 'This is the Chapter 12 ethic: descriptive statistics and raw counts first; inferential claims only when justified by enough independent observations — and a semester project usually yields few, so stating the limitation earns more credit than pseudo-precision.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ماذا يعني قول إن التقرير النهائي «تجميع لا حفريات»؟',
+            en: 'What does it mean that the final report should be assembly, not archaeology?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'أن يُكتب بلغة قديمة رصينة', en: 'It should be written in formal old language' } },
+            { id: 'b', text: { ar: 'أن تجمع من سجلات سبرنتات حافظتم عليها، بدل إعادة بناء الماضي من الذاكرة في الأسبوع الأخير', en: 'You assemble it from sprint records you kept, instead of reconstructing the past from memory in the last week' } },
+            { id: 'c', text: { ar: 'أن يُنسخ من مقارير الفرق الأخرى', en: 'It is copied from other team reports' } },
+            { id: 'd', text: { ar: 'أن يُكتب مرة واحدة في البداية ولا يتغير', en: 'It is written once at the start and never changes' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'إذا بقيتم تحدّثون سجلات السبرنتات ومراجعات الفريق، فإن velocity واتجاهات التغطية والقصّات ودروس الاستعادات مكتوبة سلفًا — سبرنتًا سبرنتًا.',
+            en: 'If you kept sprint reports and review records current, the velocity data, coverage trends, scope cuts, and retrospective insights are already written — one sprint at a time.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'أي الأدعاءات التالية يُحسب عند المعيِّن؟',
+            en: 'Which of these claims counts with the grader?',
+          },
+          options: [
+            { id: 'a', text: { ar: '«نظامنا آمن لأننا حرصنا»', en: 'Our system is secure because we were careful' } },
+            { id: 'b', text: { ar: '«التغطية 80%» بلا رابط إلى تقرير CI', en: 'Coverage is 80 percent, with no link to the CI report' } },
+            { id: 'c', text: { ar: '«النشر تلقائي» ودليله خط أنابيب يمكن للمعيِّن رؤيته يعمل', en: 'Deployment is automatic, with a pipeline the grader can watch run' } },
+            { id: 'd', text: { ar: '«اختبرنا كثيرًا» بلا عدد ولا نوع اختبارات', en: 'We tested a lot, with no count or kind of tests' } },
+          ],
+          answer: 'c',
+          explanation: {
+            ar: 'القاعدة الحاكمة: كل ادعاء يجب أن يكون مرئيًا في النظام المنشور أو المستودع — عناوين وروابط وأرقام يمكن للمعيِّن أن يفتحها.',
+            en: 'The governing rule: every claim must be visible in the deployed system or the repository — links, numbers, and artifacts the grader can open.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'ما الذي يجب أن يظهره قسم استخدام AI في التقرير؟',
+            en: 'What must the AI-use section of the report show?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'قائمة بأسماء الأدوات المستعملة فقط', en: 'Only the names of the tools used' } },
+            { id: 'b', text: { ar: 'أن AI لم يُستخدم إطلاقًا', en: 'That AI was never used at all' } },
+            { id: 'c', text: { ar: 'ما وُكِل للـ AI، وروابط المحادثات، وكيف تحققتم من كل تغيير قبل شحنه', en: 'What was delegated to AI, transcript links, and how each change was verified before shipping' } },
+            { id: 'd', text: { ar: 'عدد الأسطر التي كتبها الـ AI بالضبط', en: 'The exact number of lines AI wrote' } },
+          ],
+          answer: 'c',
+          explanation: {
+            ar: 'فقرة صادقة واحدة مع رابط سجل README تسبق قائمة أدوات: ما فوضتموه وما امتلكتموه، وكيف تحققتم — اختبارًا ومراجعة — قبل أن يُشحن كل تغيير.',
+            en: 'One honest paragraph plus the README log link beats a list of tools: what you delegated versus owned, and how each AI-assisted change was verified — tests, review — before it shipped.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'كتابة التقرير النهائي كله في الأسبوع الأخير من الذاكرة.',
+          right: 'التجميع من سجلات السبرنتات والمراجعات التي حُفظت حين حدثت.',
+          note: {
+            ar: 'حفريات آخر أسبوع تفقد الأرقام والحِجَج؛ التجميع يستغرق جلسة لأن كل شيء مكتوب سلفًا.',
+            en: 'Last-week archaeology loses numbers and evidence; assembly takes one sitting because everything was written down along the way.',
+          },
+        },
+        {
+          wrong: 'إرفاق فترة ثقة لأربعة مشاهدات غير مستقلة لإبهار القارئ.',
+          right: 'أعداد خام واتجاهات وفقرة حدود صريحة تسمي ما لا تدعمه أرقامكم.',
+          note: {
+            ar: 'الحدود المعلنة تكسب اعتمادًا أكثر من الدقة الزائفة؛ والاختيار الانحيازي لرقم واحد مُبهج يُكشف من بقية اللوحة.',
+            en: 'A stated limitation earns more credit than pseudo-precision; cherry-picking one flattering figure is exposed by the rest of the dashboard.',
+          },
+        },
+        {
+          wrong: 'إصلاح كل تحذير أداة بصمت لتظهر البطاقة نظيفة.',
+          right: 'تسجيل ثلاثي: ما أصلحتموه، وما تركتموه ولماذا، وما دحضتموه بدليل.',
+          note: {
+            ar: 'الخلاف المدافع عنه بحجة يساوي الإصلاح — لكنه يساويها فقط عندما يكون موثقًا ومفسّرًا في التقرير.',
+            en: 'A defended disagreement counts as much as a fix — but only when it is documented and explained in the report.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        {
+          ar: 'التقرير النهائي يربط الفصل كله: متطلبات وعمارة وعملية واختبارات ومقاييس — والنتائج مقابل definition of done.',
+          en: 'The final report ties the course together: requirements, architecture, process, testing, metrics — and results against your definition of done.',
+        },
+        {
+          ar: 'كل ادعاء بدليل مرئي في النظام المنشور أو المستودع؛ ما لا يُرى لا يُحسب.',
+          en: 'Every claim needs evidence visible in the deployed system or the repository; what cannot be seen does not count.',
+        },
+        {
+          ar: 'بطاقة تقييم المستودع تُسجَّل مرتين — بداية المرحلة وقبل العرض — والخلاف المدافع عنه يساوي الإصلاح.',
+          en: 'The repository scorecard is taken twice — phase start and pre-demo — and a defended disagreement counts as much as a fix.',
+        },
+        {
+          ar: 'تتبع كامل من المتطلب إلى الكود إلى الاختبار إلى التقرير، وسجل provenance للـ AI مع التحقق قبل الشحن.',
+          en: 'Full traceability from requirement to code to test to report, and an AI provenance log with verification before shipping.',
+        },
+      ],
+      reflectPrompt: {
+        ar: 'افتح مستودع مشروعكم الآن: ما أول ادعاء في تقريرك الذي لا تجد له دليلًا مرئيًا اليوم؟',
+        en: 'Open your project repository right now: what is the first claim in your report that has no visible evidence today?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.A.s5', pages: 'ص474-480 / pp.474-480' },
+        { book: 'SWE', section: 'swe.A.s6', pages: 'ص450 / p.450' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.A.s5', pages: 'ص474-480 / pp.474-480' },
+    { book: 'SWE', section: 'swe.A.s6', pages: 'ص450 / p.450' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

@@ -1,0 +1,133 @@
+{
+ "swe.ch13.l4": [
+  "C2: ship (tests green)",
+  "C4: ship (tests green)",
+  "shipped: 4/5"
+ ],
+ "py4e.ch10.l6": [
+  "1. watch: 1",
+  "3. stars: 1"
+ ],
+ "py4e.ch11.l6": [
+  "confidence count: 6",
+  "average: 0.5000"
+ ],
+ "py4e.ch12.l6": [
+  "200 OK",
+  "links: 2"
+ ],
+ "py4e.ch13.l6": [
+  "status: error",
+  "status: error"
+ ],
+ "py4e.ch14.l6": [
+  "team: red",
+  "players: 2"
+ ],
+ "py4e.ch15.l6": [
+  "albums: 6"
+ ],
+ "py4e.ch16.l6": [
+  "hour 11: 3",
+  "messages: 4"
+ ],
+ "py4e.ch2.l6": [
+  "fahrenheit"
+ ],
+ "py4e.ch5.l6": [
+  "المجموع: 91"
+ ],
+ "py4e.ch6.l6": [
+  "Domain: @pypath.io"
+ ],
+ "py4e.ch7.l6": [
+  "chars: 0"
+ ],
+ "py4e.ch8.l6": [
+  "backup: ['apple', 'banana', 'cherry']",
+  "original: ['apple', 'banana', 'cherry']"
+ ],
+ "py4e.ch9.l6": [
+  "3",
+  "2"
+ ],
+ "swe.appa.l4": [
+  "milestone 1: proposal - ready",
+  "risk: 2 requirements unassigned"
+ ],
+ "swe.ch1.l4": [
+  "scope: 8 time: 4 cost: 2 flex: crunch",
+  "hire: +1 devs"
+ ],
+ "swe.ch10.l5": [
+  "FAILED: pass edge -> got 1",
+  "tests: 4 passed: 3"
+ ],
+ "swe.ch11.l1": [
+  "bob: denied",
+  "bob: denied"
+ ],
+ "swe.ch11.l2": [
+  "eval: 0"
+ ],
+ "swe.ch11.l3": [
+  "log4j-core: ok",
+  "log4j-core: ok"
+ ],
+ "swe.ch11.l4": [
+  "breached: 0"
+ ],
+ "swe.ch12.l6": [
+  "mean: 9.00 s: 5.58",
+  "t 95% CI: (5.25, 12.75)"
+ ],
+ "swe.ch14.l5": [
+  "build: ok",
+  "stages passed: 3 / decision: promote"
+ ],
+ "swe.ch15.l1": [
+  "..F",
+  "probe: 9 -> C"
+ ],
+ "swe.ch15.l2": [
+  "run: 3 failures: 1",
+  "probe: 200 -> 165"
+ ],
+ "swe.ch15.l3": [
+  "routes: 3 legacy: 0",
+  "new:/payroll"
+ ],
+ "swe.ch15.l4": [
+  "run: 4 failures: 1"
+ ],
+ "swe.ch2.l5": [
+  "waterfall: fix F4 late for 9",
+  "escape check: clean"
+ ],
+ "swe.ch3.l5": [
+  "ST-1 Must valid",
+  "stories: 4 valid: 4 must: 3"
+ ],
+ "swe.ch4.l4": [
+  "picked: S1 S2 S3 (15/12 pts)",
+  "overbooked!"
+ ],
+ "swe.ch5.l4": [
+  "== S1 ==",
+  "summary: S1 lines=7 extend=1 | S2 lines=7 extend=1"
+ ],
+ "swe.ch6.l4": [
+  "app reaches models: False",
+  "cycle: none"
+ ],
+ "swe.ch7.l4": [
+  "S1: mvc",
+  "matched: 1/3"
+ ],
+ "swe.ch8.l5": [
+  "commits: 2"
+ ],
+ "swe.ch9.l4": [
+  "bare except: 0"
+ ]
+}

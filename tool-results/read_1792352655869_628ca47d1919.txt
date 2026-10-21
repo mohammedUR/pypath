@@ -1,0 +1,702 @@
+     1→
+     2→===== صفحة الكتاب 508 =====
+     3→12
+     4→Optimization Algorithms
+     5→If you read the book in sequence up to this point you already used a number of optimization
+     6→algorithms to train deep learning models. They were the tools that allowed us to continue
+     7→updating model parameters and to minimize the value of the loss function, as evaluated on
+     8→the training set. Indeed, anyone content with treating optimization as a black box device
+     9→to minimize objective functions in a simple setting might well content oneself with the
+    10→knowledge that there exists an array of incantations of such a procedure (with names such
+    11→as “SGD” and “Adam”).
+    12→To do well, however, some deeper knowledge is required. Optimization algorithms are
+    13→important for deep learning. On the one hand, training a complex deep learning model can
+    14→take hours, days, or even weeks. The performance of the optimization algorithm directly
+    15→affects the model’s training efficiency. On the other hand, understanding the principles
+    16→of different optimization algorithms and the role of their hyperparameters will enable us to
+    17→tune the hyperparameters in a targeted manner to improve the performance of deep learning
+    18→models.
+    19→In this chapter, we explore common deep learning optimization algorithms in depth. Al-
+    20→most all optimization problems arising in deep learning are nonconvex. Nonetheless, the
+    21→design and analysis of algorithms in the context of convex problems have proven to be very
+    22→instructive. It is for that reason that this chapter includes a primer on convex optimization
+    23→and the proof for a very simple stochastic gradient descent algorithm on a convex objective
+    24→function.
+    25→12.1 Optimization and Deep Learning
+    26→In this section, we will discuss the relationship between optimization and deep learning as
+    27→well as the challenges of using optimization in deep learning. For a deep learning problem,
+    28→we will usually define a loss function first. Once we have the loss function, we can use an
+    29→optimization algorithm in attempt to minimize the loss. In optimization, a loss function is
+    30→often referred to as the objective function of the optimization problem. By tradition and con-
+    31→vention most optimization algorithms are concerned with minimization. If we ever need to
+    32→maximize an objective there is a simple solution: just flip the sign on the objective.
+    33→468
+    34→
+    35→===== صفحة الكتاب 509 =====
+    36→469
+    37→Optimization and Deep Learning
+    38→12.1.1 Goal of Optimization
+    39→Although optimization provides a way to minimize the loss function for deep learning,
+    40→in essence, the goals of optimization and deep learning are fundamentally different. The
+    41→former is primarily concerned with minimizing an objective whereas the latter is concerned
+    42→with finding a suitable model, given a finite amount of data. In Section 3.6, we discussed the
+    43→difference between these two goals in detail. For instance, training error and generalization
+    44→error generally differ: since the objective function of the optimization algorithm is usually a
+    45→loss function based on the training dataset, the goal of optimization is to reduce the training
+    46→error. However, the goal of deep learning (or more broadly, statistical inference) is to reduce
+    47→the generalization error. To accomplish the latter we need to pay attention to overfitting in
+    48→addition to using the optimization algorithm to reduce the training error.
+    49→%matplotlib inline
+    50→import numpy as np
+    51→import torch
+    52→from mpl_toolkits import mplot3d
+    53→from d2l import torch as d2l
+    54→To illustrate the aforementioned different goals, let’s consider the empirical risk and the
+    55→risk. As described in Section 4.7.3, the empirical risk is an average loss on the training
+    56→dataset while the risk is the expected loss on the entire population of data. Below we define
+    57→two functions: the risk function f and the empirical risk function g. Suppose that we have
+    58→only a finite amount of training data. As a result, here g is less smooth than f.
+    59→def f(x):
+    60→return x * torch.cos(np.pi * x)
+    61→def g(x):
+    62→return f(x) + 0.2 * torch.cos(5 * np.pi * x)
+    63→The graph below illustrates that the minimum of the empirical risk on a training dataset
+    64→may be at a different location from the minimum of the risk (generalization error).
+    65→def annotate(text, xy, xytext):
+    66→#@save
+    67→d2l.plt.gca().annotate(text, xy=xy, xytext=xytext,
+    68→arrowprops=dict(arrowstyle='->'))
+    69→x = torch.arange(0.5, 1.5, 0.01)
+    70→d2l.set_figsize((4.5, 2.5))
+    71→d2l.plot(x, [f(x), g(x)], 'x', 'risk')
+    72→annotate('min of\nempirical risk', (1.0, -1.2), (0.5, -1.1))
+    73→annotate('min of risk', (1.1, -1.05), (0.95, -0.5))
+    74→12.1.2 Optimization Challenges in Deep Learning
+    75→In this chapter, we are going to focus specifically on the performance of optimization algo-
+    76→rithms in minimizing the objective function, rather than a model’s generalization error. In
+    77→Section 3.1 we distinguished between analytical solutions and numerical solutions in opti-
+    78→
+    79→===== صفحة الكتاب 510 =====
+    80→470
+    81→Optimization Algorithms
+    82→mization problems. In deep learning, most objective functions are complicated and do not
+    83→have analytical solutions. Instead, we must use numerical optimization algorithms. The
+    84→optimization algorithms in this chapter all fall into this category.
+    85→There are many challenges in deep learning optimization. Some of the most vexing ones
+    86→are local minima, saddle points, and vanishing gradients. Let’s have a look at them.
+    87→Local Minima
+    88→For any objective function 𝑓(𝑥), if the value of 𝑓(𝑥) at 𝑥is smaller than the values of 𝑓(𝑥)
+    89→at any other points in the vicinity of 𝑥, then 𝑓(𝑥) could be a local minimum. If the value
+    90→of 𝑓(𝑥) at 𝑥is the minimum of the objective function over the entire domain, then 𝑓(𝑥) is
+    91→the global minimum.
+    92→For example, given the function
+    93→𝑓(𝑥) = 𝑥· cos(𝜋𝑥) for −1.0 ≤𝑥≤2.0,
+    94→(12.1.1)
+    95→we can approximate the local minimum and global minimum of this function.
+    96→x = torch.arange(-1.0, 2.0, 0.01)
+    97→d2l.plot(x, [f(x), ], 'x', 'f(x)')
+    98→annotate('local minimum', (-0.3, -0.25), (-0.77, -1.0))
+    99→annotate('global minimum', (1.1, -0.95), (0.6, 0.8))
+   100→The objective function of deep learning models usually has many local optima. When the
+   101→numerical solution of an optimization problem is near the local optimum, the numerical
+   102→
+   103→===== صفحة الكتاب 511 =====
+   104→471
+   105→Optimization and Deep Learning
+   106→solution obtained by the final iteration may only minimize the objective function locally,
+   107→rather than globally, as the gradient of the objective function’s solutions approaches or
+   108→becomes zero. Only some degree of noise might knock the parameter out of the local
+   109→minimum. In fact, this is one of the beneficial properties of minibatch stochastic gradient
+   110→descent where the natural variation of gradients over minibatches is able to dislodge the
+   111→parameters from local minima.
+   112→Saddle Points
+   113→Besides local minima, saddle points are another reason for gradients to vanish. A saddle
+   114→point is any location where all gradients of a function vanish but which is neither a global
+   115→nor a local minimum. Consider the function 𝑓(𝑥) = 𝑥3. Its first and second derivative van-
+   116→ish for 𝑥= 0. Optimization might stall at this point, even though it is not a minimum.
+   117→x = torch.arange(-2.0, 2.0, 0.01)
+   118→d2l.plot(x, [x**3], 'x', 'f(x)')
+   119→annotate('saddle point', (0, -0.2), (-0.52, -5.0))
+   120→Saddle points in higher dimensions are even more insidious, as the example below shows.
+   121→Consider the function 𝑓(𝑥, 𝑦) = 𝑥2 −𝑦2. It has its saddle point at (0, 0). This is a maximum
+   122→with respect to 𝑦and a minimum with respect to 𝑥. Moreover, it looks like a saddle, which
+   123→is where this mathematical property got its name.
+   124→x, y = torch.meshgrid(
+   125→torch.linspace(-1.0, 1.0, 101), torch.linspace(-1.0, 1.0, 101))
+   126→z = x**2 - y**2
+   127→ax = d2l.plt.figure().add_subplot(111, projection='3d')
+   128→ax.plot_wireframe(x, y, z, **{'rstride': 10, 'cstride': 10})
+   129→ax.plot([0], [0], [0], 'rx')
+   130→ticks = [-1, 0, 1]
+   131→d2l.plt.xticks(ticks)
+   132→d2l.plt.yticks(ticks)
+   133→ax.set_zticks(ticks)
+   134→d2l.plt.xlabel('x')
+   135→d2l.plt.ylabel('y');
+   136→We assume that the input of a function is a 𝑘-dimensional vector and its output is a scalar,
+   137→
+   138→===== صفحة الكتاب 512 =====
+   139→472
+   140→Optimization Algorithms
+   141→so its Hessian matrix will have 𝑘eigenvalues. The solution of the function could be a local
+   142→minimum, a local maximum, or a saddle point at a position where the function gradient is
+   143→zero:
+   144→• When the eigenvalues of the function’s Hessian matrix at the zero-gradient position are
+   145→all positive, we have a local minimum for the function.
+   146→• When the eigenvalues of the function’s Hessian matrix at the zero-gradient position are
+   147→all negative, we have a local maximum for the function.
+   148→• When the eigenvalues of the function’s Hessian matrix at the zero-gradient position are
+   149→negative and positive, we have a saddle point for the function.
+   150→For high-dimensional problems the likelihood that at least some of the eigenvalues are neg-
+   151→ative is quite high. This makes saddle points more likely than local minima. We will discuss
+   152→some exceptions to this situation in the next section when introducing convexity. In short,
+   153→convex functions are those where the eigenvalues of the Hessian are never negative. Sadly,
+   154→though, most deep learning problems do not fall into this category. Nonetheless it is a great
+   155→tool to study optimization algorithms.
+   156→Vanishing Gradients
+   157→Probably the most insidious problem to encounter is the vanishing gradient. Recall our
+   158→commonly-used activation functions and their derivatives in Section 5.1.2. For instance,
+   159→assume that we want to minimize the function 𝑓(𝑥) = tanh(𝑥) and we happen to get started
+   160→at 𝑥= 4. As we can see, the gradient of 𝑓is close to nil. More specifically, 𝑓′(𝑥) =
+   161→1 −tanh2(𝑥) and thus 𝑓′(4) = 0.0013. Consequently, optimization will get stuck for a
+   162→long time before we make progress. This turns out to be one of the reasons that training
+   163→deep learning models was quite tricky prior to the introduction of the ReLU activation
+   164→function.
+   165→x = torch.arange(-2.0, 5.0, 0.01)
+   166→d2l.plot(x, [torch.tanh(x)], 'x', 'f(x)')
+   167→annotate('vanishing gradient', (4, 1), (2, 0.0))
+   168→As we saw, optimization for deep learning is full of challenges. Fortunately there exists a
+   169→robust range of algorithms that perform well and that are easy to use even for beginners.
+   170→
+   171→===== صفحة الكتاب 513 =====
+   172→473
+   173→Optimization and Deep Learning
+   174→166
+   175→Furthermore, it is not really necessary to find the best solution. Local optima or even ap-
+   176→proximate solutions thereof are still very useful.
+   177→12.1.3 Summary
+   178→• Minimizing the training error does not guarantee that we find the best set of parameters
+   179→to minimize the generalization error.
+   180→• The optimization problems may have many local minima.
+   181→• The problem may have even more saddle points, as generally the problems are not convex.
+   182→• Vanishing gradients can cause optimization to stall. Often a reparametrization of the
+   183→problem helps. Good initialization of the parameters can be beneficial, too.
+   184→12.1.4 Exercises
+   185→1. Consider a simple MLP with a single hidden layer of, say, 𝑑dimensions in the hid-
+   186→den layer and a single output. Show that for any local minimum there are at least 𝑑!
+   187→equivalent solutions that behave identically.
+   188→2. Assume that we have a symmetric random matrix M where the entries 𝑀𝑖𝑗= 𝑀𝑗𝑖are
+   189→each drawn from some probability distribution 𝑝𝑖𝑗. Furthermore assume that 𝑝𝑖𝑗(𝑥) =
+   190→𝑝𝑖𝑗(−𝑥), i.e., that the distribution is symmetric (see e.g., Wigner (1958) for details).
+   191→1. Prove that the distribution over eigenvalues is also symmetric. That is, for any eigen-
+   192→vector v the probability that the associated eigenvalue 𝜆satisfies 𝑃(𝜆> 0) = 𝑃(𝜆<
+   193→0).
+   194→2. Why does the above not imply 𝑃(𝜆> 0) = 0.5?
+   195→3. What other challenges involved in deep learning optimization can you think of?
+   196→4. Assume that you want to balance a (real) ball on a (real) saddle.
+   197→1. Why is this hard?
+   198→2. Can you exploit this effect also for optimization algorithms?
+   199→Discussions166.
+   200→
+   201→===== صفحة الكتاب 514 =====
+   202→474
+   203→Optimization Algorithms
+   204→12.2 Convexity
+   205→Convexity plays a vital role in the design of optimization algorithms. This is largely due
+   206→to the fact that it is much easier to analyze and test algorithms in such a context. In other
+   207→words, if the algorithm performs poorly even in the convex setting, typically we should not
+   208→hope to see great results otherwise. Furthermore, even though the optimization problems in
+   209→deep learning are generally nonconvex, they often exhibit some properties of convex ones
+   210→near local minima. This can lead to exciting new optimization variants such as (Izmailov
+   211→et al., 2018).
+   212→%matplotlib inline
+   213→import numpy as np
+   214→import torch
+   215→from mpl_toolkits import mplot3d
+   216→from d2l import torch as d2l
+   217→12.2.1 Definitions
+   218→Before convex analysis, we need to define convex sets and convex functions. They lead to
+   219→mathematical tools that are commonly applied to machine learning.
+   220→Convex Sets
+   221→Sets are the basis of convexity. Simply put, a set X in a vector space is convex if for any
+   222→𝑎, 𝑏∈X the line segment connecting 𝑎and 𝑏is also in X. In mathematical terms this
+   223→means that for all 𝜆∈[0, 1] we have
+   224→𝜆𝑎+ (1 −𝜆)𝑏∈X whenever 𝑎, 𝑏∈X.
+   225→(12.2.1)
+   226→This sounds a bit abstract. Consider Fig. 12.2.1. The first set is not convex since there exist
+   227→line segments that are not contained in it. The other two sets suffer no such problem.
+   228→t
+   229→Fig. 12.2.1
+   230→The ﬁrst set is nonconvex and the other two are convex.
+   231→Definitions on their own are not particularly useful unless you can do something with them.
+   232→In this case we can look at intersections as shown in Fig. 12.2.2. Assume that X and Y are
+   233→convex sets. Then X ∩Y is also convex. To see this, consider any 𝑎, 𝑏∈X ∩Y. Since X
+   234→and Y are convex, the line segments connecting 𝑎and 𝑏are contained in both X and Y.
+   235→Given that, they also need to be contained in X ∩Y, thus proving our theorem.
+   236→
+   237→===== صفحة الكتاب 515 =====
+   238→475
+   239→Convexity
+   240→t
+   241→Fig. 12.2.2
+   242→The intersection between two convex sets is convex.
+   243→We can strengthen this result with little effort: given convex sets X𝑖, their intersection ∩𝑖X𝑖
+   244→is convex. To see that the converse is not true, consider two disjoint sets X ∩Y = ∅. Now
+   245→pick 𝑎∈X and 𝑏∈Y. The line segment in Fig. 12.2.3 connecting 𝑎and 𝑏needs to contain
+   246→some part that is neither in X nor in Y, since we assumed that X ∩Y = ∅. Hence the line
+   247→segment is not in X ∪Y either, thus proving that in general unions of convex sets need not
+   248→be convex.
+   249→t
+   250→Fig. 12.2.3
+   251→The union of two convex sets need not be convex.
+   252→Typically the problems in deep learning are defined on convex sets. For instance, R𝑑, the
+   253→set of 𝑑-dimensional vectors of real numbers, is a convex set (after all, the line between any
+   254→two points in R𝑑remains in R𝑑). In some cases we work with variables of bounded length,
+   255→such as balls of radius 𝑟as defined by {x|x ∈R𝑑and ∥x∥≤𝑟}.
+   256→Convex Functions
+   257→Now that we have convex sets we can introduce convex functions 𝑓. Given a convex set X,
+   258→a function 𝑓: X →R is convex if for all 𝑥, 𝑥′ ∈X and for all 𝜆∈[0, 1] we have
+   259→𝜆𝑓(𝑥) + (1 −𝜆) 𝑓(𝑥′) ≥𝑓(𝜆𝑥+ (1 −𝜆)𝑥′).
+   260→(12.2.2)
+   261→To illustrate this let’s plot a few functions and check which ones satisfy the requirement.
+   262→Below we define a few functions, both convex and nonconvex.
+   263→f = lambda x: 0.5 * x**2
+   264→# Convex
+   265→g = lambda x: torch.cos(np.pi * x)
+   266→# Nonconvex
+   267→h = lambda x: torch.exp(0.5 * x)
+   268→# Convex
+   269→x, segment = torch.arange(-2, 2, 0.01), torch.tensor([-1.5, 1])
+   270→d2l.use_svg_display()
+   271→_, axes = d2l.plt.subplots(1, 3, figsize=(9, 3))
+   272→for ax, func in zip(axes, [f, g, h]):
+   273→d2l.plot([x, segment], [func(x), func(segment)], axes=ax)
+   274→
+   275→===== صفحة الكتاب 516 =====
+   276→476
+   277→Optimization Algorithms
+   278→As expected, the cosine function is nonconvex, whereas the parabola and the exponential
+   279→function are. Note that the requirement that X is a convex set is necessary for the condition
+   280→to make sense. Otherwise the outcome of 𝑓(𝜆𝑥+(1−𝜆)𝑥′) might not be well defined.
+   281→Jensen’s Inequality
+   282→Given a convex function 𝑓, one of the most useful mathematical tools is Jensen’s inequality.
+   283→It amounts to a generalization of the definition of convexity:
+   284→Õ
+   285→𝑖
+   286→𝛼𝑖𝑓(𝑥𝑖) ≥𝑓
+   287→ Õ
+   288→𝑖
+   289→𝛼𝑖𝑥𝑖
+   290→!
+   291→and 𝐸𝑋[ 𝑓(𝑋)] ≥𝑓(𝐸𝑋[𝑋]) ,
+   292→(12.2.3)
+   293→where 𝛼𝑖are nonnegative real numbers such that Í
+   294→𝑖𝛼𝑖= 1 and 𝑋is a random variable. In
+   295→other words, the expectation of a convex function is no less than the convex function of an
+   296→expectation, where the latter is usually a simpler expression. To prove the first inequality
+   297→we repeatedly apply the definition of convexity to one term in the sum at a time.
+   298→One of the common applications of Jensen’s inequality is to bound a more complicated
+   299→expression by a simpler one. For example, its application can be with regard to the log-
+   300→likelihood of partially observed random variables. That is, we use
+   301→𝐸𝑌∼𝑃(𝑌) [−log 𝑃(𝑋| 𝑌)] ≥−log 𝑃(𝑋),
+   302→(12.2.4)
+   303→since
+   304→∫
+   305→𝑃(𝑌)𝑃(𝑋| 𝑌)𝑑𝑌= 𝑃(𝑋). This can be used in variational methods. Here 𝑌
+   306→is typically the unobserved random variable, 𝑃(𝑌) is the best guess of how it might be
+   307→distributed, and 𝑃(𝑋) is the distribution with 𝑌integrated out. For instance, in clustering
+   308→𝑌might be the cluster labels and 𝑃(𝑋| 𝑌) is the generative model when applying cluster
+   309→labels.
+   310→12.2.2 Properties
+   311→Convex functions have many useful properties. We describe a few commonly-used ones
+   312→below.
+   313→
+   314→===== صفحة الكتاب 517 =====
+   315→477
+   316→Convexity
+   317→Local Minima Are Global Minima
+   318→First and foremost, the local minima of convex functions are also the global minima. We
+   319→can prove it by contradiction as follows.
+   320→Consider a convex function 𝑓defined on a convex set X. Suppose that 𝑥∗∈X is a local
+   321→minimum: there exists a small positive value 𝑝so that for 𝑥∈X that satisfies 0 < |𝑥−𝑥∗| ≤
+   322→𝑝we have 𝑓(𝑥∗) < 𝑓(𝑥).
+   323→Assume that the local minimum 𝑥∗is not the global minimum of 𝑓: there exists 𝑥′ ∈X
+   324→for which 𝑓(𝑥′) < 𝑓(𝑥∗). There also exists 𝜆∈[0, 1) such as 𝜆= 1 −
+   325→𝑝
+   326→|𝑥∗−𝑥′| so that
+   327→0 < |𝜆𝑥∗+ (1 −𝜆)𝑥′ −𝑥∗| ≤𝑝.
+   328→However, according to the definition of convex functions, we have
+   329→𝑓(𝜆𝑥∗+ (1 −𝜆)𝑥′) ≤𝜆𝑓(𝑥∗) + (1 −𝜆) 𝑓(𝑥′)
+   330→< 𝜆𝑓(𝑥∗) + (1 −𝜆) 𝑓(𝑥∗)
+   331→= 𝑓(𝑥∗),
+   332→(12.2.5)
+   333→which contradicts with our statement that 𝑥∗is a local minimum. Therefore, there does
+   334→not exist 𝑥′ ∈X for which 𝑓(𝑥′) < 𝑓(𝑥∗). The local minimum 𝑥∗is also the global
+   335→minimum.
+   336→For instance, the convex function 𝑓(𝑥) = (𝑥−1)2 has a local minimum at 𝑥= 1, which is
+   337→also the global minimum.
+   338→f = lambda x: (x - 1) ** 2
+   339→d2l.set_figsize()
+   340→d2l.plot([x, segment], [f(x), f(segment)], 'x', 'f(x)')
+   341→The fact that the local minima for convex functions are also the global minima is very
+   342→convenient. It means that if we minimize functions we cannot “get stuck”. Note, though,
+   343→that this does not mean that there cannot be more than one global minimum or that there
+   344→might even exist one. For instance, the function 𝑓(𝑥) = max(|𝑥|−1, 0) attains its minimum
+   345→value over the interval [−1, 1]. Conversely, the function 𝑓(𝑥) = exp(𝑥) does not attain a
+   346→minimum value on R: for 𝑥→−∞it asymptotes to 0, but there is no 𝑥for which 𝑓(𝑥) =
+   347→0.
+   348→
+   349→===== صفحة الكتاب 518 =====
+   350→478
+   351→Optimization Algorithms
+   352→Below Sets of Convex Functions Are Convex
+   353→We can conveniently define convex sets via below sets of convex functions. Concretely,
+   354→given a convex function 𝑓defined on a convex set X, any below set
+   355→S𝑏
+   356→def= {𝑥|𝑥∈X and 𝑓(𝑥) ≤𝑏}
+   357→(12.2.6)
+   358→is convex.
+   359→Let’s prove this quickly. Recall that for any 𝑥, 𝑥′ ∈S𝑏we need to show that 𝜆𝑥+ (1−𝜆)𝑥′ ∈
+   360→S𝑏as long as 𝜆∈[0, 1]. Since 𝑓(𝑥) ≤𝑏and 𝑓(𝑥′) ≤𝑏, by the definition of convexity we
+   361→have
+   362→𝑓(𝜆𝑥+ (1 −𝜆)𝑥′) ≤𝜆𝑓(𝑥) + (1 −𝜆) 𝑓(𝑥′) ≤𝑏.
+   363→(12.2.7)
+   364→Convexity and Second Derivatives
+   365→Whenever the second derivative of a function 𝑓: R𝑛→R exists it is very easy to check
+   366→whether 𝑓is convex. All we need to do is check whether the Hessian of 𝑓is positive
+   367→semidefinite: ∇2 𝑓⪰0, i.e., denoting the Hessian matrix ∇2 𝑓by H, x⊤Hx ≥0 for all
+   368→x ∈R𝑛. For instance, the function 𝑓(x) = 1
+   369→2 ∥x∥2 is convex since ∇2 𝑓= 1, i.e., its Hessian
+   370→is an identity matrix.
+   371→Formally, a twice-differentiable one-dimensional function 𝑓: R →R is convex if and only
+   372→if its second derivative 𝑓′′ ≥0. For any twice-differentiable multidimensional function
+   373→𝑓: R𝑛→R, it is convex if and only if its Hessian ∇2 𝑓⪰0.
+   374→First, we need to prove the one-dimensional case. To see that convexity of 𝑓implies 𝑓′′ ≥0
+   375→we use the fact that
+   376→1
+   377→2 𝑓(𝑥+ 𝜖) + 1
+   378→2 𝑓(𝑥−𝜖) ≥𝑓
+   379→𝑥+ 𝜖
+   380→2
+   381→+ 𝑥−𝜖
+   382→2
+   383→
+   384→= 𝑓(𝑥).
+   385→(12.2.8)
+   386→Since the second derivative is given by the limit over finite differences it follows that
+   387→𝑓′′(𝑥) = lim
+   388→𝜖→0
+   389→𝑓(𝑥+ 𝜖) + 𝑓(𝑥−𝜖) −2 𝑓(𝑥)
+   390→𝜖2
+   391→≥0.
+   392→(12.2.9)
+   393→To see that 𝑓′′ ≥0 implies that 𝑓is convex we use the fact that 𝑓′′ ≥0 implies that 𝑓′
+   394→is a monotonically nondecreasing function. Let 𝑎< 𝑥< 𝑏be three points in R, where
+   395→𝑥= (1 −𝜆)𝑎+ 𝜆𝑏and 𝜆∈(0, 1). According to the mean value theorem, there exist
+   396→𝛼∈[𝑎, 𝑥] and 𝛽∈[𝑥, 𝑏] such that
+   397→𝑓′(𝛼) = 𝑓(𝑥) −𝑓(𝑎)
+   398→𝑥−𝑎
+   399→and 𝑓′(𝛽) = 𝑓(𝑏) −𝑓(𝑥)
+   400→𝑏−𝑥
+   401→.
+   402→(12.2.10)
+   403→By monotonicity 𝑓′(𝛽) ≥𝑓′(𝛼), hence
+   404→𝑥−𝑎
+   405→𝑏−𝑎𝑓(𝑏) + 𝑏−𝑥
+   406→𝑏−𝑎𝑓(𝑎) ≥𝑓(𝑥).
+   407→(12.2.11)
+   408→Since 𝑥= (1 −𝜆)𝑎+ 𝜆𝑏, we have
+   409→𝜆𝑓(𝑏) + (1 −𝜆) 𝑓(𝑎) ≥𝑓((1 −𝜆)𝑎+ 𝜆𝑏),
+   410→(12.2.12)
+   411→
+   412→===== صفحة الكتاب 519 =====
+   413→479
+   414→Convexity
+   415→thus proving convexity.
+   416→Second, we need a lemma before proving the multidimensional case: 𝑓: R𝑛→R is convex
+   417→if and only if for all x, y ∈R𝑛
+   418→𝑔(𝑧)
+   419→def= 𝑓(𝑧x + (1 −𝑧)y) where 𝑧∈[0, 1]
+   420→(12.2.13)
+   421→is convex.
+   422→To prove that convexity of 𝑓implies that 𝑔is convex, we can show that for all 𝑎, 𝑏, 𝜆∈[0, 1]
+   423→(thus 0 ≤𝜆𝑎+ (1 −𝜆)𝑏≤1)
+   424→𝑔(𝜆𝑎+ (1 −𝜆)𝑏)
+   425→= 𝑓((𝜆𝑎+ (1 −𝜆)𝑏) x + (1 −𝜆𝑎−(1 −𝜆)𝑏) y)
+   426→= 𝑓(𝜆(𝑎x + (1 −𝑎)y) + (1 −𝜆) (𝑏x + (1 −𝑏)y))
+   427→≤𝜆𝑓(𝑎x + (1 −𝑎)y) + (1 −𝜆) 𝑓(𝑏x + (1 −𝑏)y)
+   428→=𝜆𝑔(𝑎) + (1 −𝜆)𝑔(𝑏).
+   429→(12.2.14)
+   430→To prove the converse, we can show that for all 𝜆∈[0, 1]
+   431→𝑓(𝜆x + (1 −𝜆)y)
+   432→=𝑔(𝜆· 1 + (1 −𝜆) · 0)
+   433→≤𝜆𝑔(1) + (1 −𝜆)𝑔(0)
+   434→=𝜆𝑓(x) + (1 −𝜆) 𝑓(y).
+   435→(12.2.15)
+   436→Finally, using the lemma above and the result of the one-dimensional case, the multidimen-
+   437→sional case can be proven as follows. A multidimensional function 𝑓: R𝑛→R is convex
+   438→if and only if for all x, y ∈R𝑛𝑔(𝑧)
+   439→def= 𝑓(𝑧x + (1 −𝑧)y), where 𝑧∈[0, 1], is convex. Ac-
+   440→cording to the one-dimensional case, this holds if and only if 𝑔′′ = (x −y)⊤H(x −y) ≥0
+   441→(H
+   442→def= ∇2 𝑓) for all x, y ∈R𝑛, which is equivalent to H ⪰0 per the definition of positive
+   443→semidefinite matrices.
+   444→12.2.3 Constraints
+   445→One of the nice properties of convex optimization is that it allows us to handle constraints ef-
+   446→ficiently. That is, it allows us to solve constrained optimization problems of the form:
+   447→minimize
+   448→x
+   449→𝑓(x)
+   450→subject to 𝑐𝑖(x) ≤0 for all 𝑖∈{1, . . . , 𝑛},
+   451→(12.2.16)
+   452→where 𝑓is the objective and the functions 𝑐𝑖are constraint functions. To see what this does
+   453→consider the case where 𝑐1(x) = ∥x∥2 −1. In this case the parameters x are constrained to
+   454→the unit ball. If a second constraint is 𝑐2(x) = v⊤x + 𝑏, then this corresponds to all x lying
+   455→on a half-space. Satisfying both constraints simultaneously amounts to selecting a slice of
+   456→a ball.
+   457→
+   458→===== صفحة الكتاب 520 =====
+   459→480
+   460→Optimization Algorithms
+   461→Lagrangian
+   462→In general, solving a constrained optimization problem is difficult. One way of addressing
+   463→it stems from physics with a rather simple intuition. Imagine a ball inside a box. The ball
+   464→will roll to the place that is lowest and the forces of gravity will be balanced out with the
+   465→forces that the sides of the box can impose on the ball. In short, the gradient of the objective
+   466→function (i.e., gravity) will be offset by the gradient of the constraint function (the ball need
+   467→to remain inside the box by virtue of the walls “pushing back”). Note that some constraints
+   468→may not be active: the walls that are not touched by the ball will not be able to exert any
+   469→force on the ball.
+   470→Skipping over the derivation of the Lagrangian 𝐿, the above reasoning can be expressed
+   471→via the following saddle point optimization problem:
+   472→𝐿(x, 𝛼1, . . . , 𝛼𝑛) = 𝑓(x) +
+   473→𝑛
+   474→Õ
+   475→𝑖=1
+   476→𝛼𝑖𝑐𝑖(x) where 𝛼𝑖≥0.
+   477→(12.2.17)
+   478→Here the variables 𝛼𝑖(𝑖= 1, . . . , 𝑛) are the so-called Lagrange multipliers that ensure that
+   479→constraints are properly enforced. They are chosen just large enough to ensure that 𝑐𝑖(x) ≤
+   480→0 for all 𝑖. For instance, for any x where 𝑐𝑖(x) < 0 naturally, we’d end up picking 𝛼𝑖= 0.
+   481→Moreover, this is a saddle point optimization problem where one wants to maximize 𝐿with
+   482→respect to all 𝛼𝑖and simultaneously minimize it with respect to x. There is a rich body of
+   483→literature explaining how to arrive at the function 𝐿(x, 𝛼1, . . . , 𝛼𝑛). For our purposes it is
+   484→sufficient to know that the saddle point of 𝐿is where the original constrained optimization
+   485→problem is solved optimally.
+   486→Penalties
+   487→One way of satisfying constrained optimization problems at least approximately is to adapt
+   488→the Lagrangian 𝐿. Rather than satisfying 𝑐𝑖(x) ≤0 we simply add 𝛼𝑖𝑐𝑖(x) to the objective
+   489→function 𝑓(𝑥). This ensures that the constraints will not be violated too badly.
+   490→In fact, we have been using this trick all along. Consider weight decay in Section 3.7. In it
+   491→we add 𝜆
+   492→2 ∥w∥2 to the objective function to ensure that w does not grow too large. From the
+   493→constrained optimization point of view we can see that this will ensure that ∥w∥2 −𝑟2 ≤0
+   494→for some radius 𝑟. Adjusting the value of 𝜆allows us to vary the size of w.
+   495→In general, adding penalties is a good way of ensuring approximate constraint satisfaction.
+   496→In practice this turns out to be much more robust than exact satisfaction. Furthermore, for
+   497→nonconvex problems many of the properties that make the exact approach so appealing in
+   498→the convex case (e.g., optimality) no longer hold.
+   499→Projections
+   500→An alternative strategy for satisfying constraints is projections. Again, we encountered
+   501→them before, e.g., when dealing with gradient clipping in Section 9.5. There we ensured
+   502→
+   503→===== صفحة الكتاب 521 =====
+   504→481
+   505→Convexity
+   506→that a gradient has length bounded by 𝜃via
+   507→g ←g · min(1, 𝜃/∥g∥).
+   508→(12.2.18)
+   509→This turns out to be a projection of g onto the ball of radius 𝜃. More generally, a projection
+   510→on a convex set X is defined as
+   511→ProjX(x) = argmin
+   512→x′∈X
+   513→∥x −x′∥,
+   514→(12.2.19)
+   515→which is the closest point in X to x.
+   516→t
+   517→Fig. 12.2.4
+   518→Convex Projections.
+   519→The mathematical definition of projections may sound a bit abstract. Fig. 12.2.4 explains it
+   520→somewhat more clearly. In it we have two convex sets, a circle and a diamond. Points inside
+   521→both sets (yellow) remain unchanged during projections. Points outside both sets (black)
+   522→are projected to the points inside the sets (red) that are closet to the original points (black).
+   523→While for ℓ2 balls this leaves the direction unchanged, this need not be the case in general,
+   524→as can be seen in the case of the diamond.
+   525→One of the uses for convex projections is to compute sparse weight vectors. In this case we
+   526→project weight vectors onto an ℓ1 ball, which is a generalized version of the diamond case
+   527→in Fig. 12.2.4.
+   528→12.2.4 Summary
+   529→In the context of deep learning the main purpose of convex functions is to motivate opti-
+   530→mization algorithms and help us understand them in detail. In the following we will see
+   531→how gradient descent and stochastic gradient descent can be derived accordingly.
+   532→• Intersections of convex sets are convex. Unions are not.
+   533→• The expectation of a convex function is no less than the convex function of an expectation
+   534→(Jensen’s inequality).
+   535→• A twice-differentiable function is convex if and only if its Hessian (a matrix of second
+   536→derivatives) is positive semidefinite.
+   537→• Convex constraints can be added via the Lagrangian. In practice we may simply add
+   538→them with a penalty to the objective function.
+   539→• Projections map to points in the convex set closest to the original points.
+   540→
+   541→===== صفحة الكتاب 522 =====
+   542→482
+   543→Optimization Algorithms
+   544→167
+   545→12.2.5 Exercises
+   546→1. Assume that we want to verify convexity of a set by drawing all lines between points
+   547→within the set and checking whether the lines are contained.
+   548→1. Prove that it is sufficient to check only the points on the boundary.
+   549→2. Prove that it is sufficient to check only the vertices of the set.
+   550→2. Denote by B𝑝[𝑟]
+   551→def= {x|x ∈R𝑑and ∥x∥𝑝≤𝑟} the ball of radius 𝑟using the 𝑝-norm.
+   552→Prove that B𝑝[𝑟] is convex for all 𝑝≥1.
+   553→3. Given convex functions 𝑓and 𝑔, show that max( 𝑓, 𝑔) is convex, too. Prove that min( 𝑓, 𝑔)
+   554→is not convex.
+   555→4. Prove that the normalization of the softmax function is convex. More specifically prove
+   556→the convexity of 𝑓(𝑥) = log Í
+   557→𝑖exp(𝑥𝑖).
+   558→5. Prove that linear subspaces, i.e., X = {x|Wx = b}, are convex sets.
+   559→6. Prove that in the case of linear subspaces with b = 0 the projection ProjX can be written
+   560→as Mx for some matrix M.
+   561→7. Show that for twice-differentiable convex functions 𝑓we can write 𝑓(𝑥+ 𝜖) = 𝑓(𝑥) +
+   562→𝜖𝑓′(𝑥) + 1
+   563→2𝜖2 𝑓′′(𝑥+ 𝜉) for some 𝜉∈[0, 𝜖].
+   564→8. Given a convex set X and two vectors x and y, prove that projections never increase
+   565→distances, i.e., ∥x −y∥≥∥ProjX(x) −ProjX(y)∥.
+   566→Discussions167.
+   567→12.3 Gradient Descent
+   568→In this section we are going to introduce the basic concepts underlying gradient descent.
+   569→Although it is rarely used directly in deep learning, an understanding of gradient descent is
+   570→key to understanding stochastic gradient descent algorithms. For instance, the optimization
+   571→problem might diverge due to an overly large learning rate. This phenomenon can already
+   572→be seen in gradient descent. Likewise, preconditioning is a common technique in gradient
+   573→descent and carries over to more advanced algorithms. Let’s start with a simple special
+   574→case.
+   575→12.3.1 One-Dimensional Gradient Descent
+   576→Gradient descent in one dimension is an excellent example to explain why the gradient
+   577→descent algorithm may reduce the value of the objective function. Consider some con-
+   578→tinuously differentiable real-valued function 𝑓: R →R. Using a Taylor expansion we
+   579→
+   580→===== صفحة الكتاب 523 =====
+   581→483
+   582→Gradient Descent
+   583→obtain
+   584→𝑓(𝑥+ 𝜖) = 𝑓(𝑥) + 𝜖𝑓′(𝑥) + O(𝜖2).
+   585→(12.3.1)
+   586→That is, in first-order approximation 𝑓(𝑥+ 𝜖) is given by the function value 𝑓(𝑥) and the
+   587→first derivative 𝑓′(𝑥) at 𝑥. It is not unreasonable to assume that for small 𝜖moving in the
+   588→direction of the negative gradient will decrease 𝑓. To keep things simple we pick a fixed
+   589→step size 𝜂> 0 and choose 𝜖= −𝜂𝑓′(𝑥). Plugging this into the Taylor expansion above we
+   590→get
+   591→𝑓(𝑥−𝜂𝑓′(𝑥)) = 𝑓(𝑥) −𝜂𝑓′2(𝑥) + O(𝜂2 𝑓′2(𝑥)).
+   592→(12.3.2)
+   593→If the derivative 𝑓′(𝑥) ≠0 does not vanish we make progress since 𝜂𝑓′2(𝑥) > 0. Moreover,
+   594→we can always choose 𝜂small enough for the higher-order terms to become irrelevant.
+   595→Hence we arrive at
+   596→𝑓(𝑥−𝜂𝑓′(𝑥)) ⪅𝑓(𝑥).
+   597→(12.3.3)
+   598→This means that, if we use
+   599→𝑥←𝑥−𝜂𝑓′(𝑥)
+   600→(12.3.4)
+   601→to iterate 𝑥, the value of function 𝑓(𝑥) might decline. Therefore, in gradient descent we first
+   602→choose an initial value 𝑥and a constant 𝜂> 0 and then use them to continuously iterate 𝑥
+   603→until the stop condition is reached, for example, when the magnitude of the gradient | 𝑓′(𝑥)|
+   604→is small enough or the number of iterations has reached a certain value.
+   605→For simplicity we choose the objective function 𝑓(𝑥) = 𝑥2 to illustrate how to implement
+   606→gradient descent. Although we know that 𝑥= 0 is the solution to minimize 𝑓(𝑥), we still
+   607→use this simple function to observe how 𝑥changes.
+   608→%matplotlib inline
+   609→import numpy as np
+   610→import torch
+   611→from d2l import torch as d2l
+   612→def f(x):
+   613→# Objective function
+   614→return x ** 2
+   615→def f_grad(x):
+   616→# Gradient (derivative) of the objective function
+   617→return 2 * x
+   618→Next, we use 𝑥= 10 as the initial value and assume 𝜂= 0.2. Using gradient descent to
+   619→iterate 𝑥for 10 times we can see that, eventually, the value of 𝑥approaches the optimal
+   620→solution.
+   621→def gd(eta, f_grad):
+   622→x = 10.0
+   623→results = [x]
+   624→(continues on next page)
+   625→
+   626→===== صفحة الكتاب 524 =====
+   627→484
+   628→Optimization Algorithms
+   629→(continued from previous page)
+   630→for i in range(10):
+   631→x -= eta * f_grad(x)
+   632→results.append(float(x))
+   633→print(f'epoch 10, x: {x:f}')
+   634→return results
+   635→results = gd(0.2, f_grad)
+   636→epoch 10, x: 0.060466
+   637→The progress of optimizing over 𝑥can be plotted as follows.
+   638→def show_trace(results, f):
+   639→n = max(abs(min(results)), abs(max(results)))
+   640→f_line = torch.arange(-n, n, 0.01)
+   641→d2l.set_figsize()
+   642→d2l.plot([f_line, results], [[f(x) for x in f_line], [
+   643→f(x) for x in results]], 'x', 'f(x)', fmts=['-', '-o'])
+   644→show_trace(results, f)
+   645→Learning Rate
+   646→The learning rate 𝜂can be set by the algorithm designer. If we use a learning rate that is too
+   647→small, it will cause 𝑥to update very slowly, requiring more iterations to get a better solu-
+   648→tion. To show what happens in such a case, consider the progress in the same optimization
+   649→problem for 𝜂= 0.05. As we can see, even after 10 steps we are still very far from the
+   650→optimal solution.
+   651→show_trace(gd(0.05, f_grad), f)
+   652→epoch 10, x: 3.486784
+   653→Conversely, if we use an excessively high learning rate, |𝜂𝑓′(𝑥)| might be too large for
+   654→the first-order Taylor expansion formula. That is, the term O(𝜂2 𝑓′2(𝑥)) in (12.3.2) might
+   655→
+   656→===== صفحة الكتاب 525 =====
+   657→485
+   658→Gradient Descent
+   659→become significant. In this case, we cannot guarantee that the iteration of 𝑥will be able to
+   660→lower the value of 𝑓(𝑥). For example, when we set the learning rate to 𝜂= 1.1, 𝑥overshoots
+   661→the optimal solution 𝑥= 0 and gradually diverges.
+   662→show_trace(gd(1.1, f_grad), f)
+   663→epoch 10, x: 61.917364
+   664→Local Minima
+   665→To illustrate what happens for nonconvex functions consider the case of 𝑓(𝑥) = 𝑥· cos(𝑐𝑥)
+   666→for some constant 𝑐. This function has infinitely many local minima. Depending on our
+   667→choice of the learning rate and depending on how well conditioned the problem is, we may
+   668→end up with one of many solutions. The example below illustrates how an (unrealistically)
+   669→high learning rate will lead to a poor local minimum.
+   670→c = torch.tensor(0.15 * np.pi)
+   671→def f(x):
+   672→# Objective function
+   673→return x * torch.cos(c * x)
+   674→def f_grad(x):
+   675→# Gradient of the objective function
+   676→return torch.cos(c * x) - c * x * torch.sin(c * x)
+   677→show_trace(gd(2, f_grad), f)
+   678→
+   679→===== صفحة الكتاب 526 =====
+   680→486
+   681→Optimization Algorithms
+   682→epoch 10, x: -1.528166
+   683→12.3.2 Multivariate Gradient Descent
+   684→Now that we have a better intuition of the univariate case, let’s consider the situation where
+   685→x = [𝑥1, 𝑥2, . . . , 𝑥𝑑]⊤. That is, the objective function 𝑓: R𝑑→R maps vectors into
+   686→scalars. Correspondingly its gradient is multivariate, too. It is a vector consisting of 𝑑
+   687→partial derivatives:
+   688→∇𝑓(x) =
+   689→ 𝜕𝑓(x)
+   690→𝜕𝑥1
+   691→, 𝜕𝑓(x)
+   692→𝜕𝑥2
+   693→, . . . , 𝜕𝑓(x)
+   694→𝜕𝑥𝑑
+   695→⊤
+   696→.
+   697→(12.3.5)
+   698→Each partial derivative element 𝜕𝑓(x)/𝜕𝑥𝑖in the gradient indicates the rate of change of
+   699→𝑓at x with respect to the input 𝑥𝑖. As before in the univariate case we can use the cor-
+   700→responding Taylor approximation for multivariate functions to get some idea of what we
+
+[showing lines 1-700 of 3065; use offset=701 with limit to continue reading]

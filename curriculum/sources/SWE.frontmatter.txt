@@ -1,0 +1,445 @@
+
+########## PAGE 1 ##########
+
+########## PAGE 2 ##########
+Software Engineering: Standing on the Shoulders of
+Giants — Python Edition
+Software Engineering: Standing on the Shoulders of Giants
+Who this book is for
+Why this book exists
+How the book is organized
+Suggested paths through the book
+Code examples in six languages
+How this book was made (AI assistance)
+About the author
+If this book helped you
+Citing this book
+Copyright and license
+Chapter 1 — Introduction
+1.1 What Is Software Engineering?
+1.2 The Requirements Challenge
+1.3 Software Is Intrinsically Complex
+1.4 Defects Are Inevitable
+1.5 Balancing Constraints: The Iron Triangle
+1.6 Social Responsibility
+1.7 Conclusion
+Chapter 1 — Exercises
+Concepts
+Analysis
+Ethics
+Chapter 1 — Open Resources
+What software engineering is
+Origins of the discipline (used in §1.1.3)
+Complexity and defects
+Professional responsibility (used in §1.6)
+License note
+Chapter 2 — Software Development Processes
+2.1 Processes and Values Guide Development
+2.2 Structuring Teamwork: The Scrum Framework
+2.3 Agile Development: Extreme Programming
+2.4 Limitations of Waterfall Processes
+
+########## PAGE 3 ##########
+2.5 Levels of Design and Testing: V Processes
+2.6 Additional Project Risks
+2.7 Risk Reduction: The Spiral Framework
+2.8 Shape Up: Fixed Time, Variable Scope
+2.9 Conclusion
+Chapter 2 — Exercises
+Processes and values (§2.1)
+Scrum (§2.2)
+XP and engineering practice (§2.3)
+Plan-driven models and their risks (§§2.4–2.5)
+Risk and the spiral (§§2.6–2.7)
+Shape Up (§2.8)
+Chapter 2 — Open Resources
+Foundational values
+Plan-driven and risk-driven models (primary sources)
+Course material
+License note
+Chapter 3 — User Requirements
+3.1 What Is a Requirement?
+3.2 Developing Requirements and Software
+3.3 Eliciting User Needs
+3.4 Writing Requirements: Stories and Features
+3.5 Writing User-Experience Scenarios
+3.6 Clarifying User Goals
+3.7 Identifying Security Attacks
+3.8 Conclusion
+Chapter 3 — Exercises
+Concepts
+Analysis
+Chapter 3 — Open Resources
+User stories, features, and BDD
+Gherkin, Given/When/Then, and BDD
+Traceability
+Writing and specifying requirements
+Eliciting and prioritizing needs
+Framing the problem
+Goals and goal modeling
+Security requirements and attack trees
+License note
+
+########## PAGE 4 ##########
+Chapter 4 — Requirements Analysis
+4.1 A Checklist Approach
+4.2 Relative Estimation: Iteration Planning
+4.3 Structured Group Consensus Estimates
+4.4 Balancing Priorities
+4.5 Customer Satisfiers and Dissatisfiers
+4.6 Plan-Driven Estimation Models
+4.7 Conclusion
+Chapter 4 — Exercises
+Concepts
+Estimation and forecasting
+Prioritization
+Effort models
+Chapter 4 — Open Resources
+Relative estimation, story points, and velocity
+Consensus estimation: Planning Poker and Delphi
+Prioritization
+Customer satisfaction: the Kano model
+Plan-driven / algorithmic estimation: COCOMO
+Estimation, judgment, and its limits (background)
+Appetite: fixed time, variable scope
+License note
+Chapter 5 — Use Cases
+5.1 Elements of a Use Case
+5.2 Alternative Flows: Conditional Behaviors
+5.3 Writing Use Cases
+5.4 Use-Case Diagrams
+5.5 Relationships between Use Cases
+5.6 Conclusion
+Chapter 5 — Exercises
+Concepts
+Analysis
+Chapter 5 — Open Resources
+Foundations: what a use case is
+Notation and diagrams
+Templates and practice
+License note
+Chapter 6 — Design and Architecture
+6.1 The Role of Architecture
+
+########## PAGE 5 ##########
+6.2 Designing Modular Systems
+6.3 Class Diagrams
+6.4 Architectural Views
+6.5 Describing System Architecture
+6.6 Conclusion
+Chapter 6 — Exercises
+Concepts
+Analysis
+Chapter 6 — Open Resources
+Modularity, abstraction, and interfaces
+Coupling, cohesion, and design principles
+Class diagrams and UML notation
+Architectural views (used in §6.4)
+Quality-attribute scenarios
+License note
+Chapter 7 — Architectural Patterns
+7.1 Software Layering
+7.2 Three Building Blocks
+7.3 User Interfaces: Model-View-Controller
+7.4 Dataflow Architectures
+7.5 Connecting Clients with Servers
+7.6 Families and Product Lines
+7.7 Conclusion
+Chapter 7 — Exercises
+Concepts
+Analysis
+Choosing a pattern
+Chapter 7 — Open Resources
+Pattern catalogs (use across the whole chapter)
+Dataflow, streams, and big data (§7.4)
+Client-server, broker, and distributed structure (§7.5)
+Product lines (§7.6)
+RESTful APIs (§7.5.4)
+Foundational background
+License note
+Chapter 8 — Version Control with Git
+8.1 Why Version Control
+8.2 The Everyday Workflow
+8.3 Branching and Merging
+
+########## PAGE 6 ##########
+8.4 Working with Others
+8.5 Merge Conflicts
+8.6 Habits That Make Git Work for a Team
+8.7 Markdown, READMEs, and Project Documentation
+8.8 Conclusion
+Chapter 8 — Exercises
+Concepts
+Analysis
+Chapter 8 — Open Resources
+Foundations: what Git is and how it works (used in §8.1)
+Building the right mental model (used in §8.1, §8.3)
+Hands-on practice and everyday commands (used in §8.2, §8.4)
+Team workflows and conflicts (used in §8.4, §8.5)
+Commit and history discipline (used in §8.6)
+Markdown and documentation (used in §8.7)
+Chapter 9 — Static Checking
+9.1 Architecture Reviews
+9.2 Conducting Software Inspections
+9.3 Code Reviews: Check Intent and Trust
+9.4 Automated Static Analysis
+9.5 Conclusion
+Chapter 9 — Exercises
+Concepts
+Analysis
+Chapter 9 — Open Resources
+Code review (used in §9.3)
+Inspection (used in §9.2)
+Automated static analysis (used in §9.4)
+Learning from failure (used in §9.1)
+License note
+Chapter 10 — Testing
+10.1 Overview of Testing
+10.2 Levels of Testing
+10.3 Code Coverage I: White-Box Testing
+10.4 Input Coverage I: Black-Box Testing
+10.5 Code Coverage II: MC/DC
+10.6 Input Coverage II: Combinatorial Testing
+10.7 Conclusion
+Chapter 10 — Exercises
+
+########## PAGE 7 ##########
+Concepts
+Analysis
+Do the work
+Chapter 10 — Open Resources
+Foundations: what to test and how
+Coverage criteria, white-box, and MC/DC
+Black-box and combinatorial testing
+Tools and practice
+License note
+Chapter 11 — Software Security
+11.1 Security Is a Lifecycle Property
+11.2 The OWASP Top 10
+11.3 Finding Vulnerabilities, from Manual to Autonomous
+11.4 The Software Supply Chain: A World of Weak Links
+11.5 Building Security In
+11.6 Conclusion
+Chapter 11 — Exercises
+Concepts
+Analysis
+Chapter 11 — Open Resources
+The OWASP Top 10 and hands-on practice
+AI in security
+The software supply chain
+Standards, frameworks, and courses
+License note
+Chapter 12 — Quality Metrics
+12.1 Meaningful Metrics
+12.2 Software Quality
+12.3 Graphical Displays of Data Sets
+12.4 Product Quality: Measuring Defects
+12.5 Ops Quality Improvement: A Case Study
+12.6 Data Dispersion: Boxplots and Histograms
+12.7 Data Dispersion: Statistics
+12.8 Confidence Intervals
+12.9 Simple Linear Regression
+12.10 Conclusion
+Chapter 12 — Exercises
+Concepts
+Analysis
+
+########## PAGE 8 ##########
+Calculation
+Chapter 12 — Open Resources
+Statistics foundations (§§12.6–12.9)
+Software metrics and quality (§§12.1–12.5)
+Reference and data
+License note
+Chapter 13 — Software Engineering in the Age of AI
+13.1 What AI Changes — and What It Doesn’t
+13.2 AI Across the Lifecycle
+13.3 The Evidence: Productivity, Quality, Security
+13.4 Outcome Engineering: The o16g Manifesto
+13.5 Spec-Driven Development
+13.6 Context as Infrastructure: CLAUDE.md, AGENTS.md, and Skills
+13.7 Loop Engineering
+13.8 Principles for the AI-Augmented Engineer
+13.9 Conclusion
+Chapter 13 — Exercises
+Concepts
+Analysis
+The o16g manifesto
+Agentic practice
+Chapter 13 — Open Resources
+The o16g manifesto (used in §13.4)
+Productivity evidence (used in §13.1.4, §13.3)
+Code quality & security (used in §13.3)
+AI in requirements, design, testing (used in §13.2)
+Agentic development in practice (used in §§13.5–13.7)
+Foundations & agentic engineering
+License note
+Chapter 14 — Delivery: CI/CD, DevOps, and Operations
+14.1 SaaS and the Cloud
+14.2 Continuous Integration Pipelines
+14.3 Continuous Deployment
+14.4 Packaging and Running a Service: Docker and Compose
+14.5 Reaching Users: DNS, TLS, and the Edge
+14.6 Continuous Security Pipelines
+14.7 DORA Delivery Metrics
+14.8 Conclusion
+Chapter 14 — Exercises
+
+########## PAGE 9 ##########
+Concepts
+Analysis
+Chapter 14 — Open Resources
+Primary sources for the case studies
+The cloud and distributed systems
+CI/CD and deployment practice
+Deployment mechanics: containers, DNS, and TLS
+DORA and delivery research
+Continuous security and the supply chain
+License note
+Chapter 15 — Maintenance and Evolution
+15.1 What Makes Code Legacy
+15.2 Characterization Tests
+15.3 Refactoring Under Green Tests
+15.4 Repository Stewardship
+15.5 Technical Debt
+15.6 Strangler Fig versus Big-Bang Rewrite
+15.7 Conclusion
+Chapter 15 — Exercises
+Concepts
+Analysis
+Chapter 15 — Open Resources
+Legacy code, refactoring, and technical debt
+License note
+Appendix A — The Team Project
+A.1 Overview
+A.2 Project Proposal
+A.3 Skeletal System: Status Report 1
+A.4 Viable System: Status Report 2
+A.5 Comprehensive Final Report
+A.6 Grading Your Own Repository
+A.7 Conclusion
+Running the Project on Two-Week Sprints
+Dual hats: every team is both customer and developer
+The cadence
+Sprint 0: from pitch to deployed skeleton
+Sprints 1–4: build cycles with a hardening arc
+Every sprint: the common cycle
+Demo Day rules
+
+########## PAGE 10 ##########
+Appetite per sprint
+Team and customer reviews
+End of term
+Appendix A — Project Exercises
+Weeks 1–2 — Team and idea
+Weeks 3–4 — Proposal
+Weeks 5–7 — Skeletal system (Status Report 1)
+Weeks 8–11 — Viable system (Status Report 2)
+Weeks 12–15 — Final report and demo
+Appendix A — Open Resources
+Running a team project end to end
+Requirements for the proposal (A.2)
+Team effectiveness (A.1.2)
+Process (A.1.1, referenced from Ch. 2)
+Curriculum context (why the course is shaped this way)
+Cross-team customer models (the dual-hat swap)
+Metrics for status reports and the final report (referenced from Ch. 12)
+License note
+Idea Pitch —
+1. Problem
+2. Appetite
+3. Rough solution
+4. Rabbit holes
+5. No-gos
+6. Customer contact
+Project Proposal — <Team / Project Name>
+1. Problem statement
+2. Users and stakeholders
+3. Proposed solution and value
+4. Key user stories / features (prioritized)
+5. Scope boundaries
+6. Intended architecture and technology
+7. Process and team plan
+8. Risks and how you’ll probe them
+9. Definition of done for the term
+Sprint Report <1–4> — <Team / Project Name>
+1. Sprint goal
+2. What shipped (demo notes)
+3. Stories: planned vs. done
+
+########## PAGE 11 ##########
+4. Quality
+4a. Process evidence
+5. Scopes and hill chart
+6. Scope cuts and nice-to-haves dropped
+7. Risks and blockers
+8. Next sprint plan
+9. Contributions
+Status Report <1 | 2> — <Team / Project Name>
+1. Summary
+2. What works right now
+3. Architecture (current)
+4. Process and progress
+5. Testing and quality (Report 2 emphasizes this)
+6. Metrics so far (Report 2)
+7. Risks, blockers, and changes
+8. Plan for next milestone
+9. Individual contributions this period
+Team & Customer Review <#0–4> —
+1. Retrospective: keep / change / try
+2. Improvement committed last review — did it stick?
+3. New committed improvement
+4. Peer contribution
+5. Customer feedback captured
+6. Escalations
+Final Report — <Team / Project Name>
+1. Problem and users
+2. Users and requirements
+3. Architecture
+4. Process used
+5. Testing and quality metrics
+6. Results
+7. Retrospective
+8. AI use and provenance
+9. Individual contributions
+10. Appendix (optional)
+Individual Write-up —
+1. What I built
+2. What I learned
+3. Working on a team
+
+########## PAGE 12 ##########
+4. What I’d do differently
+5. Self-assessment
+Open Curriculum Resource Map
+The four anchor courses
+Chapter 1 — Introduction
+Chapter 2 — Software Development Processes
+Chapter 3 — User Requirements
+Chapter 4 — Requirements Analysis
+Chapter 5 — Use Cases
+Chapter 6 — Design and Architecture
+Chapter 7 — Architectural Patterns
+Chapter 8 — Version Control with Git
+Chapter 9 — Static Checking
+Chapter 10 — Testing
+Chapter 11 — Software Security
+Chapter 12 — Quality Metrics
+Chapter 13 — Software Engineering in the Age of AI
+Chapter 14 — Delivery: CI/CD, DevOps, and Operations
+Chapter 15 — Maintenance and Evolution
+Appendix A — A Team Project
+Coverage vs. the ACM/IEEE SEEK body of knowledge
+Notes on coverage & gaps
+Course Plans
+Variant A: 15-week milestone track
+Variant B: 16-week semester on two-week sprints
+Assessment (suggested weights)
+Learning outcomes
+Adapting the plan
+Contributing
+Ground rules
+Repository layout
+House style
+Making a change
+Reporting issues

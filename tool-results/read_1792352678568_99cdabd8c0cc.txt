@@ -1,0 +1,462 @@
+   570→kernel K′ will be the same as K after K′ is flipped both horizontally and vertically. That
+   571→is to say, when the convolutional layer performs strict convolution for the input in Fig.
+   572→7.2.1 and K′, the same output in Fig. 7.2.1 (cross-correlation of the input and K) will be
+   573→obtained.
+   574→In keeping with standard terminology in deep learning literature, we will continue to refer to
+   575→the cross-correlation operation as a convolution even though, strictly-speaking, it is slightly
+   576→different. Furthermore, we use the term element to refer to an entry (or component) of any
+   577→tensor representing a layer representation or a convolution kernel.
+   578→7.2.6 Feature Map and Receptive Field
+   579→As described in Section 7.1.4, the convolutional layer output in Fig. 7.2.1 is sometimes
+   580→called a feature map, as it can be regarded as the learned representations (features) in the
+   581→spatial dimensions (e.g., width and height) to the subsequent layer. In CNNs, for any el-
+   582→ement 𝑥of some layer, its receptive field refers to all the elements (from all the previous
+   583→layers) that may affect the calculation of 𝑥during the forward propagation. Note that the
+   584→receptive field may be larger than the actual size of the input.
+   585→Let’s continue to use Fig. 7.2.1 to explain the receptive field. Given the 2 × 2 convolution
+   586→kernel, the receptive field of the shaded output element (of value 19) is the four elements
+   587→in the shaded portion of the input. Now let’s denote the 2 × 2 output as Y and consider a
+   588→deeper CNN with an additional 2×2 convolutional layer that takes Y as its input, outputting
+   589→a single element 𝑧. In this case, the receptive field of 𝑧on Y includes all the four elements
+   590→of Y, while the receptive field on the input includes all the nine input elements. Thus, when
+   591→any element in a feature map needs a larger receptive field to detect input features over a
+   592→broader area, we can build a deeper network.
+   593→Receptive fields derive their name from neurophysiology. A series of experiments on a
+   594→range of animals using different stimuli (Hubel and Wiesel, 1959, Hubel and Wiesel, 1962,
+   595→Hubel and Wiesel, 1968) explored the response of what is called the visual cortex on said
+   596→stimuli. By and large they found that lower levels respond to edges and related shapes.
+   597→
+   598→===== صفحة الكتاب 286 =====
+   599→246
+   600→Convolutional Neural Networks
+   601→Later on, Field (1987) illustrated this effect on natural images with, what can only be called,
+   602→convolutional kernels. We reprint a key figure in Fig. 7.2.2 to illustrate the striking simi-
+   603→larities.
+   604→t
+   605→Fig. 7.2.2
+   606→Figure and caption taken from Field (1987): An example of coding with six different
+   607→channels. (Left) Examples of the six types of sensor associated with each channel. (Right)
+   608→Convolution of the image in (Middle) with the six sensors shown in (Left). The response
+   609→of the individual sensors is determined by sampling these ﬁltered images at a distance
+   610→proportional to the size of the sensor (shown with dots). This diagram shows the response
+   611→of only the even symmetric sensors.
+   612→As it turns out, this relation even holds for the features computed by deeper layers of net-
+   613→works trained on image classification tasks, as demonstrated in, for example, Kuzovkin et
+   614→al. (2018). Suffice it to say, convolutions have proven to be an incredibly powerful tool for
+   615→computer vision, both in biology and in code. As such, it is not surprising (in hindsight)
+   616→that they heralded the recent success in deep learning.
+   617→7.2.7 Summary
+   618→The core computation required for a convolutional layer is a cross-correlation operation.
+   619→We saw that a simple nested for-loop is all that is required to compute its value. If we
+   620→have multiple input and multiple output channels, we are performing a matrix–matrix op-
+   621→eration between channels. As can be seen, the computation is straightforward and, most
+   622→importantly, highly local. This affords significant hardware optimization and many recent
+   623→results in computer vision are only possible because of that. After all, it means that chip
+   624→designers can invest in fast computation rather than memory when it comes to optimizing
+   625→for convolutions. While this may not lead to optimal designs for other applications, it does
+   626→open the door to ubiquitous and affordable computer vision.
+   627→
+   628→===== صفحة الكتاب 287 =====
+   629→247
+   630→Padding and Stride
+   631→120
+   632→In terms of convolutions themselves, they can be used for many purposes, for example
+   633→detecting edges and lines, blurring images, or sharpening them. Most importantly, it is
+   634→not necessary that the statistician (or engineer) invents suitable filters. Instead, we can
+   635→simply learn them from data. This replaces feature engineering heuristics by evidence-
+   636→based statistics. Lastly, and quite delightfully, these filters are not just advantageous for
+   637→building deep networks but they also correspond to receptive fields and feature maps in the
+   638→brain. This gives us confidence that we are on the right track.
+   639→7.2.8 Exercises
+   640→1. Construct an image X with diagonal edges.
+   641→1. What happens if you apply the kernel K in this section to it?
+   642→2. What happens if you transpose X?
+   643→3. What happens if you transpose K?
+   644→2. Design some kernels manually.
+   645→1. Given a directional vector v = (𝑣1, 𝑣2), derive an edge-detection kernel that detects
+   646→edges orthogonal to v, i.e., edges in the direction (𝑣2, −𝑣1).
+   647→2. Derive a finite difference operator for the second derivative. What is the minimum
+   648→size of the convolutional kernel associated with it? Which structures in images re-
+   649→spond most strongly to it?
+   650→3. How would you design a blur kernel? Why might you want to use such a kernel?
+   651→4. What is the minimum size of a kernel to obtain a derivative of order 𝑑?
+   652→3. When you try to automatically find the gradient for the Conv2D class we created, what
+   653→kind of error message do you see?
+   654→4. How do you represent a cross-correlation operation as a matrix multiplication by chang-
+   655→ing the input and kernel tensors?
+   656→Discussions120.
+   657→7.3 Padding and Stride
+   658→Recall the example of a convolution in Fig. 7.2.1. The input had both a height and width of
+   659→3 and the convolution kernel had both a height and width of 2, yielding an output represen-
+   660→tation with dimension 2 × 2. Assuming that the input shape is 𝑛h × 𝑛w and the convolution
+   661→kernel shape is 𝑘h × 𝑘w, the output shape will be (𝑛h −𝑘h + 1) × (𝑛w −𝑘w + 1): we can
+   662→only shift the convolution kernel so far until it runs out of pixels to apply the convolution
+   663→to.
+   664→
+   665→===== صفحة الكتاب 288 =====
+   666→248
+   667→Convolutional Neural Networks
+   668→In the following we will explore a number of techniques, including padding and strided
+   669→convolutions, that offer more control over the size of the output. As motivation, note that
+   670→since kernels generally have width and height greater than 1, after applying many successive
+   671→convolutions, we tend to wind up with outputs that are considerably smaller than our input.
+   672→If we start with a 240 × 240 pixel image, ten layers of 5 × 5 convolutions reduce the image
+   673→to 200 × 200 pixels, slicing off 30% of the image and with it obliterating any interesting
+   674→information on the boundaries of the original image. Padding is the most popular tool for
+   675→handling this issue. In other cases, we may want to reduce the dimensionality drastically,
+   676→e.g., if we find the original input resolution to be unwieldy. Strided convolutions are a
+   677→popular technique that can help in these instances.
+   678→import torch
+   679→from torch import nn
+   680→7.3.1 Padding
+   681→As described above, one tricky issue when applying convolutional layers is that we tend
+   682→to lose pixels on the perimeter of our image. Consider Fig. 7.3.1 that depicts the pixel
+   683→utilization as a function of the convolution kernel size and the position within the image.
+   684→The pixels in the corners are hardly used at all.
+   685→t
+   686→Fig. 7.3.1
+   687→Pixel utilization for convolutions of size 1 × 1, 2 × 2, and 3 × 3 respectively.
+   688→Since we typically use small kernels, for any given convolution we might only lose a few
+   689→pixels but this can add up as we apply many successive convolutional layers. One straight-
+   690→forward solution to this problem is to add extra pixels of filler around the boundary of our
+   691→input image, thus increasing the effective size of the image. Typically, we set the values of
+   692→the extra pixels to zero. In Fig. 7.3.2, we pad a 3 × 3 input, increasing its size to 5 × 5. The
+   693→corresponding output then increases to a 4×4 matrix. The shaded portions are the first out-
+   694→put element as well as the input and kernel tensor elements used for the output computation:
+   695→0 × 0 + 0 × 1 + 0 × 2 + 0 × 3 = 0.
+   696→t
+   697→Fig. 7.3.2
+   698→Two-dimensional cross-correlation with padding.
+   699→
+   700→===== صفحة الكتاب 289 =====
+   701→249
+   702→Padding and Stride
+   703→In general, if we add a total of 𝑝h rows of padding (roughly half on top and half on bottom)
+   704→and a total of 𝑝w columns of padding (roughly half on the left and half on the right), the
+   705→output shape will be
+   706→(𝑛h −𝑘h + 𝑝h + 1) × (𝑛w −𝑘w + 𝑝w + 1).
+   707→(7.3.1)
+   708→This means that the height and width of the output will increase by 𝑝h and 𝑝w, respec-
+   709→tively.
+   710→In many cases, we will want to set 𝑝h = 𝑘h −1 and 𝑝w = 𝑘w −1 to give the input and
+   711→output the same height and width. This will make it easier to predict the output shape of
+   712→each layer when constructing the network. Assuming that 𝑘h is odd here, we will pad 𝑝h/2
+   713→rows on both sides of the height. If 𝑘h is even, one possibility is to pad ⌈𝑝h/2⌉rows on the
+   714→top of the input and ⌊𝑝h/2⌋rows on the bottom. We will pad both sides of the width in the
+   715→same way.
+   716→CNNs commonly use convolution kernels with odd height and width values, such as 1, 3,
+   717→5, or 7. Choosing odd kernel sizes has the benefit that we can preserve the dimensionality
+   718→while padding with the same number of rows on top and bottom, and the same number of
+   719→columns on left and right.
+   720→Moreover, this practice of using odd kernels and padding to precisely preserve dimension-
+   721→ality offers a clerical benefit. For any two-dimensional tensor X, when the kernel’s size is
+   722→odd and the number of padding rows and columns on all sides are the same, thereby pro-
+   723→ducing an output with the same height and width as the input, we know that the output Y[i,
+   724→j] is calculated by cross-correlation of the input and convolution kernel with the window
+   725→centered on X[i, j].
+   726→In the following example, we create a two-dimensional convolutional layer with a height
+   727→and width of 3 and apply 1 pixel of padding on all sides. Given an input with a height and
+   728→width of 8, we find that the height and width of the output is also 8.
+   729→# We define a helper function to calculate convolutions. It initializes the
+   730→# convolutional layer weights and performs corresponding dimensionality
+   731→# elevations and reductions on the input and output
+   732→def comp_conv2d(conv2d, X):
+   733→# (1, 1) indicates that batch size and the number of channels are both 1
+   734→X = X.reshape((1, 1) + X.shape)
+   735→Y = conv2d(X)
+   736→# Strip the first two dimensions: examples and channels
+   737→return Y.reshape(Y.shape[2:])
+   738→# 1 row and column is padded on either side, so a total of 2 rows or columns
+   739→# are added
+   740→conv2d = nn.LazyConv2d(1, kernel_size=3, padding=1)
+   741→X = torch.rand(size=(8, 8))
+   742→comp_conv2d(conv2d, X).shape
+   743→torch.Size([8, 8])
+   744→
+   745→===== صفحة الكتاب 290 =====
+   746→250
+   747→Convolutional Neural Networks
+   748→When the height and width of the convolution kernel are different, we can make the output
+   749→and input have the same height and width by setting different padding numbers for height
+   750→and width.
+   751→# We use a convolution kernel with height 5 and width 3. The padding on either
+   752→# side of the height and width are 2 and 1, respectively
+   753→conv2d = nn.LazyConv2d(1, kernel_size=(5, 3), padding=(2, 1))
+   754→comp_conv2d(conv2d, X).shape
+   755→torch.Size([8, 8])
+   756→7.3.2 Stride
+   757→When computing the cross-correlation, we start with the convolution window at the upper-
+   758→left corner of the input tensor, and then slide it over all locations both down and to the
+   759→right. In the previous examples, we defaulted to sliding one element at a time. However,
+   760→sometimes, either for computational efficiency or because we wish to downsample, we
+   761→move our window more than one element at a time, skipping the intermediate locations.
+   762→This is particularly useful if the convolution kernel is large since it captures a large area of
+   763→the underlying image.
+   764→We refer to the number of rows and columns traversed per slide as stride. So far, we have
+   765→used strides of 1, both for height and width. Sometimes, we may want to use a larger stride.
+   766→Fig. 7.3.3 shows a two-dimensional cross-correlation operation with a stride of 3 vertically
+   767→and 2 horizontally. The shaded portions are the output elements as well as the input and
+   768→kernel tensor elements used for the output computation: 0 × 0 + 0 × 1 + 1 × 2 + 2 × 3 = 8,
+   769→0×0+6×1+0×2+0×3 = 6. We can see that when the second element of the first column is
+   770→generated, the convolution window slides down three rows. The convolution window slides
+   771→two columns to the right when the second element of the first row is generated. When the
+   772→convolution window continues to slide two columns to the right on the input, there is no
+   773→output because the input element cannot fill the window (unless we add another column of
+   774→padding).
+   775→t
+   776→Fig. 7.3.3
+   777→Cross-correlation with strides of 3 and 2 for height and width, respectively.
+   778→In general, when the stride for the height is 𝑠h and the stride for the width is 𝑠w, the output
+   779→shape is
+   780→⌊(𝑛h −𝑘h + 𝑝h + 𝑠h)/𝑠h⌋× ⌊(𝑛w −𝑘w + 𝑝w + 𝑠w)/𝑠w⌋.
+   781→(7.3.2)
+   782→If we set 𝑝h = 𝑘h −1 and 𝑝w = 𝑘w −1, then the output shape can be simplified to ⌊(𝑛h +
+   783→
+   784→===== صفحة الكتاب 291 =====
+   785→251
+   786→Padding and Stride
+   787→𝑠h −1)/𝑠h⌋× ⌊(𝑛w + 𝑠w −1)/𝑠w⌋. Going a step further, if the input height and width are
+   788→divisible by the strides on the height and width, then the output shape will be (𝑛h/𝑠h) ×
+   789→(𝑛w/𝑠w).
+   790→Below, we set the strides on both the height and width to 2, thus halving the input height
+   791→and width.
+   792→conv2d = nn.LazyConv2d(1, kernel_size=3, padding=1, stride=2)
+   793→comp_conv2d(conv2d, X).shape
+   794→torch.Size([4, 4])
+   795→Let’s look at a slightly more complicated example.
+   796→conv2d = nn.LazyConv2d(1, kernel_size=(3, 5), padding=(0, 1), stride=(3, 4))
+   797→comp_conv2d(conv2d, X).shape
+   798→torch.Size([2, 2])
+   799→7.3.3 Summary and Discussion
+   800→Padding can increase the height and width of the output. This is often used to give the
+   801→output the same height and width as the input to avoid undesirable shrinkage of the output.
+   802→Moreover, it ensures that all pixels are used equally frequently. Typically we pick symmetric
+   803→padding on both sides of the input height and width. In this case we refer to (𝑝h, 𝑝w)
+   804→padding. Most commonly we set 𝑝h = 𝑝w, in which case we simply state that we choose
+   805→padding 𝑝.
+   806→A similar convention applies to strides. When horizontal stride 𝑠h and vertical stride 𝑠w
+   807→match, we simply talk about stride 𝑠. The stride can reduce the resolution of the output, for
+   808→example reducing the height and width of the output to only 1/𝑛of the height and width of
+   809→the input for 𝑛> 1. By default, the padding is 0 and the stride is 1.
+   810→So far all padding that we discussed simply extended images with zeros. This has signif-
+   811→icant computational benefit since it is trivial to accomplish. Moreover, operators can be
+   812→engineered to take advantage of this padding implicitly without the need to allocate addi-
+   813→tional memory. At the same time, it allows CNNs to encode implicit position information
+   814→within an image, simply by learning where the “whitespace” is. There are many alternatives
+   815→to zero-padding. Alsallakh et al. (2020) provided an extensive overview of those (albeit
+   816→without a clear case for when to use nonzero paddings unless artifacts occur).
+   817→7.3.4 Exercises
+   818→1. Given the final code example in this section with kernel size (3, 5), padding (0, 1), and
+   819→stride (3, 4), calculate the output shape to check if it is consistent with the experimental
+   820→result.
+   821→
+   822→===== صفحة الكتاب 292 =====
+   823→252
+   824→Convolutional Neural Networks
+   825→121
+   826→2. For audio signals, what does a stride of 2 correspond to?
+   827→3. Implement mirror padding, i.e., padding where the border values are simply mirrored
+   828→to extend tensors.
+   829→4. What are the computational benefits of a stride larger than 1?
+   830→5. What might be statistical benefits of a stride larger than 1?
+   831→6. How would you implement a stride of 1
+   832→2? What does it correspond to? When would this
+   833→be useful?
+   834→Discussions121.
+   835→7.4 Multiple Input and Multiple Output Channels
+   836→While we described the multiple channels that comprise each image (e.g., color images
+   837→have the standard RGB channels to indicate the amount of red, green and blue) and con-
+   838→volutional layers for multiple channels in Section 7.1.4, until now, we simplified all of our
+   839→numerical examples by working with just a single input and a single output channel. This
+   840→allowed us to think of our inputs, convolution kernels, and outputs each as two-dimensional
+   841→tensors.
+   842→When we add channels into the mix, our inputs and hidden representations both become
+   843→three-dimensional tensors. For example, each RGB input image has shape 3 × ℎ× 𝑤. We
+   844→refer to this axis, with a size of 3, as the channel dimension. The notion of channels is
+   845→as old as CNNs themselves: for instance LeNet-5 (LeCun et al., 1995) uses them. In this
+   846→section, we will take a deeper look at convolution kernels with multiple input and multiple
+   847→output channels.
+   848→import torch
+   849→from d2l import torch as d2l
+   850→7.4.1 Multiple Input Channels
+   851→When the input data contains multiple channels, we need to construct a convolution kernel
+   852→with the same number of input channels as the input data, so that it can perform cross-
+   853→correlation with the input data. Assuming that the number of channels for the input data
+   854→is 𝑐i, the number of input channels of the convolution kernel also needs to be 𝑐i. If our
+   855→convolution kernel’s window shape is 𝑘h × 𝑘w, then, when 𝑐i = 1, we can think of our
+   856→convolution kernel as just a two-dimensional tensor of shape 𝑘h × 𝑘w.
+   857→However, when 𝑐i > 1, we need a kernel that contains a tensor of shape 𝑘h × 𝑘w for ev-
+   858→ery input channel. Concatenating these 𝑐i tensors together yields a convolution kernel of
+   859→shape 𝑐i × 𝑘h × 𝑘w. Since the input and convolution kernel each have 𝑐i channels, we can
+   860→
+   861→===== صفحة الكتاب 293 =====
+   862→253
+   863→Multiple Input and Multiple Output Channels
+   864→perform a cross-correlation operation on the two-dimensional tensor of the input and the
+   865→two-dimensional tensor of the convolution kernel for each channel, adding the 𝑐i results
+   866→together (summing over the channels) to yield a two-dimensional tensor. This is the result
+   867→of a two-dimensional cross-correlation between a multi-channel input and a multi-input-
+   868→channel convolution kernel.
+   869→Fig. 7.4.1 provides an example of a two-dimensional cross-correlation with two input chan-
+   870→nels. The shaded portions are the first output element as well as the input and kernel tensor
+   871→elements used for the output computation: (1 × 1 + 2 × 2 + 4 × 3 + 5 × 4) + (0 × 0 + 1 × 1 +
+   872→3 × 2 + 4 × 3) = 56.
+   873→t
+   874→Fig. 7.4.1
+   875→Cross-correlation computation with two input channels.
+   876→To make sure we really understand what is going on here, we can implement cross-correlation
+   877→operations with multiple input channels ourselves. Notice that all we are doing is perform-
+   878→ing a cross-correlation operation per channel and then adding up the results.
+   879→def corr2d_multi_in(X, K):
+   880→# Iterate through the 0th dimension (channel) of K first, then add them up
+   881→return sum(d2l.corr2d(x, k) for x, k in zip(X, K))
+   882→We can construct the input tensor X and the kernel tensor K corresponding to the values in
+   883→Fig. 7.4.1 to validate the output of the cross-correlation operation.
+   884→X = torch.tensor([[[0.0, 1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0]],
+   885→[[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]])
+   886→K = torch.tensor([[[0.0, 1.0], [2.0, 3.0]], [[1.0, 2.0], [3.0, 4.0]]])
+   887→corr2d_multi_in(X, K)
+   888→tensor([[ 56.,
+   889→72.],
+   890→[104., 120.]])
+   891→7.4.2 Multiple Output Channels
+   892→Regardless of the number of input channels, so far we always ended up with one output
+   893→channel. However, as we discussed in Section 7.1.4, it turns out to be essential to have
+   894→multiple channels at each layer. In the most popular neural network architectures, we actu-
+   895→ally increase the channel dimension as we go deeper in the neural network, typically down-
+   896→sampling to trade off spatial resolution for greater channel depth. Intuitively, you could
+   897→
+   898→===== صفحة الكتاب 294 =====
+   899→254
+   900→Convolutional Neural Networks
+   901→think of each channel as responding to a different set of features. The reality is a bit more
+   902→complicated than this. A naive interpretation would suggest that representations are learned
+   903→independently per pixel or per channel. Instead, channels are optimized to be jointly useful.
+   904→This means that rather than mapping a single channel to an edge detector, it may simply
+   905→mean that some direction in channel space corresponds to detecting edges.
+   906→Denote by 𝑐i and 𝑐o the number of input and output channels, respectively, and by 𝑘h and 𝑘w
+   907→the height and width of the kernel. To get an output with multiple channels, we can create
+   908→a kernel tensor of shape 𝑐i × 𝑘h × 𝑘w for every output channel. We concatenate them on the
+   909→output channel dimension, so that the shape of the convolution kernel is 𝑐o × 𝑐i × 𝑘h × 𝑘w.
+   910→In cross-correlation operations, the result on each output channel is calculated from the
+   911→convolution kernel corresponding to that output channel and takes input from all channels
+   912→in the input tensor.
+   913→We implement a cross-correlation function to calculate the output of multiple channels as
+   914→shown below.
+   915→def corr2d_multi_in_out(X, K):
+   916→# Iterate through the 0th dimension of K, and each time, perform
+   917→# cross-correlation operations with input X. All of the results are
+   918→# stacked together
+   919→return torch.stack([corr2d_multi_in(X, k) for k in K], 0)
+   920→We construct a trivial convolution kernel with three output channels by concatenating the
+   921→kernel tensor for K with K+1 and K+2.
+   922→K = torch.stack((K, K + 1, K + 2), 0)
+   923→K.shape
+   924→torch.Size([3, 2, 2, 2])
+   925→Below, we perform cross-correlation operations on the input tensor X with the kernel tensor
+   926→K. Now the output contains three channels. The result of the first channel is consistent with
+   927→the result of the previous input tensor X and the multi-input channel, single-output channel
+   928→kernel.
+   929→corr2d_multi_in_out(X, K)
+   930→tensor([[[ 56.,
+   931→72.],
+   932→[104., 120.]],
+   933→[[ 76., 100.],
+   934→[148., 172.]],
+   935→[[ 96., 128.],
+   936→[192., 224.]]])
+   937→
+   938→===== صفحة الكتاب 295 =====
+   939→255
+   940→Multiple Input and Multiple Output Channels
+   941→7.4.3 1 × 1 Convolutional Layer
+   942→At first, a 1 × 1 convolution, i.e., 𝑘h = 𝑘w = 1, does not seem to make much sense.
+   943→After all, a convolution correlates adjacent pixels. A 1 × 1 convolution obviously does
+   944→not. Nonetheless, they are popular operations that are sometimes included in the designs
+   945→of complex deep networks (Lin et al., 2013, Szegedy et al., 2017). Let’s see in some detail
+   946→what it actually does.
+   947→Because the minimum window is used, the 1×1 convolution loses the ability of larger con-
+   948→volutional layers to recognize patterns consisting of interactions among adjacent elements
+   949→in the height and width dimensions. The only computation of the 1 × 1 convolution occurs
+   950→on the channel dimension.
+   951→Fig. 7.4.2 shows the cross-correlation computation using the 1×1 convolution kernel with 3
+   952→input channels and 2 output channels. Note that the inputs and outputs have the same height
+   953→and width. Each element in the output is derived from a linear combination of elements at
+   954→the same position in the input image. You could think of the 1 × 1 convolutional layer as
+   955→constituting a fully connected layer applied at every single pixel location to transform the
+   956→𝑐i corresponding input values into 𝑐o output values. Because this is still a convolutional
+   957→layer, the weights are tied across pixel location. Thus the 1 × 1 convolutional layer requires
+   958→𝑐o × 𝑐i weights (plus the bias). Also note that convolutional layers are typically followed
+   959→by nonlinearities. This ensures that 1 × 1 convolutions cannot simply be folded into other
+   960→convolutions.
+   961→t
+   962→Fig. 7.4.2
+   963→The cross-correlation computation uses the 1 × 1 convolution kernel with three input
+   964→channels and two output channels. The input and output have the same height and width.
+   965→Let’s check whether this works in practice: we implement a 1 × 1 convolution using a fully
+   966→connected layer. The only thing is that we need to make some adjustments to the data shape
+   967→before and after the matrix multiplication.
+   968→def corr2d_multi_in_out_1x1(X, K):
+   969→c_i, h, w = X.shape
+   970→c_o = K.shape[0]
+   971→X = X.reshape((c_i, h * w))
+   972→K = K.reshape((c_o, c_i))
+   973→# Matrix multiplication in the fully connected layer
+   974→Y = torch.matmul(K, X)
+   975→return Y.reshape((c_o, h, w))
+   976→When performing 1×1 convolutions, the above function is equivalent to the previously im-
+   977→plemented cross-correlation function corr2d_multi_in_out. Let’s check this with some
+   978→sample data.
+   979→
+   980→===== صفحة الكتاب 296 =====
+   981→256
+   982→Convolutional Neural Networks
+   983→X = torch.normal(0, 1, (3, 3, 3))
+   984→K = torch.normal(0, 1, (2, 3, 1, 1))
+   985→Y1 = corr2d_multi_in_out_1x1(X, K)
+   986→Y2 = corr2d_multi_in_out(X, K)
+   987→assert float(torch.abs(Y1 - Y2).sum()) < 1e-6
+   988→7.4.4 Discussion
+   989→Channels allow us to combine the best of both worlds: MLPs that allow for significant
+   990→nonlinearities and convolutions that allow for localized analysis of features. In particular,
+   991→channels allow the CNN to reason with multiple features, such as edge and shape detec-
+   992→tors at the same time. They also offer a practical trade-off between the drastic parameter
+   993→reduction arising from translation invariance and locality, and the need for expressive and
+   994→diverse models in computer vision.
+   995→Note, though, that this flexibility comes at a price. Given an image of size (ℎ× 𝑤), the cost
+   996→for computing a 𝑘× 𝑘convolution is O(ℎ· 𝑤· 𝑘2). For 𝑐i and 𝑐o input and output channels
+   997→respectively this increases to O(ℎ· 𝑤· 𝑘2 · 𝑐i · 𝑐o). For a 256 × 256 pixel image with a
+   998→5 × 5 kernel and 128 input and output channels respectively this amounts to over 53 billion
+   999→operations (we count multiplications and additions separately). Later on we will encounter
+  1000→effective strategies to cut down on the cost, e.g., by requiring the channel-wise operations
+  1001→to be block-diagonal, leading to architectures such as ResNeXt (Xie et al., 2017).
+  1002→7.4.5 Exercises
+  1003→1. Assume that we have two convolution kernels of size 𝑘1 and 𝑘2, respectively (with no
+  1004→nonlinearity in between).
+  1005→1. Prove that the result of the operation can be expressed by a single convolution.
+  1006→2. What is the dimensionality of the equivalent single convolution?
+  1007→3. Is the converse true, i.e., can you always decompose a convolution into two smaller
+  1008→ones?
+  1009→2. Assume an input of shape 𝑐i × ℎ×𝑤and a convolution kernel of shape 𝑐o ×𝑐i × 𝑘h × 𝑘w,
+  1010→padding of (𝑝h, 𝑝w), and stride of (𝑠h, 𝑠w).
+  1011→1. What is the computational cost (multiplications and additions) for the forward prop-
+  1012→agation?
+  1013→2. What is the memory footprint?
+  1014→3. What is the memory footprint for the backward computation?
+  1015→4. What is the computational cost for the backpropagation?
+  1016→3. By what factor does the number of calculations increase if we double both the number
+  1017→of input channels 𝑐i and the number of output channels 𝑐o? What happens if we double
+  1018→the padding?
+  1019→
+  1020→===== صفحة الكتاب 297 =====
+  1021→257
+  1022→Pooling
+  1023→122
+  1024→4. Are the variables Y1 and Y2 in the final example of this section exactly the same? Why?
+  1025→5. Express convolutions as a matrix multiplication, even when the convolution window is
+  1026→not 1 × 1.
+  1027→6. Your task is to implement fast convolutions with a 𝑘× 𝑘kernel. One of the algorithm
+  1028→candidates is to scan horizontally across the source, reading a 𝑘-wide strip and comput-
+  1029→ing the 1-wide output strip one value at a time. The alternative is to read a 𝑘+ Δ wide
+
+[showing lines 570-1029 of 1455; use offset=1030 with limit to continue reading]

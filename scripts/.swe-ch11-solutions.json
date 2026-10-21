@@ -1,0 +1,310 @@
+[
+ {
+  "lesson": "swe.ch11.l1",
+  "id": "ex1.write-verify",
+  "solution": "import hashlib\nimport hmac\n\nUSERS = {\n    'ada': {'salt': 'a1b2c3d4', 'digest': 'c8e20c85e7a92882cc4e2a10a2e2a6b5eddfb3a52ffed9dd699a7275efe16447'},\n    'grace': {'salt': 'e5f6a7b8', 'digest': '7adb665259691f8dbb956777897b9290429f409302d0a8680c80c1da23af829c'},\n}\n\ndef digest(password, salt):\n    return hashlib.sha256((salt + password).encode('utf-8')).hexdigest()\n\ndef verify(username, password, users):\n    user = users.get(username)\n    if user is None:\n        return False\n    attempt = digest(password, user['salt'])\n    return hmac.compare_digest(attempt, user['digest'])\n\nprint('ada:', verify('ada', 'lovelace-1815', USERS))\nprint('grace:', verify('grace', 'hopper-1906', USERS))\nprint('eve:', verify('eve', 'lovelace-1815', USERS))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "كلمة المرور الصحيحة تُقبل",
+     "en": "The correct password is accepted"
+    },
+    "code": "assert verify('ada', 'lovelace-1815', USERS) is True, 'expected: True | actual: %r' % verify('ada', 'lovelace-1815', USERS)",
+    "expected": "True"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "مستخدم ثانٍ يُقبل وحالة الأحرف المبدّلة تُرفض",
+     "en": "A second user is accepted and a case-swapped attempt is denied"
+    },
+    "code": "assert verify('grace', 'hopper-1906', USERS) is True and verify('ada', 'Lovelace-1815', USERS) is False, 'expected: True/False | actual: %r' % ((verify('grace', 'hopper-1906', USERS), verify('ada', 'Lovelace-1815', USERS)),)",
+    "expected": "True for grace, False for the case-swapped attempt"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "المستخدم المجهول والكلمة الفارغة يُرفضان",
+     "en": "Unknown user and empty password are denied"
+    },
+    "code": "assert verify('eve', 'lovelace-1815', USERS) is False and verify('ada', '', USERS) is False, 'expected: False/False | actual: %r' % ((verify('eve', 'lovelace-1815', USERS), verify('ada', '', USERS)),)",
+    "expected": "False for unknown user and empty password"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "القيمة المعادة bool حقيقي لا صادف صدفة",
+     "en": "The return value is a real bool"
+    },
+    "code": "assert isinstance(verify('ada', 'lovelace-1815', USERS), bool), 'expected: a real bool | actual: %r' % type(verify('ada', 'lovelace-1815', USERS)).__name__",
+    "expected": "a real bool"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch11.l1",
+  "id": "ex5.debug-salt",
+  "solution": "import hashlib\nimport hmac\n\nBOB = {'salt': '99887766', 'digest': '958561749c9db531c92c40b272a85f926667ee1b58938d103dea619872648322'}\n\ndef digest(password, salt):\n    return hashlib.sha256((salt + password).encode('utf-8')).hexdigest()\n\ndef check(user, password):\n    return hmac.compare_digest(digest(password, user['salt']), user['digest'])\n\nattempts = [('bob', 'builder-2026'), ('bob', 'Builder-2026')]\nfor name, password in attempts:\n    if check(BOB, password):\n        print('%s: ok' % name)\n    else:\n        print('%s: denied' % name)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "كلمة المرور الصحيحة تُقبل بعد إرجاع الملح",
+     "en": "The correct password is accepted once the salt is back"
+    },
+    "code": "assert 'bob: ok' in __learner_output__, 'expected: bob: ok | actual: %r' % __learner_output__",
+    "expected": "bob: ok"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "كلمة المرور المبدّلة الحروف تبقى مرفوضة",
+     "en": "The case-swapped password stays denied"
+    },
+    "code": "assert 'bob: denied' in __learner_output__, 'expected: bob: denied for the wrong case | actual: %r' % __learner_output__",
+    "expected": "bob: denied for the wrong case"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "العقد نفسه يشتغل على الدالة مباشرة",
+     "en": "The contract works on the function directly"
+    },
+    "code": "assert check(BOB, 'builder-2026') is True and check(BOB, 'Builder-2026') is False, 'expected: True/False | actual: %r' % ((check(BOB, 'builder-2026'), check(BOB, 'Builder-2026')),)",
+    "expected": "True for the right password, False for the wrong one"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch11.l2",
+  "id": "ex1.write-fuzz",
+  "solution": "def first_word(text):\n    if not isinstance(text, str):\n        return ''\n    return text.split()[0]  # السطر المشتبه به / the suspect line\n\nCANDIDATES = ['abc', 'two words', '', '   ', 'x']\n\ndef fuzz(fn, candidates):\n    crashes = 0\n    for c in candidates:\n        try:\n            fn(c)\n        except Exception:\n            crashes = crashes + 1\n    return crashes\n\nprint('candidates: %d' % len(CANDIDATES))\nprint('crashes: %d' % fuzz(first_word, CANDIDATES))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "القائمة المثبتة تكشف انهيارين",
+     "en": "The fixed list exposes two crashes"
+    },
+    "code": "assert fuzz(first_word, CANDIDATES) == 2, 'expected: 2 | actual: %r' % fuzz(first_word, CANDIDATES)",
+    "expected": "2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "التقرير يطبع عدد الانهيارات",
+     "en": "The report prints the crash count"
+    },
+    "code": "assert 'crashes: 2' in __learner_output__, 'expected: crashes: 2 | actual: %r' % __learner_output__",
+    "expected": "crashes: 2"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "قائمة نظيفة تعطي صفر — لا إنذارات كاذبة",
+     "en": "A clean list gives zero — no false positives"
+    },
+    "code": "assert fuzz(first_word, ['ok', 'also ok']) == 0, 'expected: 0 | actual: %r' % fuzz(first_word, ['ok', 'also ok'])",
+    "expected": "0"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "التقرير يطبع عدد المرشحين",
+     "en": "The report prints the candidate count"
+    },
+    "code": "assert 'candidates: 5' in __learner_output__, 'expected: candidates: 5 | actual: %r' % __learner_output__",
+    "expected": "candidates: 5"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch11.l2",
+  "id": "ex5.debug-walk",
+  "solution": "import ast\n\nSRC = 'def run(user_text):\\n    return eval(user_text)\\n'\n\ndef count_eval(source):\n    tree = ast.parse(source)\n    found = 0\n    for node in ast.walk(tree):\n        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == 'eval':\n            found = found + 1\n    return found\n\nfound = count_eval(SRC)\nprint('eval: %d' % found)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "التقرير يعلن النداء: eval: 1",
+     "en": "The report announces the call: eval: 1"
+    },
+    "code": "assert 'eval: 1' in __learner_output__, 'expected: eval: 1 | actual: %r' % __learner_output__",
+    "expected": "eval: 1"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "العدّ نفسه صحيح على العينة",
+     "en": "The count itself is right on the sample"
+    },
+    "code": "assert count_eval(SRC) == 1, 'expected: 1 | actual: %r' % count_eval(SRC)",
+    "expected": "1"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "بلا إنذارات كاذبة على شيفرة نظيفة",
+     "en": "No false positives on clean code"
+    },
+    "code": "assert count_eval('x = 1\\n') == 0, 'expected: 0 | actual: %r' % count_eval('x = 1\\n')",
+    "expected": "0"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch11.l3",
+  "id": "ex1.write-chain",
+  "solution": "MANIFEST = {\n    'log4j-core': '2.15.0',\n    'xz-utils': '5.6.1',\n    'requests': '2.31.0',\n    'jinja2': '3.1.2',\n}\n\nADVISORIES = {\n    'log4j-core': ['2.14.1', '2.15.0'],\n    'xz-utils': ['5.6.0', '5.6.1'],\n}\n\ndef audit(manifest, advisories):\n    hits = []\n    for pkg in sorted(manifest):\n        if manifest[pkg] in advisories.get(pkg, []):\n            hits.append(pkg)\n    return hits\n\nfor pkg in audit(MANIFEST, ADVISORIES):\n    print('vulnerable: %s' % pkg)\nprint('scanned: %d' % len(MANIFEST))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "المدقّق يسمّي الحزمتين المعطوبتين بالترتيب",
+     "en": "The checker names both broken packages in order"
+    },
+    "code": "assert audit(MANIFEST, ADVISORIES) == ['log4j-core', 'xz-utils'], 'expected: [log4j-core, xz-utils] | actual: %r' % audit(MANIFEST, ADVISORIES)",
+    "expected": "['log4j-core', 'xz-utils']"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "التقرير يطبع السطرين",
+     "en": "The report prints both lines"
+    },
+    "code": "assert 'vulnerable: log4j-core' in __learner_output__ and 'vulnerable: xz-utils' in __learner_output__, 'expected: both vulnerable lines | actual: %r' % __learner_output__",
+    "expected": "vulnerable: log4j-core and vulnerable: xz-utils"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "حزمة بلا نصائح تبقى نظيفة",
+     "en": "A package with no advisories stays clean"
+    },
+    "code": "assert audit({'requests': '2.31.0'}, {}) == [], 'expected: [] | actual: %r' % audit({'requests': '2.31.0'}, {})",
+    "expected": "[]"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "التقرير يطبع عدد الحزم الممسوحة",
+     "en": "The report prints the scanned count"
+    },
+    "code": "assert 'scanned: 4' in __learner_output__, 'expected: scanned: 4 | actual: %r' % __learner_output__",
+    "expected": "scanned: 4"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch11.l3",
+  "id": "ex5.debug-pin",
+  "solution": "PINS = {\n    'log4j-core': '2.15.0',\n}\n\ndef pin_ok(pkg, installed):\n    return installed == PINS[pkg]\n\nattempts = [('log4j-core', '2.15.0'), ('log4j-core', '2.15.1')]\nfor pkg, installed in attempts:\n    if pin_ok(pkg, installed):\n        print('%s: ok' % pkg)\n    else:\n        print('%s: blocked' % pkg)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الإصدار المثبَّت بالضبط يمرّ البوابة",
+     "en": "The exact pinned version passes the gate"
+    },
+    "code": "assert 'log4j-core: ok' in __learner_output__, 'expected: log4j-core: ok | actual: %r' % __learner_output__",
+    "expected": "log4j-core: ok"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "رقعة 2.15.1 تُحجب",
+     "en": "The 2.15.1 patch is blocked"
+    },
+    "code": "assert 'log4j-core: blocked' in __learner_output__, 'expected: log4j-core: blocked for 2.15.1 | actual: %r' % __learner_output__",
+    "expected": "log4j-core: blocked for 2.15.1"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "العقد نفسه يعمل على الدالة مباشرة",
+     "en": "The contract works on the function directly"
+    },
+    "code": "assert pin_ok('log4j-core', '2.15.0') is True and pin_ok('log4j-core', '2.15.1') is False, 'expected: True/False | actual: %r' % ((pin_ok('log4j-core', '2.15.0'), pin_ok('log4j-core', '2.15.1')),)",
+    "expected": "True for the exact pin, False for the patched version"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch11.l4",
+  "id": "ex1.write-auditor",
+  "solution": "import hashlib\n\nLEAKED = {\n    '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',\n    '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',\n    '65e84be33532fb784c48129675f9eff3a682b27168c0ea744b2cf58ee02337c5',\n    '1c8bfe8f801d79745c4631d09fff36c82aa37fc4cce4fc946683d7b336b63032',\n}\n\nACCOUNTS = [\n    ('ada', 'Qw7!vXm2Rp'),\n    ('grace', 'password'),\n    ('linus', 'password'),\n    ('kay', 'Sunshine2026'),\n    ('alan', 'abc'),\n    ('betty', 'Tr0ub4dor&3x'),\n]\n\ndef digest(pw):\n    return hashlib.sha256(pw.encode('utf-8')).hexdigest()\n\ndef breached(pw):\n    return digest(pw) in LEAKED\n\ndef weak(pw):\n    if len(pw) < 10:\n        return True\n    classes = 0\n    if any(c.islower() for c in pw):\n        classes = classes + 1\n    if any(c.isupper() for c in pw):\n        classes = classes + 1\n    if any(c.isdigit() for c in pw):\n        classes = classes + 1\n    if any(not c.isalnum() for c in pw):\n        classes = classes + 1\n    return classes < 3\n\ndef audit(accounts):\n    weak_n = 0\n    reused_n = 0\n    breached_n = 0\n    seen = set()\n    for name, pw in accounts:\n        if weak(pw):\n            weak_n = weak_n + 1\n        if pw in seen:\n            reused_n = reused_n + 1\n        seen.add(pw)\n        if breached(pw):\n            breached_n = breached_n + 1\n    return (weak_n, reused_n, breached_n)\n\nweak_n, reused_n, breached_n = audit(ACCOUNTS)\nprint('weak: %d / reused: %d / breached: %d' % (weak_n, reused_n, breached_n))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الأعداد الثلاثة صحيحة على الحسابات الست",
+     "en": "The three counts are correct over the six accounts"
+    },
+    "code": "assert audit(ACCOUNTS) == (3, 1, 2), 'expected: (3, 1, 2) | actual: %r' % (audit(ACCOUNTS),)",
+    "expected": "(3, 1, 2)"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "التقرير يطبع سطر المشروع كاملًا",
+     "en": "The report prints the full project line"
+    },
+    "code": "assert 'weak: 3 / reused: 1 / breached: 2' in __learner_output__, 'expected: weak: 3 / reused: 1 / breached: 2 | actual: %r' % __learner_output__",
+    "expected": "weak: 3 / reused: 1 / breached: 2"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "السياسة تميّز الضعيف من القوي",
+     "en": "The policy separates weak from strong"
+    },
+    "code": "assert weak('password') is True and weak('Qw7!vXm2Rp') is False and weak('Sunshine2026') is False, 'expected: True/False/False | actual: %r' % ((weak('password'), weak('Qw7!vXm2Rp'), weak('Sunshine2026')),)",
+    "expected": "True for password, False for the strong pair"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "جردة التسريب تصطاد المعروف وتترك السليم",
+     "en": "The breach sweep catches the known and spares the clean"
+    },
+    "code": "assert breached('password') is True and breached('123456') is True and breached('Qw7!vXm2Rp') is False, 'expected: True/True/False | actual: %r' % ((breached('password'), breached('123456'), breached('Qw7!vXm2Rp')),)",
+    "expected": "True for both leaked, False for the clean password"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch11.l4",
+  "id": "ex5.debug-leak",
+  "solution": "import hashlib\n\nLEAKED = {\n    '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8',\n    '8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92',\n}\n\ndef audit(accounts):\n    breached = 0\n    for name, pw in accounts:\n        attempt = hashlib.sha256(pw.encode('utf-8')).hexdigest()\n        if attempt in LEAKED:\n            breached = breached + 1\n    return breached\n\nprint('breached: %d' % audit([('grace', 'password'), ('ada', '123456')]))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "التقرير يعلن الحسابين المسرَّبين",
+     "en": "The report announces both breached accounts"
+    },
+    "code": "assert 'breached: 2' in __learner_output__, 'expected: breached: 2 | actual: %r' % __learner_output__",
+    "expected": "breached: 2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "كلمة مسرَّبة واحدة تُحسب 1",
+     "en": "A single leaked password counts as 1"
+    },
+    "code": "assert audit([('grace', 'password')]) == 1, 'expected: 1 | actual: %r' % audit([('grace', 'password')])",
+    "expected": "1"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "كلمة نظيفة تبقى خارج الجردة",
+     "en": "A clean password stays outside the sweep"
+    },
+    "code": "assert audit([('ada', 'Qw7!vXm2Rp')]) == 0, 'expected: 0 | actual: %r' % audit([('ada', 'Qw7!vXm2Rp')])",
+    "expected": "0"
+   }
+  ]
+ }
+]

@@ -1,0 +1,347 @@
+    60→    60→        },
+    61→    61→        {
+    62→    62→          ar: 'وأقوى أداة تنقيح في الحلقات طباعة مؤقتة داخل الجسم: اطبع المتغيّرات في كل تكرار وراقبها تتحرك — كم تعلمت الآن أن total يتراكم وlargest يتبدل. وإن طال البحث فاستخدم التنصيف: اقسم البرنامج نصفين وحدد أيهما يحوي الخطأ ثم نصّف نصفه — يتقليص فضاء البحث سريعًا. ولا تنسَ: رسالة انتهاء المهلة في منصتنا تعني غالبًا حلقة لا تتوقف — ابحث عن تحديث متغيّر التكرار.',
+    63→    63→          en: 'And the strongest loop-debugging tool is a temporary print inside the body: print the variables each iteration and watch them move — you now know how total accumulates and largest swaps. If the hunt drags on, use bisection: split the program in half, decide which half holds the bug, then halve again — the search space shrinks fast. And remember: the timeout message on this platform usually means a loop that never stops — look for the iteration-variable update.',
+    64→    64→        },
+    65→    65→      ],
+    66→    66→    },
+    67→    67→    {
+    68→    68→      kind: 'concept',
+    69→    69→      heading: { ar: 'المشروع: تقرير الدرجات', en: 'The project: the grade report' },
+    70→    70→      chunks: [
+    71→    71→        {
+    72→    72→          ar: 'الوظيفة: القائمة scores فيها درجات خمس ثابتة. بحلقة for واحدة تطبّق الأنماط الخمسة كلها: العدّ في count، والمجموع في total، والمعدل round(total / count, 1)، والأكبر في largest بنمط None، والأدنى في smallest بمرآته. ثم بعد الحلقة اطبع خمسة أسطر موقّعة: العدد، المجموع، المعدل، الأعلى، الأدنى.',
+    73→    73→          en: 'The job: the list scores holds five fixed grades. With one for loop apply all five patterns: counting into count, summing into total, the average as round(total / count, 1), the maximum into largest with the None pattern, and the minimum into smallest with its mirror. Then after the loop print five labeled lines: العدد (count), المجموع (sum), المعدل (average), الأعلى (top), الأدنى (bottom).',
+    74→    74→        },
+    75→    75→        {
+    76→    76→          ar: 'لاحظ العمارة: تهيئة واحدة قبل الحلقة، وجسم يجمع الأنماط على كل عنصر، وطباعة واحدة بعد اكتمالها — الوصفة الثلاثية من درس الأنماط بأكملها. هذا أول تقرير إحصائي كامل لك: ستة أسطر منه تساوي عمود جداول بيانات كاملًا.',
+    77→    77→          en: 'Notice the architecture: one initialization before the loop, a body composing the patterns on each element, and one print-out after it completes — the three-step recipe of the patterns lesson in full. This is your first complete statistics report: its six lines equal an entire spreadsheet column.',
+    78→    78→        },
+    79→    79→      ],
+    80→    80→    },
+    81→    81→    {
+    82→    82→      kind: 'worked',
+    83→    83→      title: { ar: 'تقرير مصغّر على ثلاث درجات', en: 'A miniature report on three scores' },
+    84→    84→      code: "scores = [70, 88, 95]\ncount = 0\ntotal = 0\nlargest = None\nfor s in scores:\n    count = count + 1\n    total = total + s\n    if largest is None or s > largest:\n        largest = s\nprint('العدد:', count)\nprint('المجموع:', total)\nprint('المعدل:', round(total / count, 1))\nprint('الأعلى:', largest)",
+    85→    85→      explanation: {
+    86→    86→        ar: 'ثلاث درجات، ثلاثة تكرارات، ثم أربعة أسطر: العدد 3، والمجموع 253، والمعدل 84.3 (لأن 253 ÷ 3 تساوي 84.33… وقُرّبت)، والأعلى 95. مشروعك يضيف نمطًا سادسًا — الأدنى — ويطبع سطرًا خامسًا. الحقلة نفسها، بنمط إضافي.',
+    87→    87→        en: 'Three scores, three iterations, then four lines: count 3, sum 253, average 84.3 (253 ÷ 3 is 84.33…, rounded), and top 95. Your project adds a sixth pattern — the minimum — and a fifth line. The same field, one more pattern.',
+    88→    88→      },
+    89→    89→    },
+    90→    90→    {
+    91→    91→      kind: 'exercise',
+    92→    92→      id: 'ex1.trace-filter',
+    93→    93→      exKind: 'trace_output',
+    94→    94→      required: true,
+    95→    95→      prompt: {
+    96→    96→        ar: 'تسخين مراجعة: نمط تصفية من الدرس السابق — تتبّع ووقّع الخرْج.',
+    97→    97→        en: 'Review warm-up: a filtering pattern from the previous lesson — trace and predict the output.',
+    98→    98→      },
+    99→    99→      code: 'count = 0\nfor n in [5, 12, 8]:\n    if n > 6:\n        count = count + 1\nprint(count)',
+   100→   100→      solution: '2',
+   101→   101→      answer: '2',
+   102→   102→      hints: [
+   103→   103→        { ar: 'افحص كل عنصر: هل 5 > 6؟ هل 12 > 6؟ هل 8 > 6؟', en: 'Test each element: is 5 > 6? Is 12 > 6? Is 8 > 6?' },
+   104→   104→        { ar: 'اثنان فقط اجتازا الحد — والعدّاد يزيد عندهما فقط.', en: 'Only two crossed the threshold — the counter gains only on those.' },
+   105→   105→        { ar: 'قيمة 5 و8 لا تدخلان في الجمع — هذا عدّ تصفية لا جمع.', en: 'The values 5 and 8 are never added — this is filtered counting, not summing.' },
+   106→   106→        { ar: 'الخرْج: 2', en: 'The output: 2' },
+   107→   107→      ],
+   108→   108→    },
+   109→   109→    {
+   110→   110→      kind: 'exercise',
+   111→   111→      id: 'ex2.grade-report',
+   112→   112→      exKind: 'write_code',
+   113→   113→      required: true,
+   114→   114→      prompt: {
+   115→   115→        ar: "مشروع الفصل الخامس — تقرير الدرجات: القائمة scores = [82, 95, 67, 74, 91] معطاة. بحلقة for واحدة احسب: count (عدد الدرجات)، وtotal (مجموعها)، وlargest (الأكبر بنمط None)، وsmallest (الأدنى بنمط None). بعد الحلقة احسب average = round(total / count, 1) ثم اطبع خمسة أسطر موقّعة بالترتيب: العدد: والمجموع: والمعدل: والأعلى: والأدنى:. المتوقع في الخرْج: 5 و409 و81.8 و95 و67.",
+   116→   116→        en: 'Chapter 5 project — the grade report: the list scores = [82, 95, 67, 74, 91] is given. With a single for loop compute: count (number of scores), total (their sum), largest (the maximum with the None pattern), and smallest (the minimum with the None pattern). After the loop compute average = round(total / count, 1), then print five labeled lines in order: العدد: (count), المجموع: (sum), المعدل: (average), الأعلى: (top), الأدنى: (bottom). Expected output: 5, 409, 81.8, 95, 67.',
+   117→   117→      },
+   118→   118→      starterCode: 'scores = [82, 95, 67, 74, 91]\n# تهيئة الأنماط الأربعة / initialize the four patterns\n# حلقة تجمعها كلها / one loop composing them all\n# طباعة التقرير بعد الحلقة / print the report after the loop\n',
+   119→   119→      solution: "scores = [82, 95, 67, 74, 91]\ncount = 0\ntotal = 0\nlargest = None\nsmallest = None\nfor s in scores:\n    count = count + 1\n    total = total + s\n    if largest is None or s > largest:\n        largest = s\n    if smallest is None or s < smallest:\n        smallest = s\nprint('العدد:', count)\nprint('المجموع:', total)\naverage = round(total / count, 1)\nprint('المعدل:', average)\nprint('الأعلى:', largest)\nprint('الأدنى:', smallest)",
+   120→   120→      tests: [
+   121→   121→        {
+   122→   122→          id: 't1',
+   123→   123→          name: { ar: 'count يساوي 5', en: 'count equals 5' },
+   124→   124→          code: "assert count == 5, 'expected: 5 | actual: %r' % count",
+   125→   125→          expected: '5',
+   126→   126→        },
+   127→   127→        {
+   128→   128→          id: 't2',
+   129→   129→          name: { ar: 'total يساوي 409', en: 'total equals 409' },
+   130→   130→          code: "assert total == 409, 'expected: 409 | actual: %r' % total",
+   131→   131→          expected: '409',
+   132→   132→        },
+   133→   133→        {
+   134→   134→          id: 't3',
+   135→   135→          name: { ar: 'largest يساوي 95 وsmallest يساوي 67', en: 'largest equals 95 and smallest equals 67' },
+   136→   136→          code: "assert largest == 95 and smallest == 67, 'expected: 95/67 | actual: %r/%r' % (largest, smallest)",
+   137→   137→          expected: '95 / 67',
+   138→   138→        },
+   139→   139→        {
+   140→   140→          id: 't4',
+   141→   141→          name: { ar: 'يُطبع المجموع 409 والمعدل 81.8', en: 'The sum 409 and average 81.8 are printed' },
+   142→   142→          code: "assert '409' in __learner_output__ and '81.8' in __learner_output__, ('expected: 409, 81.8 | actual: %r' % __learner_output__)",
+   143→   143→          expected: '409 / 81.8',
+   144→   144→        },
+   145→   145→        {
+   146→   146→          id: 't5',
+   147→   147→          name: { ar: 'التقرير موقّع بخمسة أسطر بالترتيب', en: 'The report carries five labeled lines in order' },
+   148→   148→          code: "lines = [l.strip() for l in __learner_output__.splitlines() if l.strip()]\nlabels = ['العدد', 'المجموع', 'المعدل', 'الأعلى', 'الأدنى']\nfound = [l for l in lines if any(l.startswith(x) for x in labels)]\nassert len(found) == 5 and all(found[i].startswith(labels[i]) for i in range(5)), ('expected: 5 labeled lines | actual: %r' % __learner_output__)",
+   149→   149→          expected: 'العدد/المجموع/المعدل/الأعلى/الأدنى',
+   150→   150→        },
+   151→   151→      ],
+   152→   152→      hints: [
+   153→   153→        { ar: 'أربعة متغيّرات تولد قبل الحلقة: count = 0 وtotal = 0 وlargest = None وsmallest = None.', en: 'Four variables are born before the loop: count = 0, total = 0, largest = None, smallest = None.' },
+   154→   154→        { ar: 'في الجسم: عدّ، ثم اجمع، ثم شرطا الأكبر والأدنى — كلها بإزاحة واحدة تحت for.', en: 'In the body: count, then sum, then the max and min conditions — all at one indent level under for.' },
+   155→   155→        { ar: 'الهيكل:\nfor s in scores:\n    count = count + 1\n    total = total + s\n    if largest is None or s > largest:\n        largest = s\n    if smallest is None or s < smallest:\n        smallest = s\n\nثم بعد الحلقة: average = round(total / count, 1) وخمس طباعات موقّعة.', en: 'The skeleton:\nfor s in scores:\n    count = count + 1\n    total = total + s\n    if largest is None or s > largest:\n        largest = s\n    if smallest is None or s < smallest:\n        smallest = s\n\nThen after the loop: average = round(total / count, 1) and five labeled prints.' },
+   156→   156→        { ar: "scores = [82, 95, 67, 74, 91]\ncount = 0\ntotal = 0\nlargest = None\nsmallest = None\nfor s in scores:\n    count = count + 1\n    total = total + s\n    if largest is None or s > largest:\n        largest = s\n    if smallest is None or s < smallest:\n        smallest = s\nprint('العدد:', count)\nprint('المجموع:', total)\nprint('المعدل:', round(total / count, 1))\nprint('الأعلى:', largest)\nprint('الأدنى:', smallest)", en: "scores = [82, 95, 67, 74, 91]\ncount = 0\ntotal = 0\nlargest = None\nsmallest = None\nfor s in scores:\n    count = count + 1\n    total = total + s\n    if largest is None or s > largest:\n        largest = s\n    if smallest is None or s < smallest:\n        smallest = s\nprint('العدد:', count)\nprint('المجموع:', total)\nprint('المعدل:', round(total / count, 1))\nprint('الأعلى:', largest)\nprint('الأدنى:', smallest)" },
+   157→   157→      ],
+   158→   158→    },
+   159→   159→    {
+   160→   160→      kind: 'exercise',
+   161→   161→      id: 'ex3.mcq-debug-loop',
+   162→   162→      exKind: 'mcq',
+   163→   163→      required: true,
+   164→   164→      prompt: {
+   165→   165→        ar: 'ومن درس التنقيح: برنامج زميلك علّق ولا يطبع شيئًا، والمنصة تعرض رسالة انتهاء المهلة. ما أول شك تقود التحقيق إليه؟',
+   166→   166→        en: 'And from the debugging lesson: your friend\'s program hangs printing nothing, and the platform shows the timeout message. What is the first suspect the investigation points to?',
+   167→   167→      },
+   168→   168→      options: [
+   169→   169→        { id: 'a', text: { ar: 'حلقة لا تتوقف — غالبًا تحديث متغيّر التكرار غائب أو وُضع بعد continue', en: 'A loop that never stops — usually the iteration-variable update is missing or placed after a continue' } },
+   170→   170→        { id: 'b', text: { ar: 'تعليق # خاطئ أوقف البرنامج', en: 'A misplaced # comment stopped the program' } },
+   171→   171→        { id: 'c', text: { ar: 'عدد كبير من الأسطر أبطأ الجهاز', en: 'Too many lines slowed the machine' } },
+   172→   172→      ],
+   173→   173→      answer: 'a',
+   174→   174→      solution: 'a',
+   175→   175→      hints: [
+   176→   176→        { ar: 'برنامج يكمل ولا ينهي عمله — أين بقي محتجزًا؟', en: 'The program keeps running and never finishes — where is it stuck?' },
+   177→   177→        { ar: 'شرط لا يصبح خاطئًا أبدًا + لا break = دوامة أبدية.', en: 'A condition that never fails + no break = an eternal whirlpool.' },
+   178→   178→        { ar: 'أداة التنقيح هنا: اطبع متغيّر التكرار داخل الجسم وراقب هل يتحرك أصلًا.', en: 'The debugging tool here: print the iteration variable inside the body and watch whether it moves at all.' },
+   179→   179→        { ar: 'الجواب: أ — ابحث عن سطر تحديث متغيّر التكرار وتأكد من موقعه داخل الجسم وقبل أي continue.', en: 'Answer: a — look for the iteration-variable update line and make sure it is inside the body and before any continue.' },
+   180→   180→      ],
+   181→   181→    },
+   182→   182→    {
+   183→   183→      kind: 'exercise',
+   184→   184→      id: 'ex4.numeric-largest-updates',
+   185→   185→      exKind: 'numeric',
+   186→   186→      required: true,
+   187→   187→      prompt: {
+   188→   188→        ar: 'بلا تشغيل — في حلقة الأكبر على القائمة [82, 95, 67, 74, 91] بدءًا من largest = None: كم مرة تغيّرت قيمة largest خلال الحلقة؟',
+   189→   189→        en: 'Without running — in the maximum loop over [82, 95, 67, 74, 91] starting from largest = None: how many times does the value of largest change during the loop?',
+   190→   190→      },
+   191→   191→      answer: '2',
+   192→   192→      solution: '2',
+   193→   193→      tolerance: 0,
+   194→   194→      hints: [
+   195→   195→        { ar: 'تتبّع: None يسلّم أولًا لـ 82 — تغيّر أول.', en: 'Trace: None hands the crown to 82 — first change.' },
+   196→   196→        { ar: 'هل 95 > 82؟ نعم — تغيّر ثانٍ. ثم هل 67 أو 74 أو 91 أكبر من 95؟', en: 'Is 95 > 82? Yes — second change. Then are 67, 74 or 91 bigger than 95?' },
+   197→   197→        { ar: 'التغيّرات تحدث فقط حين يدخل الفرع — و91 أقل من 95 فلا يدخل.', en: 'Changes happen only when the branch fires — and 91 is less than 95, so it never fires.' },
+   198→   198→        { ar: 'الجواب: 2', en: 'Answer: 2' },
+   199→   199→      ],
+   200→   200→    },
+   201→   201→    {
+   202→   202→      kind: 'debug',
+   203→   203→      id: 'ex5.debug-reinit',
+   204→   204→      required: true,
+   205→   205→      brokenCode: "scores = [82, 95, 67, 74, 91]\ntotal = 0\nfor s in scores:\n    total = 0\n    total = total + s\nprint('المجموع:', total)",
+   206→   206→      prompt: {
+   207→   207→        ar: 'تقرير زميلك يطبع المجموع: 91 رغم أن درجاته الخمس مجموعها 409. شغّل الكود المعطوب، ثم استخدم أداة التنقيح: اطبع total داخل الجسم في كل تكرار وراقب — ماذا يحدث له في بداية كل تكرار؟ اكتشف الخلل وأصلحه ليخرج التقرير المجموع: 409.',
+   208→   208→        en: "Your friend's report prints the sum 91 although his five scores add to 409. Run the broken code, then use the debugging tool: print total inside the body on every iteration and watch it — what happens to it at the start of every iteration? Find the bug and fix the report so it prints the sum 409.",
+   209→   209→      },
+   210→   210→      solution: "scores = [82, 95, 67, 74, 91]\ntotal = 0\nfor s in scores:\n    total = total + s\nprint('المجموع:', total)",
+   211→   211→      tests: [
+   212→   212→        {
+   213→   213→          id: 't1',
+   214→   214→          name: { ar: 'total يساوي 409 بعد الإصلاح', en: 'total equals 409 after the fix' },
+   215→   215→          code: "assert total == 409, 'expected: 409 | actual: %r' % total",
+   216→   216→          expected: '409',
+   217→   217→        },
+   218→   218→        {
+   219→   219→          id: 't2',
+   220→   220→          name: { ar: 'يُطبع المجموع: 409', en: 'The sum 409 is printed' },
+   221→   221→          code: "assert '409' in __learner_output__, ('expected: 409 in output | actual: %r' % __learner_output__)",
+   222→   222→          expected: 'المجموع: 409',
+   223→   223→        },
+   224→   224→      ],
+   225→   225→      hints: [
+   226→   226→        { ar: 'الطباعة المؤقتة ستُظهر: بعد 82 صار المجموع 82، وبعد 95 صار 95 — لماذا يمسح نفسه كل تكرار؟', en: 'The temporary print will show: after 82 the total is 82, after 95 it is 95 — why does it wipe itself every iteration?' },
+   227→   227→        { ar: 'سطر total = 0 وُلد في المكان الخطأ: داخل الجسم لا قبل الحلقة.', en: 'The line total = 0 was born in the wrong place: inside the body, not before the loop.' },
+   228→   228→        { ar: 'انقل التهيئة فوق الحلقة واترك الجسم يكتفي بالإضافة.', en: 'Move the initialization above the loop and let the body do nothing but add.' },
+   229→   229→        { ar: "scores = [82, 95, 67, 74, 91]\ntotal = 0\nfor s in scores:\n    total = total + s\nprint('المجموع:', total)", en: "scores = [82, 95, 67, 74, 91]\ntotal = 0\nfor s in scores:\n    total = total + s\nprint('المجموع:', total)" },
+   230→   230→      ],
+   231→   231→    },
+   232→   232→    {
+   233→   233→      kind: 'sandbox',
+   234→   234→      starterCode: "# ملعبك الحرّ — التقرير الكامل بين يديك\n# Your playground — the full report in your hands\n\nscores = [82, 95, 67, 74, 91]\ncount = 0\ntotal = 0\ntop_count = 0\nlargest = None\nsmallest = None\nfor s in scores:\n    count = count + 1\n    total = total + s\n    if s >= 90:\n        top_count = top_count + 1\n    if largest is None or s > largest:\n        largest = s\n    if smallest is None or s < smallest:\n        smallest = s\nprint('العدد:', count)\nprint('المجموع:', total)\nprint('المعدل:', round(total / count, 1))\nprint('الأعلى:', largest)\nprint('الأدنى:', smallest)\nprint('من 90 فأعلى:', top_count)",
+   235→   235→      prompt: {
+   236→   236→        ar: 'جرّب بنفسك: هذا مشروعك كاملًا مع تصفية إضافية تعدّ من 90 فأعلى. أضف درجات جديدة، واخترقها بقيمة سالبة وراقب None يحفظ الأنماط، ثم جرّب s > 100 كمصفاة تعطي صفرًا. لا اختبار هنا — فضولك فقط.',
+   237→   237→        en: 'Try it yourself: this is your project in full with an extra filter counting scores of 90 and above. Add new scores, sabotage it with a negative value and watch None protect the patterns, then try s > 100 as a filter that yields zero. No tests here — just your curiosity.',
+   238→   238→      },
+   239→   239→    },
+   240→   240→    {
+   241→   241→      kind: 'quiz',
+   242→   242→      id: 'quiz1',
+   243→   243→      items: [
+   244→   244→        {
+   245→   245→          id: 'q1',
+   246→   246→          question: {
+   247→   247→            ar: 'في الحلقة: ما الفرق في الأثر بين break وcontinue؟',
+   248→   248→            en: 'Inside a loop: what is the difference in effect between break and continue?',
+   249→   249→          },
+   250→   250→          options: [
+   251→   251→            { id: 'a', text: { ar: 'break يخرج من الحلقة كليًا وcontinue يبدأ تكرارًا جديدًا', en: 'break leaves the loop entirely while continue starts a new iteration' } },
+   252→   252→            { id: 'b', text: { ar: 'كلاهما ينهي الحلقة لكن بسرعات مختلفة', en: 'Both end the loop but at different speeds' } },
+   253→   253→            { id: 'c', text: { ar: 'continue يخرج من الحلقة وbreak يتخطى تكرارًا', en: 'continue exits the loop while break skips an iteration' } },
+   254→   254→          ],
+   255→   255→          answer: 'a',
+   256→   256→          explanation: {
+   257→   257→            ar: 'break مخرج طوارئ من الحلقة كلها إلى أول تعليمة بعدها، وcontinue زر تخطٍّ يعيد الجسم من أعلى ببنكهة جديدة.',
+   258→   258→            en: 'break is the emergency exit from the whole loop to the first statement after it; continue is a skip button restarting the body from the top with a fresh element.',
+   259→   259→          },
+   260→   260→        },
+   261→   261→        {
+   262→   262→          id: 'q2',
+   263→   263→          question: {
+   264→   264→            ar: 'متى تختار for ومتى تختار while؟',
+   265→   265→            en: 'When do you choose for and when while?',
+   266→   266→          },
+   267→   267→          options: [
+   268→   268→            { id: 'a', text: { ar: 'for حين يكون المجموعة المحددة معلومًا، وwhile حين يقرر الشرط موعد التوقف', en: 'for when the definite collection is known, while when a condition decides when to stop' } },
+   269→   269→            { id: 'b', text: { ar: 'while للقوائم وfor للأعداد', en: 'while for lists and for for numbers' } },
+   270→   270→            { id: 'c', text: { ar: 'لا فرق — تبادل تام في كل الحالات', en: 'No difference — fully interchangeable in every case' } },
+   271→   271→          ],
+   272→   272→          answer: 'a',
+   273→   273→          explanation: {
+   274→   274→            ar: 'for حلقة محددة تتكرر بعدد الأشياء، وwhile حلقة غير محددة تتكرر حتى يصبح شرطها غير صحيح — وقد لا نعرف عدد المرات مسبقًا.',
+   275→   275→            en: 'for is a definite loop repeating per item; while is an indefinite loop repeating until its condition fails — and we may not know the count in advance.',
+   276→   276→          },
+   277→   277→        },
+   278→   278→        {
+   279→   279→          id: 'q3',
+   280→   280→          question: {
+   281→   281→            ar: 'ومن الفصل الثاني: في total = total + s — ما الدلالة التي تجعل التراكم ممكنًا؟',
+   282→   282→            en: 'And from chapter 2: in total = total + s — which semantics makes accumulation possible?',
+   283→   283→          },
+   284→   284→          options: [
+   285→   285→            { id: 'a', text: { ar: 'الإسناد يقرأ القيمة القديمة أولًا ثم يخزّن الناتج الجديد', en: 'Assignment reads the old value first, then stores the new result' } },
+   286→   286→            { id: 'b', text: { ar: 'الإسناد يحذف total قبل الجمع', en: 'Assignment deletes total before adding' } },
+   287→   287→            { id: 'c', text: { ar: 'الإسناد ينسخ السطر كاملًا في الذاكرة', en: 'Assignment copies the whole line into memory' } },
+   288→   288→          ],
+   289→   289→          answer: 'a',
+   290→   290→          explanation: {
+   291→   291→            ar: 'الطرف الأيمن يُحسب بالقيمة الحالية قبل التخزين — لهذا يكبر المتراكم تكرارًا بعد تكرار بدل أن يمسح.',
+   292→   292→            en: 'The right side computes with the current value before storing — that is why the accumulator grows iteration after iteration instead of wiping.',
+   293→   293→          },
+   294→   294→        },
+   295→   295→        {
+   296→   296→          id: 'q4',
+   297→   297→          question: {
+   298→   298→            ar: 'ومن الفصل الثالث: في الشرط largest is None or s > largest — ما الذي يحمي أول تكرار من TypeError؟',
+   299→   299→            en: 'And from chapter 3: in the condition largest is None or s > largest — what protects the first iteration from a TypeError?',
+   300→   300→          },
+   301→   301→          options: [
+   302→   302→            { id: 'a', text: { ar: 'القصر قصير الدارة: or يكتفي بأول True ويتخطى المقارنة', en: 'Short-circuit evaluation: or settles for the first True and skips the comparison' } },
+   303→   303→            { id: 'b', text: { ar: 'None يقارن بالأعداد تلقائيًا', en: 'None compares with numbers automatically' } },
+   304→   304→            { id: 'c', text: { ar: 'حلقات for تلتقط الأخطاء وتهملها', en: 'for loops catch and ignore errors' } },
+   305→   305→          ],
+   306→   306→          answer: 'a',
+   307→   307→          explanation: {
+   308→   308→            ar: 'عند أول تكرار يكون largest is None محققًا فلا تُقيَّم المقارنة الخطر أصلًا — نفس فكرة الحارس التي حمينا بها القسمة.',
+   309→   309→            en: 'On the first iteration largest is None already holds, so the risky comparison is never evaluated — the same guardian idea that shielded our division.',
+   310→   310→          },
+   311→   311→        },
+   312→   312→        {
+   313→   313→          id: 'q5',
+   314→   314→          question: {
+   315→   315→            ar: 'ومن الفصل الرابع: تابعا max(scores) وmin(scores) — كيف يوصف كل منهما؟',
+   316→   316→            en: 'And from chapter 4: the functions max(scores) and min(scores) — how is each described?',
+   317→   317→          },
+   318→   318→          options: [
+   319→   319→            { id: 'a', text: { ar: 'تابعان مُنتجان يستقبلان وسيطًا ويعيدان قيمة', en: 'Fruitful functions taking an argument and returning a value' } },
+   320→   320→            { id: 'b', text: { ar: 'تابعان خاليان يطبعان النتيجة فقط', en: 'Void functions that only print the result' } },
+   321→   321→            { id: 'c', text: { ar: 'كلمتان محجوزتان في اللغة', en: 'Two reserved words of the language' } },
+   322→   322→          ],
+   323→   323→          answer: 'a',
+   324→   324→          explanation: {
+   325→   325→            ar: 'استدعاؤهما تعبير قيمته هي النتيجة المُعادة — تعريف التابع المُنتج. وهوما يمكنكنك من التحقق من أنماطك اليدوية في الملعب.',
+   326→   326→            en: 'Their call is an expression whose value is the returned result — the definition of a fruitful function. It is also what lets you verify your hand-written patterns in the sandbox.',
+   327→   327→          },
+   328→   328→        },
+   329→   329→        {
+   330→   330→          id: 'q6',
+   331→   331→          question: {
+   332→   332→            ar: 'ومن درس التنقيح: ظهرت لك رسالة خطأ بموجز تتبع طويل — من أين تبدأ قراءته؟',
+   333→   333→            en: 'And from the debugging lesson: an error message with a long traceback appears — where do you start reading?',
+   334→   334→          },
+   335→   335→          options: [
+   336→   336→            { id: 'a', text: { ar: 'من السطر الأخير: نوع الخطأ ومكانه', en: 'From the last line: the error type and location' } },
+   337→   337→            { id: 'b', text: { ar: 'من أول سطر وتصاعديًا بالكامل', en: 'From the first line, fully upward' } },
+   338→   338→            { id: 'c', text: { ar: 'من منتصف الموجز حيث الأسماء الطويلة', en: 'From the middle where the long names are' } },
+   339→   339→          ],
+   340→   340→          answer: 'a',
+   341→   341→          explanation: {
+   342→   342→            ar: 'السطر الأخير يقول ماذا حدث وأين — ثم تصعد للأسطر السابقة لتتتبع مسار النداءات، كما تعلمت مع try وexcept في الفصل الثالث.',
+   343→   343→            en: 'The last line says what happened and where — then you climb the lines above to trace the call path, as you learned with try and except in chapter 3.',
+   344→   344→          },
+   345→   345→        },
+   346→   346→      ],
+   347→   347→    },
+   348→   348→    {
+   349→   349→      kind: 'pitfalls',
+   350→   350→      items: [
+   351→   351→        {
+   352→   352→          wrong: 'total = 0\nfor s in scores:\n    total = 0\n    total = total + s',
+   353→   353→          right: 'total = 0\nfor s in scores:\n    total = total + s',
+   354→   354→          note: {
+   355→   355→            ar: 'خطأ الفصل الأشهر: التهيئة داخل الجسم تمسح التراكم كل تكرار فيبقى آخر عنصر فقط. طباعة مؤقتة داخل الحلقة تكشفه فورًا — والتهيئة تعود لقبل الحلقة.',
+   356→   356→            en: 'The chapter\'s most famous bug: initializing inside the body wipes the accumulation every iteration, leaving only the last element. A temporary print inside the loop exposes it instantly — and the initialization returns to before the loop.',
+   357→   357→          },
+   358→   358→        },
+   359→   359→        {
+   360→   360→          wrong: 'largest = 0\nfor s in scores:\n    if s > largest:\n        largest = s',
+   361→   361→          right: 'largest = None\nfor s in scores:\n    if largest is None or s > largest:\n        largest = s',
+   362→   362→          note: {
+   363→   363→            ar: 'بدء الأكبر بالصفر يعمل مع درجاتك الموجبة ثم يخونك أول قائمة سالبة: يطبع 0 زورًا. ابدأ بـ None واحمِ المقارنة الأولى بـ is None.',
+   364→   364→            en: 'Starting the maximum at zero works with your positive grades, then betrays you on the first negative list: it prints 0 falsely. Start with None and guard the first comparison with is None.',
+   365→   365→          },
+   366→   366→        },
+   367→   367→        {
+   368→   368→          wrong: 'n = 5\nwhile n > 0:\n    print(n)\nn = n - 1',
+   369→   369→          right: 'n = 5\nwhile n > 0:\n    print(n)\n    n = n - 1',
+   370→   370→          note: {
+   371→   371→            ar: 'سطر التحديث خرج من الجسم بالإزاحة الناقصة — الحلقة لا تتوقف أبدًا وسيلتقطها عداد المهلة. حافظ على تحديث متغيّر التكرار داخل الجسم دائمًا.',
+   372→   372→            en: 'The update line left the body through lost indentation — the loop never stops and the timeout watchdog catches it. Always keep the iteration-variable update inside the body.',
+   373→   373→          },
+   374→   374→        },
+   375→   375→      ],
+   376→   376→    },
+   377→   377→    {
+   378→   378→      kind: 'summary',
+   379→   379→      bullets: [
+   380→   380→        { ar: 'الفصل الخامس كله: تحديث المتغيرات، حلقة while وتكراراتها، اللانهائية مع break وcontinue، الحلقة المحددة for، وأنماط العدّ والمجموع والمعدل والتصفية والأكبر والأصغر.', en: 'All of chapter 5: updating variables, the while loop and its iterations, infinity with break and continue, the definite for loop, and the counting, summing, average, filtering, maximum and minimum patterns.' },
+   381→   381→        { ar: 'التنقيح: اقرأ موجز التتبع من آخر سطر، صغّر البيانات والأسطر، اطبع داخل الجسم لترى التراكم، ونصّف البحث عند طول الشك — وانتبه لرسالة المهلة: حلقة لا تتوقف.', en: 'Debugging: read the traceback from the last line, shrink data and lines, print inside the body to watch accumulation, bisect when the hunt drags — and heed the timeout message: a loop that never stops.' },
+   382→   382→        { ar: 'تقرير الدرجات جمع الوصفة الثلاثية: تهيئة قبل الحلقة، أنماط مركّبة في الجسم، وطباعة موقّعة بعده — أول برنامج إحصائي كامل لك.', en: 'The grade report composed the three-step recipe: initialization before the loop, patterns composed in the body, and a labeled print-out after it — your first complete statistics program.' },
+   383→   383→      ],
+   384→   384→      reflectPrompt: {
+   385→   385→        ar: 'تقريرك اليوم يقرأ قائمة جاهزة. حين تتعلم قراءة الملفات في فصل قادم، كيف سيصبح هذا التقرير مفيدًا حقيقيًا؟ وما الدرجة الأولى التي ستُدخلها فيه؟',
+   386→   386→        en: 'Your report today reads a ready list. Once you learn to read files in a coming chapter, how will this report become truly useful? And what will be the first grade you feed into it?',
+   387→   387→      },
+   388→   388→    },
+   389→   389→    {
+   390→   390→      kind: 'sources',
+   391→   391→      items: [
+   392→   392→        { book: 'PY4E', section: 'py4e.ch5.s7', pages: 'ص83 / pp.83' },
+   393→   393→        { book: 'PY4E', section: 'py4e.ch5.s8', pages: 'ص83 / pp.83' },
+   394→   394→        { book: 'PY4E', section: 'py4e.ch5.s9', pages: 'ص84 / pp.84' },
+   395→   395→      ],
+   396→   396→    },
+   397→   397→  ],
+   398→   398→  sources: [
+   399→   399→    { book: 'PY4E', section: 'py4e.ch5.s7', pages: 'ص83 / pp.83' },
+   400→   400→    { book: 'PY4E', section: 'py4e.ch5.s8', pages: 'ص83 / pp.83' },
+   401→   401→    { book: 'PY4E', section: 'py4e.ch5.s9', pages: 'ص84 / pp.84' },
+   402→   402→  ],
+   403→   403→} satisfies Lesson;
+   404→   404→
+   405→   405→export default lesson;
+   406→   406→

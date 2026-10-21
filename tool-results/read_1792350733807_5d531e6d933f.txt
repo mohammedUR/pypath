@@ -1,0 +1,502 @@
+  1658→we need to provide some vector v such that backward will compute v⊤𝜕xy rather than
+  1659→𝜕xy. This next part may be confusing, but for reasons that will become clear later, this
+  1660→argument (representing v) is named gradient. For a more detailed description, see Yang
+  1661→Zhang’s Medium post57.
+  1662→x.grad.zero_()
+  1663→y = x * x
+  1664→y.backward(gradient=torch.ones(len(y)))
+  1665→# Faster: y.sum().backward()
+  1666→x.grad
+  1667→tensor([0., 2., 4., 6.])
+  1668→2.5.3 Detaching Computation
+  1669→Sometimes, we wish to move some calculations outside of the recorded computational
+  1670→graph. For example, say that we use the input to create some auxiliary intermediate terms
+  1671→for which we do not want to compute a gradient. In this case, we need to detach the re-
+  1672→spective computational graph from the final result. The following toy example makes this
+  1673→clearer: suppose we have z = x * y and y = x * x but we want to focus on the direct
+  1674→influence of x on z rather than the influence conveyed via y. In this case, we can create a
+  1675→new variable u that takes the same value as y but whose provenance (how it was created)
+  1676→has been wiped out. Thus u has no ancestors in the graph and gradients do not flow through
+  1677→u to x. For example, taking the gradient of z = x * u will yield the result u, (not 3 * x
+  1678→* x as you might have expected since z = x * x * x).
+  1679→x.grad.zero_()
+  1680→y = x * x
+  1681→u = y.detach()
+  1682→z = u * x
+  1683→z.sum().backward()
+  1684→x.grad == u
+  1685→
+  1686→===== صفحة الكتاب 103 =====
+  1687→63
+  1688→Automatic Differentiation
+  1689→tensor([True, True, True, True])
+  1690→Note that while this procedure detaches y’s ancestors from the graph leading to z, the com-
+  1691→putational graph leading to y persists and thus we can calculate the gradient of y with
+  1692→respect to x.
+  1693→x.grad.zero_()
+  1694→y.sum().backward()
+  1695→x.grad == 2 * x
+  1696→tensor([True, True, True, True])
+  1697→2.5.4 Gradients and Python Control Flow
+  1698→So far we reviewed cases where the path from input to output was well defined via a func-
+  1699→tion such as z = x * x * x. Programming offers us a lot more freedom in how we
+  1700→compute results. For instance, we can make them depend on auxiliary variables or condi-
+  1701→tion choices on intermediate results. One benefit of using automatic differentiation is that
+  1702→even if building the computational graph of a function required passing through a maze
+  1703→of Python control flow (e.g., conditionals, loops, and arbitrary function calls), we can still
+  1704→calculate the gradient of the resulting variable. To illustrate this, consider the following
+  1705→code snippet where the number of iterations of the while loop and the evaluation of the if
+  1706→statement both depend on the value of the input a.
+  1707→def f(a):
+  1708→b = a * 2
+  1709→while b.norm() < 1000:
+  1710→b = b * 2
+  1711→if b.sum() > 0:
+  1712→c = b
+  1713→else:
+  1714→c = 100 * b
+  1715→return c
+  1716→Below, we call this function, passing in a random value, as input. Since the input is a
+  1717→random variable, we do not know what form the computational graph will take. However,
+  1718→whenever we execute f(a) on a specific input, we realize a specific computational graph
+  1719→and can subsequently run backward.
+  1720→a = torch.randn(size=(), requires_grad=True)
+  1721→d = f(a)
+  1722→d.backward()
+  1723→Even though our function f is, for demonstration purposes, a bit contrived, its dependence
+  1724→on the input is quite simple: it is a linear function of a with piecewise defined scale. As
+  1725→
+  1726→===== صفحة الكتاب 104 =====
+  1727→64
+  1728→Preliminaries
+  1729→such, f(a) / a is a vector of constant entries and, moreover, f(a) / a needs to match the
+  1730→gradient of f(a) with respect to a.
+  1731→a.grad == d / a
+  1732→tensor(True)
+  1733→Dynamic control flow is very common in deep learning. For instance, when processing
+  1734→text, the computational graph depends on the length of the input. In these cases, automatic
+  1735→differentiation becomes vital for statistical modeling since it is impossible to compute the
+  1736→gradient a priori.
+  1737→2.5.5 Discussion
+  1738→You have now gotten a taste of the power of automatic differentiation. The development of
+  1739→libraries for calculating derivatives both automatically and efficiently has been a massive
+  1740→productivity booster for deep learning practitioners, liberating them so they can focus on
+  1741→less menial. Moreover, autograd lets us design massive models for which pen and paper
+  1742→gradient computations would be prohibitively time consuming. Interestingly, while we use
+  1743→autograd to optimize models (in a statistical sense) the optimization of autograd libraries
+  1744→themselves (in a computational sense) is a rich subject of vital interest to framework design-
+  1745→ers. Here, tools from compilers and graph manipulation are leveraged to compute results
+  1746→in the most expedient and memory-efficient manner.
+  1747→For now, try to remember these basics: (i) attach gradients to those variables with respect
+  1748→to which we desire derivatives; (ii) record the computation of the target value; (iii) execute
+  1749→the backpropagation function; and (iv) access the resulting gradient.
+  1750→2.5.6 Exercises
+  1751→1. Why is the second derivative much more expensive to compute than the first derivative?
+  1752→2. After running the function for backpropagation, immediately run it again and see what
+  1753→happens. Investigate.
+  1754→3. In the control flow example where we calculate the derivative of d with respect to a,
+  1755→what would happen if we changed the variable a to a random vector or a matrix? At
+  1756→this point, the result of the calculation f(a) is no longer a scalar. What happens to the
+  1757→result? How do we analyze this?
+  1758→4. Let 𝑓(𝑥) = sin(𝑥). Plot the graph of 𝑓and of its derivative 𝑓′. Do not exploit the fact
+  1759→that 𝑓′(𝑥) = cos(𝑥) but rather use automatic differentiation to get the result.
+  1760→5. Let 𝑓(𝑥) = ((log 𝑥2) · sin 𝑥) + 𝑥−1. Write out a dependency graph tracing results from
+  1761→𝑥to 𝑓(𝑥).
+  1762→6. Use the chain rule to compute the derivative 𝑑𝑓
+  1763→𝑑𝑥of the aforementioned function, placing
+  1764→each term on the dependency graph that you constructed previously.
+  1765→
+  1766→===== صفحة الكتاب 105 =====
+  1767→65
+  1768→Probability and Statistics
+  1769→58
+  1770→7. Given the graph and the intermediate derivative results, you have a number of options
+  1771→when computing the gradient. Evaluate the result once starting from 𝑥to 𝑓and once
+  1772→from 𝑓tracing back to 𝑥. The path from 𝑥to 𝑓is commonly known as forward differ-
+  1773→entiation, whereas the path from 𝑓to 𝑥is known as backward differentiation.
+  1774→8. When might you want to use forward, and when backward, differentiation? Hint: con-
+  1775→sider the amount of intermediate data needed, the ability to parallelize steps, and the
+  1776→size of matrices and vectors involved.
+  1777→Discussions58.
+  1778→2.6 Probability and Statistics
+  1779→One way or another, machine learning is all about uncertainty. In supervised learning, we
+  1780→want to predict something unknown (the target) given something known (the features). De-
+  1781→pending on our objective, we might attempt to predict the most likely value of the target.
+  1782→Or we might predict the value with the smallest expected distance from the target. And
+  1783→sometimes we wish not only to predict a specific value but to quantify our uncertainty. For
+  1784→example, given some features describing a patient, we might want to know how likely they
+  1785→are to suffer a heart attack in the next year. In unsupervised learning, we often care about
+  1786→uncertainty. To determine whether a set of measurements are anomalous, it helps to know
+  1787→how likely one is to observe values in a population of interest. Furthermore, in reinforce-
+  1788→ment learning, we wish to develop agents that act intelligently in various environments.
+  1789→This requires reasoning about how an environment might be expected to change and what
+  1790→rewards one might expect to encounter in response to each of the available actions.
+  1791→Probability is the mathematical field concerned with reasoning under uncertainty. Given a
+  1792→probabilistic model of some process, we can reason about the likelihood of various events.
+  1793→The use of probabilities to describe the frequencies of repeatable events (like coin tosses) is
+  1794→fairly uncontroversial. In fact, frequentist scholars adhere to an interpretation of probability
+  1795→that applies only to such repeatable events. By contrast Bayesian scholars use the language
+  1796→of probability more broadly to formalize reasoning under uncertainty. Bayesian probability
+  1797→is characterized by two unique features: (i) assigning degrees of belief to non-repeatable
+  1798→events, e.g., what is the probability that a dam will collapse?; and (ii) subjectivity. While
+  1799→Bayesian probability provides unambiguous rules for how one should update their beliefs in
+  1800→light of new evidence, it allows for different individuals to start off with different prior be-
+  1801→liefs. Statistics helps us to reason backwards, starting off with collection and organization
+  1802→of data and backing out to what inferences we might draw about the process that generated
+  1803→the data. Whenever we analyze a dataset, hunting for patterns that we hope might charac-
+  1804→terize a broader population, we are employing statistical thinking. Many courses, majors,
+  1805→theses, careers, departments, companies, and institutions have been devoted to the study of
+  1806→probability and statistics. While this section only scratches the surface, we will provide the
+  1807→foundation that you need to begin building models.
+  1808→
+  1809→===== صفحة الكتاب 106 =====
+  1810→66
+  1811→Preliminaries
+  1812→%matplotlib inline
+  1813→import random
+  1814→import torch
+  1815→from torch.distributions.multinomial import Multinomial
+  1816→from d2l import torch as d2l
+  1817→2.6.1 A Simple Example: Tossing Coins
+  1818→Imagine that we plan to toss a coin and want to quantify how likely we are to see heads
+  1819→(vs. tails). If the coin is fair, then both outcomes (heads and tails), are equally likely.
+  1820→Moreover if we plan to toss the coin 𝑛times then the fraction of heads that we expect to
+  1821→see should exactly match the expected fraction of tails. One intuitive way to see this is
+  1822→by symmetry: for every possible outcome with 𝑛h heads and 𝑛t = (𝑛−𝑛h) tails, there is
+  1823→an equally likely outcome with 𝑛t heads and 𝑛h tails. Note that this is only possible if on
+  1824→average we expect to see 1/2 of tosses come up heads and 1/2 come up tails. Of course, if
+  1825→you conduct this experiment many times with 𝑛= 1000000 tosses each, you might never
+  1826→see a trial where 𝑛h = 𝑛t exactly.
+  1827→Formally, the quantity 1/2 is called a probability and here it captures the certainty with
+  1828→which any given toss will come up heads. Probabilities assign scores between 0 and 1 to
+  1829→outcomes of interest, called events. Here the event of interest is heads and we denote the
+  1830→corresponding probability 𝑃(heads). A probability of 1 indicates absolute certainty (imag-
+  1831→ine a trick coin where both sides were heads) and a probability of 0 indicates impossibility
+  1832→(e.g., if both sides were tails). The frequencies 𝑛h/𝑛and 𝑛t/𝑛are not probabilities but rather
+  1833→statistics. Probabilities are theoretical quantities that underly the data generating process.
+  1834→Here, the probability 1/2 is a property of the coin itself. By contrast, statistics are empirical
+  1835→quantities that are computed as functions of the observed data. Our interests in probabilis-
+  1836→tic and statistical quantities are inextricably intertwined. We often design special statistics
+  1837→called estimators that, given a dataset, produce estimates of model parameters such as prob-
+  1838→abilities. Moreover, when those estimators satisfy a nice property called consistency, our
+  1839→estimates will converge to the corresponding probability. In turn, these inferred probabili-
+  1840→ties tell about the likely statistical properties of data from the same population that we might
+  1841→encounter in the future.
+  1842→Suppose that we stumbled upon a real coin for which we did not know the true 𝑃(heads).
+  1843→To investigate this quantity with statistical methods, we need to (i) collect some data; and
+  1844→(ii) design an estimator. Data acquisition here is easy; we can toss the coin many times
+  1845→and record all the outcomes. Formally, drawing realizations from some underlying random
+  1846→process is called sampling. As you might have guessed, one natural estimator is the ratio
+  1847→of the number of observed heads to the total number of tosses.
+  1848→Now, suppose that the coin was in fact fair, i.e., 𝑃(heads) = 0.5. To simulate tosses of a
+  1849→fair coin, we can invoke any random number generator. There are some easy ways to draw
+  1850→samples of an event with probability 0.5. For example Python’s random.random yields
+  1851→numbers in the interval [0, 1] where the probability of lying in any sub-interval [𝑎, 𝑏] ⊂
+  1852→
+  1853→===== صفحة الكتاب 107 =====
+  1854→67
+  1855→Probability and Statistics
+  1856→[0, 1] is equal to 𝑏−𝑎. Thus we can get out 0 and 1 with probability 0.5 each by testing
+  1857→whether the returned float number is greater than 0.5:
+  1858→num_tosses = 100
+  1859→heads = sum([random.random() > 0.5 for _ in range(num_tosses)])
+  1860→tails = num_tosses - heads
+  1861→print("heads, tails: ", [heads, tails])
+  1862→heads, tails:
+  1863→[44, 56]
+  1864→More generally, we can simulate multiple draws from any variable with a finite number
+  1865→of possible outcomes (like the toss of a coin or roll of a die) by calling the multinomial
+  1866→function, setting the first argument to the number of draws and the second as a list of prob-
+  1867→abilities associated with each of the possible outcomes. To simulate ten tosses of a fair coin,
+  1868→we assign probability vector [0.5, 0.5], interpreting index 0 as heads and index 1 as tails.
+  1869→The function returns a vector with length equal to the number of possible outcomes (here,
+  1870→2), where the first component tells us the number of occurrences of heads and the second
+  1871→component tells us the number of occurrences of tails.
+  1872→fair_probs = torch.tensor([0.5, 0.5])
+  1873→Multinomial(100, fair_probs).sample()
+  1874→tensor([50., 50.])
+  1875→Each time you run this sampling process, you will receive a new random value that may
+  1876→differ from the previous outcome. Dividing by the number of tosses gives us the frequency
+  1877→of each outcome in our data. Note that these frequencies, just like the probabilities that they
+  1878→are intended to estimate, sum to 1.
+  1879→Multinomial(100, fair_probs).sample() / 100
+  1880→tensor([0.4800, 0.5200])
+  1881→Here, even though our simulated coin is fair (we ourselves set the probabilities [0.5, 0.
+  1882→5]), the counts of heads and tails may not be identical. That is because we only drew a
+  1883→relatively small number of samples. If we did not implement the simulation ourselves, and
+  1884→only saw the outcome, how would we know if the coin were slightly unfair or if the possible
+  1885→deviation from 1/2 was just an artifact of the small sample size? Let’s see what happens
+  1886→when we simulate 10,000 tosses.
+  1887→counts = Multinomial(10000, fair_probs).sample()
+  1888→counts / 10000
+  1889→
+  1890→===== صفحة الكتاب 108 =====
+  1891→68
+  1892→Preliminaries
+  1893→tensor([0.4966, 0.5034])
+  1894→In general, for averages of repeated events (like coin tosses), as the number of repetitions
+  1895→grows, our estimates are guaranteed to converge to the true underlying probabilities. The
+  1896→mathematical formulation of this phenomenon is called the law of large numbers and the
+  1897→central limit theorem tells us that in many situations, as the sample size 𝑛grows, these
+  1898→errors should go down at a rate of (1/√𝑛). Let’s get some more intuition by studying how
+  1899→our estimate evolves as we grow the number of tosses from 1 to 10,000.
+  1900→counts = Multinomial(1, fair_probs).sample((10000,))
+  1901→cum_counts = counts.cumsum(dim=0)
+  1902→estimates = cum_counts / cum_counts.sum(dim=1, keepdims=True)
+  1903→estimates = estimates.numpy()
+  1904→d2l.set_figsize((4.5, 3.5))
+  1905→d2l.plt.plot(estimates[:, 0], label=("P(coin=heads)"))
+  1906→d2l.plt.plot(estimates[:, 1], label=("P(coin=tails)"))
+  1907→d2l.plt.axhline(y=0.5, color='black', linestyle='dashed')
+  1908→d2l.plt.gca().set_xlabel('Samples')
+  1909→d2l.plt.gca().set_ylabel('Estimated probability')
+  1910→d2l.plt.legend();
+  1911→Each solid curve corresponds to one of the two values of the coin and gives our estimated
+  1912→probability that the coin turns up that value after each group of experiments. The dashed
+  1913→black line gives the true underlying probability. As we get more data by conducting more
+  1914→experiments, the curves converge towards the true probability. You might already begin to
+  1915→see the shape of some of the more advanced questions that preoccupy statisticians: How
+  1916→quickly does this convergence happen? If we had already tested many coins manufactured
+  1917→at the same plant, how might we incorporate this information?
+  1918→2.6.2 A More Formal Treatment
+  1919→We have already gotten pretty far: posing a probabilistic model, generating synthetic data,
+  1920→running a statistical estimator, empirically assessing convergence, and reporting error met-
+  1921→
+  1922→===== صفحة الكتاب 109 =====
+  1923→69
+  1924→Probability and Statistics
+  1925→rics (checking the deviation). However, to go much further, we will need to be more pre-
+  1926→cise.
+  1927→When dealing with randomness, we denote the set of possible outcomes S and call it the
+  1928→sample space or outcome space. Here, each element is a distinct possible outcome. In
+  1929→the case of rolling a single coin, S = {heads, tails}. For a single die, S = {1, 2, 3, 4, 5, 6}.
+  1930→When flipping two coins, possible outcomes are {(heads, heads), (heads, tails), (tails, heads), (tails, tails)}.
+  1931→Events are subsets of the sample space. For instance, the event “the first coin toss comes
+  1932→up heads” corresponds to the set {(heads, heads), (heads, tails)}. Whenever the outcome
+  1933→𝑧of a random experiment satisfies 𝑧∈A, then event A has occurred. For a single roll
+  1934→of a die, we could define the events “seeing a 5” (A = {5}) and “seeing an odd number”
+  1935→(B = {1, 3, 5}). In this case, if the die came up 5, we would say that both A and B occurred.
+  1936→On the other hand, if 𝑧= 3, then A did not occur but B did.
+  1937→A probability function maps events onto real values 𝑃: A ⊆S →[0, 1]. The probabil-
+  1938→ity, denoted 𝑃(A), of an event A in the given sample space S, has the following proper-
+  1939→ties:
+  1940→• The probability of any event A is a nonnegative real number, i.e., 𝑃(A) ≥0;
+  1941→• The probability of the entire sample space is 1, i.e., 𝑃(S) = 1;
+  1942→• For any countable sequence of events A1, A2, . . . that are mutually exclusive (i.e., A𝑖∩
+  1943→A 𝑗= ∅for all 𝑖≠𝑗), the probability that any of them happens is equal to the sum of
+  1944→their individual probabilities, i.e., 𝑃(Ð∞
+  1945→𝑖=1 A𝑖) = Í∞
+  1946→𝑖=1 𝑃(A𝑖).
+  1947→These axioms of probability theory, proposed by Kolmogorov (1933), can be applied to
+  1948→rapidly derive a number of important consequences. For instance, it follows immediately
+  1949→that the probability of any event A or its complement A′ occurring is 1 (because A∪A′ =
+  1950→S). We can also prove that 𝑃(∅) = 0 because 1 = 𝑃(S ∪S′) = 𝑃(S ∪∅) = 𝑃(S) + 𝑃(∅) =
+  1951→1 + 𝑃(∅). Consequently, the probability of any event A and its complement A′ occurring
+  1952→simultaneously is 𝑃(A ∩A′) = 0. Informally, this tells us that impossible events have zero
+  1953→probability of occurring.
+  1954→2.6.3 Random Variables
+  1955→When we spoke about events like the roll of a die coming up odds or the first coin toss
+  1956→coming up heads, we were invoking the idea of a random variable. Formally, random
+  1957→variables are mappings from an underlying sample space to a set of (possibly many) values.
+  1958→You might wonder how a random variable is different from the sample space, since both are
+  1959→collections of outcomes. Importantly, random variables can be much coarser than the raw
+  1960→sample space. We can define a binary random variable like “greater than 0.5” even when
+  1961→the underlying sample space is infinite, e.g., points on the line segment between 0 and 1.
+  1962→Additionally, multiple random variables can share the same underlying sample space. For
+  1963→example “whether my home alarm goes off” and “whether my house was burgled” are both
+  1964→binary random variables that share an underlying sample space. Consequently, knowing the
+  1965→value taken by one random variable can tell us something about the likely value of another
+  1966→
+  1967→===== صفحة الكتاب 110 =====
+  1968→70
+  1969→Preliminaries
+  1970→random variable. Knowing that the alarm went off, we might suspect that the house was
+  1971→likely burgled.
+  1972→Every value taken by a random variable corresponds to a subset of the underlying sample
+  1973→space. Thus the occurrence where the random variable 𝑋takes value 𝑣, denoted by 𝑋= 𝑣,
+  1974→is an event and 𝑃(𝑋= 𝑣) denotes its probability. Sometimes this notation can get clunky,
+  1975→and we can abuse notation when the context is clear. For example, we might use 𝑃(𝑋) to
+  1976→refer broadly to the distribution of 𝑋, i.e., the function that tells us the probability that 𝑋
+  1977→takes any given value. Other times we write expressions like 𝑃(𝑋,𝑌) = 𝑃(𝑋)𝑃(𝑌), as a
+  1978→shorthand to express a statement that is true for all of the values that the random variables
+  1979→𝑋and 𝑌can take, i.e., for all 𝑖, 𝑗it holds that 𝑃(𝑋= 𝑖and 𝑌= 𝑗) = 𝑃(𝑋= 𝑖)𝑃(𝑌= 𝑗).
+  1980→Other times, we abuse notation by writing 𝑃(𝑣) when the random variable is clear from the
+  1981→context. Since an event in probability theory is a set of outcomes from the sample space,
+  1982→we can specify a range of values for a random variable to take. For example, 𝑃(1 ≤𝑋≤3)
+  1983→denotes the probability of the event {1 ≤𝑋≤3}.
+  1984→Note that there is a subtle difference between discrete random variables, like flips of a coin
+  1985→or tosses of a die, and continuous ones, like the weight and the height of a person sampled
+  1986→at random from the population. In this case we seldom really care about someone’s exact
+  1987→height. Moreover, if we took precise enough measurements, we would find that no two
+  1988→people on the planet have the exact same height. In fact, with fine enough measurements,
+  1989→you would never have the same height when you wake up and when you go to sleep. There
+  1990→is little point in asking about the exact probability that someone is 1.801392782910287192
+  1991→meters tall. Instead, we typically care more about being able to say whether someone’s
+  1992→height falls into a given interval, say between 1.79 and 1.81 meters. In these cases we work
+  1993→with probability densities. The height of exactly 1.80 meters has no probability, but nonzero
+  1994→density. To work out the probability assigned to an interval, we must take an integral of the
+  1995→density over that interval.
+  1996→2.6.4 Multiple Random Variables
+  1997→You might have noticed that we could not even make it through the previous section without
+  1998→making statements involving interactions among multiple random variables (recall 𝑃(𝑋,𝑌) =
+  1999→𝑃(𝑋)𝑃(𝑌)). Most of machine learning is concerned with such relationships. Here, the sam-
+  2000→ple space would be the population of interest, say customers who transact with a business,
+  2001→photographs on the Internet, or proteins known to biologists. Each random variable would
+  2002→represent the (unknown) value of a different attribute. Whenever we sample an individual
+  2003→from the population, we observe a realization of each of the random variables. Because
+  2004→the values taken by random variables correspond to subsets of the sample space that could
+  2005→be overlapping, partially overlapping, or entirely disjoint, knowing the value taken by one
+  2006→random variable can cause us to update our beliefs about which values of another random
+  2007→variable are likely. If a patient walks into a hospital and we observe that they are having
+  2008→trouble breathing and have lost their sense of smell, then we believe that they are more
+  2009→likely to have COVID-19 than we might if they had no trouble breathing and a perfectly
+  2010→ordinary sense of smell.
+  2011→When working with multiple random variables, we can construct events corresponding to
+  2012→
+  2013→===== صفحة الكتاب 111 =====
+  2014→71
+  2015→Probability and Statistics
+  2016→every combination of values that the variables can jointly take. The probability function
+  2017→that assigns probabilities to each of these combinations (e.g. 𝐴= 𝑎and 𝐵= 𝑏) is called the
+  2018→joint probability function and simply returns the probability assigned to the intersection
+  2019→of the corresponding subsets of the sample space. The joint probability assigned to the
+  2020→event where random variables 𝐴and 𝐵take values 𝑎and 𝑏, respectively, is denoted 𝑃(𝐴=
+  2021→𝑎, 𝐵= 𝑏), where the comma indicates “and”. Note that for any values 𝑎and 𝑏, it follows
+  2022→that
+  2023→𝑃(𝐴= 𝑎, 𝐵= 𝑏) ≤𝑃(𝐴= 𝑎) and 𝑃(𝐴= 𝑎, 𝐵= 𝑏) ≤𝑃(𝐵= 𝑏),
+  2024→(2.6.1)
+  2025→since for 𝐴= 𝑎and 𝐵= 𝑏to happen, 𝐴= 𝑎has to happen and 𝐵= 𝑏also has to
+  2026→happen. Interestingly, the joint probability tells us all that we can know about these random
+  2027→variables in a probabilistic sense, and can be used to derive many other useful quantities,
+  2028→including recovering the individual distributions 𝑃(𝐴) and 𝑃(𝐵). To recover 𝑃(𝐴= 𝑎)
+  2029→we simply sum up 𝑃(𝐴= 𝑎, 𝐵= 𝑣) over all values 𝑣that the random variable 𝐵can take:
+  2030→𝑃(𝐴= 𝑎) = Í
+  2031→𝑣𝑃(𝐴= 𝑎, 𝐵= 𝑣).
+  2032→The ratio 𝑃(𝐴=𝑎,𝐵=𝑏)
+  2033→𝑃(𝐴=𝑎)
+  2034→≤1 turns out to be extremely important. It is called the conditional
+  2035→probability, and is denoted via the “|” symbol:
+  2036→𝑃(𝐵= 𝑏| 𝐴= 𝑎) = 𝑃(𝐴= 𝑎, 𝐵= 𝑏)/𝑃(𝐴= 𝑎).
+  2037→(2.6.2)
+  2038→It tells us the new probability associated with the event 𝐵= 𝑏, once we condition on the
+  2039→fact 𝐴= 𝑎took place. We can think of this conditional probability as restricting attention
+  2040→only to the subset of the sample space associated with 𝐴= 𝑎and then renormalizing so that
+  2041→all probabilities sum to 1. Conditional probabilities are in fact just ordinary probabilities
+  2042→and thus respect all of the axioms, as long as we condition all terms on the same event and
+  2043→thus restrict attention to the same sample space. For instance, for disjoint events B and B′,
+  2044→we have that 𝑃(B ∪B′ | 𝐴= 𝑎) = 𝑃(B | 𝐴= 𝑎) + 𝑃(B′ | 𝐴= 𝑎).
+  2045→Using the definition of conditional probabilities, we can derive the famous result called
+  2046→Bayes’ theorem. By construction, we have that 𝑃(𝐴, 𝐵) = 𝑃(𝐵| 𝐴)𝑃(𝐴) and 𝑃(𝐴, 𝐵) =
+  2047→𝑃(𝐴| 𝐵)𝑃(𝐵). Combining both equations yields 𝑃(𝐵| 𝐴)𝑃(𝐴) = 𝑃(𝐴| 𝐵)𝑃(𝐵) and
+  2048→hence
+  2049→𝑃(𝐴| 𝐵) = 𝑃(𝐵| 𝐴)𝑃(𝐴)
+  2050→𝑃(𝐵)
+  2051→.
+  2052→(2.6.3)
+  2053→This simple equation has profound implications because it allows us to reverse the order of
+  2054→conditioning. If we know how to estimate 𝑃(𝐵| 𝐴), 𝑃(𝐴), and 𝑃(𝐵), then we can estimate
+  2055→𝑃(𝐴| 𝐵). We often find it easier to estimate one term directly but not the other and Bayes’
+  2056→theorem can come to the rescue here. For instance, if we know the prevalence of symptoms
+  2057→for a given disease, and the overall prevalences of the disease and symptoms, respectively,
+  2058→we can determine how likely someone is to have the disease based on their symptoms. In
+  2059→some cases we might not have direct access to 𝑃(𝐵), such as the prevalence of symptoms.
+  2060→In this case a simplified version of Bayes’ theorem comes in handy:
+  2061→𝑃(𝐴| 𝐵) ∝𝑃(𝐵| 𝐴)𝑃(𝐴).
+  2062→(2.6.4)
+  2063→
+  2064→===== صفحة الكتاب 112 =====
+  2065→72
+  2066→Preliminaries
+  2067→Since we know that 𝑃(𝐴| 𝐵) must be normalized to 1, i.e., Í
+  2068→𝑎𝑃(𝐴= 𝑎| 𝐵) = 1, we can
+  2069→use it to compute
+  2070→𝑃(𝐴| 𝐵) =
+  2071→𝑃(𝐵| 𝐴)𝑃(𝐴)
+  2072→Í
+  2073→𝑎𝑃(𝐵| 𝐴= 𝑎)𝑃(𝐴= 𝑎) .
+  2074→(2.6.5)
+  2075→In Bayesian statistics, we think of an observer as possessing some (subjective) prior be-
+  2076→liefs about the plausibility of the available hypotheses encoded in the prior 𝑃(𝐻), and a
+  2077→likelihood function that says how likely one is to observe any value of the collected evi-
+  2078→dence for each of the hypotheses in the class 𝑃(𝐸| 𝐻). Bayes’ theorem is then interpreted
+  2079→as telling us how to update the initial prior 𝑃(𝐻) in light of the available evidence 𝐸to
+  2080→produce posterior beliefs 𝑃(𝐻| 𝐸) = 𝑃(𝐸|𝐻)𝑃(𝐻)
+  2081→𝑃(𝐸)
+  2082→. Informally, this can be stated as “pos-
+  2083→terior equals prior times likelihood, divided by the evidence”. Now, because the evidence
+  2084→𝑃(𝐸) is the same for all hypotheses, we can get away with simply normalizing over the
+  2085→hypotheses.
+  2086→Note that Í
+  2087→𝑎𝑃(𝐴= 𝑎| 𝐵) = 1 also allows us to marginalize over random variables.
+  2088→That is, we can drop variables from a joint distribution such as 𝑃(𝐴, 𝐵). After all, we have
+  2089→that
+  2090→Õ
+  2091→𝑎
+  2092→𝑃(𝐵| 𝐴= 𝑎)𝑃(𝐴= 𝑎) =
+  2093→Õ
+  2094→𝑎
+  2095→𝑃(𝐵, 𝐴= 𝑎) = 𝑃(𝐵).
+  2096→(2.6.6)
+  2097→Independence is another fundamentally important concept that forms the backbone of many
+  2098→important ideas in statistics. In short, two variables are independent if conditioning on the
+  2099→value of 𝐴does not cause any change to the probability distribution associated with 𝐵and
+  2100→vice versa. More formally, independence, denoted 𝐴⊥𝐵, requires that 𝑃(𝐴| 𝐵) = 𝑃(𝐴)
+  2101→and, consequently, that 𝑃(𝐴, 𝐵) = 𝑃(𝐴| 𝐵)𝑃(𝐵) = 𝑃(𝐴)𝑃(𝐵). Independence is often
+  2102→an appropriate assumption. For example, if the random variable 𝐴represents the outcome
+  2103→from tossing one fair coin and the random variable 𝐵represents the outcome from tossing
+  2104→another, then knowing whether 𝐴came up heads should not influence the probability of 𝐵
+  2105→coming up heads.
+  2106→Independence is especially useful when it holds among the successive draws of our data
+  2107→from some underlying distribution (allowing us to make strong statistical conclusions) or
+  2108→when it holds among various variables in our data, allowing us to work with simpler models
+  2109→that encode this independence structure. On the other hand, estimating the dependencies
+  2110→among random variables is often the very aim of learning. We care to estimate the probabil-
+  2111→ity of disease given symptoms specifically because we believe that diseases and symptoms
+  2112→are not independent.
+  2113→Note that because conditional probabilities are proper probabilities, the concepts of inde-
+  2114→pendence and dependence also apply to them. Two random variables 𝐴and 𝐵are condition-
+  2115→ally independent given a third variable 𝐶if and only if 𝑃(𝐴, 𝐵| 𝐶) = 𝑃(𝐴| 𝐶)𝑃(𝐵| 𝐶).
+  2116→Interestingly, two variables can be independent in general but become dependent when
+  2117→conditioning on a third. This often occurs when the two random variables 𝐴and 𝐵cor-
+  2118→respond to causes of some third variable 𝐶. For example, broken bones and lung cancer
+  2119→might be independent in the general population but if we condition on being in the hospital
+  2120→then we might find that broken bones are negatively correlated with lung cancer. That is
+  2121→
+  2122→===== صفحة الكتاب 113 =====
+  2123→73
+  2124→Probability and Statistics
+  2125→because the broken bone explains away why some person is in the hospital and thus lowers
+  2126→the probability that they are hospitalized because of having lung cancer.
+  2127→And conversely, two dependent random variables can become independent upon condition-
+  2128→ing on a third. This often happens when two otherwise unrelated events have a common
+  2129→cause. Shoe size and reading level are highly correlated among elementary school students,
+  2130→but this correlation disappears if we condition on age.
+  2131→2.6.5 An Example
+  2132→Let’s put our skills to the test. Assume that a doctor administers an HIV test to a patient.
+  2133→This test is fairly accurate and fails only with 1% probability if the patient is healthy but
+  2134→reported as diseased, i.e., healthy patients test positive in 1% of cases. Moreover, it never
+  2135→fails to detect HIV if the patient actually has it. We use 𝐷1 ∈{0, 1} to indicate the diagnosis
+  2136→(0 if negative and 1 if positive) and 𝐻∈{0, 1} to denote the HIV status.
+  2137→Conditional probability
+  2138→𝐻= 1
+  2139→𝐻= 0
+  2140→𝑃(𝐷1 = 1 | 𝐻)
+  2141→1
+  2142→0.01
+  2143→𝑃(𝐷1 = 0 | 𝐻)
+  2144→0
+  2145→0.99
+  2146→Note that the column sums are all 1 (but the row sums do not), since they are conditional
+  2147→probabilities. Let’s compute the probability of the patient having HIV if the test comes
+  2148→back positive, i.e., 𝑃(𝐻= 1 | 𝐷1 = 1). Intuitively this is going to depend on how common
+  2149→the disease is, since it affects the number of false alarms. Assume that the population is
+  2150→fairly free of the disease, e.g., 𝑃(𝐻= 1) = 0.0015. To apply Bayes’ theorem, we need to
+  2151→apply marginalization to determine
+  2152→𝑃(𝐷1 = 1) =𝑃(𝐷1 = 1, 𝐻= 0) + 𝑃(𝐷1 = 1, 𝐻= 1)
+  2153→=𝑃(𝐷1 = 1 | 𝐻= 0)𝑃(𝐻= 0) + 𝑃(𝐷1 = 1 | 𝐻= 1)𝑃(𝐻= 1)
+  2154→=0.011485.
+  2155→(2.6.7)
+  2156→This leads us to
+  2157→𝑃(𝐻= 1 | 𝐷1 = 1) = 𝑃(𝐷1 = 1 | 𝐻= 1)𝑃(𝐻= 1)
+
+[showing lines 1658-2157 of 2536; use offset=2158 with limit to continue reading]

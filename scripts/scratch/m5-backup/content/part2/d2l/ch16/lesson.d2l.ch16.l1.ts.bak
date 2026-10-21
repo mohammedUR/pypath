@@ -1,0 +1,216 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * d2l.ch16.l1 — "Sentiment Analysis: Dataset, RNN and CNN Routes"
+ * تحليل المشاعر: المجموعة وطرقا RNN وCNN
+ * Aligned with D2L ch16 s1 (Sentiment Analysis and the Dataset) + s2
+ * (Sentiment Analysis: Using Recurrent Neural Networks) + s3 (Sentiment
+ * Analysis: Using Convolutional Neural Networks). All expression is original —
+ * a paraphrase of the source's ideas, never a verbatim translation. Runnable
+ * design: a tiny sentiment vocabulary with pad/truncate encoding of 3 fixed
+ * one-line reviews, an RNN-style last-hidden-state classifier with literal
+ * weights scored by pure-python softmax, and textCNN window-count math.
+ * Every literal verified under CPython 3. Deterministic only.
+ */
+const lesson = {
+  id: 'd2l.ch16.l1',
+  version: 1,
+  part: 'II',
+  track: 'A5',
+  book: 'D2L',
+  chapter: 16,
+  title: {
+    ar: 'تحليل المشاعر: المجموعة وطرقا RNN وCNN',
+    en: 'Sentiment Analysis: Dataset, RNN and CNN Routes',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['d2l.ch15.l4'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: '«هذا الفيلم رائع» و«هذا الفيلم سيئ» — تصنيف مثل هذه المراجعات هو جوهر تحليل المشاعر: خريطة آراء على المراجعات والتعليقات تتغذى عليها السياسة والتمويل والتسويق. سنبني الخط الكامل على مجموعة IMDb: مفردات، ثم قصّ وحشو إلى طول ثابت، ثم مصنّفان متنافسان — BiRNN يقرأ التسلسل رمزا رمزا وtextCNN يمسحه بنوافذ n-gram — ولكل منهما نسخة دمية صغيرة تعمل فورا بلغة بايثون الخالصة.',
+        en: '"This movie is great" and "this movie is bad" — classifying such reviews is the heart of sentiment analysis: an opinion map over reviews and comments that feeds politics, finance, and marketing. We build the full pipeline on the IMDb dataset: vocabulary, then truncation and padding to a fixed length, then two rival classifiers — a BiRNN that reads the sequence token by token and a textCNN that scans it with n-gram windows — each with a tiny toy version that runs instantly in pure Python.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'من نص متغيّر الطول إلى فئة ثابتة، بطريقين', en: 'From a varying-length text to a fixed class, two ways' },
+      chunks: [
+        {
+          ar: 'يبحث تحليل المشاعر في الآراء التي يكتبها الناس: مراجعات المنتجات وتعليقات المدونات ونقاشات المنتديات. وهو مهمة تصنيف نصوص تحوّل تسلسلا متغيّر الطول إلى فئة ثابتة، لذلك تخدم السياسة والتمويل والتسويق. يستخدم الكتاب مجموعة Stanford الكبيرة لمراجعات الأفلام: 25000 مراجعة تدريب و25000 اختبار من IMDb بعدد متساوٍ من الأمثلة الموجبة والسالبة، والتسمية 1 للموجب و0 للسالب. الكلمات رموز، وتُبنى المفردات من رموز التدريب بشرط min_freq=5 مع رمز محجوز <pad>. أطوال المراجعات متباينة جدًا، فتُثبّت truncate_pad كل مراجعة عند num_steps=500 فهرسًا: قصّ الأطول وحشو الأقصر. دفعات من 64 صفا بطول ثابت تعطي 391 دفعة تدريب.',
+          en: 'Sentiment analysis studies the opinions people write: product reviews, blog comments, forum threads. It is a text-classification task that maps a varying-length sequence to a fixed category, feeding politics, finance, and marketing. The book uses the Stanford large movie review dataset: 25000 training and 25000 test IMDb reviews with equally many positive and negative examples, label 1 for positive and 0 for negative. Words are tokens; a vocabulary is built from training tokens with min_freq=5 and a reserved <pad> token. Review lengths vary wildly, so truncate_pad fixes each review at num_steps=500 indices: cut longer, pad shorter. Batches of 64 fixed-length rows give 391 training batches.',
+        },
+        {
+          ar: 'طريق RNN يحتفظ بالمتجهات المدرَّبة مسبقًا: كل رمز يحمل سطر GloVe ذا 100 بُعد، مجمّدًا أثناء التدريب. LSTM ثنائية الاتجاه بطبقتين تُرمِّز التسلسل، وتُلصق الحالات المخفية للطبقة الأخيرة عند الخطتين الابتدائية والنهائية في تمثيل نص واحد بعرض 4 × num_hiddens، ثم تحوّله طبقة اتصال كامل إلى مخرجين. Adam بمعدل تعلم 0.01 لخمس حقبات يبلغ دقة اختبار 0.861، وpredict_sentiment تقرأ «this movie is so great» كموجب. نسختنا الدمية المصغرة تختزل الفكرة: حالة مخفية ثنائية البعد يحدّثها tanh، ثم رأس ثابت مع softmax.',
+          en: 'The RNN route keeps pretrained vectors: each token holds its 100-dimensional GloVe row, frozen during training. A two-layer bidirectional LSTM encodes the sequence, and the hidden states of the last layer at the initial and final time steps are concatenated into one text representation of width 4 x num_hiddens; a fully connected layer maps it to two outputs. Adam with lr 0.01 for 5 epochs reaches 0.861 test accuracy, and predict_sentiment reads this movie is so great as positive. Our toy below compresses the idea: a 2-D hidden state updated by tanh, then a literal head with softmax.',
+        },
+        {
+          ar: 'طريق CNN يعامل النص كصورة أحادية البعد. نواة بعرض k تنزلق فوق n متجه رموز وترى n−k+1 نافذة، وكل قناة مخرجات تُجمّع كاشف n-gram واحد. الارتباط التفافي أحادي البعد متعدد القنوات يعادل الارتباط ثنائي البعد بقناة واحدة إذا ثُبّت ارتفاع النواة على مدخلها. التجميع الأقصى عبر الزمن يأخذ أعلى قيمة لكل قناة، فيساوي طول المتجه المُلصق عدد القنوات الكلي بغض النظر عن طول الجملة. يجمع textCNN طبقتي تضمين (قابلة للتدريب وأخرى ثابتة)، ويشغّل عروض نوافذ 3 و4 و5 بمئة قناة لكل منها، ويبلغ 0.868 دقة اختبار بعد خمس حقبات.',
+          en: 'The CNN route treats text as a one-dimensional image. A width-k kernel slides over n token vectors and sees n-k+1 windows; each output channel pools one n-gram detector. Multi-input-channel 1-D cross-correlation equals single-channel 2-D cross-correlation with the kernel height pinned to the input. Max-over-time pooling takes each channel maximum, so the concatenated vector length equals the total number of channels, independent of sentence length. textCNN concatenates two embedding layers (trainable plus constant), runs kernel widths 3, 4, 5 with 100 channels each, and reaches 0.868 test accuracy after 5 epochs.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: {
+        ar: 'ترميز ثلاث مراجعات + مصنف حالة مخفية + عدّ نوافذ textCNN',
+        en: 'Encoding three reviews + a hidden-state classifier + textCNN window counts',
+      },
+      code: "import math\n\ndef softmax(xs):\n    m = max(xs)\n    es = [math.exp(x - m) for x in xs]\n    s = sum(es)\n    return [e / s for e in es]\n\nVOCAB = ['<pad>', '<unk>', 'this', 'movie', 'is', 'great', 'bad', 'a', 'with', 'acting']\ntok2idx = {t: i for i, t in enumerate(VOCAB)}\n\ndef encode(tokens, num_steps, pad=0, unk=1):\n    idxs = [tok2idx.get(t, unk) for t in tokens][:num_steps]\n    return idxs + [pad] * (num_steps - len(idxs))\n\nreviews = [\n    (['this', 'movie', 'is', 'great'], 1),\n    (['this', 'movie', 'is', 'bad'], 0),\n    (['a', 'great', 'movie', 'with', 'great', 'acting'], 1),\n]\nnum_steps = 5\nencoded = [(encode(t, num_steps), min(len(t), num_steps)) for t, _ in reviews]\nfor (toks, y), (enc, vlen) in zip(reviews, encoded):\n    print('label %d idx %s valid_len %d' % (y, enc, vlen))\n\n# s2: RNN-style classifier: last hidden state -> fixed head -> softmax\nEMB = {'<pad>': [0.0, 0.0], '<unk>': [0.0, 0.0], 'this': [0.1, 0.0],\n       'movie': [0.2, 0.0], 'is': [0.1, 0.0], 'great': [1.0, 0.0],\n       'bad': [-1.0, 0.0], 'a': [0.0, 0.1], 'with': [0.0, 0.2],\n       'acting': [0.5, 0.1]}\nWh, Wr = 0.8, 0.5\nVw = [[-2.0, -1.0], [2.0, 1.0]]  # row 0 = negative, row 1 = positive\n\ndef rnn_last(enc, vlen):\n    h = [0.0, 0.0]\n    for t in range(vlen):\n        e = EMB[VOCAB[enc[t]]]\n        h = [math.tanh(Wh * e[0] + Wr * h[0]), math.tanh(Wh * e[1] + Wr * h[1])]\n    return h\n\nfor (toks, y), (enc, vlen) in zip(reviews, encoded):\n    h = rnn_last(enc, vlen)\n    logits = [Vw[0][0] * h[0] + Vw[0][1] * h[1], Vw[1][0] * h[0] + Vw[1][1] * h[1]]\n    p_pos = softmax(logits)[1]\n    pred = 1 if p_pos > 0.5 else 0\n    print('%s: h=[%.6f, %.6f] p_pos=%.6f pred=%d true=%d'\n          % (' '.join(toks), h[0], h[1], p_pos, pred, y))\n    if y == 1 and vlen < num_steps:\n        h_pad = rnn_last(enc, num_steps)\n        print('after one <pad> step: h=[%.6f, %.6f] (state decays on filler steps)'\n              % (h_pad[0], h_pad[1]))\n\n# s3: textCNN window counts (book figure: 11 tokens, 6-dim vectors)\ndef corr1d(X, K):\n    w = len(K)\n    return [sum(X[i + j] * K[j] for j in range(w)) for i in range(len(X) - w + 1)]\n\nprint('corr1d([0..6], [1, 2]):', corr1d([0, 1, 2, 3, 4, 5, 6], [1, 2]))\nn_tokens = 11\nfor k, c in [(2, 4), (4, 5)]:\n    print('kernel width %d: %d channels, each width %d' % (k, c, n_tokens - k + 1))\nprint('max-over-time pooling -> concat dim', 4 + 5)",
+      explanation: {
+        ar: 'المفردات العشرية ترمز المراجعات الثلاث إلى [2, 3, 4, 5, 0] و[2, 3, 4, 6, 0] و[7, 5, 3, 8, 5] بأطوال صالحة 4 و4 و5 — الثالثة قُصّت من 6 رموز عند num_steps=5. مصنف RNN: مراجعة great تنتهي بحالة h=[0.710595, 0.000000] فتعطي p_pos=0.944923 (تنبؤ موجب صحيح)، وbad تنتهي بـ h=[-0.611688, 0.000000] وp_pos=0.079676 (تنبؤ سالب صحيح)، والمقصوصة تعطي h=[0.722101, 0.083979] وp_pos=0.955056 — الثلاثة صحيحة. خطوة <pad> واحدة وحدها أسقطت الحالة من 0.710595 إلى 0.341065: خطوات الحشو تُغيّر الحالة الأخيرة. وفي طريق CNN: corr1d على [0..6] بنواة [1, 2] يعطي [2, 5, 8, 11, 14, 17]، ونواة عرضها 2 على 11 رمزا ترى 10 نوافذ وعرضها 4 ترى 8، والتجميع الأقصى يلصق 4 + 5 = 9 قيمة مهما طال النص.',
+        en: 'The ten-token vocabulary encodes the three reviews as [2, 3, 4, 5, 0], [2, 3, 4, 6, 0], [7, 5, 3, 8, 5] with valid lengths 4, 4, 5 — the third was truncated from 6 tokens at num_steps=5. The RNN classifier: the great review ends at h=[0.710595, 0.000000] giving p_pos=0.944923 (correct positive), bad ends at h=[-0.611688, 0.000000] with p_pos=0.079676 (correct negative), and the truncated one gives h=[0.722101, 0.083979] with p_pos=0.955056 — all three correct. A single <pad> step alone dropped the state from 0.710595 to 0.341065: filler steps do move the last hidden state. On the CNN route: corr1d over [0..6] with kernel [1, 2] yields [2, 5, 8, 11, 14, 17]; a width-2 kernel over 11 tokens sees 10 windows and width-4 sees 8, and max-over-time pooling concatenates 4 + 5 = 9 values regardless of text length.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.encode-review',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفذ encode_review(tokens, tok2idx, num_steps) التي تعيد قائمة أرقام ثابتة الطول: حوّل كل رمز إلى فهرسه من tok2idx مع إسقاط الرموز المجهولة على <unk>، واقصّ القائمة عند num_steps، ثم احشُ بفهرس <pad> حتى الطول المطلوب. المفردات الصغيرة هي مفردات الدرس (تبدأ بـ <pad>=0 و<unk>=1).',
+        en: 'Implement encode_review(tokens, tok2idx, num_steps) returning a fixed-length index list: map each token through tok2idx, falling back to <unk> for unseen words, truncate at num_steps, then pad with the <pad> index up to the target length. Use the lesson tiny vocabulary (it starts with <pad>=0 and <unk>=1).',
+      },
+      starterCode: "def encode_review(tokens, tok2idx, num_steps):\n    # TODO: map -> truncate -> pad with the <pad> index\n    ...\n",
+      solution: "VOCAB = ['<pad>', '<unk>', 'this', 'movie', 'is', 'great', 'bad', 'a', 'with', 'acting']\ntok2idx = {t: i for i, t in enumerate(VOCAB)}\n\ndef encode_review(tokens, tok2idx, num_steps):\n    pad = tok2idx['<pad>']\n    unk = tok2idx['<unk>']\n    idxs = [tok2idx.get(t, unk) for t in tokens][:num_steps]\n    return idxs + [pad] * (num_steps - len(idxs))\n",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'مراجعة قصيرة تُحشُ إلى الطول الثابت', en: 'A short review is padded to the fixed length' },
+          code: "r = encode_review(['this', 'movie', 'is', 'great'], tok2idx, 5)\nassert r == [2, 3, 4, 5, 0], 'must end with one <pad> | got %r' % (r,)",
+          expected: '[2, 3, 4, 5, 0]',
+        },
+        {
+          id: 't2',
+          name: { ar: 'مراجعة طويلة تُقصّ عند num_steps', en: 'A long review is truncated at num_steps' },
+          code: "r = encode_review(['a', 'great', 'movie', 'with', 'great', 'acting'], tok2idx, 5)\nassert r == [7, 5, 3, 8, 5], 'six tokens must cut to five | got %r' % (r,)",
+          expected: '[7, 5, 3, 8, 5]',
+        },
+        {
+          id: 't3',
+          name: { ar: 'الرمز المجهول يسقط على <unk>', en: 'An unknown token falls back to <unk>' },
+          code: "r = encode_review(['this', 'film', 'is', 'great'], tok2idx, 4)\nassert r == [2, 1, 4, 5], 'film must map to <unk> index 1 | got %r' % (r,)",
+          expected: '[2, 1, 4, 5]',
+        },
+      ],
+      hints: [
+        { ar: 'اقرأ الفهرسين من القاموس نفسه: pad = tok2idx[<pad>] وunk = tok2idx[<unk>] — لا تفترض قيمهما.', en: 'Read both indices from the dict itself: pad = tok2idx[<pad>] and unk = tok2idx[<unk>] — do not hardcode them.' },
+        { ar: 'القص أولا: [tok2idx.get(t, unk) for t in tokens][:num_steps] — ثم الحشو بعد ذلك.', en: 'Truncate first: [tok2idx.get(t, unk) for t in tokens][:num_steps] — then pad afterwards.' },
+        { ar: 'الحشو: idxs + [pad] * (num_steps - len(idxs)) — يصير صفر خطوات إذا كان الطول مساويا تماما.', en: 'Padding: idxs + [pad] * (num_steps - len(idxs)) — zero copies when the length already matches.' },
+        { ar: 'قيم تحقق: مراجعة great إلى الطول 5 تعطي [2, 3, 4, 5, 0]، وfilm المجهولة تصير الفهرس 1.', en: 'Sanity values: the great review to length 5 gives [2, 3, 4, 5, 0], and unknown film becomes index 1.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.numeric-birnn-decoder',
+      exKind: 'numeric',
+      required: true,
+      prompt: {
+        ar: 'في BiRNN بالكتاب (s2) تُلصق الحالات المخفية للطبقة الأخيرة عند الخطتين الابتدائية والنهائية للـ LSTM ثنائي الاتجاه بعدد وحدات مخفية num_hiddens=100، ثم تغذي طبقة اتصال كامل بمخرجين (موجب/سالب). كم معاملا في هذه الطبقة (أوزان + انحيازات)؟ أجب بعدد صحيح.',
+        en: 'In the book BiRNN (s2), the last-layer hidden states at the initial and final time steps of a bidirectional LSTM with num_hiddens=100 are concatenated, then fed to a fully connected layer with two outputs (positive/negative). How many parameters does this layer hold (weights + biases)? Answer with an integer.',
+      },
+      answer: '802',
+      tolerance: 0,
+      solution: '802',
+      hints: [
+        { ar: 'الاتجاهان (2) × الخطتان (ابتدائية ونهائية) × num_hiddens=100 تعطي 4 × 100 = 400 مدخلا.', en: 'Two directions x two time steps (initial and final) x num_hiddens=100 gives 4 x 100 = 400 inputs.' },
+        { ar: 'طبقة كثيفة تحمل مصفوفة أوزان 400 × 2 ومتجه انحياز بطول 2.', en: 'A dense layer holds a 400 x 2 weight matrix plus a length-2 bias vector.' },
+        { ar: 'قارن برأس textCNN: مدخلاته مجموع القنوات (300 في نسخة الكتاب) — النمط نفسه in_features × classes + classes.', en: 'Compare with the textCNN head: its inputs are the total channel count (300 in the book instance) — the same in_features x classes + classes pattern.' },
+        { ar: 'الجواب: 400 × 2 + 2 = 802.', en: 'Answer: 400 x 2 + 2 = 802.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "import math\n\ndef corr1d(X, K):\n    w = len(K)\n    return [sum(X[i + j] * K[j] for j in range(w)) for i in range(len(X) - w + 1)]\n\n# multi-channel 1-D cross-correlation = single-channel 2-D (book figures)\nXm = [[0, 1, 2, 3, 4, 5, 6], [1, 2, 3, 4, 5, 6, 7], [2, 3, 4, 5, 6, 7, 8]]\nKm = [[1, 2], [3, 4], [-1, -3]]\nper_ch = [corr1d(x, k) for x, k in zip(Xm, Km)]\nfor c, row in enumerate(per_ch):\n    print('channel %d:' % c, row)\nprint('summed over channels:', [sum(col) for col in zip(*per_ch)])\n\n# build the sentiment vocabulary like the book: reserved tokens first, then order of appearance\ndef build_vocab(token_lists, reserved=('<pad>', '<unk>')):\n    toks = list(reserved)\n    for line in token_lists:\n        for t in line:\n            if t not in toks:\n                toks.append(t)\n    return {t: i for i, t in enumerate(toks)}\n\nreviews = [['this', 'movie', 'is', 'great'], ['this', 'movie', 'is', 'bad'],\n           ['a', 'great', 'movie', 'with', 'great', 'acting']]\nvocab = build_vocab(reviews)\nprint('vocab:', vocab)\n\n# the book TextCNN instance: 11 tokens, kernel widths 3/4/5, 100 channels each\nfor k in (3, 4, 5):\n    print('k=%d -> width %d, 100 channels' % (k, 11 - k + 1))\nprint('decoder input = concat of pooled channels =', 100 * 3)\n\n# try: extend a kernel width to 11 - what is left of its output width?\n# try: add a width-1 kernel - how many windows does it scan per channel?",
+      prompt: {
+        ar: 'الملعب يثبت التكافؤ الذي ذكره الكتاب: الارتباط التفافي أحادي البعد بثلاث قنوات مدخلات (2، 8، 14، 20، 26، 32 بعد الجمع) يعادل ارتباطا ثنائي البعد بقناة واحدة. ثم يبني المفردات بترتيب الظهور الأول بعد المحجوزات، ويطبع جدول نوافذ نسخة الكتاب textCNN: عروض 9 و8 و7 ومئة قناة لكل نواة، فيتغذى المصنف بـ 300 قيمة. جرّب توسيع نواة حتى عرض 11 ولاحظ اختفاء عرض المخرجات.',
+        en: 'The sandbox proves the equivalence the book states: 3-input-channel 1-D cross-correlation (summed to [2, 8, 14, 20, 26, 32]) equals single-channel 2-D cross-correlation. It then builds the vocabulary with reserved tokens first followed by order of appearance, and prints the window table of the book textCNN instance: widths 9, 8, 7 with 100 channels per kernel, so the classifier consumes 300 pooled values. Try stretching a kernel to width 11 and watch its output width collapse.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ما تركيبة مجموعة IMDb المستخدمة لتحليل المشاعر وكيف تُوسم المراجعات؟',
+            en: 'What is the composition of the IMDb dataset used for sentiment analysis, and how are reviews labeled?',
+          },
+          options: [
+            { id: 'a', text: { ar: '25000 مراجعة تدريب و25000 اختبار بعدد متساو من الموجب والسالب، والتسمية 1 للموجب و0 للسالب', en: '25000 training and 25000 test reviews with equal positive and negative counts, label 1 for positive and 0 for negative' } },
+            { id: 'b', text: { ar: '50000 مراجعة تدريب فقط دون مجموعة اختبار', en: '50000 training reviews only, with no test set' } },
+            { id: 'c', text: { ar: 'ثلاث فئات: موجب وسالب ومحايد لكل مراجعة', en: 'Three classes per review: positive, negative, and neutral' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'القسم 16.1 يقرأ مجلدَي pos وneg من التدريب والاختبار: 25000 مثالا لكل منهما بتوازن تام بين الفئتين، والتسمية عددية 1 موجب و0 سالب — تصنيف ثنائي لا ثلاثي.',
+            en: 'Section 16.1 reads the pos and neg folders of train and test: 25000 examples each, perfectly balanced across the two classes, with numeric labels 1 positive and 0 negative — binary classification, not three-way.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'لماذا تُقصّ المراجعات وتُحشُ عند num_steps=500 قبل التجميع في دفعات؟',
+            en: 'Why are reviews truncated and padded to num_steps=500 before batching?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن دفعات الموترات تحتاج صفا بطول موحد بين كل المراجعات', en: 'Because tensor minibatches need every row to share one uniform length' } },
+            { id: 'b', text: { ar: 'لأن ذلك يكبر حجم المفردات فيحسّن التغطية', en: 'Because it grows the vocabulary and improves coverage' } },
+            { id: 'c', text: { ar: 'لأنه يحذف الكلمات النادرة من النصوص تلقائيا', en: 'Because it removes rare words from the texts automatically' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'أطوال المراجعات متباينة، والدفعات مصفوفات مستطيلة: بعد بناء المفردات بحد أدنى للتكرار 5، تثبّت truncate_pad كل صف عند 500 فهرسا — قصّ الأطول وحشو الأقصر — فتتشكل 391 دفعة من حجم 64. حذف النادر عمل المفردات لا القص والنش.',
+            en: 'Review lengths differ, but minibatches are rectangular tensors: after building the vocabulary with min_freq=5, truncate_pad fixes every row at 500 indices — cut longer, pad shorter — yielding 391 batches of size 64. Dropping rare words is the vocabulary job, not padding.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'بعد التجميع الأقصى عبر الزمن في textCNN، ما الذي يحدد طول المتجه المُلصق الذي يغذي المصنف؟',
+            en: 'After max-over-time pooling in textCNN, what determines the length of the concatenated vector feeding the classifier?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'مجموع قنوات المخرجات على كل النوى — مستقلا عن عدد الرموز في الجملة', en: 'The total output channels over all kernels — independent of the sentence token count' } },
+            { id: 'b', text: { ar: 'عدد رموز الجملة مطروحا منه أصغر عرض نواة', en: 'The token count minus the smallest kernel width' } },
+            { id: 'c', text: { ar: 'عرض أوسع نواة مضروبا في عدد القنوات', en: 'The widest kernel width times the number of channels' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'كل قناة مخرجات تنكمش بالتجميع الأقصى إلى قيمة واحدة، فيساوي الطول المُلصق عدد القنوات الكلي: 4 + 5 = 9 في مثالنا الدموي، و100 + 100 + 100 = 300 في نسخة الكتاب — بينما تتبع عرض المخرجات قبل التجميع المعادلة n − k + 1 (10 و8 و9 و8 و7 في أمثلتنا).',
+            en: 'Each output channel collapses to one maximum, so the concatenated length equals the total channel count: 4 + 5 = 9 in our toy, 100 + 100 + 100 = 300 in the book instance — while pre-pooling output widths follow n − k + 1 (10, 8, and 9, 8, 7 in our examples).',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'تحليل المشاعر تصنيف نص: 25000 تدريب و25000 اختبار من IMDb متوازنة (1 موجب، 0 سالب)، مفردات بحد تكرار 5 مع <pad>، وtruncate_pad إلى 500 فهرسا فتتشكل 391 دفعة من 64 (الهدف من s1).', en: 'Sentiment analysis is text classification: 25000 balanced IMDb train and test reviews (1 positive, 0 negative), a min_freq-5 vocabulary with <pad>, and truncate_pad to 500 indices forming 391 batches of 64 (goal of s1).' },
+        { ar: 'طريق RNN: متجهات GloVe مجمدة وLSTM ثنائية الاتجاه تلصق حالتي البداية والنهاية في تمثيل بعرض 4 × num_hiddens (دقة اختبار 0.861)؛ ودميتنا h=[0.710595, 0.000000] تعطي p_pos=0.944923 وتصنف الثلاثة صحيحا (الهدف من s2).', en: 'The RNN route: frozen GloVe vectors and a bidirectional LSTM concatenating initial and final states into a 4 x num_hiddens representation (0.861 test accuracy); our toy h=[0.710595, 0.000000] gives p_pos=0.944923 and classifies all three reviews correctly (goal of s2).' },
+        { ar: 'طريق textCNN: نواة عرض k ترى n−k+1 نافذة، والتجميع الأقصى عبر الزمن يلصق قناة لكل كاشف (9 في الدمية، 300 في الكتاب، دقة 0.868) بطول مستقل عن طول الجملة (الهدف من s3).', en: 'The textCNN route: a width-k kernel sees n-k+1 windows, and max-over-time pooling concatenates one value per detector channel (9 in the toy, 300 in the book, 0.868 accuracy) at a length independent of sentence size (goal of s3).' },
+      ],
+      reflectPrompt: {
+        ar: 'في نسختنا الدمية أسقطت خطوة <pad> واحدة الحالة المخفية من 0.710595 إلى 0.341065 — فهل تعالج هذه الملاحظة اختيار BiRNN للكتاب لصق حالتي البداية والنهاية بدلا من الاعتماد على الحالة الأخيرة فقط، أم أن الحشو إلى 500 يجعل المسألة أسوأ في نموذجنا؟',
+        en: 'In our toy, one <pad> step dropped the hidden state from 0.710595 to 0.341065 — does this observation justify the book BiRNN concatenating initial and final states instead of trusting only the last state, or does padding to 500 make it worse for a last-state-only model like ours?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'D2L', section: 'd2l.ch16.s1', pages: '785-788' },
+        { book: 'D2L', section: 'd2l.ch16.s2', pages: '788-792' },
+        { book: 'D2L', section: 'd2l.ch16.s3', pages: '792-798' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'D2L', section: 'd2l.ch16.s1', pages: '785-788' },
+    { book: 'D2L', section: 'd2l.ch16.s2', pages: '788-792' },
+    { book: 'D2L', section: 'd2l.ch16.s3', pages: '792-798' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

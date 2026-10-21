@@ -1,0 +1,392 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch8.l5 — "Chapter 8 Review and Project: The Mini-Git Model /
+ * مراجعة الفصل 8 ومشروع: نموذج Git المصغّر"
+ * Aligned with SWE ch8 s8 (8.8 Conclusion, p.222) — chapter recap + closing project.
+ * All expression is original (own-words paraphrase of the CC BY-SA 4.0 source).
+ * SIMULATED-GIT PATTERN (kept from l1–l4): git itself appears only in display-only
+ * prose; every runnable field is a pure-Python DAG model — commits as snapshot
+ * dicts {'id','parent','msg','files'} linked by parent, branches as dict
+ * name->commit-id pointers, merge() fast-forwarding or reporting the first
+ * conflicting file from snapshot diffs against the merge base. Deterministic,
+ * no randomness, no input(), no git execution claims.
+ */
+const lesson = {
+  id: 'swe.ch8.l5',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 8,
+  title: {
+    ar: 'مراجعة الفصل 8 ومشروع: نموذج Git المصغّر',
+    en: 'Chapter 8 Review and Project: The Mini-Git Model',
+  },
+  estimatedMinutes: 35,
+  prerequisites: ['swe.ch8.l4'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'أربع محطات قطعناها في هذا الفصل: لماذا نحتاج التحكم بالإصدارات أصلًا (تاريخ وإسناد وعزل وتكامل)، ثم سير العمل اليومي، ثم التفرّع والدمج، ثم العمل الجماعي وتعارضات الدمج والعادات والتوثيق. اليوم نجمعها كلها في مراجعة واحدة وفهرس مصطلحات، ثم مشروع الختام: نموذج Git المصغّر — تبني بيدك في بايثون الصورة الذهنية التي خلاصتها خاتمة الكتاب: رسم بياني من لقطات معنونة بالمحتوى، وفروع كأنها مؤشرات رخيصة متحركة. commit وbranch وcheckout وmerge بلا أي أداة خارجية، والدمج إمّا fast-forward على خط واحد أو تقرير تعارض عند تداخل تغييرَين في ملف واحد. وفي قلب الدرس خلل صامت حقيقي: مؤشر فرع لا يتحرك عند الالتزام فيبقى السجل قديمًا. بنهاية الدرس ستكون قادرًا على: استرجاع مصطلحات الفصل كاملة، وبناء نموذج مصغّر كامل للتفرّع والدمج، وتنقيح مؤشرٍ لا يتحرك، وتفسير كل أمر git يومي بمصطلحات النموذج.',
+        en: 'Four stations behind us in this chapter: why version control exists at all (history, attribution, isolation, integration), then the everyday workflow, then branching and merging, then working with others — conflicts, habits and documentation. Today we gather everything into one review and a glossary, then the closing project: the Mini-Git Model — you build, in plain Python, the mental picture the book\u2019s conclusion distilled: a graph of content-addressed snapshots with branches as cheap movable pointers. commit, branch, checkout and merge with no external tool, merging either fast-forwarding along a straight line or reporting a conflict when two changes touch the same file. At the heart of the lesson a real silent flaw: a branch pointer that never moves on commit, leaving the log stale. By the end of this lesson you will be able to: retrieve the chapter\u2019s full glossary, build a complete miniature model of branching and merging, debug a pointer that never moves, and explain every everyday git command in the model\u2019s terms.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "commits = {'c1': {'parent': None, 'msg': 'init'}}\nbranches = {'main': 'c1'}\nbranches['dev'] = branches['main']\ncommits['c2'] = {'parent': branches['dev'], 'msg': 'wip'}\nbranches['dev'] = 'c2'\nprint(branches['main'])\nprint(branches['dev'])",
+      question: {
+        ar: 'هذه أربعة أسطر هي كل التفرّع في نموذج اليوم. أي مؤشر تحرّك وأي مؤشر بقي مكانه — ولماذا يبقى الالتزام الجديد واصلًا بالتاريخ القديم رغم ذلك؟',
+        en: 'These four lines are all the branching today\u2019s model needs. Which pointer moved and which stayed put — and why does the new commit still connect to the old history despite that?',
+      },
+      reveal: {
+        ar: 'main بقي على c1 وdev تقدّم إلى c2: نسخنا قيمة المؤشر في سطر التفرّع ثم حرّكنا نسخة واحدة فقط. والالتزام الجديد واصل لأن حقل parent في c2 يسجل القيمة التي كان عليها dev لحظة الالتزام — فالتاريخ رسم بياني بالروابط لا مجلدات منسوخة. هذا بالضبط ما ينفّذه git branch وgit commit على جهازك — نموذجنا يعرض آليتهما المجردة.',
+        en: 'main stayed on c1 while dev advanced to c2: we copied the pointer\u2019s value in the branching line, then moved only one copy. The new commit still connects because c2\u2019s parent field recorded where dev pointed at commit time — history is a graph of links, not copied folders. That is exactly what git branch and git commit do on your own machine — our model exposes their abstract machinery.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'خريطة الفصل ومصطلحاته', en: 'The chapter map and its glossary' },
+      chunks: [
+        {
+          ar: 'خريطة الفصل في خمس محطات: المحطة الأولى الدافع — النسخ بمجلدات نسخ نهائية لا تحكي شيئًا، والتحكم بالإصدارات يمنح أربع قدرات لا يمنحها المجلد: تاريخ كامل تسافر فيه، وإسناد من غيّر وماذا ولماذا، وعزل تجريب بلا خطر، وتكامل يجمع شغل الفريق بقصد. الثانية سير العمل اليومي: عدّل ثم اجمع التغيير المتماسك ثم التزم برسالة وصفية ثم ادفع واسحب من remote. الثالثة التفرّع والدمج: فرع مؤشر رخيص لا نسخ مجلدات، وسلسلة parents تصنع الرسم البياني، والدمج يعود إلى أصل مشترك merge-base. الرابعة العمل مع الآخرين: clone وpush وpull وطلبات الدمج — والمستودع المركزي يعاد بناؤه من أي نسخة. الخامسة التعارضات: تعارض الدمج ليس عطلًا بل سؤال من الأداة حين يغيّر شخصان الملف نفسه في السطور نفسها، وحله يدوي دائمًا ثم التزام جديد يغلق القضية.',
+          en: 'The chapter\u2019s map in five stations: first the motive — folder-copy versioning is a history that says nothing, while version control grants four capabilities the shared folder cannot: a complete history you travel back through, attribution of who changed what and why, isolation for riskless experiments, and integration combining the team\u2019s work on purpose. Second, the everyday workflow: edit, stage a coherent change, commit with a descriptive message, then push and pull from a remote. Third, branching and merging: a branch is a cheap pointer, not copied folders; the parent links build the graph; merging walks back to a shared merge-base. Fourth, working with others: clone, push, pull and pull requests — the central repository can be rebuilt from any clone. Fifth, conflicts: a merge conflict is not a malfunction but the tool asking a question when two people change the same file\u2019s same lines, always resolved by hand and sealed with a new commit.',
+        },
+        {
+          ar: 'فهرس المصطلحات كما جمعه الفصل: الالتزام commit لقطة كاملة للمحتوى معنونة ببصمتها تشير إلى لقطة الأب — لا قائمة فروق — فالتاريخ رسم بياني DAG من لقطات؛ والفرع branch اسم يشير إلى التزام واحد ويتحرك رخيصًا مع كل التزام جديد؛ وHEAD اسم الفرع النشط الذي تسقط عليه التزاماتك؛ والدمج merge جمع مسارَين عند أصلهما المشترك — سريع fast-forward حين يكون أحد الطرفين سلفًا للآخر؛ والتعارض conflict تقاطع تغييرَين على ملف واحد يطلب قرارًا بشريًا؛ والـ remote نسخة المستودع على خدمة يتبادل معها جهازك التزامات عبر الدفع والسحب. هذه المصطلحات الستة هي قاموس الفصل كاملًا — والمشروع التالي يبنيها في العمل لا في الحفظ.',
+          en: 'The glossary as the chapter assembled it: a commit is a full content-addressed snapshot pointing at its parent snapshot — not a list of diffs — so history is a DAG of snapshots; a branch is a name pointing at one commit, moving cheaply with every new commit; HEAD is the active branch your commits land on; a merge joins two paths at their common ancestor — a fast-forward when one side is an ancestor of the other; a conflict is an intersection of two changes to one file demanding a human decision; and a remote is a copy of the repository on a service your machine exchanges commits with via push and pull. These six terms are the chapter\u2019s whole dictionary — and the project ahead builds them in action, not in memorization.',
+        },
+        {
+          ar: 'وخلاصة الكتاب في 8.8: يبدو Git كومة أوامر اعتباطية حتى ترى الفكرة الصغيرة تحته — رسم بياني من لقطات معنونة بالمحتوى وفروع كأنها مؤشرات رخيصة متحركة فيه. احمل هذه الصورة فصير سير العمل اليومي — لقطة متماسكة، التزم، افزل بفرع، أعد الدمج — روتينًا، وحتى اللحظات المخيفة (دمج محطم، التزام ضائع، دفع مرفوض) تصير عادية قابلة للاسترجاع. والسبب الأعمق لقدَم الفصل قبل فصول الجودة والتوصيل: التحكم بالإصدارات هو ما يجعل هندسة الفريق ممكنة أصلًا — فهو يعطي كل تغيير اسمًا وتاريخًا وصاحبًا، وهو شرط مراجعة التغييرات (الفصل 9) وتشغيل خط البناء على كل واحد منها (الفصل 14). احمِ main، وأبقِ الفروع قصيرة، والتزم كأن أحدًا سيقرأ — لأن أحدًا سيقرأ فعلًا، وغالبًا أنت.',
+          en: 'And the book\u2019s 8.8 distillation: Git looks like a pile of arbitrary commands until you see the small idea underneath — a graph of content-addressed snapshots with branches as cheap movable pointers into it. Hold that picture and the everyday workflow — stage a coherent change, commit, branch to isolate, merge back — becomes routine, and even the scary moments (a wrecked merge, a lost commit, a rejected push) become ordinary and recoverable. The deeper reason this chapter precedes the quality and delivery chapters: version control is what makes team engineering possible at all — it gives every change a name, a history and an owner, the precondition for reviewing changes (chapter 9) and running a pipeline on each of them (chapter 14). Protect main, keep branches short, and commit like someone will read it — because someone will, and often that someone is you.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'امشِ الرسم البياني واعثر على أصل الدمج', en: 'Walk the graph and find the merge base' },
+      code: "commits = {\n    'c1': {'parent': None, 'msg': 'Add app skeleton'},\n    'c2': {'parent': 'c1', 'msg': 'Add search box'},\n    'c3': {'parent': 'c2', 'msg': 'Fix redirect loop'},\n}\nbranches = {'main': 'c2', 'dev': 'c3'}\n\ndef walk(tip):\n    chain = []\n    node = tip\n    while node is not None:\n        chain.append(node)\n        node = commits[node]['parent']\n    return chain\n\nprint('main: %s' % ' -> '.join(walk(branches['main'])))\nprint('dev: %s' % ' -> '.join(walk(branches['dev'])))\n\nmain_chain = walk(branches['main'])\ndev_set = set(walk(branches['dev']))\nbase = None\nfor cid in main_chain:\n    if cid in dev_set:\n        base = cid\n        break\nprint('merge base: %s' % base)",
+      explanation: {
+        ar: 'المشي من طرف الفرع عبر parent حتى None يعطي سلسلة أسلافه كاملة: main ترى c2 ثم c1 وdev ترى c3 ثم c2 ثم c1 — التاريخ مشترك لأن كل التزام جديد يربط نفسه بما كان عليه مؤشره. وأول التزام من سلسلة main يظهر في سلسلة dev هو c2: هذا هو أصل الدمج merge-base — النقطة التي انفصل عنها الطرفان، وهي c3 وحدها التي تزيدها dev. لأن الطرفان على خط واحد (main سلف لـ dev) يكفي تحريك مؤشر main إلى c3 — هذا هو fast-forward الذي ينفذه مشروع اليوم قبل كشف التعارض. نفس المشي بالأوامر على جهازك: git log يعرض السلسلة، وgit merge-base يجد النقطة.',
+        en: 'Walking from a branch tip through parent until None yields its full ancestry: main sees c2 then c1, and dev sees c3 then c2 then c1 — the history is shared because every new commit links itself to where its pointer was. And the first commit of main\u2019s chain appearing in dev\u2019s chain is c2: that is the merge-base, the point the two sides diverged from, with c3 alone being what dev adds. Since the two sides sit on one line (main is an ancestor of dev), simply moving main\u2019s pointer to c3 suffices — the fast-forward today\u2019s project performs before conflict detection. The same walk on your own machine: git log shows the chain, git merge-base finds the point.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.trace-pointers',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرجه بالضبط — سطرًا لكل طباعة — دون تشغيله. النموذج: التزامات قواميس بروابط parent وفروع مؤشرات في قاموس.',
+        en: 'Read the code and predict its exact output — one line per print — without running it. The model: commits as dicts with parent links and branches as pointers in a dict.',
+      },
+      code: "commits = {'c1': {'parent': None, 'msg': 'init'}, 'c2': {'parent': 'c1', 'msg': 'readme'}}\nbranches = {'main': 'c2'}\nbranches['dev'] = branches['main']\ncommits['c3'] = {'parent': branches['dev'], 'msg': 'search'}\nbranches['dev'] = 'c3'\nprint(branches['main'])\nprint(branches['dev'])\nprint(commits['c1']['parent'])",
+      solution: 'c2\nc3\nNone',
+      answer: 'c2\nc3\nNone',
+      hints: [
+        { ar: 'نسخ المفتاح ينسخ القيمة المخزّنة لحظتها — لم يتحرك main بعد ذلك.', en: 'Copying a key copies the value stored at that moment — main never moved afterwards.' },
+        { ar: 'dev تقدّم مرة واحدة فقط عند الالتزام الأخير — تتبّع المؤشر خطوة خطوة.', en: 'dev advanced exactly once, at the last commit — trace the pointer step by step.' },
+        { ar: 'السطر الثالث يقرأ حقل parent للالتزام الجذري c1 — وهو لا أب له.', en: 'The third line reads the parent field of the root commit c1 — which has no parent.' },
+        { ar: 'الخرج:\nc2\nc3\nNone', en: 'The output:\nc2\nc3\nNone' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.project-minigit',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: "المشروع: نموذج Git المصغّر. 1) عرّف صنف MiniGit بحالة: self.commits قاموس id->التزام، وself.branches قاموس اسم->التزام يبدأ بـ {'main': None}، وself.head اسم الفرع النشط يبدأ 'main'، وself.files قاموس ملف->نسخة، وself.next_id عدّاد يبدأ 1. 2) التوابع: change(self, fname, version) يسجّل نسخة ملف في شجرة العمل؛ commit(self, msg) يبني التزام {'id': cid, 'parent': self.branches[self.head], 'msg': msg, 'files': dict(self.files)} بمعرّف 'c%d' من العدّاد ثم يحرّك مؤشر الفرع الحالي إليه ويعيد المعرف — لاحظ أن كل التزام يحمل لقطة كاملة للملفات (commits-as-snapshots)؛ branch(self, name) ينسخ مؤشر الفرع الحالي إلى اسم جديد؛ checkout(self, name) يبدّل self.head ويستعيد شجرة العمل من لقطة طرف ذلك الفرع: self.files = dict(self.commits[tip]['files']) متى كان للفرع طرف — كما يفعل git checkout على جهازك حين يبدّل محتوى المجلد؛ merge(self, source) يفحص أولًا fast-forward (إن كان طرفنا سلفًا لطرف المصدر فحرّك مؤشرنا وحدّث الملفات من لقطة المصدر وأعِد 'fast-forward')، وإلا امشِ من طرفنا إلى الجذور واعثر على أول سلف مشترك، وقارن لقطتَي الطرفين مع لقطة الأصل: أي ملف غيّره الطرفان معًا يعيد 'conflict: <file>' (أول اسم مرتبًا)، وإلا طبّق تغييرات المصدر وأعِد 'merged'، وإن كان الطرفان متساويين أعِد 'already up to date'. 3) السائق: التزامان على main (app.py ثم config.py)، فرع dev وانتقل إليه والتزامان (search.py ثم config.py بنسخة أخرى)، عُد إلى main والتزام ثالث يغيّر config.py أيضًا، ثم اطبع 'commits: %d' مع len(mg.commits) و'branches: %d' مع len(mg.branches) ونتيجة merge('dev'). المتوقع: commits: 5 ثم branches: 2 ثم conflict: config.py.",
+        en: "The project: the Mini-Git Model. 1) Define a class MiniGit with state: self.commits a dict id->commit, self.branches a dict name->commit starting as {'main': None}, self.head the active branch name starting 'main', self.files a dict file->version, and self.next_id a counter starting at 1. 2) Methods: change(self, fname, version) records a file version in the working tree; commit(self, msg) builds {'id': cid, 'parent': self.branches[self.head], 'msg': msg, 'files': dict(self.files)} with a 'c%d' id from the counter, then moves the current branch pointer to it and returns the id — note every commit carries a full snapshot of the files (commits-as-snapshots); branch(self, name) copies the current branch pointer to a new name; checkout(self, name) switches self.head and restores the working tree from that branch\u2019s tip snapshot: self.files = dict(self.commits[tip]['files']) whenever the branch has a tip — exactly what git checkout does on your own machine when it swaps the folder\u2019s contents; merge(self, source) first checks fast-forward (if our tip is an ancestor of the source tip, move our pointer, update files from the source snapshot, return 'fast-forward'); otherwise walk from our tip to the roots to find the first common ancestor, compare both sides\u2019 snapshots against the ancestor\u2019s: any file both sides changed returns 'conflict: <file>' (first sorted name); otherwise apply the source-side changes and return 'merged'; when both tips are equal return 'already up to date'. 3) Driver: two commits on main (app.py then config.py), a dev branch you check out with two commits (search.py then config.py with another version), back to main for a third commit touching config.py too, then print 'commits: %d' with len(mg.commits), 'branches: %d' with len(mg.branches), and the result of merge('dev'). Expected: commits: 5, then branches: 2, then conflict: config.py.",
+      },
+      starterCode: "class MiniGit:\n    def __init__(self):\n        self.commits = {}\n        self.branches = {'main': None}\n        self.head = 'main'\n        self.files = {}\n        self.next_id = 1\n\n    def change(self, fname, version):\n        # سجّل نسخة الملف في شجرة العمل / record the file version in the working tree\n        pass\n\n    def commit(self, msg):\n        # ابنِ التزام باللقطة ثم حرّك مؤشر الفرع الحالي / build the commit with its snapshot, then move the branch pointer\n        pass\n\n    def branch(self, name):\n        # انسخ مؤشر الفرع الحالي إلى اسم جديد / copy the current pointer to a new name\n        pass\n\n    def checkout(self, name):\n        # بدّل الفرع ثم استعد شجرة العمل من لقطة الطرف / switch the branch, then restore the working tree from the tip snapshot\n        pass\n\n\nmg = MiniGit()\nmg.change('app.py', 'v1')\nmg.commit('Add app skeleton')\nmg.change('config.py', 'base')\nmg.commit('Add shared config')\nmg.branch('dev')\nmg.checkout('dev')\nmg.change('search.py', 'dev-v1')\nmg.commit('Add search box')\nmg.change('config.py', 'dev-v2')\nmg.commit('Tune config for search')\nmg.checkout('main')\nmg.change('config.py', 'main-v2')\nmg.commit('Tune config for pages')\nprint('commits: %d' % len(mg.commits))\nprint('branches: %d' % len(mg.branches))\nprint(mg.merge('dev'))",
+      solution: "class MiniGit:\n    def __init__(self):\n        self.commits = {}\n        self.branches = {'main': None}\n        self.head = 'main'\n        self.files = {}\n        self.next_id = 1\n\n    def change(self, fname, version):\n        self.files[fname] = version\n\n    def commit(self, msg):\n        cid = 'c%d' % self.next_id\n        self.next_id = self.next_id + 1\n        self.commits[cid] = {'id': cid, 'parent': self.branches[self.head], 'msg': msg, 'files': dict(self.files)}\n        self.branches[self.head] = cid\n        return cid\n\n    def branch(self, name):\n        self.branches[name] = self.branches[self.head]\n\n    def checkout(self, name):\n        self.head = name\n        tip = self.branches[name]\n        if tip is not None:\n            self.files = dict(self.commits[tip]['files'])\n\n    def merge(self, source):\n        ours = self.branches[self.head]\n        theirs = self.branches[source]\n        if ours == theirs:\n            return 'already up to date'\n        node = theirs\n        while node is not None:\n            if node == ours:\n                self.branches[self.head] = theirs\n                self.files = dict(self.commits[theirs]['files'])\n                return 'fast-forward'\n            node = self.commits[node]['parent']\n\n        def ancestors(tip):\n            chain = []\n            node = tip\n            while node is not None:\n                chain.append(node)\n                node = self.commits[node]['parent']\n            return chain\n\n        base = None\n        for cid in ancestors(ours):\n            if cid in ancestors(theirs):\n                base = cid\n                break\n        base_files = self.commits[base]['files']\n        ours_files = self.commits[ours]['files']\n        theirs_files = self.commits[theirs]['files']\n        ours_changed = set()\n        for fname, ver in ours_files.items():\n            if base_files.get(fname) != ver:\n                ours_changed.add(fname)\n        theirs_changed = set()\n        for fname, ver in theirs_files.items():\n            if base_files.get(fname) != ver:\n                theirs_changed.add(fname)\n        conflicts = sorted(ours_changed & theirs_changed)\n        if conflicts:\n            return 'conflict: %s' % conflicts[0]\n        for fname, ver in theirs_files.items():\n            if base_files.get(fname) != ver:\n                self.files[fname] = ver\n        return 'merged'\n\n\nmg = MiniGit()\nmg.change('app.py', 'v1')\nmg.commit('Add app skeleton')\nmg.change('config.py', 'base')\nmg.commit('Add shared config')\nmg.branch('dev')\nmg.checkout('dev')\nmg.change('search.py', 'dev-v1')\nmg.commit('Add search box')\nmg.change('config.py', 'dev-v2')\nmg.commit('Tune config for search')\nmg.checkout('main')\nmg.change('config.py', 'main-v2')\nmg.commit('Tune config for pages')\nprint('commits: %d' % len(mg.commits))\nprint('branches: %d' % len(mg.branches))\nprint(mg.merge('dev'))",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'السائق يطبع العدّادات الثلاثة بالترتيب', en: 'The driver prints the three summary lines in order' },
+          code: "assert 'commits: 5' in __learner_output__ and 'branches: 2' in __learner_output__ and 'conflict: config.py' in __learner_output__, 'expected: commits: 5 / branches: 2 / conflict: config.py | actual: %r' % __learner_output__",
+          expected: 'commits: 5 / branches: 2 / conflict: config.py',
+        },
+        {
+          id: 't2',
+          name: { ar: 'المؤشرات: main على c5 وdev على c4', en: 'Pointers: main sits on c5 and dev on c4' },
+          code: "assert mg.branches == {'main': 'c5', 'dev': 'c4'}, 'expected: main c5 dev c4 | actual: %r' % mg.branches",
+          expected: 'main c5 dev c4',
+        },
+        {
+          id: 't3',
+          name: { ar: 'الرسم البياني: c3 ابن c2 ولقطة c4 تحمل search.py', en: 'The graph: c3 is a child of c2 and c4\u2019s snapshot carries search.py' },
+          code: "assert mg.commits['c3']['parent'] == 'c2' and mg.commits['c4']['files']['search.py'] == 'dev-v1', 'expected: c3 parent c2 | actual: %r' % mg.commits['c3']['parent']",
+          expected: 'c3 parent c2',
+        },
+        {
+          id: 't4',
+          name: { ar: 'الدمج على خط واحد: fast-forward يحرّك المؤشر ويحدّث الملفات', en: 'Merging on one line: fast-forward moves the pointer and updates files' },
+          code: "g2 = MiniGit()\ng2.change('a.txt', 'v1')\ng2.commit('one')\ng2.branch('dev')\ng2.checkout('dev')\ng2.change('b.txt', 'v1')\ng2.commit('two')\ng2.checkout('main')\nresult = g2.merge('dev')\nassert result == 'fast-forward', 'expected: fast-forward | actual: %r' % result\nassert g2.branches['main'] == 'c2', 'expected: c2 | actual: %r' % g2.branches['main']\nassert g2.files['b.txt'] == 'v1', 'expected: v1 | actual: %r' % g2.files['b.txt']",
+          expected: 'fast-forward then c2 with b.txt v1',
+        },
+        {
+          id: 't5',
+          name: { ar: 'التعارض يُقرأ من اللقطات لا من شجرة العمل', en: 'The conflict is read from snapshots, not the working tree' },
+          code: "g3 = MiniGit()\ng3.change('x.py', 'base')\ng3.commit('base')\ng3.branch('dev')\ng3.change('z.py', 'main')\ng3.commit('main side')\ng3.checkout('dev')\ng3.change('y.py', 'dev')\ng3.commit('dev side')\ng3.checkout('main')\nresult = g3.merge('dev')\nassert result == 'merged', 'expected: merged | actual: %r' % result",
+          expected: 'merged when the changed sets do not overlap',
+        },
+      ],
+      hints: [
+        { ar: 'commit ابنِ القاموس بالمعرّف والأب من branches[head] ثم الخطوة الحاسمة: self.branches[self.head] = cid — والتقاط dict(self.files) يجعل اللقطة مستقلة عن شجرة العمل.', en: 'commit builds the dict with the id and parent from branches[head], then the crucial step: self.branches[self.head] = cid — and dict(self.files) makes the snapshot independent of the working tree.' },
+        { ar: 'merge خط واحد: امشِ من طرف المصدر عبر parent واسأل هل التقيت طرفنا — إن وصلت None بلا لقاء فالطرفان متباعدان.', en: 'merge line one: walk from the source tip via parent asking whether you met our tip — reaching None without meeting means the sides diverged.' },
+        { ar: 'للتعارض: اعثر على الأصل المشترك بمشي من طرفنا وأول معرّف يظهر في أسلاف المصدر، وقارن كل ملف في لقطة الطرفين مع لقطة الأصل — التقاطع المجموعاتي & هو التعارض، وsorted يثبّت الترتيب.', en: 'For the conflict: find the common ancestor by walking from our tip and taking the first id among the source\u2019s ancestors; compare each file in both snapshots with the ancestor\u2019s — the set intersection & is the conflict, and sorted fixes the order.' },
+        { ar: 'هيكل merge كاملًا:\nours = self.branches[self.head]\ntheirs = self.branches[source]\nnode = theirs\nwhile node is not None:\n    if node == ours:\n        self.branches[self.head] = theirs\n        return \'fast-forward\'\n    node = self.commits[node][\'parent\']\n# ثم الأصل المشترك وقارن اللقطات\n# then the common ancestor and compare snapshots', en: "The merge skeleton:\nours = self.branches[self.head]\ntheirs = self.branches[source]\nnode = theirs\nwhile node is not None:\n    if node == ours:\n        self.branches[self.head] = theirs\n        return 'fast-forward'\n    node = self.commits[node]['parent']\n# then the common ancestor and compare snapshots" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-branch-model',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'بصيغة خلاصة الفصل: ما الذي يحمله اسم الفرع في النموذج الذهني — وماذا يعني ذلك عند إنشاء فرع جديد؟',
+        en: 'In the chapter\u2019s distilled mental model: what does a branch name hold — and what does that mean when you create a new branch?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'مؤشرًا رخيصًا على التزام واحد — وإنشاء فرع جديد مجرد نسخ للمؤشر، لحظي وبلا نسخ ملفات', en: 'A cheap pointer to a single commit — creating a new branch just copies the pointer, instant and with no file copying' } },
+        { id: 'b', text: { ar: 'نسخة كاملة من مجلد المشروع تُبنى عند التفرّع', en: 'A full copy of the project folder built at branch time' } },
+        { id: 'c', text: { ar: 'سلسلة الفروق التي أُجريت على main منذ البداية', en: 'The chain of diffs applied to main since the beginning' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'ارجع إلى predict: سطر واحد branches[\'dev\'] = branches[\'main\'] صنع الفرع كله.', en: 'Look back at the predict: one line, branches[\'dev\'] = branches[\'main\'], created the whole branch.' },
+        { ar: 'لهذا وُصف الفروع بأنها رخيصة: لا شيء يُنسخ من الملفات عند التفرّع.', en: 'That is why branches are called cheap: nothing file-wise is copied at branch time.' },
+        { ar: 'الفروق تُحسب عند السؤال من اللقطات — لا تُخزَّن في الفرع.', en: 'Diffs are computed from snapshots on demand — never stored in the branch.' },
+        { ar: 'الجواب: أ — الفرع مؤشر متحرك رخيص على التزام.', en: 'Answer: a — a branch is a cheap movable pointer to a commit.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.numeric-log-walk',
+      exKind: 'numeric',
+      required: true,
+      prompt: {
+        ar: 'بلا تشغيل: في نموذج الدرس c5.parent = c2 وc2.parent = c1 وc1.parent = None. كم التزامًا يزور مشي السجل من طرف main قبل أن يتوقف عند None؟',
+        en: 'Without running: in the lesson\u2019s model c5.parent = c2, c2.parent = c1 and c1.parent = None. How many commits does the log walk from main\u2019s tip visit before stopping at None?',
+      },
+      answer: '3',
+      solution: '3',
+      tolerance: 0,
+      hints: [
+        { ar: 'المشي يزور الطرف نفسه أولًا ثم كل أب حتى يصل أبًا يساوي None.', en: 'The walk visits the tip itself first, then each parent, until it reaches a parent equal to None.' },
+        { ar: 'c1.parent = None يعني c1 آخر زيارة — لا يزور None نفسها.', en: 'c1.parent = None means c1 is the last visit — None itself is not visited.' },
+        { ar: 'عدّها: c5 ثم c2 ثم c1.', en: 'Count them: c5, then c2, then c1.' },
+        { ar: 'الجواب: 3', en: 'Answer: 3' },
+      ],
+    },
+    {
+      kind: 'debug',
+      id: 'ex5.debug-stale-pointer',
+      required: true,
+      brokenCode: "class MiniGit:\n    def __init__(self):\n        self.commits = {}\n        self.branches = {'main': None}\n        self.head = 'main'\n        self.next_id = 1\n\n    def commit(self, msg):\n        cid = 'c%d' % self.next_id\n        self.next_id = self.next_id + 1\n        self.commits[cid] = {'id': cid, 'parent': self.branches[self.head], 'msg': msg}\n        # الخلل هنا: سجل التزامًا ونسي شيئًا / THE FLAW: recorded a commit and forgot something\n        return cid\n\n    def log(self):\n        lines = []\n        node = self.branches[self.head]\n        while node is not None:\n            lines.append('%s %s' % (node, self.commits[node]['msg']))\n            node = self.commits[node]['parent']\n        return lines\n\n\ng = MiniGit()\ng.commit('Add app skeleton')\ng.commit('Add search box')\nprint('commits: %d' % len(g.commits))\nfor line in g.log():\n    print(line)",
+      prompt: {
+        ar: 'شغّل الكود المعطوب ولاحظ الفضيحة: التزامان موجودان في commits — ومع ذلك لا يطبع السجل شيئًا على الإطلاق! لا استثناء ولا انهيار: التاريخ يبدو فارغًا رغم وجود الالتزامات. اسأل نفسك: من أين يبدأ log مشيه؟ من self.branches[self.head] — ولم يتحرك هذا المؤشر أبدًا بعد أول التزام، فبقي None وكل التزام جديد وُلد أبوه None بلا رابط بالسابق. أصلح الخلل بإضافة السطر الناقص في commit بعد بناء التزام: self.branches[self.head] = cid — المؤشر يتحرك مع كل التزام، فيصير السجل حيًّا: c2 ثم c1.',
+        en: 'Run the broken code and witness the scandal: two commits exist in commits — yet the log prints nothing at all! No exception, no crash: history looks empty though the commits are there. Ask yourself: where does log start its walk? From self.branches[self.head] — and that pointer never moved after the first commit, so it stayed None and every new commit was born with None as its parent, disconnected from the past. Fix the flaw by adding the missing line in commit after building the commit: self.branches[self.head] = cid — the pointer moves with every commit, and the log comes alive: c2 then c1.',
+      },
+      solution: "class MiniGit:\n    def __init__(self):\n        self.commits = {}\n        self.branches = {'main': None}\n        self.head = 'main'\n        self.next_id = 1\n\n    def commit(self, msg):\n        cid = 'c%d' % self.next_id\n        self.next_id = self.next_id + 1\n        self.commits[cid] = {'id': cid, 'parent': self.branches[self.head], 'msg': msg}\n        self.branches[self.head] = cid\n        return cid\n\n    def log(self):\n        lines = []\n        node = self.branches[self.head]\n        while node is not None:\n            lines.append('%s %s' % (node, self.commits[node]['msg']))\n            node = self.commits[node]['parent']\n        return lines\n\n\ng = MiniGit()\ng.commit('Add app skeleton')\ng.commit('Add search box')\nprint('commits: %d' % len(g.commits))\nfor line in g.log():\n    print(line)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'العدّادات صحيحة كما كانت', en: 'The counter line is right as before' },
+          code: "assert 'commits: 2' in __learner_output__, 'expected: commits: 2 | actual: %r' % __learner_output__",
+          expected: 'commits: 2',
+        },
+        {
+          id: 't2',
+          name: { ar: 'السجل حيّ: الالتزامان بالترتيب الجديد-فوق-القديم', en: 'The log is alive: both commits, newest above oldest' },
+          code: "assert 'c2 Add search box' in __learner_output__ and 'c1 Add app skeleton' in __learner_output__, 'expected: c2 Add search box / c1 Add app skeleton | actual: %r' % __learner_output__",
+          expected: 'c2 Add search box / c1 Add app skeleton',
+        },
+        {
+          id: 't3',
+          name: { ar: 'المؤشر يتحرك والروابط تتشكل: main على c2 وأب c2 هو c1', en: 'The pointer moves and links form: main on c2 with c2\u2019s parent c1' },
+          code: "assert g.branches['main'] == 'c2' and g.commits['c2']['parent'] == 'c1', 'expected: main at c2 with parent c1 | actual: %r' % g.branches['main']",
+          expected: 'main at c2 with parent c1',
+        },
+      ],
+      hints: [
+        { ar: 'لا استثناء ولا انهيار — الخلل صامت: commits ممتلئة والسجل فارغ. السؤال الحقيقي: من أين يبدأ log مشيه؟', en: 'No exception, no crash — the flaw is silent: commits is full and the log empty. The real question: where does log start its walk?' },
+        { ar: 'قارن بين كتابة commits[cid] التي تضيف الالتزام إلى الرسم البياني وغياب أي تحديث لـ branches[head] — المؤشر ساكن عند None.', en: 'Compare writing commits[cid], which adds the commit to the graph, with the absence of any update to branches[head] — the pointer sits still at None.' },
+        { ar: 'الإصلاح سطر واحد في commit بعد بناء الالتزام: self.branches[self.head] = cid — نفس الخطوة التي يميز بها git التزامك عن الملفات المعدلة فقط.', en: 'The fix is one line in commit after building the commit: self.branches[self.head] = cid — the very step that makes git see your commit as a commit and not merely edited files.' },
+        { ar: 'بعد الإصلاح يطبع السجل c2 Add search box ثم c1 Add app skeleton — الأحدث أولًا لأن المشي يبدأ من الطرف.', en: 'After the fix the log prints c2 Add search box then c1 Add app skeleton — newest first because the walk starts at the tip.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "# ملعبك الحرّ — نموذج Git المصغّر بين يديك\n# Your playground — the Mini-Git model in your hands\n\nclass MiniGit:\n    def __init__(self):\n        self.commits = {}\n        self.branches = {'main': None}\n        self.head = 'main'\n        self.files = {}\n        self.next_id = 1\n\n    def change(self, fname, version):\n        self.files[fname] = version\n\n    def commit(self, msg):\n        cid = 'c%d' % self.next_id\n        self.next_id = self.next_id + 1\n        self.commits[cid] = {'id': cid, 'parent': self.branches[self.head], 'msg': msg, 'files': dict(self.files)}\n        self.branches[self.head] = cid\n        return cid\n\n    def branch(self, name):\n        self.branches[name] = self.branches[self.head]\n\n    def checkout(self, name):\n        self.head = name\n        tip = self.branches[name]\n        if tip is not None:\n            self.files = dict(self.commits[tip]['files'])\n\n\ng = MiniGit()\ng.change('app.py', 'v1')\nprint(g.commit('Add app'))\ng.branch('dev')\ng.checkout('dev')\ng.change('idea.py', 'v1')\nprint(g.commit('Spike an idea'))\ng.checkout('main')\nprint(g.commits[g.branches['main']]['msg'])\nprint(g.commits[g.branches['dev']]['msg'])\n\n# جرّب: أضف تابع log(self) يمشي parents من طرف الفرع الحالي ويطبع الأسطر\n# try: add a log(self) method walking parents from the current branch tip\n# جرّب: ابنِ فرعًا ثانيًا وتتبّع يدويًّا أي التزامات يرى كل فرع قبل التشغيل\n# try: build a second branch and trace by hand which commits each branch sees\n# جرّب: أضف تابع tag(self, name, cid) يجمع أسماء الإصدارات في قاموس self.tags\n# try: add a tag(self, name, cid) method collecting release names in a self.tags dict",
+      prompt: {
+        ar: 'جرّب بنفسك: اكتب log يمشي parents ويطبع السجل، ثم تفرّع من التزام قديم ولاحظ أي التزامات يرى كل فرع — وتتبّع يدويًّا قبل التشغيل. ثم فكّر في tag كقاموس ثالث: الإصدارات المسلَّمة أسماء تعود إليها. لا اختبار هنا — فضولك فقط.',
+        en: 'Try it yourself: write a log walking parents and printing history, then branch from an older commit and watch which commits each branch sees — trace by hand before running. Then think of tag as a third dict: shipped releases are names you can return to. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ومن الفصل الرابع (الدوال) في مسار بايثون: merge في مشروعنا يعيد سلسلة مثل fast-forward أو conflict: config.py بدل طباعتها — لماذا إعادة القيمة أفضل هنا؟',
+            en: 'From chapter 4 (functions) of the Python track: our project\u2019s merge returns a string like fast-forward or conflict: config.py instead of printing it — why is returning the value better here?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'القيمة المعادة تصل المستدعي فيقرر بناءً عليها ويبقى سلوك الدالة قابلًا للاختبار بـ assert — بينما الطباعة عرضٌ للإنسان فقط', en: 'A returned value reaches the caller, who decides based on it and keeps the behavior assert-testable — while printing is a display for humans only' } },
+            { id: 'b', text: { ar: 'لأن بايثون تمنع الطباعة داخل التوابع', en: 'Because Python forbids printing inside methods' } },
+            { id: 'c', text: { ar: 'لأن return يجعل الدالة أسرع في التنفيذ', en: 'Because return makes the function faster' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'نفس قاعدة الدوال منذ الفصل الرابع: دالة تحسب وتعيد ودالة أخرى تعرض. اختباراتنا استدعت merge وقارنت القيمة مباشرة — لو طبعتها لما استطعنا فحصها آليًّا، ولو كان السائق يقرر من نص مطبوع لكان برمجة عرضة للانكسار.',
+            en: 'The same functions rule since chapter 4: one function computes and returns, another displays. Our tests called merge and compared the value directly — had it only printed, automated checking would be impossible, and a driver deciding from printed text would be brittle.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ومن الفصل التاسع (القواميس) في مسار بايثون: branches[\'dev\'] = branches[\'main\'] — ماذا حدث في القاموس حين نسخنا قيمة مفتاح إلى مفتاح جديد؟',
+            en: "From chapter 9 (dictionaries) of the Python track: branches['dev'] = branches['main'] — what happened in the dict when we copied one key's value to a new key?",
+          },
+          options: [
+            { id: 'a', text: { ar: 'سُجّلت القيمة المخزّنة لحظتها كقيمة للمفتاح الجديد — فبعد ذلك يستقل كل مفتاح بمساره ويُحدَّث كل على حدة', en: 'The value stored at that moment became the new key\u2019s value — afterwards each key follows its own path and is updated independently' } },
+            { id: 'b', text: { ar: 'ارُبط المفتاحان للأبد فيتحركان معًا مع كل تحديث', en: 'The two keys were bound forever, moving together on every update' } },
+            { id: 'c', text: { ar: 'حُذف المفتاح القديم من القاموس', en: 'The old key was deleted from the dict' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الإسناد في القاموس ينسخ القيمة المخزّنة لا العلاقة — ولأن قيمنا معرّفات نصية ثابتة فالنسخة سجلٌّ للحظة التفرّع: dev وُلد على c2 وبقي main هناك حتى تحرّك كلٌّ على حدة. هكذا يصور القاموس مؤشرات الفرع بلا أي بنية إضافية.',
+            en: 'Dict assignment copies the stored value, not a live relationship — and because our values are fixed strings, the copy is a record of the branch moment: dev was born on c2 and main stayed there until each moved independently. This is how a plain dict models branch pointers with no extra structure.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'ومن الدرس الأول لهذا الفصل: أي قدرة من القدرات الأربع تخدمها عادة الفروع القصيرة والتزامات المتكررة الصغيرة؟',
+            en: 'From this chapter\u2019s first lesson: which of the four capabilities do short-lived branches and small frequent commits serve?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'العزل isolation — تجريب أفكار على فرع بلا خطر على main ثم دمجها حين تنضج', en: 'Isolation — trying ideas on a branch without risking main, then merging when they mature' } },
+            { id: 'b', text: { ar: 'لا علاقة لها بأي من القدرات الأربع', en: 'None of the four capabilities' } },
+            { id: 'c', text: { ar: 'الإسناد attribution وحدها بلا علاقة بالفروع', en: 'Attribution alone, with branches unrelated' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الفرع صندوق عزل رخيص: تجرب فيه بحرية، وmain يبقى صالحًا دائمًا، والدمج يعيد المنتج الناجح. الإسناد تخدمه الرسائل ومن فعل، والاحتياط تخدمه الدفعات المتكررة — لكن عزل التجريب هو جوهر التفرّع.',
+            en: 'A branch is a cheap isolation box: experiment freely while main stays always shippable, and merging brings back the success. Attribution is served by messages and authorship, backup by frequent pushes — but isolating experiments is the heart of branching.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'ومن درس التفرّع والدمج: كيف يحدد الدمج نقطة الانفصال merge-base بين فرعين؟',
+            en: 'From the branching-and-merging lesson: how does a merge find the two branches\u2019 divergence point, the merge-base?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'يمشي من كل طرف للخلف عبر parents ويأخذ أول التزام مشترك يظهر في السلسلتين', en: 'It walks back from each tip through parents and takes the first commit common to both chains' } },
+            { id: 'b', text: { ar: 'يأخذ أحدث التزام على الفرع الأصغر عمرًا', en: 'It takes the newest commit on the younger branch' } },
+            { id: 'c', text: { ar: 'يقارن أسماء الملفات في مجلدي الفرعين مباشرة', en: 'It directly compares file names in the two branches\u2019 folders' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'في worked مشينا من الطرفين وبحثنا عن أول تقاطع — في مشروعنا نفس المنطق: ancestors(ours) ثم أول معرّف يظهر في أسلاف المصدر. أصل الدمج هو المرجع الذي يُقاس عليه ما غيّره كل طرف، ومنه يُكشف التعارض.',
+            en: 'In the worked example we walked both sides hunting the first intersection — the project repeats the logic: ancestors(ours), then the first id among the source\u2019s ancestors. The merge-base is the reference both sides\u2019 changes are measured against, and from it conflicts are detected.',
+          },
+        },
+        {
+          id: 'q5',
+          question: {
+            ar: 'في النموذج الذهني للفصل — الالتزام commit هو بالضبط ماذا؟',
+            en: 'In the chapter\u2019s mental model — what exactly is a commit?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لقطة كاملة للمحتوى معنونة ببصمتها تشير إلى لقطة الأب — والفروق تُحسب عند السؤال', en: 'A full content-addressed snapshot pointing at its parent snapshot — diffs are computed on demand' } },
+            { id: 'b', text: { ar: 'قائمة الفروق التي أُجريت منذ الالتزام السابق', en: 'The list of diffs applied since the previous commit' } },
+            { id: 'c', text: { ar: 'نسخة مضغوطة من مجلد المشروع كله بلا روابط', en: 'A compressed copy of the whole project folder with no links' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'لقطات لا فروق — هي عنوان الكتاب للنموذج. مشروعنا طبّقها حرفيًّا: كل التزام حمل files: dict(self.files) لقطة كاملة، والأب ربطه بالرسم البياني. القوّة أن التاريخ يستعاد من أي لقطة بلا إعادة تشغيل سلسلة فروق.',
+            en: 'Snapshots, not diffs — the book\u2019s very title for the model. Our project applied it literally: every commit carried files: dict(self.files), a full snapshot, with the parent linking it into the graph. The payoff: any state is recovered from a snapshot alone, no diff-chain replay needed.',
+          },
+        },
+        {
+          id: 'q6',
+          question: {
+            ar: 'وفي مشروعنا — ماذا يمثل self.head، ولماذا يقرأه commit عند كل التزام؟',
+            en: 'And in our project — what does self.head represent, and why does commit read it every time?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'اسم الفرع النشط — commit يلحق الالتزام الجديد بالفرع الذي يشير إليه head، فمكانه يحدد أين تُكتب الخطوة القادمة من الرسم البياني', en: 'The active branch name — commit attaches the new commit to whichever branch head names, so its position decides where the graph\u2019s next step is written' } },
+            { id: 'b', text: { ar: 'رقم الالتزام الأخير فقط — ومكانه لا يؤثر على مكان الالتزام الجديد', en: 'Just the latest commit\u2019s number — its position does not affect where the new commit lands' } },
+            { id: 'c', text: { ar: 'اسم المستخدم الذي التزم — للإسناد', en: 'The committing user\u2019s name — for attribution' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'HEAD في git الحقيقي مؤشر على الفرع الحالي (أو التزام منفصل في الحالات الخاصة) — ونموذجنا اختصره لاسم الفرع النشط. فمكانه هو ما جعل الدمج من main يصل بعد checkout(\'main\') رغم أن الالتزامات الأربعة السابقة تدار على الفرعين معًا.',
+            en: 'In real git HEAD points at the current branch (or a detached commit in special cases) — our model reduced it to the active branch name. Its position is what made merging from main land correctly after checkout(\'main\') even though the four earlier commits were managed across both branches.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'الالتزام = قائمة الفروق عن الأب',
+          right: 'الالتزام = لقطة كاملة معنونة بالمحتوى تشير إلى لقطة الأب، والفروق تُحسب عند السؤال',
+          note: {
+            ar: 'الصورة الخاطئة أصل أشهر سوء فهم في git. اللقطة تجعل كل حالة قابلة للاسترجاع فورًا بلا إعادة تشغيل سلسلة فروق، وتربط الالتزامات برسم بياني تُبنى عليه الفروع والدمج — كما فعل مشروعنا بـ files: dict(self.files).',
+            en: 'The wrong picture is the root of git\u2019s most famous misunderstanding. Snapshots make every state instantly recoverable with no diff-chain replay, and link commits into the graph that branches and merges are built on — exactly what our project did with files: dict(self.files).',
+          },
+        },
+        {
+          wrong: "branch('dev') ينسخ مجلد المشروع كله",
+          right: "branch('dev') ينشئ مؤشرًا واحدًا جديدًا على الالتزام الحاضر — لا يُنسخ أي ملف",
+          note: {
+            ar: 'التفرّع لحظي ومجاني لأنه نسخ قيمة في قاموس. الفروع الرخيصة تشجع عزل كل تجربة على فرعها، والفروع القصيرة تقلل التعارضات — تذكّر درس تعارضات الدمج: طول عمر الفرع هو السبب الأول للتعارضات الكبيرة.',
+            en: 'Branching is instant and free because it copies one value in a dict. Cheap branches encourage isolating every experiment on its own branch, and short-lived branches shrink conflicts — remember the conflicts lesson: branch lifetime is the top cause of large conflicts.',
+          },
+        },
+        {
+          wrong: 'merge ينشئ دائمًا التزام دمج جديد ويخلط كل شيء',
+          right: 'على الخط الواحد fast-forward يحرك المؤشر فقط — والتباعد يُفحص عند الأصل المشترك قبل أي قرار',
+          note: {
+            ar: 'الدمج ليس صندوقًا أسود: أداة جيت نفسها تمشي أسلاف الطرفين كما فعلنا. حين يكون أحد الطرفين سلفًا للآخر لا شيء يُخلط — مؤشر يتقدم فقط. وحين يتباعد الطرفان تقارن اللقطات مع الأصل المشترك فيظهر التعارض ملفًا ملفًا ويُحل بقرار بشري.',
+            en: 'Merging is not a black box: git itself walks both sides\u2019 ancestry exactly as we did. When one side is an ancestor of the other nothing is mixed — a pointer simply advances. When the sides diverge, snapshots are compared against the common ancestor, surfacing the conflict file by file for a human decision.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'النموذج الذهني الذي يبقى: رسم بياني DAG من لقطات معنونة بالمحتوى، كل التزام يشير إلى أبٍ، والفروع مؤشرات رخيصة متحركة عليه، وHEAD اسم الفرع النشط — حمل الصورة فتصير الأوامر اليومية روتينًا وتصير اللحظات المخيفة عادية قابلة للاسترجاع.', en: 'The mental model that stays: a DAG of content-addressed snapshots, each commit pointing at a parent, branches as cheap movable pointers over it, HEAD the active branch name — hold the picture and the daily commands become routine while scary moments become ordinary and recoverable.' },
+        { ar: 'مشروع MiniGit نفّذ الفصل في صنف واحد: commits قواميس لقطات بروابط parent، وbranches قاموس مؤشرات، وcommit يحرّك مؤشر الفرع الحالي، وmerge يمشي الأسلاف: fast-forward على الخط الواحد، وإلا مقارنة لقطات الطرفين مع الأصل المشترك فتعارض يُعلن بالملف أو دمج نظيف.', en: 'The MiniGit project implemented the chapter in one class: commits as snapshot dicts with parent links, branches as a pointer dict, commit moving the current branch pointer, merge walking ancestry — fast-forward on a straight line, otherwise comparing both sides\u2019 snapshots against the common ancestor to report a conflict by file or merge cleanly.' },
+        { ar: 'الخلل الذي نقحناه صامت دائمًا في git أيضًا: مؤشر لا يتحرك أو رابط parent ناقص لا يرمي استثناء — التاريخ يبدو سليمًا وهو مكسور. لهذا يجعل التحكم بالإصدارات كل تغيير اسمًا وتاريخًا وصاحبًا: شرط المراجعة والخط الآلي والتعاون الذي تقوم عليه الفصول القادمة.', en: 'The flaw we debugged is silent in git too: a pointer that never moves or a missing parent link throws no exception — history looks fine while broken. That is why version control giving every change a name, a history and an owner is the precondition for the review, pipelines and collaboration the coming chapters build on.' },
+      ],
+      reflectPrompt: {
+        ar: 'في الملعب: ابنِ مستودعًا مصغرًا فيه ثلاثة التزامات على main وفرعين، واكتب على الورق الرسم البياني كاملًا بعلامات المؤشرات، ثم تنقّح رسمك بمشي log الذي أضفته. أي أمر git يومي على جهازك ما زال يبدو كوما سحرية لك — وترجمةً بمصطلحات النموذج ماذا يفعل بالضبط؟',
+        en: 'In the sandbox: build a miniature repository with three commits on main and two branches, draw the whole graph on paper with pointer marks, then audit your drawing with the log walk you added. Which everyday git command still looks like magic to you — and translated into the model\u2019s terms, what does it exactly do?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch8.s8', pages: 'ص222 / pp.222' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch8.s8', pages: 'ص222 / pp.222' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

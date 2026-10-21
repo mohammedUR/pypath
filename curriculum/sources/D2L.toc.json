@@ -1,0 +1,1218 @@
+{
+ "code": "D2L",
+ "title": "Dive into Deep Learning",
+ "authors": [
+  "Aston Zhang",
+  "Zachary C. Lipton",
+  "Mu Li",
+  "Alexander J. Smola"
+ ],
+ "license": "License not stated inside the PDF; d2l.ai site publishes under CC BY-NC-SA 4.0 (verify before publishing any content — OQ-3).",
+ "url": "https://d2l.ai/",
+ "chapters": [
+  {
+   "id": "d2l.ch1",
+   "number": 1,
+   "title": "Introduction",
+   "pdfPage": 41,
+   "bookPage": 41,
+   "sections": [
+    {
+     "id": "d2l.ch1.s1",
+     "number": "1.1",
+     "title": "A Motivating Example",
+     "pdfPage": 42,
+     "bookPage": 42
+    },
+    {
+     "id": "d2l.ch1.s2",
+     "number": "1.2",
+     "title": "Key Components",
+     "pdfPage": 44,
+     "bookPage": 44
+    },
+    {
+     "id": "d2l.ch1.s3",
+     "number": "1.3",
+     "title": "Kinds of Machine Learning Problems",
+     "pdfPage": 47,
+     "bookPage": 47
+    },
+    {
+     "id": "d2l.ch1.s4",
+     "number": "1.4",
+     "title": "Roots",
+     "pdfPage": 60,
+     "bookPage": 60
+    },
+    {
+     "id": "d2l.ch1.s5",
+     "number": "1.5",
+     "title": "The Road to Deep Learning",
+     "pdfPage": 62,
+     "bookPage": 62
+    },
+    {
+     "id": "d2l.ch1.s6",
+     "number": "1.6",
+     "title": "Success Stories",
+     "pdfPage": 65,
+     "bookPage": 65
+    },
+    {
+     "id": "d2l.ch1.s7",
+     "number": "1.7",
+     "title": "The Essence of Deep Learning",
+     "pdfPage": 67,
+     "bookPage": 67
+    },
+    {
+     "id": "d2l.ch1.s8",
+     "number": "1.8",
+     "title": "Summary",
+     "pdfPage": 69,
+     "bookPage": 69
+    },
+    {
+     "id": "d2l.ch1.s9",
+     "number": "1.9",
+     "title": "Exercises",
+     "pdfPage": 69,
+     "bookPage": 69
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch2",
+   "number": 2,
+   "title": "Preliminaries",
+   "pdfPage": 70,
+   "bookPage": 70,
+   "sections": [
+    {
+     "id": "d2l.ch2.s1",
+     "number": "2.1",
+     "title": "Data Manipulation",
+     "pdfPage": 70,
+     "bookPage": 70
+    },
+    {
+     "id": "d2l.ch2.s2",
+     "number": "2.2",
+     "title": "Data Preprocessing",
+     "pdfPage": 78,
+     "bookPage": 78
+    },
+    {
+     "id": "d2l.ch2.s3",
+     "number": "2.3",
+     "title": "Linear Algebra",
+     "pdfPage": 81,
+     "bookPage": 81
+    },
+    {
+     "id": "d2l.ch2.s4",
+     "number": "2.4",
+     "title": "Calculus",
+     "pdfPage": 94,
+     "bookPage": 94
+    },
+    {
+     "id": "d2l.ch2.s5",
+     "number": "2.5",
+     "title": "Automatic Differentiation",
+     "pdfPage": 99,
+     "bookPage": 99
+    },
+    {
+     "id": "d2l.ch2.s6",
+     "number": "2.6",
+     "title": "Probability and Statistics",
+     "pdfPage": 105,
+     "bookPage": 105
+    },
+    {
+     "id": "d2l.ch2.s7",
+     "number": "2.7",
+     "title": "Documentation",
+     "pdfPage": 118,
+     "bookPage": 118
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch3",
+   "number": 3,
+   "title": "Linear Neural Networks for Regression",
+   "pdfPage": 122,
+   "bookPage": 122,
+   "sections": [
+    {
+     "id": "d2l.ch3.s1",
+     "number": "3.1",
+     "title": "Linear Regression",
+     "pdfPage": 122,
+     "bookPage": 122
+    },
+    {
+     "id": "d2l.ch3.s2",
+     "number": "3.2",
+     "title": "Object-Oriented Design for Implementation",
+     "pdfPage": 133,
+     "bookPage": 133
+    },
+    {
+     "id": "d2l.ch3.s3",
+     "number": "3.3",
+     "title": "Synthetic Regression Data",
+     "pdfPage": 139,
+     "bookPage": 139
+    },
+    {
+     "id": "d2l.ch3.s4",
+     "number": "3.4",
+     "title": "Linear Regression Implementation from Scratch",
+     "pdfPage": 142,
+     "bookPage": 142
+    },
+    {
+     "id": "d2l.ch3.s5",
+     "number": "3.5",
+     "title": "Concise Implementation of Linear Regression",
+     "pdfPage": 148,
+     "bookPage": 148
+    },
+    {
+     "id": "d2l.ch3.s6",
+     "number": "3.6",
+     "title": "Generalization",
+     "pdfPage": 152,
+     "bookPage": 152
+    },
+    {
+     "id": "d2l.ch3.s7",
+     "number": "3.7",
+     "title": "Weight Decay",
+     "pdfPage": 158,
+     "bookPage": 158
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch4",
+   "number": 4,
+   "title": "Linear Neural Networks for Classification",
+   "pdfPage": 165,
+   "bookPage": 165,
+   "sections": [
+    {
+     "id": "d2l.ch4.s1",
+     "number": "4.1",
+     "title": "Softmax Regression",
+     "pdfPage": 165,
+     "bookPage": 165
+    },
+    {
+     "id": "d2l.ch4.s2",
+     "number": "4.2",
+     "title": "The Image Classification Dataset",
+     "pdfPage": 173,
+     "bookPage": 173
+    },
+    {
+     "id": "d2l.ch4.s3",
+     "number": "4.3",
+     "title": "The Base Classification Model",
+     "pdfPage": 177,
+     "bookPage": 177
+    },
+    {
+     "id": "d2l.ch4.s4",
+     "number": "4.4",
+     "title": "Softmax Regression Implementation from Scratch",
+     "pdfPage": 179,
+     "bookPage": 179
+    },
+    {
+     "id": "d2l.ch4.s5",
+     "number": "4.5",
+     "title": "Concise Implementation of Softmax Regression",
+     "pdfPage": 184,
+     "bookPage": 184
+    },
+    {
+     "id": "d2l.ch4.s6",
+     "number": "4.6",
+     "title": "Generalization in Classification",
+     "pdfPage": 187,
+     "bookPage": 187
+    },
+    {
+     "id": "d2l.ch4.s7",
+     "number": "4.7",
+     "title": "Environment and Distribution Shift",
+     "pdfPage": 194,
+     "bookPage": 194
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch5",
+   "number": 5,
+   "title": "Multilayer Perceptrons",
+   "pdfPage": 207,
+   "bookPage": 207,
+   "sections": [
+    {
+     "id": "d2l.ch5.s1",
+     "number": "5.1",
+     "title": "Multilayer Perceptrons",
+     "pdfPage": 207,
+     "bookPage": 207
+    },
+    {
+     "id": "d2l.ch5.s2",
+     "number": "5.2",
+     "title": "Implementation of Multilayer Perceptrons",
+     "pdfPage": 215,
+     "bookPage": 215
+    },
+    {
+     "id": "d2l.ch5.s3",
+     "number": "5.3",
+     "title": "Forward Propagation, Backward Propagation, and Computational Graphs",
+     "pdfPage": 219,
+     "bookPage": 219
+    },
+    {
+     "id": "d2l.ch5.s4",
+     "number": "5.4",
+     "title": "Numerical Stability and Initialization",
+     "pdfPage": 224,
+     "bookPage": 224
+    },
+    {
+     "id": "d2l.ch5.s5",
+     "number": "5.5",
+     "title": "Generalization in Deep Learning",
+     "pdfPage": 229,
+     "bookPage": 229
+    },
+    {
+     "id": "d2l.ch5.s6",
+     "number": "5.6",
+     "title": "Dropout",
+     "pdfPage": 234,
+     "bookPage": 234
+    },
+    {
+     "id": "d2l.ch5.s7",
+     "number": "5.7",
+     "title": "Predicting House Prices on Kaggle",
+     "pdfPage": 239,
+     "bookPage": 239
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch6",
+   "number": 6,
+   "title": "Builders' Guide",
+   "pdfPage": 247,
+   "bookPage": 247,
+   "sections": [
+    {
+     "id": "d2l.ch6.s1",
+     "number": "6.1",
+     "title": "Layers and Modules",
+     "pdfPage": 247,
+     "bookPage": 247
+    },
+    {
+     "id": "d2l.ch6.s2",
+     "number": "6.2",
+     "title": "Parameter Management",
+     "pdfPage": 253,
+     "bookPage": 253
+    },
+    {
+     "id": "d2l.ch6.s3",
+     "number": "6.3",
+     "title": "Parameter Initialization",
+     "pdfPage": 256,
+     "bookPage": 256
+    },
+    {
+     "id": "d2l.ch6.s4",
+     "number": "6.4",
+     "title": "Lazy Initialization",
+     "pdfPage": 259,
+     "bookPage": 259
+    },
+    {
+     "id": "d2l.ch6.s5",
+     "number": "6.5",
+     "title": "Custom Layers",
+     "pdfPage": 261,
+     "bookPage": 261
+    },
+    {
+     "id": "d2l.ch6.s6",
+     "number": "6.6",
+     "title": "File I/O",
+     "pdfPage": 263,
+     "bookPage": 263
+    },
+    {
+     "id": "d2l.ch6.s7",
+     "number": "6.7",
+     "title": "GPUs",
+     "pdfPage": 266,
+     "bookPage": 266
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch7",
+   "number": 7,
+   "title": "Convolutional Neural Networks",
+   "pdfPage": 273,
+   "bookPage": 273,
+   "sections": [
+    {
+     "id": "d2l.ch7.s1",
+     "number": "7.1",
+     "title": "From Fully Connected Layers to Convolutions",
+     "pdfPage": 274,
+     "bookPage": 274
+    },
+    {
+     "id": "d2l.ch7.s2",
+     "number": "7.2",
+     "title": "Convolutions for Images",
+     "pdfPage": 280,
+     "bookPage": 280
+    },
+    {
+     "id": "d2l.ch7.s3",
+     "number": "7.3",
+     "title": "Padding and Stride",
+     "pdfPage": 287,
+     "bookPage": 287
+    },
+    {
+     "id": "d2l.ch7.s4",
+     "number": "7.4",
+     "title": "Multiple Input and Multiple Output Channels",
+     "pdfPage": 292,
+     "bookPage": 292
+    },
+    {
+     "id": "d2l.ch7.s5",
+     "number": "7.5",
+     "title": "Pooling",
+     "pdfPage": 297,
+     "bookPage": 297
+    },
+    {
+     "id": "d2l.ch7.s6",
+     "number": "7.6",
+     "title": "Convolutional Neural Networks (LeNet)",
+     "pdfPage": 302,
+     "bookPage": 302
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch8",
+   "number": 8,
+   "title": "Modern Convolutional Neural Networks",
+   "pdfPage": 308,
+   "bookPage": 308,
+   "sections": [
+    {
+     "id": "d2l.ch8.s1",
+     "number": "8.1",
+     "title": "Deep Convolutional Neural Networks (AlexNet)",
+     "pdfPage": 309,
+     "bookPage": 309
+    },
+    {
+     "id": "d2l.ch8.s2",
+     "number": "8.2",
+     "title": "Networks Using Blocks (VGG)",
+     "pdfPage": 318,
+     "bookPage": 318
+    },
+    {
+     "id": "d2l.ch8.s3",
+     "number": "8.3",
+     "title": "Network in Network (NiN)",
+     "pdfPage": 323,
+     "bookPage": 323
+    },
+    {
+     "id": "d2l.ch8.s4",
+     "number": "8.4",
+     "title": "Multi-Branch Networks (GoogLeNet)",
+     "pdfPage": 327,
+     "bookPage": 327
+    },
+    {
+     "id": "d2l.ch8.s5",
+     "number": "8.5",
+     "title": "Batch Normalization",
+     "pdfPage": 332,
+     "bookPage": 332
+    },
+    {
+     "id": "d2l.ch8.s6",
+     "number": "8.6",
+     "title": "Residual Networks (ResNet) and ResNeXt",
+     "pdfPage": 342,
+     "bookPage": 342
+    },
+    {
+     "id": "d2l.ch8.s7",
+     "number": "8.7",
+     "title": "Densely Connected Networks (DenseNet)",
+     "pdfPage": 352,
+     "bookPage": 352
+    },
+    {
+     "id": "d2l.ch8.s8",
+     "number": "8.8",
+     "title": "Designing Convolution Network Architectures",
+     "pdfPage": 356,
+     "bookPage": 356
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch9",
+   "number": 9,
+   "title": "Recurrent Neural Networks",
+   "pdfPage": 365,
+   "bookPage": 365,
+   "sections": [
+    {
+     "id": "d2l.ch9.s1",
+     "number": "9.1",
+     "title": "Working with Sequences",
+     "pdfPage": 367,
+     "bookPage": 367
+    },
+    {
+     "id": "d2l.ch9.s2",
+     "number": "9.2",
+     "title": "Converting Raw Text into Sequence Data",
+     "pdfPage": 376,
+     "bookPage": 376
+    },
+    {
+     "id": "d2l.ch9.s3",
+     "number": "9.3",
+     "title": "Language Models",
+     "pdfPage": 382,
+     "bookPage": 382
+    },
+    {
+     "id": "d2l.ch9.s4",
+     "number": "9.4",
+     "title": "Recurrent Neural Networks",
+     "pdfPage": 388,
+     "bookPage": 388
+    },
+    {
+     "id": "d2l.ch9.s5",
+     "number": "9.5",
+     "title": "Recurrent Neural Network Implementation from Scratch",
+     "pdfPage": 392,
+     "bookPage": 392
+    },
+    {
+     "id": "d2l.ch9.s6",
+     "number": "9.6",
+     "title": "Concise Implementation of Recurrent Neural Networks",
+     "pdfPage": 400,
+     "bookPage": 400
+    },
+    {
+     "id": "d2l.ch9.s7",
+     "number": "9.7",
+     "title": "Backpropagation Through Time",
+     "pdfPage": 402,
+     "bookPage": 402
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch10",
+   "number": 10,
+   "title": "Modern Recurrent Neural Networks",
+   "pdfPage": 409,
+   "bookPage": 409,
+   "sections": [
+    {
+     "id": "d2l.ch10.s1",
+     "number": "10.1",
+     "title": "Long Short-Term Memory (LSTM)",
+     "pdfPage": 409,
+     "bookPage": 409
+    },
+    {
+     "id": "d2l.ch10.s2",
+     "number": "10.2",
+     "title": "Gated Recurrent Units (GRU)",
+     "pdfPage": 416,
+     "bookPage": 416
+    },
+    {
+     "id": "d2l.ch10.s3",
+     "number": "10.3",
+     "title": "Deep Recurrent Neural Networks",
+     "pdfPage": 421,
+     "bookPage": 421
+    },
+    {
+     "id": "d2l.ch10.s4",
+     "number": "10.4",
+     "title": "Bidirectional Recurrent Neural Networks",
+     "pdfPage": 425,
+     "bookPage": 425
+    },
+    {
+     "id": "d2l.ch10.s5",
+     "number": "10.5",
+     "title": "Machine Translation and the Dataset",
+     "pdfPage": 428,
+     "bookPage": 428
+    },
+    {
+     "id": "d2l.ch10.s6",
+     "number": "10.6",
+     "title": "The Encoder-Decoder Architecture",
+     "pdfPage": 434,
+     "bookPage": 434
+    },
+    {
+     "id": "d2l.ch10.s7",
+     "number": "10.7",
+     "title": "Sequence-to-Sequence Learning for Machine Translation",
+     "pdfPage": 436,
+     "bookPage": 436
+    },
+    {
+     "id": "d2l.ch10.s8",
+     "number": "10.8",
+     "title": "Beam Search",
+     "pdfPage": 445,
+     "bookPage": 445
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch11",
+   "number": 11,
+   "title": "Attention Mechanisms and Transformers",
+   "pdfPage": 449,
+   "bookPage": 449,
+   "sections": [
+    {
+     "id": "d2l.ch11.s1",
+     "number": "11.1",
+     "title": "Queries, Keys, and Values",
+     "pdfPage": 451,
+     "bookPage": 451
+    },
+    {
+     "id": "d2l.ch11.s2",
+     "number": "11.2",
+     "title": "Attention Pooling by Similarity",
+     "pdfPage": 455,
+     "bookPage": 455
+    },
+    {
+     "id": "d2l.ch11.s3",
+     "number": "11.3",
+     "title": "Attention Scoring Functions",
+     "pdfPage": 460,
+     "bookPage": 460
+    },
+    {
+     "id": "d2l.ch11.s4",
+     "number": "11.4",
+     "title": "The Bahdanau Attention Mechanism",
+     "pdfPage": 466,
+     "bookPage": 466
+    },
+    {
+     "id": "d2l.ch11.s5",
+     "number": "11.5",
+     "title": "Multi-Head Attention",
+     "pdfPage": 472,
+     "bookPage": 472
+    },
+    {
+     "id": "d2l.ch11.s6",
+     "number": "11.6",
+     "title": "Self-Attention and Positional Encoding",
+     "pdfPage": 475,
+     "bookPage": 475
+    },
+    {
+     "id": "d2l.ch11.s7",
+     "number": "11.7",
+     "title": "The Transformer Architecture",
+     "pdfPage": 480,
+     "bookPage": 480
+    },
+    {
+     "id": "d2l.ch11.s8",
+     "number": "11.8",
+     "title": "Transformers for Vision",
+     "pdfPage": 491,
+     "bookPage": 491
+    },
+    {
+     "id": "d2l.ch11.s9",
+     "number": "11.9",
+     "title": "Large-Scale Pretraining with Transformers",
+     "pdfPage": 496,
+     "bookPage": 496
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch12",
+   "number": 12,
+   "title": "Optimization Algorithms",
+   "pdfPage": 508,
+   "bookPage": 508,
+   "sections": [
+    {
+     "id": "d2l.ch12.s1",
+     "number": "12.1",
+     "title": "Optimization and Deep Learning",
+     "pdfPage": 508,
+     "bookPage": 508
+    },
+    {
+     "id": "d2l.ch12.s2",
+     "number": "12.2",
+     "title": "Convexity",
+     "pdfPage": 513,
+     "bookPage": 513
+    },
+    {
+     "id": "d2l.ch12.s3",
+     "number": "12.3",
+     "title": "Gradient Descent",
+     "pdfPage": 522,
+     "bookPage": 522
+    },
+    {
+     "id": "d2l.ch12.s4",
+     "number": "12.4",
+     "title": "Stochastic Gradient Descent",
+     "pdfPage": 532,
+     "bookPage": 532
+    },
+    {
+     "id": "d2l.ch12.s5",
+     "number": "12.5",
+     "title": "Minibatch Stochastic Gradient Descent",
+     "pdfPage": 539,
+     "bookPage": 539
+    },
+    {
+     "id": "d2l.ch12.s6",
+     "number": "12.6",
+     "title": "Momentum",
+     "pdfPage": 550,
+     "bookPage": 550
+    },
+    {
+     "id": "d2l.ch12.s7",
+     "number": "12.7",
+     "title": "Adagrad",
+     "pdfPage": 559,
+     "bookPage": 559
+    },
+    {
+     "id": "d2l.ch12.s8",
+     "number": "12.8",
+     "title": "RMSProp",
+     "pdfPage": 565,
+     "bookPage": 565
+    },
+    {
+     "id": "d2l.ch12.s9",
+     "number": "12.9",
+     "title": "Adadelta",
+     "pdfPage": 569,
+     "bookPage": 569
+    },
+    {
+     "id": "d2l.ch12.s10",
+     "number": "12.10",
+     "title": "Adam",
+     "pdfPage": 572,
+     "bookPage": 572
+    },
+    {
+     "id": "d2l.ch12.s11",
+     "number": "12.11",
+     "title": "Learning Rate Scheduling",
+     "pdfPage": 576,
+     "bookPage": 576
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch13",
+   "number": 13,
+   "title": "Computational Performance",
+   "pdfPage": 587,
+   "bookPage": 587,
+   "sections": [
+    {
+     "id": "d2l.ch13.s1",
+     "number": "13.1",
+     "title": "Compilers and Interpreters",
+     "pdfPage": 587,
+     "bookPage": 587
+    },
+    {
+     "id": "d2l.ch13.s2",
+     "number": "13.2",
+     "title": "Asynchronous Computation",
+     "pdfPage": 592,
+     "bookPage": 592
+    },
+    {
+     "id": "d2l.ch13.s3",
+     "number": "13.3",
+     "title": "Automatic Parallelism",
+     "pdfPage": 595,
+     "bookPage": 595
+    },
+    {
+     "id": "d2l.ch13.s4",
+     "number": "13.4",
+     "title": "Hardware",
+     "pdfPage": 599,
+     "bookPage": 599
+    },
+    {
+     "id": "d2l.ch13.s5",
+     "number": "13.5",
+     "title": "Training on Multiple GPUs",
+     "pdfPage": 612,
+     "bookPage": 612
+    },
+    {
+     "id": "d2l.ch13.s6",
+     "number": "13.6",
+     "title": "Concise Implementation for Multiple GPUs",
+     "pdfPage": 620,
+     "bookPage": 620
+    },
+    {
+     "id": "d2l.ch13.s7",
+     "number": "13.7",
+     "title": "Parameter Servers",
+     "pdfPage": 624,
+     "bookPage": 624
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch14",
+   "number": 14,
+   "title": "Computer Vision",
+   "pdfPage": 632,
+   "bookPage": 632,
+   "sections": [
+    {
+     "id": "d2l.ch14.s1",
+     "number": "14.1",
+     "title": "Image Augmentation",
+     "pdfPage": 632,
+     "bookPage": 632
+    },
+    {
+     "id": "d2l.ch14.s2",
+     "number": "14.2",
+     "title": "Fine-Tuning",
+     "pdfPage": 640,
+     "bookPage": 640
+    },
+    {
+     "id": "d2l.ch14.s3",
+     "number": "14.3",
+     "title": "Object Detection and Bounding Boxes",
+     "pdfPage": 646,
+     "bookPage": 646
+    },
+    {
+     "id": "d2l.ch14.s4",
+     "number": "14.4",
+     "title": "Anchor Boxes",
+     "pdfPage": 649,
+     "bookPage": 649
+    },
+    {
+     "id": "d2l.ch14.s5",
+     "number": "14.5",
+     "title": "Multiscale Object Detection",
+     "pdfPage": 663,
+     "bookPage": 663
+    },
+    {
+     "id": "d2l.ch14.s6",
+     "number": "14.6",
+     "title": "The Object Detection Dataset",
+     "pdfPage": 667,
+     "bookPage": 667
+    },
+    {
+     "id": "d2l.ch14.s7",
+     "number": "14.7",
+     "title": "Single Shot Multibox Detection",
+     "pdfPage": 670,
+     "bookPage": 670
+    },
+    {
+     "id": "d2l.ch14.s8",
+     "number": "14.8",
+     "title": "Region-based CNNs (R-CNNs)",
+     "pdfPage": 682,
+     "bookPage": 682
+    },
+    {
+     "id": "d2l.ch14.s9",
+     "number": "14.9",
+     "title": "Semantic Segmentation and the Dataset",
+     "pdfPage": 687,
+     "bookPage": 687
+    },
+    {
+     "id": "d2l.ch14.s10",
+     "number": "14.10",
+     "title": "Transposed Convolution",
+     "pdfPage": 694,
+     "bookPage": 694
+    },
+    {
+     "id": "d2l.ch14.s11",
+     "number": "14.11",
+     "title": "Fully Convolutional Networks",
+     "pdfPage": 699,
+     "bookPage": 699
+    },
+    {
+     "id": "d2l.ch14.s12",
+     "number": "14.12",
+     "title": "Neural Style Transfer",
+     "pdfPage": 706,
+     "bookPage": 706
+    },
+    {
+     "id": "d2l.ch14.s13",
+     "number": "14.13",
+     "title": "Image Classification (CIFAR-10) on Kaggle",
+     "pdfPage": 714,
+     "bookPage": 714
+    },
+    {
+     "id": "d2l.ch14.s14",
+     "number": "14.14",
+     "title": "Dog Breed Identification (ImageNet Dogs) on Kaggle",
+     "pdfPage": 722,
+     "bookPage": 722
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch15",
+   "number": 15,
+   "title": "Natural Language Processing: Pretraining",
+   "pdfPage": 730,
+   "bookPage": 730,
+   "sections": [
+    {
+     "id": "d2l.ch15.s1",
+     "number": "15.1",
+     "title": "Word Embedding (word2vec)",
+     "pdfPage": 730,
+     "bookPage": 730
+    },
+    {
+     "id": "d2l.ch15.s2",
+     "number": "15.2",
+     "title": "Approximate Training",
+     "pdfPage": 736,
+     "bookPage": 736
+    },
+    {
+     "id": "d2l.ch15.s3",
+     "number": "15.3",
+     "title": "The Dataset for Pretraining Word Embeddings",
+     "pdfPage": 739,
+     "bookPage": 739
+    },
+    {
+     "id": "d2l.ch15.s4",
+     "number": "15.4",
+     "title": "Pretraining word2vec",
+     "pdfPage": 747,
+     "bookPage": 747
+    },
+    {
+     "id": "d2l.ch15.s5",
+     "number": "15.5",
+     "title": "Word Embedding with Global Vectors (GloVe)",
+     "pdfPage": 751,
+     "bookPage": 751
+    },
+    {
+     "id": "d2l.ch15.s6",
+     "number": "15.6",
+     "title": "Subword Embedding",
+     "pdfPage": 755,
+     "bookPage": 755
+    },
+    {
+     "id": "d2l.ch15.s7",
+     "number": "15.7",
+     "title": "Word Similarity and Analogy",
+     "pdfPage": 759,
+     "bookPage": 759
+    },
+    {
+     "id": "d2l.ch15.s8",
+     "number": "15.8",
+     "title": "Bidirectional Encoder Representations from Transformers (BERT)",
+     "pdfPage": 764,
+     "bookPage": 764
+    },
+    {
+     "id": "d2l.ch15.s9",
+     "number": "15.9",
+     "title": "The Dataset for Pretraining BERT",
+     "pdfPage": 773,
+     "bookPage": 773
+    },
+    {
+     "id": "d2l.ch15.s10",
+     "number": "15.10",
+     "title": "Pretraining BERT",
+     "pdfPage": 779,
+     "bookPage": 779
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch16",
+   "number": 16,
+   "title": "Natural Language Processing: Applications",
+   "pdfPage": 784,
+   "bookPage": 784,
+   "sections": [
+    {
+     "id": "d2l.ch16.s1",
+     "number": "16.1",
+     "title": "Sentiment Analysis and the Dataset",
+     "pdfPage": 785,
+     "bookPage": 785
+    },
+    {
+     "id": "d2l.ch16.s2",
+     "number": "16.2",
+     "title": "Sentiment Analysis: Using Recurrent Neural Networks",
+     "pdfPage": 788,
+     "bookPage": 788
+    },
+    {
+     "id": "d2l.ch16.s3",
+     "number": "16.3",
+     "title": "Sentiment Analysis: Using Convolutional Neural Networks",
+     "pdfPage": 792,
+     "bookPage": 792
+    },
+    {
+     "id": "d2l.ch16.s4",
+     "number": "16.4",
+     "title": "Natural Language Inference and the Dataset",
+     "pdfPage": 798,
+     "bookPage": 798
+    },
+    {
+     "id": "d2l.ch16.s5",
+     "number": "16.5",
+     "title": "Natural Language Inference: Using Attention",
+     "pdfPage": 803,
+     "bookPage": 803
+    },
+    {
+     "id": "d2l.ch16.s6",
+     "number": "16.6",
+     "title": "Fine-Tuning BERT for Sequence-Level and Token-Level Applications",
+     "pdfPage": 810,
+     "bookPage": 810
+    },
+    {
+     "id": "d2l.ch16.s7",
+     "number": "16.7",
+     "title": "Natural Language Inference: Fine-Tuning BERT",
+     "pdfPage": 815,
+     "bookPage": 815
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch17",
+   "number": 17,
+   "title": "Reinforcement Learning",
+   "pdfPage": 821,
+   "bookPage": 821,
+   "sections": [
+    {
+     "id": "d2l.ch17.s1",
+     "number": "17.1",
+     "title": "Markov Decision Process (MDP)",
+     "pdfPage": 822,
+     "bookPage": 822
+    },
+    {
+     "id": "d2l.ch17.s2",
+     "number": "17.2",
+     "title": "Value Iteration",
+     "pdfPage": 825,
+     "bookPage": 825
+    },
+    {
+     "id": "d2l.ch17.s3",
+     "number": "17.3",
+     "title": "Q-Learning",
+     "pdfPage": 831,
+     "bookPage": 831
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch18",
+   "number": 18,
+   "title": "Gaussian Processes",
+   "pdfPage": 837,
+   "bookPage": 837,
+   "sections": [
+    {
+     "id": "d2l.ch18.s1",
+     "number": "18.1",
+     "title": "Introduction to Gaussian Processes",
+     "pdfPage": 837,
+     "bookPage": 837
+    },
+    {
+     "id": "d2l.ch18.s2",
+     "number": "18.2",
+     "title": "Gaussian Process Priors",
+     "pdfPage": 849,
+     "bookPage": 849
+    },
+    {
+     "id": "d2l.ch18.s3",
+     "number": "18.3",
+     "title": "Gaussian Process Inference",
+     "pdfPage": 855,
+     "bookPage": 855
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch19",
+   "number": 19,
+   "title": "Hyperparameter Optimization",
+   "pdfPage": 868,
+   "bookPage": 868,
+   "sections": [
+    {
+     "id": "d2l.ch19.s1",
+     "number": "19.1",
+     "title": "What Is Hyperparameter Optimization?",
+     "pdfPage": 868,
+     "bookPage": 868
+    },
+    {
+     "id": "d2l.ch19.s2",
+     "number": "19.2",
+     "title": "Hyperparameter Optimization API",
+     "pdfPage": 875,
+     "bookPage": 875
+    },
+    {
+     "id": "d2l.ch19.s3",
+     "number": "19.3",
+     "title": "Asynchronous Random Search",
+     "pdfPage": 882,
+     "bookPage": 882
+    },
+    {
+     "id": "d2l.ch19.s4",
+     "number": "19.4",
+     "title": "Multi-Fidelity Hyperparameter Optimization",
+     "pdfPage": 893,
+     "bookPage": 893
+    },
+    {
+     "id": "d2l.ch19.s5",
+     "number": "19.5",
+     "title": "Asynchronous Successive Halving",
+     "pdfPage": 906,
+     "bookPage": 906
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch20",
+   "number": 20,
+   "title": "Generative Adversarial Networks",
+   "pdfPage": 920,
+   "bookPage": 920,
+   "sections": [
+    {
+     "id": "d2l.ch20.s1",
+     "number": "20.1",
+     "title": "Generative Adversarial Networks",
+     "pdfPage": 920,
+     "bookPage": 920
+    },
+    {
+     "id": "d2l.ch20.s2",
+     "number": "20.2",
+     "title": "Deep Convolutional Generative Adversarial Networks",
+     "pdfPage": 925,
+     "bookPage": 925
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch21",
+   "number": 21,
+   "title": "Recommender Systems",
+   "pdfPage": 933,
+   "bookPage": 933,
+   "sections": [
+    {
+     "id": "d2l.ch21.s1",
+     "number": "21.1",
+     "title": "Overview of Recommender Systems",
+     "pdfPage": 933,
+     "bookPage": 933
+    }
+   ]
+  }
+ ]
+}

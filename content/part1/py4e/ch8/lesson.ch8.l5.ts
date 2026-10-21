@@ -1,0 +1,338 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * py4e.ch8.l5 — "Lines, Files, Objects, and References /
+ * الأسطر والملفات والكائنات والإحالات"
+ * Aligned with PY4E ch8 s10 (التعامل مع الأسطر في الملفات), s11 (الكائنات والقيم),
+ * s12 (التسمية البديلة), s13 (وسائط القائمة). All expression is original.
+ * The file lines are simulated with a fixed list (platform determinism rule).
+ */
+const lesson = {
+  id: 'py4e.ch8.l5',
+  version: 1,
+  part: 'I',
+  track: 'P1',
+  book: 'PY4E',
+  chapter: 8,
+  title: { ar: 'الأسطر والملفات والكائنات والإحالات', en: 'Lines, Files, Objects, and References' },
+  estimatedMinutes: 20,
+  prerequisites: ['py4e.ch8.l4'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'أسطر ملفاتك خرجت من الفصل السابع سلاسل نصية خام، واليوم تنقسم بـ split إلى قوائم كلمات تصوغها الفهارس — لكن سطرًا فارغًا واحدًا كفيل بهدم برنامجك، فستبني نمط الحارس الذي يفحص الطول قبل الفهرسة. ثم الغوص الأعمق: ما الذي يحمله اسم المتغير فعلًا؟ كائنان متكافئان ليسا الكائن نفسه، والاسم الثاني إحالة إلى الأول، ووسیط القائمة في التابع يد من نفس الجسد. بنهاية الدرس ستكون قادرًا على: تحليل الأسطر بحماية، وتمييز الكائنات عن القيم بالإحالات، والتوقع الدقيق لما يتعدل عند من.',
+        en: 'Your file lines left chapter 7 as raw strings, and today they split into lists of words shaped by indices — but a single empty line can demolish your program, so you will build the guardian pattern that checks length before indexing. Then the deeper dive: what does a variable name actually hold? Two equivalent objects are not the same object, a second name is a reference to the first, and a list parameter inside a function is a hand on the same body. By the end of this lesson you will be able to: parse lines with protection, tell objects from values through references, and predict exactly who changes and who does not.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: 'a = [1, 2, 3]\nb = a\nb[0] = 99\nprint(a)',
+      question: {
+        ar: 'أسندنا a إلى b ثم عدّلنا b فقط. في الفصل الثاني مع الأعداد بقيت a سليمة. هل تتغير a هنا؟',
+        en: 'We assigned a to b, then modified b only. In chapter 2, with numbers, a stayed intact. Does a change here?',
+      },
+      reveal: {
+        ar: 'يطبع [99, 2, 3] — نعم! الإسناد b = a لم ينسخ القائمة بل جعل الاسمين يشيران إلى الكائن نفسه، فأي تعديل عبر ب يظهر في أ. هذه هي التسمية البديلة — قلب هذا الدرس ونبض الدروس القادمة.',
+        en: 'It prints [99, 2, 3] — yes! The assignment b = a did not copy the list; it made both names point at the same object, so any change through b shows in a. This is aliasing — the heart of this lesson and the pulse of lessons to come.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'تحليل الأسطر: من سطر خام إلى كلمات مفهرسة', en: 'Parsing lines: from raw line to indexed words' },
+      chunks: [
+        {
+          ar: "حين نقرأ ملفًا نريد غالبًا أكثر من عرض السطر: نبحث عن الأسطر المهمة ثم نحللها. لسطر بريد مثل From stephen.marquard@uct.ac.za Sat Jan 5 09:14:16 2008 — التابع split يفتحه كالخبز: words = line.split() تعطي قائمة، فتصير words[0] هي 'From' وwords[1] العنوان وwords[2] يوم الإرسال 'Sat'. حلقة على الأسطر + split + فهرس = استخراج أي عمود تريده.",
+          en: "When we read a file we usually want more than showing the line: we hunt the important lines, then dissect them. For a mail line like From stephen.marquard@uct.ac.za Sat Jan 5 09:14:16 2008 — the split method opens it like bread: words = line.split() gives a list, so words[0] is 'From', words[1] the address, and words[2] the sending day 'Sat'. A loop over lines + split + an index = extracting any column you like.",
+        },
+        {
+          ar: 'لكن ماذا لو كان السطر فارغًا؟ split على \'\' يعطي قائمة فارغة [] — ثم words[0] يرمي IndexError: list index out of range وينهار البرنامج كله. أداة التنقيح التي تدربت عليها في الفصل الخامس تكشفه: اطبع words قبل السطر الذي ينهار وسترى [] في آخر سطر قبل الانهيار.',
+          en: "But what if the line is empty? split on '' gives an empty list [] — then words[0] throws IndexError: list index out of range and the whole program collapses. The chapter-5 debugging tool exposes it: print words right before the collapsing line and you will see [] as the last line before the crash.",
+        },
+        {
+          ar: 'الحل اسمه نمط الحارس: افحص قبل أن تقرأ. سطر مثل if len(words) < 1: continue يتخطى القوائم الفارغة — ثم if words[0] != \'From\': continue يصفّي غير المطلوب. حارسان صغيران وبرنامجك يبتلع أي سطر مفاجئ دون أن يرتعش. ويمكن مضاعفة القوة: قسّم مرتين — words[5] يحمل \'09:14:16\' فتقسمه بـ split(\':\') لتستخرج الساعة.',
+          en: "The cure is named the guardian pattern: inspect before you read. A line like if len(words) < 1: continue skips empty lists — then if words[0] != 'From': continue filters the unwanted. Two small guards and your program swallows any surprise line without flinching. And the power doubles: split twice — words[5] carries '09:14:16', so split it again with split(':') to extract the hour.",
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الكائنات والقيم: متكافئان ليسا متطابقين', en: 'Objects and values: equivalent is not identical' },
+      chunks: [
+        {
+          ar: "حتى الآن استخدمنا كائن وقيمة بالتبادل — فلنتدقق: الكائن شيء له كيان في الذاكرة، وله قيمة خاصة به. عند a = 'banana' وb = 'banana' نعلم أن الاسمين يشيران إلى سلاسل متساوية، لكن هل هما السلسلة نفسها؟ عامل is يجيب: يفحص هل الاسمين يشيران إلى نفس الكائن لا إلى قيمتين متساويتين فقط.",
+          en: "So far we used object and value interchangeably — time to be precise: an object is a thing with an identity in memory, and it has a value. With a = 'banana' and b = 'banana' we know both names point to equal strings, but is it the same string? The is operator answers: it checks whether the two names refer to the same object, not merely two equal values.",
+        },
+        {
+          ar: "بايثون اختصرت في السلاسل: كائن واحد يشير إليه a وb معًا فيعطي a is b قيمة True. لكن حين تنشئ قائمتين منفصلتين بأي نوع: a = [1, 2, 3] وb = [1, 2, 3] تحصل على كائنين — فa is b تعطي False رغم التساوي التام. الصياغة الدقيقة: القائمتان متكافئتان (equivalent) لأن عناصرهما نفسها، لكنهما غير متطابقتين (identical) لأنهما ليستا الكائن ذاته. التطابق يقتضي التكافؤ، والعكس ليس صحيحًا.",
+          en: "Python economized on strings: one object referenced by both a and b, so a is b gives True. But when you create two separate lists, a = [1, 2, 3] and b = [1, 2, 3], you get two objects — so a is b gives False despite perfect equality. The precise wording: the two lists are equivalent because their elements are the same, but not identical because they are not one object. Identity implies equivalence; the reverse does not hold.",
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الإحالات والتسمية البديلة ووسائط القائمة', en: 'References, aliasing, and list arguments' },
+      chunks: [
+        {
+          ar: "ارتباط المتغير بالكائن يسمى مرجعًا (reference). فإذا كان a يشير إلى كائن وأسندت b = a صار الاثنان يشيران إلى نفس الكائن: b is a تعطي True، والكائن صار له اسمان بديلان (aliased). وإن كان الكائن قابلًا للتعديل — قائمة — فالتغيير عبر اسم واحد يظهر في الآخر: b[0] = 17 ثم print(a) تُظهر [17, 2, 3]. هذا مفيد إن أردته وكارثي إن نسيته؛ ومن يريد نسخة مستقلة يكتب b = a[:].",
+          en: "The binding of a variable to its object is called a reference. So if a refers to an object and you assign b = a, both now refer to the same object: b is a gives True, and the object owns two aliased names. If that object is mutable — a list — a change through one name shows in the other: b[0] = 17 then print(a) shows [17, 2, 3]. Useful if intended, disastrous if forgotten; whoever wants an independent copy writes b = a[:].",
+        },
+        {
+          ar: 'ومع التوابع نفس الحكاية: عند تمرير قائمة إلى تابع يحصل التابع على مرجع — فdelete_head(t) بجسم del t[0] يحذف أول عنصر من قائمة المستدعي نفسها. أما bad_delete_head(t) بجسم t = t[1:] فلا يحذف شيئًا من الأصل: التجزئة أنشأت قائمة جديدة وأعادت ربط الاسم المحلي t بها — والقائمة الممررة سليمة. والبديل الآمن: تابع مثل tail(t) يعيد t[1:] قائمة جديدة يلتقطها المستدعي.',
+          en: "Same story with functions: passing a list gives the function a reference — so delete_head(t) with body del t[0] removes the first element of the caller's very list. But bad_delete_head(t) with body t = t[1:] deletes nothing from the original: the slice created a new list and re-pointed the local name t at it — the passed list stays intact. The safe alternative: a function like tail(t) that returns t[1:] as a new list the caller catches.",
+        },
+        {
+          ar: 'القاعدة التشغيلية: التابع أو العامل الذي يعدّل القائمة يغيرها عند الجميع (append وsort وdel وpop)، والعامل الذي يبني قائمة جديدة لا يمس الأصل (+ والتجزئة). ومن يريد أن يعدّل فعلًا فيستخدم الأولى، ومن يريد الأصل سليمًا فيستخدم الثانية أو ينسخ أولًا.',
+          en: 'The operating rule: a method or operator that modifies the list changes it for everyone (append, sort, del, pop); an operator that builds a new list never touches the original (+ and slicing). Want a real modification? Use the first. Want the original safe? Use the second — or copy first.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'برنامج اليوم المحروس', en: 'The guarded day extractor' },
+      code: "lines = [\n    'From stephen.marquard@uct.ac.za Sat Jan 5 09:14:16 2008',\n    '',\n    'From zarah@media.berkeley.edu Fri Jan 4 18:10:48 2008',\n    'Subject: hello',\n]\nfor line in lines:\n    words = line.split()\n    if len(words) < 1:\n        continue\n    if words[0] != 'From':\n        continue\n    parts = words[5].split(':')\n    print(words[2], parts[0])",
+      explanation: {
+        ar: "أربعة أسطر وثلاثة ناجون: الفارغ أمسكه الحارس الأول (طوله 0)، وSubject: أمسكه الثاني (كلمته الأولى ليست From). الناجيان: 'Sat' و'Fri' مع ساعتيهما 09 و18 — التفريع الثاني قسّم words[5] عند النقطتين. لو أزلنا الحارسين لانهار البرنامج عند السطر الفارغ بـ IndexError.",
+        en: "Four lines, two survivors: the empty one was caught by the first guard (length 0), and Subject: by the second (its first word is not From). The survivors: 'Sat' and 'Fri' with their hours 09 and 18 — the second split cut words[5] at the colons. Remove the guards and the program dies on the empty line with an IndexError.",
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.guarded-days',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: "القائمة lines معطاة في المحرر (سطران يبدآن بـ From وسطر فارغ وسطر Subject). اكتب حلقة for على الأسطر: قسّم كل سطر بـ split()، ثم حرسه بحالتين: إذا كان طول القائمة أقل من 1 فتخطَّ (continue)، وإذا كانت الكلمة الأولى ليست 'From' فتخطَّ. وإلا فاطبع الكلمة الثالثة words[2] (يوم الإرسال). المتوقع: يُطبع Sat ثم Mon — دون أي انهيار.",
+        en: "The list lines is given in the editor (two lines starting with From, one empty line, one Subject line). Write a for loop over the lines: split each with split(), then guard it with two conditions: if the list length is less than 1, skip it (continue); if the first word is not 'From', skip it. Otherwise print the third word words[2] (the sending day). Expected: Sat then Mon are printed — with no crash.",
+      },
+      starterCode: "lines = ['From a@b.c Sat Jan 1 08:00:00 2008', '', 'From d@e.f Mon Jan 2 09:30:00 2008', 'Subject: hello']\n# حلقة محروسة: split ثم حارسان ثم اطبع words[2] / guarded loop: split, two guards, then print words[2]\n",
+      solution: "lines = ['From a@b.c Sat Jan 1 08:00:00 2008', '', 'From d@e.f Mon Jan 2 09:30:00 2008', 'Subject: hello']\nfor line in lines:\n    words = line.split()\n    if len(words) < 1:\n        continue\n    if words[0] != 'From':\n        continue\n    print(words[2])",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'يوم السبت يُطبع', en: 'Saturday is printed' },
+          code: "assert 'Sat' in __learner_output__, ('expected: Sat | actual: %r' % __learner_output__)",
+          expected: 'Sat',
+        },
+        {
+          id: 't2',
+          name: { ar: 'يوم الاثنين يُطبع', en: 'Monday is printed' },
+          code: "assert 'Mon' in __learner_output__, ('expected: Mon | actual: %r' % __learner_output__)",
+          expected: 'Mon',
+        },
+        {
+          id: 't3',
+          name: { ar: 'السطر الفارغ لم يُطبع محتواه', en: 'The empty line leaked nothing' },
+          code: "assert 'hello' not in __learner_output__, ('expected: no hello | actual: %r' % __learner_output__)",
+          expected: 'no hello',
+        },
+      ],
+      hints: [
+        { ar: 'الحارس الأول يفحص الطول: if len(words) < 1: continue — وإلا فwords[0] على قائمة فارغة ينهار.', en: 'The first guard checks length: if len(words) < 1: continue — otherwise words[0] on an empty list collapses.' },
+        { ar: 'الحارس الثاني يصفّي: if words[0] != \'From\': continue.', en: "The second guard filters: if words[0] != 'From': continue." },
+        { ar: 'الهيكل:\nfor line in lines:\n    words = line.split()\n    if len(words) < 1:\n        continue\n    if words[0] != \'From\':\n        continue\n    print(words[2])', en: "The skeleton:\nfor line in lines:\n    words = line.split()\n    if len(words) < 1:\n        continue\n    if words[0] != 'From':\n        continue\n    print(words[2])" },
+        { ar: "lines = ['From a@b.c Sat Jan 1 08:00:00 2008', '', 'From d@e.f Mon Jan 2 09:30:00 2008', 'Subject: hello']\nfor line in lines:\n    words = line.split()\n    if len(words) < 1:\n        continue\n    if words[0] != 'From':\n        continue\n    print(words[2])", en: "lines = ['From a@b.c Sat Jan 1 08:00:00 2008', '', 'From d@e.f Mon Jan 2 09:30:00 2008', 'Subject: hello']\nfor line in lines:\n    words = line.split()\n    if len(words) < 1:\n        continue\n    if words[0] != 'From':\n        continue\n    print(words[2])" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-aliasing',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرْجه بالضبط — سطرًا لكل طباعة — دون تشغيله.',
+        en: 'Read the code and predict its exact output — one line per print — without running it.',
+      },
+      code: 'a = [1, 2, 3]\nb = a\nb[0] = 99\nprint(a[0])\nprint(a is b)',
+      solution: '99\nTrue',
+      answer: '99\nTrue',
+      hints: [
+        { ar: 'b = a لا تنسخ — الاسمان يشيران إلى قائمة واحدة.', en: 'b = a does not copy — the two names point at one list.' },
+        { ar: 'التعديل عبر b غيّر الكائن المشترك.', en: 'The modification through b changed the shared object.' },
+        { ar: 'is يفحص الهوية لا التساوي — وهنا الاسمان للكائن نفسه.', en: 'is checks identity, not equality — and here the two names are one object.' },
+        { ar: 'الخرْج:\n99\nTrue', en: 'The output:\n99\nTrue' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-equivalent',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'a = [1, 2, 3] وb = [1, 2, 3] — قائمتان مستقلتان بنفس العناصر. ماذا تعطي a is b؟',
+        en: 'a = [1, 2, 3] and b = [1, 2, 3] — two independent lists with the same elements. What does a is b give?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'False — متكافئتان لكنهما كائنان مختلفان', en: 'False — equivalent, but two different objects' } },
+        { id: 'b', text: { ar: 'True — لأن القيم متساوية', en: 'True — because the values are equal' } },
+        { id: 'c', text: { ar: 'ترمي IndexError', en: 'It throws an IndexError' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'كل أقواس [ ] تُنشئ كائنًا جديدًا.', en: 'Every pair of brackets [ ] creates a new object.' },
+        { ar: 'المتطابقتان متكافئتان دائمًا، والمتكافئتان ليستا متطابقتين بالضرورة.', en: 'Identical implies equivalent, but equivalent does not imply identical.' },
+        { ar: 'عامل is يسأل عن الكائن، وعامل == يسأل عن القيمة.', en: 'The is operator asks about the object; the == operator asks about the value.' },
+        { ar: 'الجواب: أ — False. ولتساوي القيم استخدم a == b فتعطي True.', en: 'Answer: a — False. For value equality use a == b, which gives True.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-is-op',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'املأ الفرز: العامل الذي يفحص هل يشير اسمان إلى نفس الكائن (لا إلى قيمتين متساويتين فقط) هو ______.',
+        en: 'Fill in the blank: the operator that checks whether two names refer to the same object (not merely equal values) is ______.',
+      },
+      answer: 'is',
+      solution: 'is',
+      hints: [
+        { ar: 'حرفان صغيران — وقد استخدمناه في الفصل السابع لفحص عَلَم None: if fhand is not None:.', en: 'Two lowercase letters — and we used it in chapter 7 to test the None flag: if fhand is not None:.' },
+        { ar: 'لا تخلط بينه وبين == : الأولى عن الكائن والثانية عن القيمة.', en: 'Do not confuse it with ==: the first is about the object, the second about the value.' },
+        { ar: "جرب: a = [1]; b = a; print(a ____ b) تطبع True.", en: 'Try: a = [1]; b = a; print(a ____ b) prints True.' },
+        { ar: 'الجواب: is', en: 'Answer: is' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: '# ملعبك الحرّ — اختراق الإحالات\n# Your playground — probing references\n\nfirst = [\'x\', \'y\']\nsecond = first\nsecond.append(\'z\')\nprint(first)\nprint(second is first)\n\ncopy = first[:]\ncopy.remove(\'x\')\nprint(first)\nprint(copy is first)\n\ndef add_item(t):\n    t.append(\'NEW\')\n\nbag = [\'a\']\nadd_item(bag)\nprint(bag)',
+      prompt: {
+        ar: 'جرّب بنفسك: أسند اسمًا ثانيًا وعدّل عبره، ثم اصنع نسخة بـ [:] وعدّلها وقارن. استخدم is على الاسمين والنسخة. ثم عرّف تابعًا يعدّل القائمة وآخر يبني قائمة جديدة بـ t = t + [\'W\'] — أيهما وصل إلى المستدعي؟ لا اختبار هنا — فضولك فقط.',
+        en: "Try it yourself: alias a second name and modify through it, then make a copy with [:], modify the copy, and compare. Use is on the names and on the copy. Then define one function that modifies the list and another that builds a new one with t = t + ['W'] — which one reached the caller? No tests here — just your curiosity.",
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'لماذا لا تُعد التسمية البديلة مشكلة مع السلاسل النصية كما هي مع القوائم؟',
+            en: 'Why is aliasing not a problem with strings the way it is with lists?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن السلاسل غير قابلة للتعديل — فلا يوجد تعديل عبر اسم يظهر عند الآخر', en: 'Because strings are immutable — no change through one name can surface at the other' } },
+            { id: 'b', text: { ar: 'لأن السلاسل لا تقبل الإسناد أصلًا', en: 'Because strings do not accept assignment at all' } },
+            { id: 'c', text: { ar: 'لأن السلاسل تُنسخ تلقائيًا عند كل إسناد', en: 'Because strings are automatically copied at every assignment' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'سواء شير الاسمان لسلسلة واحدة أو لسلسلتين متساويتين فالسلوك عينه: لا تعدّل في المكان أصلًا. الخطر يبدأ مع الكائنات القابلة للتعديل.',
+            en: 'Whether the two names share one string or two equal ones, behavior is identical: no in-place modification exists. The danger begins with mutable objects.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'قائمتان تحملان نفس العناصر — متى نقول إنهما متكافئتان (equivalent) ومتى متطابقتين (identical)؟',
+            en: 'Two lists hold the same elements — when do we call them equivalent and when identical?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'متكافئتان للقيمة نفسها؛ ومتطابقتان فقط إن كانتا كائنًا واحدًا (a is b)', en: 'Equivalent for having the same value; identical only if they are one object (a is b)' } },
+            { id: 'b', text: { ar: 'متطابقتان كلما تساوى الطول', en: 'Identical whenever their lengths match' } },
+            { id: 'c', text: { ar: 'الكلمتان مترادفتان في بايثون', en: 'The two words are synonyms in Python' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'التطابق أشدّ من التكافؤ: متطابقان يعني كائنًا واحدًا وهو أثبت التكافؤ، أما التكافؤ فلا يقطع الهوية — لهذا a is b أضيق من a == b.',
+            en: 'Identity is the stricter claim: identical means one object, which guarantees equivalence, while equivalence proves nothing about identity — that is why a is b is narrower than a == b.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'لماذا وضعنا if len(words) < 1: continue قبل if words[0] != \'From\': continue؟',
+            en: "Why did we put if len(words) < 1: continue before if words[0] != 'From': continue?",
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن فحص words[0] على قائمة فارغة يرمي IndexError — الحارس أولًا', en: 'Because probing words[0] on an empty list throws IndexError — the guardian goes first' } },
+            { id: 'b', text: { ar: 'لأن len أسرع من المقارنة النصية', en: 'Because len is faster than a string comparison' } },
+            { id: 'c', text: { ar: 'لأن continue لا يعمل داخل if متداخلة', en: 'Because continue does not work inside a nested if' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'السطر الفارغ يعطي split قائمة فارغة لا كلمة أولى لها — من قرأ words[0] على [] انهار. الحارس يفحص المرور قبل الوصول.',
+            en: 'An empty line hands split an empty list with no first word at all — whoever reads words[0] on [] collapses. The guardian inspects the gate before the entry.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'ومن الفصل السابع: لماذا استغنينا في برنامج اليوم عن line.rstrip() قبل split؟',
+            en: 'From chapter 7: why did we no longer need line.rstrip() before split in the day program?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن split بلا وسيط يقسم عند كل الفراغات ويهمل الأطراف — فمحرف \\n لا يترك أثرًا في الكلمات', en: 'Because split with no argument cuts at every whitespace and ignores the edges — the \\n leaves no trace in the words' } },
+            { id: 'b', text: { ar: 'لأن \\n يختفي تلقائيًا عند فتح الملف', en: 'Because \\n vanishes automatically when the file opens' } },
+            { id: 'c', text: { ar: 'لأن rstrip ممنوعة مع حلقات for', en: 'Because rstrip is forbidden inside for loops' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'split يعامل السطر الجديد كمسافة تُقص من حدود الكلمات — لكن احتفظ بـ rstrip حين تحتاج السطر نفسه سلسلةً نظيفة كما في مقارنات == في الفصل السابع.',
+            en: 'split treats the newline as edge whitespace to cut away — but keep rstrip for when you need the line itself as a clean string, as with the == comparisons of chapter 7.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: "for line in lines:\n    words = line.split()\n    print(words[0])",
+          right: "for line in lines:\n    words = line.split()\n    if len(words) < 1:\n        continue\n    print(words[0])",
+          note: {
+            ar: 'سطر فارغ واحد يعطي [] فينهار words[0] بـ IndexError. الحارس len قبل أي فهرسة — نمط حفظت صحة آلاف أسطر الملفات.',
+            en: 'One empty line yields [] and words[0] collapses with IndexError. The len guardian comes before any indexing — the pattern that kept thousands of file lines healthy.',
+          },
+        },
+        {
+          wrong: 'def bad_delete_head(t):\n    t = t[1:]',
+          right: 'def delete_head(t):\n    del t[0]',
+          note: {
+            ar: 'الإسناد داخل التابع أعاد ربط الاسم المحلي t بقائمة جديدة — والقائمة الأصلية لم تمسّ. تعدّل بالتوابع المكانية أو del، أو أعِد القيمة الجديدة بـ return ليقبعدها المستدعي.',
+            en: 'The assignment inside the function re-pointed the local name t at a new list — the original was never touched. Modify with in-place methods or del, or return the new value for the caller to catch.',
+          },
+        },
+        {
+          wrong: 'original = [3, 1, 2]\nbackup = original\nbackup.sort()',
+          right: 'original = [3, 1, 2]\nbackup = original[:]\nbackup.sort()',
+          note: {
+            ar: 'backup = original اسم بديل لا نسخة — فرتبت القائمة الأصلية دون قصد. النسخة المستقلة تُؤخذ بالتجزئة الكاملة [:] أو بالتابع sorted.',
+            en: 'backup = original is an alias, not a copy — you just sorted the original by accident. The independent copy comes from the full slice [:] or the sorted built-in.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'split يفتح كل سطر ملف قائمة كلمات مفهرسة — والسطر الفارغ قائمة فارغة، فالحارس len(words) يسبق أي words[0].', en: 'split opens every file line as an indexed list of words — the empty line yields an empty list, so the len(words) guardian precedes any words[0].' },
+        { ar: 'الكائن له هوية وقيمة: المتكافئان قيمتهما واحدة، والمتطابقان كائنهما واحد — وis يسأل عن الهوية و== يسأل عن القيمة.', en: 'An object has identity and value: the equivalent share one value, the identical share one object — and is asks about identity while == asks about value.' },
+        { ar: 'الاسم إحالة إلى كائن: b = a تسمية بديلة، والقائمة القابلة للتعديل تتغير عبر كل أسمائها — ووسيط القائمة في التابع يد في نفس الجسد، فdel t[0] يصل للمستدعي بينما t = t[1:] لا يصل.', en: 'A name is a reference to an object: b = a is aliasing, and a mutable list changes through all its names — a list parameter is a hand on the same body, so del t[0] reaches the caller while t = t[1:] does not.' },
+      ],
+      reflectPrompt: {
+        ar: 'اشرح بخطك لزميلٍ كتب برنامجه وانهار: لماذا words[0] عمل مئة مرة ثم انهار مرة واحدة؟ ثم صُغ قاعدة من جملتين يكتبها كل مبرمج فوق شاشته قبل التعامل مع أسطر الملفات.',
+        en: 'Explain in your own words to a friend whose program collapsed: why did words[0] work a hundred times, then fail once? Then phrase a two-line rule every programmer should pin above their screen before touching file lines.',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'PY4E', section: 'py4e.ch8.s10', pages: 'ص128 / pp.128' },
+        { book: 'PY4E', section: 'py4e.ch8.s11', pages: 'ص129 / pp.129' },
+        { book: 'PY4E', section: 'py4e.ch8.s12', pages: 'ص131 / pp.131' },
+        { book: 'PY4E', section: 'py4e.ch8.s13', pages: 'ص131 / pp.131' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'PY4E', section: 'py4e.ch8.s10', pages: 'ص128 / pp.128' },
+    { book: 'PY4E', section: 'py4e.ch8.s11', pages: 'ص129 / pp.129' },
+    { book: 'PY4E', section: 'py4e.ch8.s12', pages: 'ص131 / pp.131' },
+    { book: 'PY4E', section: 'py4e.ch8.s13', pages: 'ص131 / pp.131' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

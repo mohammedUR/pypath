@@ -1,0 +1,303 @@
+[
+ {
+  "lesson": "swe.ch10.l1",
+  "id": "ex1.mini-harness",
+  "solution": "def double(x):\n    return x * 2\n\ncases = [\n    ('double of 3', double, 3, 6),\n    ('double of 0', double, 0, 0),\n    ('double of -4', double, -4, -8),\n]\n\npassed = 0\nfailed = 0\nfor name, fn, arg, expected in cases:\n    if fn(arg) == expected:\n        passed = passed + 1\n    else:\n        failed = failed + 1\n        print('FAILED:', name)\n\nprint('passed: %d failed: %d' % (passed, failed))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "سطر الحصيلة مطبوع بالصيغة الصحيحة",
+     "en": "The summary line printed in the right form"
+    },
+    "code": "assert 'passed: 3 failed: 0' in __learner_output__, 'expected: passed: 3 failed: 0 | actual: %r' % __learner_output__",
+    "expected": "passed: 3 failed: 0"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الدالة double تعمل كما يجب",
+     "en": "The double function behaves"
+    },
+    "code": "assert double(3) == 6 and double(0) == 0 and double(-4) == -8, 'expected: 6 / 0 / -8 | actual: %r' % ((double(3), double(0), double(-4)),)",
+    "expected": "6 / 0 / -8"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "ثلاث حالات في القائمة",
+     "en": "Three cases in the list"
+    },
+    "code": "assert len(cases) == 3, 'expected: 3 cases | actual: %r' % len(cases)",
+    "expected": "3 cases"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "لا أسطر فشل — كل الحالات نجحت",
+     "en": "No FAILED lines — every case passed"
+    },
+    "code": "assert 'FAILED' not in __learner_output__, 'expected: no FAILED lines | actual: %r' % __learner_output__",
+    "expected": "no FAILED lines"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch10.l2",
+  "id": "ex1.coverage-probes",
+  "solution": "hits = {'init': 0, 'body': 0, 'negative': 0, 'done': 0}\nedges = {'d1-T': 0, 'd1-F': 0, 'd2-T': 0, 'd2-F': 0}\n\ndef classify_and_sum(n):\n    hits['init'] += 1\n    total = 0\n    i = 1\n    while i <= n:\n        edges['d2-T'] += 1\n        hits['body'] += 1\n        total = total + i\n        i = i + 1\n    edges['d2-F'] += 1\n    if n < 0:\n        edges['d1-T'] += 1\n        hits['negative'] += 1\n    else:\n        edges['d1-F'] += 1\n    hits['done'] += 1\n    return total\n\ndef covered(counter):\n    n = 0\n    for key in counter:\n        if counter[key] > 0:\n            n += 1\n    return n\n\nfor n in [3, 0]:\n    classify_and_sum(n)\n\nprint('statements: %d/4 | branches: %d/4' % (covered(hits), covered(edges)))\n\nclassify_and_sum(-5)\n\nprint('statements: %d/4 | branches: %d/4' % (covered(hits), covered(edges)))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "السطر الأول يُظهر 3/4 للاثنين",
+     "en": "The first line shows 3/4 for both"
+    },
+    "code": "assert 'statements: 3/4 | branches: 3/4' in __learner_output__, 'expected: statements: 3/4 | branches: 3/4 | actual: %r' % __learner_output__",
+    "expected": "statements: 3/4 | branches: 3/4"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "السطر الثاني يبلغ 100%",
+     "en": "The second line reaches 100%"
+    },
+    "code": "assert 'statements: 4/4 | branches: 4/4' in __learner_output__, 'expected: statements: 4/4 | branches: 4/4 | actual: %r' % __learner_output__",
+    "expected": "statements: 4/4 | branches: 4/4"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "كل العدّادات اشتغلت بعد الاستدعاء الناقص",
+     "en": "Every counter fired after the missing call"
+    },
+    "code": "assert covered(hits) == 4 and covered(edges) == 4, 'expected: 4 and 4 | actual: %r' % ((covered(hits), covered(edges)),)",
+    "expected": "4 and 4"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الحافة الناقصة كانت d1-T مع الجملة negative",
+     "en": "The missing edge was d1-T with the negative statement"
+    },
+    "code": "assert hits['negative'] >= 1 and edges['d1-T'] >= 1, 'expected: negative + d1-T hit | actual: %r' % ((hits['negative'], edges['d1-T']),)",
+    "expected": "negative + d1-T hit"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch10.l3",
+  "id": "ex1.boundary-harness",
+  "solution": "# المواصفة — spec:\n#   set_volume(level): الصلاح أعداد صحيحة 1..100 شاملين -> True؛ وكل شيء آخر -> False\n#   set_volume(level): valid integers 1..100 inclusive -> True; anything else -> False\n\ndef set_volume(level):\n    if not isinstance(level, int):\n        return False\n    return 1 <= level <= 100\n\nboundary_cases = [\n    (0, False),\n    (1, True),\n    (2, True),\n    (99, True),\n    (100, True),\n    (101, False),\n]\n\npassed = 0\nfor value, expected in boundary_cases:\n    if set_volume(value) == expected:\n        passed += 1\n    else:\n        print('FAILED at %r' % (value,))\n\nprint('boundary cases: %d passed: %d' % (len(boundary_cases), passed))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "سطر الحصيلة يظهر كاملًا",
+     "en": "The summary line appears complete"
+    },
+    "code": "assert 'boundary cases: 6 passed: 6' in __learner_output__, 'expected: boundary cases: 6 passed: 6 | actual: %r' % __learner_output__",
+    "expected": "boundary cases: 6 passed: 6"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "القيمة الداخلية 55 تُقبل",
+     "en": "The interior value 55 is accepted"
+    },
+    "code": "assert set_volume(55) is True, 'expected: True for 55 | actual: %r' % set_volume(55)",
+    "expected": "True for 55"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الحدّان يستقيمان: 0 و101 يُرفضان",
+     "en": "Both edges hold: 0 and 101 rejected"
+    },
+    "code": "assert set_volume(0) is False and set_volume(101) is False, 'expected: False, False | actual: %r' % ((set_volume(0), set_volume(101)),)",
+    "expected": "False, False"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "فئة غير الصحيح مغطاة أيضًا",
+     "en": "The non-integer class is covered too"
+    },
+    "code": "assert set_volume('loud') is False and set_volume(3.5) is False, 'expected: False for non-int | actual: %r' % ((set_volume('loud'), set_volume(3.5)),)",
+    "expected": "False for non-int"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "لا أسطر FAILED — كل الحالات الحدّية نجحت",
+     "en": "No FAILED lines — every boundary case passed"
+    },
+    "code": "assert 'FAILED' not in __learner_output__, 'expected: no FAILED lines | actual: %r' % __learner_output__",
+    "expected": "no FAILED lines"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch10.l4",
+  "id": "ex1.mcdc-complete",
+  "solution": "def gate(age, has_id):\n    if age >= 18 and has_id:\n        return 'allow'\n    return 'deny'\n\ntests = [(18, True)]\ntests.append((17, True))\ntests.append((18, False))\n\nprint('mcdc tests: %d' % len(tests))\nprint('outcomes: %s' % ' '.join(gate(a, h) for a, h in tests))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "عدد الاختبارات ثلاثة — قاعدة N+1",
+     "en": "Three tests — the N+1 rule"
+    },
+    "code": "assert 'mcdc tests: 3' in __learner_output__, 'expected: mcdc tests: 3 | actual: %r' % __learner_output__",
+    "expected": "mcdc tests: 3"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الخرجات بالترتيب الصحيح",
+     "en": "Outcomes in the right order"
+    },
+    "code": "assert 'outcomes: allow deny deny' in __learner_output__, 'expected: outcomes: allow deny deny | actual: %r' % __learner_output__",
+    "expected": "outcomes: allow deny deny"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "المجموعة تحوي ثلاث حالات",
+     "en": "The set holds three cases"
+    },
+    "code": "assert len(tests) == 3, 'expected: 3 tests | actual: %r' % len(tests)",
+    "expected": "3 tests"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "gate يتصرف وفق القرار المركب",
+     "en": "gate behaves per the compound decision"
+    },
+    "code": "assert gate(18, True) == 'allow' and gate(17, True) == 'deny' and gate(18, False) == 'deny', 'expected: allow/deny/deny | actual: %r' % ((gate(18, True), gate(17, True), gate(18, False)),)",
+    "expected": "allow/deny/deny"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch10.l4",
+  "id": "ex2.pair-coverage",
+  "solution": "table = [\n    ('Chrome', 'Windows', 'EN'),\n    ('Chrome', 'macOS', 'FR'),\n    ('Chrome', 'Linux', 'JP'),\n    ('Firefox', 'Windows', 'FR'),\n    ('Firefox', 'macOS', 'JP'),\n    ('Firefox', 'Linux', 'EN'),\n    ('Safari', 'Windows', 'JP'),\n    ('Safari', 'macOS', 'EN'),\n    ('Safari', 'Linux', 'FR'),\n]\n\ndef pair_coverage(table, i, j):\n    seen = set()\n    for row in table:\n        seen.add((row[i], row[j]))\n    return len(seen)\n\nprint('b-o: %d/9' % pair_coverage(table, 0, 1))\nprint('b-l: %d/9' % pair_coverage(table, 0, 2))\nprint('o-l: %d/9' % pair_coverage(table, 1, 2))\nprint('rows: %d of 27' % len(table))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "زوجا الأعمدة الأول والثاني مغطيان كاملين",
+     "en": "Both first column pairs fully covered"
+    },
+    "code": "assert 'b-o: 9/9' in __learner_output__ and 'b-l: 9/9' in __learner_output__, 'expected: b-o: 9/9 and b-l: 9/9 | actual: %r' % __learner_output__",
+    "expected": "b-o: 9/9 and b-l: 9/9"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الزوج الثالث مغطى كاملًا",
+     "en": "The third pair fully covered"
+    },
+    "code": "assert 'o-l: 9/9' in __learner_output__, 'expected: o-l: 9/9 | actual: %r' % __learner_output__",
+    "expected": "o-l: 9/9"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الدالة تحسب فعًلا",
+     "en": "The function really counts"
+    },
+    "code": "assert pair_coverage(table, 0, 1) == 9 and pair_coverage(table, 1, 2) == 9, 'expected: 9 and 9 | actual: %r' % ((pair_coverage(table, 0, 1), pair_coverage(table, 1, 2)),)",
+    "expected": "9 and 9"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الاقتصاد ظاهر: 9 من 27",
+     "en": "The economy is visible: 9 of 27"
+    },
+    "code": "assert 'rows: 9 of 27' in __learner_output__, 'expected: rows: 9 of 27 | actual: %r' % __learner_output__",
+    "expected": "rows: 9 of 27"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch10.l5",
+  "id": "ex2.project-suite",
+  "solution": "seen = []\n\ndef normalize_grade(score):\n    if score < 0 or score > 100:\n        seen.append('invalid')\n        return -1\n    if score < 60:\n        seen.append('fail')\n        return 0\n    if score < 80:\n        seen.append('pass')\n        return 1\n    seen.append('high')\n    return 2\n\ncases = [\n    ('invalid low', -1, -1),\n    ('floor', 0, 0),\n    ('mid fail', 30, 0),\n    ('fail edge', 59, 0),\n    ('pass edge', 60, 1),\n    ('mid pass', 70, 1),\n    ('pass ceiling', 79, 1),\n    ('high edge', 80, 2),\n    ('ceiling', 100, 2),\n    ('invalid high', 101, -1),\n]\n\npassed = 0\nfor name, arg, expected in cases:\n    if normalize_grade(arg) == expected:\n        passed = passed + 1\n    else:\n        print('FAILED:', name)\n\nprint('tests: %d passed: %d' % (len(cases), passed))\nprint('branches: %d of 4' % len(set(seen)))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الحصيلة خضراء بالكامل",
+     "en": "The summary is fully green"
+    },
+    "code": "assert 'tests: 10 passed: 10' in __learner_output__, 'expected: tests: 10 passed: 10 | actual: %r' % __learner_output__",
+    "expected": "tests: 10 passed: 10"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "كل الفروع الأربعة مستهللة",
+     "en": "All four branches exercised"
+    },
+    "code": "assert 'branches: 4 of 4' in __learner_output__, 'expected: branches: 4 of 4 | actual: %r' % __learner_output__",
+    "expected": "branches: 4 of 4"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "المواصفة صحيحة عند الحواف",
+     "en": "The spec holds at the edges"
+    },
+    "code": "assert normalize_grade(-1) == -1 and normalize_grade(59) == 0 and normalize_grade(60) == 1 and normalize_grade(79) == 1 and normalize_grade(80) == 2 and normalize_grade(101) == -1, 'expected: -1/0/1/1/2/-1 | actual: %r' % ((normalize_grade(-1), normalize_grade(59), normalize_grade(60), normalize_grade(79), normalize_grade(80), normalize_grade(101)),)",
+    "expected": "-1/0/1/1/2/-1"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "لا فشل مخفي وعشر حالات",
+     "en": "No hidden failures and ten cases"
+    },
+    "code": "assert 'FAILED' not in __learner_output__ and len(cases) == 10, 'expected: no FAILED and 10 cases | actual: %r' % (__learner_output__ + ' | cases=' + str(len(cases)))",
+    "expected": "no FAILED and 10 cases"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch10.l5",
+  "id": "ex5.debug-oracle",
+  "solution": "seen = []\n\ndef normalize_grade(score):\n    if score < 0 or score > 100:\n        seen.append('invalid')\n        return -1\n    if score < 60:\n        seen.append('fail')\n        return 0\n    if score < 80:\n        seen.append('pass')\n        return 1\n    seen.append('high')\n    return 2\n\ncases = [\n    ('zero', 0, 0),\n    ('fail edge', 59, 0),\n    ('pass edge', 79, 1),\n    ('high edge', 80, 2),\n]\n\npassed = 0\nfor name, arg, expected in cases:\n    if normalize_grade(arg) == expected:\n        passed = passed + 1\n    else:\n        print('FAILED:', name, '-> got %s' % normalize_grade(arg))\n\nprint('tests: %d passed: %d' % (len(cases), passed))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الحزمة خضراء بعد إصلاح الأوراكل",
+     "en": "The suite is green after the oracle fix"
+    },
+    "code": "assert 'tests: 4 passed: 4' in __learner_output__, 'expected: tests: 4 passed: 4 | actual: %r' % __learner_output__",
+    "expected": "tests: 4 passed: 4"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "لا صفوف فشل متبقية",
+     "en": "No FAILED lines remain"
+    },
+    "code": "assert 'FAILED' not in __learner_output__, 'expected: no FAILED lines | actual: %r' % __learner_output__",
+    "expected": "no FAILED lines"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الدالة ظلت مطابقة للمواصفة",
+     "en": "The function still matches the spec"
+    },
+    "code": "assert normalize_grade(79) == 1 and normalize_grade(80) == 2 and normalize_grade(59) == 0, 'expected: 1/2/0 | actual: %r' % ((normalize_grade(79), normalize_grade(80), normalize_grade(59)),)",
+    "expected": "1/2/0"
+   }
+  ]
+ }
+]

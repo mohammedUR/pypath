@@ -1,0 +1,267 @@
+[
+ {
+  "lesson": "py4e.ch10.l1",
+  "id": "ex1.first-tuple",
+  "solution": "t = ('a', 'b', 'c', 'd', 'e')\nprint(t[0])\nprint(t[1:3])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "t صف من خمسة أحرف بالترتيب",
+     "en": "t is the five-letter tuple in order"
+    },
+    "code": "assert t == ('a', 'b', 'c', 'd', 'e'), 'expected: 5-letter tuple | actual: %r' % (t,)",
+    "expected": "5-letter tuple"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع العنصر الأول a",
+     "en": "The first element a is printed"
+    },
+    "code": "assert 'a' in __learner_output__, ('expected: a | actual: %r' % __learner_output__)",
+    "expected": "a"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "يُطبع القطع ('b', 'c')",
+     "en": "The slice ('b', 'c') is printed"
+    },
+    "code": "assert \"('b', 'c')\" in __learner_output__, ('expected: (\\'b\\', \\'c\\') | actual: %r' % __learner_output__)",
+    "expected": "('b', 'c')"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch10.l2",
+  "id": "ex1.decorate-sort",
+  "solution": "txt = 'soft what light yonder'\nwords = txt.split()\nt = list()\nfor word in words:\n    t.append((len(word), word))\nt.sort(reverse=True)\nprint(t[0])\nprint(t)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "t قائمة الصفوف المرتبة تنازليًا",
+     "en": "t is the list of tuples sorted descending"
+    },
+    "code": "assert t == [(6, 'yonder'), (5, 'light'), (4, 'what'), (4, 'soft')], 'expected: decorated list sorted descending | actual: %r' % (t,)",
+    "expected": "decorated list sorted descending"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "القمة (6, 'yonder') مطبوعة",
+     "en": "The top pair (6, 'yonder') is printed"
+    },
+    "code": "assert \"(6, 'yonder')\" in __learner_output__, ('expected: (6, \\'yonder\\') | actual: %r' % __learner_output__)",
+    "expected": "(6, 'yonder')"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "التكافؤ حُسم أبجديًا: what قبل soft",
+     "en": "The tie broke alphabetically: what before soft"
+    },
+    "code": "assert \"(4, 'what'), (4, 'soft')\" in __learner_output__, ('expected: (4, \\'what\\'), (4, \\'soft\\') | actual: %r' % __learner_output__)",
+    "expected": "(4, 'what'), (4, 'soft')"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch10.l3",
+  "id": "ex1.split-unpack",
+  "solution": "addr = 'sara@pypath.io'\nuname, domain = addr.split('@')\nprint(uname)\nprint(domain)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "uname يساوي sara",
+     "en": "uname equals sara"
+    },
+    "code": "assert uname == 'sara', 'expected: sara | actual: %r' % uname",
+    "expected": "sara"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "domain يساوي pypath.io",
+     "en": "domain equals pypath.io"
+    },
+    "code": "assert domain == 'pypath.io', 'expected: pypath.io | actual: %r' % domain",
+    "expected": "pypath.io"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "يُطبع الاسم ثم النطاق في سطرين",
+     "en": "Username then domain print on two lines"
+    },
+    "code": "assert 'sara' in __learner_output__ and 'pypath.io' in __learner_output__, ('expected: sara and pypath.io | actual: %r' % __learner_output__)",
+    "expected": "sara / pypath.io"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch10.l4",
+  "id": "ex1.invert-sort",
+  "solution": "scores = {'omar': 12, 'lina': 20, 'ahmed': 15}\nlst = list()\nfor key, val in scores.items():\n    lst.append((val, key))\nlst.sort(reverse=True)\nprint(lst)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "lst القائمة المعكوسة المرتبة تنازليًا",
+     "en": "lst is the inverted list sorted descending"
+    },
+    "code": "assert lst == [(20, 'lina'), (15, 'ahmed'), (12, 'omar')], 'expected: inverted pairs sorted by value | actual: %r' % (lst,)",
+    "expected": "inverted pairs sorted by value"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "القمة (20, lina) مطبوعة",
+     "en": "The top pair (20, lina) is printed"
+    },
+    "code": "assert \"(20, 'lina')\" in __learner_output__, ('expected: (20, \\'lina\\') | actual: %r' % __learner_output__)",
+    "expected": "(20, 'lina')"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "القاع (12, omar) مطبوع",
+     "en": "The bottom pair (12, omar) is printed"
+    },
+    "code": "assert \"(12, 'omar')\" in __learner_output__, ('expected: (12, \\'omar\\') | actual: %r' % __learner_output__)",
+    "expected": "(12, 'omar')"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch10.l5",
+  "id": "ex1.top-two",
+  "solution": "counts = {'i': 61, 'and': 42, 'romeo': 40, 'thee': 24}\nlst = list()\nfor word, count in counts.items():\n    lst.append((count, word))\nlst.sort(reverse=True)\nfor count, word in lst[:2]:\n    print(word, count)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "lst قائمة الأزواج المرتبة تنازليًا",
+     "en": "lst is the list of pairs sorted descending"
+    },
+    "code": "assert lst == [(61, 'i'), (42, 'and'), (40, 'romeo'), (24, 'thee')], 'expected: (count, word) pairs sorted descending | actual: %r' % (lst,)",
+    "expected": "(count, word) pairs sorted descending"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "القمة i 61 مطبوعة",
+     "en": "The top pair i 61 is printed"
+    },
+    "code": "assert 'i 61' in __learner_output__, ('expected: i 61 | actual: %r' % __learner_output__)",
+    "expected": "i 61"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الوصيف and 42 مطبوع",
+     "en": "The runner-up and 42 is printed"
+    },
+    "code": "assert 'and 42' in __learner_output__, ('expected: and 42 | actual: %r' % __learner_output__)",
+    "expected": "and 42"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch10.l6",
+  "id": "ex2.word-leaderboard",
+  "solution": "import string\ntext = 'Romeo loves Juliet. Juliet loves the moon, and the night loves Romeo. And the stars watch the night.'\nout = open('wordboard.txt', 'w')\nout.write(text)\nout.close()\n\nfhand = open('wordboard.txt')\ncounts = dict()\nfor line in fhand:\n    line = line.translate(str.maketrans(' ', ' ', string.punctuation))\n    line = line.lower()\n    words = line.split()\n    for word in words:\n        counts[word] = counts.get(word, 0) + 1\nfhand.close()\n\nlst = list()\nfor word, count in counts.items():\n    lst.append((count, word))\nlst.sort(reverse=True)\n\nrank = 1\nfor count, word in lst[:3]:\n    print('%d. %s: %d' % (rank, word, count))\n    rank = rank + 1",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "القمة the بـ 4 تكرارات",
+     "en": "The top word the with 4 occurrences"
+    },
+    "code": "assert 'the: 4' in __learner_output__, ('expected: the: 4 | actual: %r' % __learner_output__)",
+    "expected": "the: 4"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الوصيف loves بـ 3 تكرارات",
+     "en": "The runner-up loves with 3 occurrences"
+    },
+    "code": "assert 'loves: 3' in __learner_output__, ('expected: loves: 3 | actual: %r' % __learner_output__)",
+    "expected": "loves: 3"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "المركز الثالث romeo بـ 2 — التكافؤ حُسم أبجديًا",
+     "en": "Third place romeo with 2 — the tie broke alphabetically"
+    },
+    "code": "assert 'romeo: 2' in __learner_output__ and 'watch: 1' not in __learner_output__, ('expected: romeo: 2 without watch: 1 | actual: %r' % __learner_output__)",
+    "expected": "romeo: 2"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "تنسيق المراتب كامل: 1. ثم 2. ثم 3.",
+     "en": "Full rank formatting: 1. then 2. then 3."
+    },
+    "code": "assert '1. the: 4' in __learner_output__ and '2. loves: 3' in __learner_output__ and '3. romeo: 2' in __learner_output__, ('expected: 1. the: 4 / 2. loves: 3 / 3. romeo: 2 | actual: %r' % __learner_output__)",
+    "expected": "1. the: 4 / 2. loves: 3 / 3. romeo: 2"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "العدّاد كامل: juliet بـ 2 وwatch بـ 1 و9 كلمات مختلفة",
+     "en": "The counter is complete: juliet at 2, watch at 1, 9 distinct words"
+    },
+    "code": "assert counts['juliet'] == 2 and counts['watch'] == 1 and len(counts) == 9, ('expected: juliet 2, watch 1, 9 distinct | actual: juliet %r watch %r distinct %d' % (counts['juliet'], counts['watch'], len(counts)))",
+    "expected": "juliet 2 / watch 1 / 9 distinct"
+   },
+   {
+    "id": "t6",
+    "name": {
+     "ar": "القائمة المرتبة صحيحة: القمة والقاع",
+     "en": "The sorted list is right: top and bottom"
+    },
+    "code": "assert lst[0] == (4, 'the') and lst[2] == (2, 'romeo'), ('expected: lst[0] (4, \\'the\\') and lst[2] (2, \\'romeo\\') | actual: %r' % (lst,))",
+    "expected": "lst[0] (4, 'the') / lst[2] (2, 'romeo')"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch10.l6",
+  "id": "ex5.debug-sort-by-key",
+  "solution": "import string\ntext = 'Romeo loves Juliet. Juliet loves the moon, and the night loves Romeo. And the stars watch the night.'\nout = open('wordboard.txt', 'w')\nout.write(text)\nout.close()\n\nfhand = open('wordboard.txt')\ncounts = dict()\nfor line in fhand:\n    line = line.translate(str.maketrans(' ', ' ', string.punctuation))\n    line = line.lower()\n    words = line.split()\n    for word in words:\n        counts[word] = counts.get(word, 0) + 1\nfhand.close()\n\nlst = list()\nfor word, count in counts.items():\n    lst.append((count, word))\nlst.sort(reverse=True)\n\nrank = 1\nfor count, word in lst[:3]:\n    print('%d. %s: %d' % (rank, word, count))\n    rank = rank + 1",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "القمة the: 4 وليست watch: 1",
+     "en": "The top is the: 4, not watch: 1"
+    },
+    "code": "assert 'the: 4' in __learner_output__ and 'watch: 1' not in __learner_output__, ('expected: the: 4 without watch: 1 | actual: %r' % __learner_output__)",
+    "expected": "the: 4"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "اللوحة الصحيحة كاملة بالمراتب",
+     "en": "The correct board complete with ranks"
+    },
+    "code": "assert '1. the: 4' in __learner_output__ and '2. loves: 3' in __learner_output__ and '3. romeo: 2' in __learner_output__, ('expected: 1. the: 4 / 2. loves: 3 / 3. romeo: 2 | actual: %r' % __learner_output__)",
+    "expected": "1. the: 4 / 2. loves: 3 / 3. romeo: 2"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "القائمة معكوسة (عدد، كلمة) قبل الترتيب",
+     "en": "The list was inverted to (count, word) before sorting"
+    },
+    "code": "assert lst[0] == (4, 'the') and lst[2] == (2, 'romeo'), ('expected: lst[0] (4, \\'the\\') and lst[2] (2, \\'romeo\\') | actual: %r' % (lst,))",
+    "expected": "lst[0] (4, 'the') / lst[2] (2, 'romeo')"
+   }
+  ]
+ }
+]

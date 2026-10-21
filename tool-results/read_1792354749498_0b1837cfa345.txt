@@ -1,0 +1,692 @@
+   100→
+   101→===== صفحة الكتاب 824 =====
+   102→784
+   103→Reinforcement Learning
+   104→Let’s now consider the situation when the robot starts at a particular state 𝑠0 ∈S and
+   105→continues taking actions to result in a trajectory
+   106→𝜏= (𝑠0, 𝑎0, 𝑟0, 𝑠1, 𝑎1, 𝑟1, 𝑠2, 𝑎2, 𝑟2, . . .).
+   107→(17.1.2)
+   108→At each time step 𝑡the robot is at a state 𝑠𝑡and takes an action 𝑎𝑡which results in a reward
+   109→𝑟𝑡= 𝑟(𝑠𝑡, 𝑎𝑡). The return of a trajectory is the total reward obtained by the robot along
+   110→such a trajectory
+   111→𝑅(𝜏) = 𝑟0 + 𝑟1 + 𝑟2 + · · · .
+   112→(17.1.3)
+   113→The goal in reinforcement learning is to find a trajectory that has the largest return.
+   114→Think of the situation when the robot continues to travel in the gridworld without ever
+   115→reaching the goal location. The sequence of states and actions in a trajectory can be in-
+   116→finitely long in this case and the return of any such infinitely long trajectory will be infinite.
+   117→In order to keep the reinforcement learning formulation meaningful even for such trajecto-
+   118→ries, we introduce the notion of a discount factor 𝛾< 1. We write the discounted return
+   119→as
+   120→𝑅(𝜏) = 𝑟0 + 𝛾𝑟1 + 𝛾2𝑟2 + · · · =
+   121→∞
+   122→Õ
+   123→𝑡=0
+   124→𝛾𝑡𝑟𝑡.
+   125→(17.1.4)
+   126→Note that if 𝛾is very small, the rewards earned by the robot in the far future, say 𝑡=
+   127→1000, are heavily discounted by the factor 𝛾1000. This encourages the robot to select short
+   128→trajectories that achieve its goal, namely that of going to the green house in the gridwold
+   129→example (see Fig. 17.1.1). For large values of the discount factor, say 𝛾= 0.99, the robot
+   130→is encouraged to explore and then find the best trajectory to go to the goal location.
+   131→17.1.3 Discussion of the Markov Assumption
+   132→Let us think of a new robot where the state 𝑠𝑡is the location as above but the action 𝑎𝑡is
+   133→the acceleration that the robot applies to its wheels instead of an abstract command like “go
+   134→forward”. If this robot has some non-zero velocity at state 𝑠𝑡, then the next location 𝑠𝑡+1 is
+   135→a function of the past location 𝑠𝑡, the acceleration 𝑎𝑡, also the velocity of the robot at time
+   136→𝑡which is proportional to 𝑠𝑡−𝑠𝑡−1. This indicates that we should have
+   137→𝑠𝑡+1 = some function(𝑠𝑡, 𝑎𝑡, 𝑠𝑡−1);
+   138→(17.1.5)
+   139→the “some function” in our case would be Newton’s law of motion. This is quite different
+   140→from our transition function that simply depends upon 𝑠𝑡and 𝑎𝑡.
+   141→Markov systems are all systems where the next state 𝑠𝑡+1 is only a function of the current
+   142→state 𝑠𝑡and the action 𝑎𝑡taken at the current state. In Markov systems, the next state does
+   143→not depend on which actions were taken in the past or the states that the robot was at in the
+   144→past. For example, the new robot that has acceleration as the action above is not Markovian
+   145→because the next location 𝑠𝑡+1 depends upon the previous state 𝑠𝑡−1 through the velocity.
+   146→It may seem that Markovian nature of a system is a restrictive assumption, but it is not so.
+   147→Markov Decision Processes are still capable of modeling a very large class of real systems.
+   148→For example, for our new robot, if we chose our state 𝑠𝑡to the tuple (location, velocity)
+   149→
+   150→===== صفحة الكتاب 825 =====
+   151→785
+   152→Value Iteration
+   153→251
+   154→252
+   155→253
+   156→then the system is Markovian because its next state (location𝑡+1, velocity𝑡+1) depends only
+   157→upon the current state (location𝑡, velocity𝑡) and the action at the current state 𝑎𝑡.
+   158→17.1.4 Summary
+   159→The reinforcement learning problem is typically modeled using Markov Decision Pro-
+   160→cesses. A Markov decision process (MDP) is defined by a tuple of four entities (S, A,𝑇, 𝑟)
+   161→where S is the state space, A is the action space, 𝑇is the transition function that encodes
+   162→the transition probabilities of the MDP and 𝑟is the immediate reward obtained by taking
+   163→action at a particular state.
+   164→17.1.5 Exercises
+   165→1. Suppose that we want to design an MDP to model MountainCar251 problem.
+   166→1. What would be the set of states?
+   167→2. What would be the set of actions?
+   168→3. What would be the possible reward functions?
+   169→2. How would you design an MDP for an Atari game like Pong game252?
+   170→Discussions253.
+   171→17.2 Value Iteration
+   172→In this section we will discuss how to pick the best action for the robot at each state to
+   173→maximize the return of the trajectory. We will describe an algorithm called Value Iteration
+   174→and implement it for a simulated robot that travels over a frozen lake.
+   175→17.2.1 Stochastic Policy
+   176→A stochastic policy denoted as 𝜋(𝑎| 𝑠) (policy for short) is a conditional distribution over
+   177→the actions 𝑎∈A given the state 𝑠∈S, 𝜋(𝑎| 𝑠) ≡𝑃(𝑎| 𝑠). As an example, if the
+   178→robot has four actions A = {go left, go down, go right, go up}. The policy at a state
+   179→𝑠∈S for such a set of actions A is a categorical distribution where the probabilities of
+   180→the four actions could be [0.4, 0.2, 0.1, 0.3]; at some other state 𝑠′ ∈S the probabilities
+   181→𝜋(𝑎| 𝑠′) of the same four actions could be [0.1, 0.1, 0.2, 0.6]. Note that we should have
+   182→Í
+   183→𝑎𝜋(𝑎| 𝑠) = 1 for any state 𝑠. A deterministic policy is a special case of a stochastic
+   184→policy in that the distribution 𝜋(𝑎| 𝑠) only gives non-zero probability to one particular
+   185→action, e.g., [1, 0, 0, 0] for our example with four actions.
+   186→To make the notation less cumbersome, we will often write 𝜋(𝑠) as the conditional distri-
+   187→bution instead of 𝜋(𝑎| 𝑠).
+   188→
+   189→===== صفحة الكتاب 826 =====
+   190→786
+   191→Reinforcement Learning
+   192→17.2.2 Value Function
+   193→Imagine now that the robot starts at a state 𝑠0 and at each time instant, it first samples
+   194→an action from the policy 𝑎𝑡∼𝜋(𝑠𝑡) and takes this action to result in the next state
+   195→𝑠𝑡+1. The trajectory 𝜏= (𝑠0, 𝑎0, 𝑟0, 𝑠1, 𝑎1, 𝑟1, . . .), can be different depending upon which
+   196→particular action 𝑎𝑡is sampled at intermediate instants. We define the average return
+   197→𝑅(𝜏) = Í∞
+   198→𝑡=0 𝛾𝑡𝑟(𝑠𝑡, 𝑎𝑡) of all such trajectories
+   199→𝑉𝜋(𝑠0) = 𝐸𝑎𝑡∼𝜋(𝑠𝑡)
+   200→h
+   201→𝑅(𝜏)
+   202→i
+   203→= 𝐸𝑎𝑡∼𝜋(𝑠𝑡)
+   204→h ∞
+   205→Õ
+   206→𝑡=0
+   207→𝛾𝑡𝑟(𝑠𝑡, 𝑎𝑡)
+   208→i
+   209→,
+   210→(17.2.1)
+   211→where 𝑠𝑡+1 ∼𝑃(𝑠𝑡+1 | 𝑠𝑡, 𝑎𝑡) is the next state of the robot and 𝑟(𝑠𝑡, 𝑎𝑡) is the instantaneous
+   212→reward obtained by taking action 𝑎𝑡in state 𝑠𝑡at time 𝑡. This is called the “value function”
+   213→for the policy 𝜋. In simple words, the value of a state 𝑠0 for a policy 𝜋, denoted by 𝑉𝜋(𝑠0),
+   214→is the expected 𝛾-discounted return obtained by the robot if it begins at state 𝑠0 and takes
+   215→actions from the policy 𝜋at each time instant.
+   216→We next break down the trajectory into two stages (i) the first stage which corresponds to
+   217→𝑠0 →𝑠1 upon taking the action 𝑎0, and (ii) a second stage which is the trajectory 𝜏′ =
+   218→(𝑠1, 𝑎1, 𝑟1, . . .) thereafter. The key idea behind all algorithms in reinforcement learning is
+   219→that the value of state 𝑠0 can be written as the average reward obtained in the first stage
+   220→and the value function averaged over all possible next states 𝑠1. This is quite intuitive and
+   221→arises from our Markov assumption: the average return from the current state is the sum
+   222→of the average return from the next state and the average reward of going to the next state.
+   223→Mathematically, we write the two stages as
+   224→𝑉𝜋(𝑠0) = 𝑟(𝑠0, 𝑎0) + 𝛾𝐸𝑎0∼𝜋(𝑠0)
+   225→h
+   226→𝐸𝑠1∼𝑃(𝑠1|𝑠0,𝑎0)
+   227→h
+   228→𝑉𝜋(𝑠1)
+   229→ii
+   230→.
+   231→(17.2.2)
+   232→This decomposition is very powerful: it is the foundation of the principle of dynamic pro-
+   233→gramming upon which all reinforcement learning algorithms are based. Notice that the
+   234→second stage gets two expectations, one over the choices of the action 𝑎0 taken in the first
+   235→stage using the stochastic policy and another over the possible states 𝑠1 obtained from the
+   236→chosen action. We can write (17.2.2) using the transition probabilities in the Markov de-
+   237→cision process (MDP) as
+   238→𝑉𝜋(𝑠) =
+   239→Õ
+   240→𝑎∈A
+   241→𝜋(𝑎| 𝑠)
+   242→h
+   243→𝑟(𝑠, 𝑎) + 𝛾
+   244→Õ
+   245→𝑠′∈S
+   246→𝑃(𝑠′ | 𝑠, 𝑎)𝑉𝜋(𝑠′)
+   247→i
+   248→; for all 𝑠∈S.
+   249→(17.2.3)
+   250→An important thing to notice here is that the above identity holds for all states 𝑠∈S because
+   251→we can think of any trajectory that begins at that state and break down the trajectory into
+   252→two stages.
+   253→17.2.3 Action-Value Function
+   254→In implementations, it is often useful to maintain a quantity called the “action value” func-
+   255→tion which is a closely related quantity to the value function. This is defined to be the
+   256→average return of a trajectory that begins at 𝑠0 but when the action of the first stage is fixed
+   257→
+   258→===== صفحة الكتاب 827 =====
+   259→787
+   260→Value Iteration
+   261→to be 𝑎0
+   262→𝑄𝜋(𝑠0, 𝑎0) = 𝑟(𝑠0, 𝑎0) + 𝐸𝑎𝑡∼𝜋(𝑠𝑡)
+   263→h ∞
+   264→Õ
+   265→𝑡=1
+   266→𝛾𝑡𝑟(𝑠𝑡, 𝑎𝑡)
+   267→i
+   268→,
+   269→(17.2.4)
+   270→note that the summation inside the expectation is from 𝑡= 1, . . . , ∞because the reward of
+   271→the first stage is fixed in this case. We can again break down the trajectory into two parts
+   272→and write
+   273→𝑄𝜋(𝑠, 𝑎) = 𝑟(𝑠, 𝑎) + 𝛾
+   274→Õ
+   275→𝑠′∈S
+   276→𝑃(𝑠′ | 𝑠, 𝑎)
+   277→Õ
+   278→𝑎′∈A
+   279→𝜋(𝑎′ | 𝑠′) 𝑄𝜋(𝑠′, 𝑎′); for all 𝑠∈S, 𝑎∈A.
+   280→(17.2.5)
+   281→This version is the analog of (17.2.3) for the action value function.
+   282→17.2.4 Optimal Stochastic Policy
+   283→Both the value function and the action-value function depend upon the policy that the robot
+   284→chooses. We will next think of the “optimal policy” that achieves the maximal average
+   285→return
+   286→𝜋∗= argmax
+   287→𝜋
+   288→𝑉𝜋(𝑠0).
+   289→(17.2.6)
+   290→Of all possible stochastic policies that the robot could have taken, the optimal policy 𝜋∗
+   291→achieves the largest average discounted return for trajectories starting from state 𝑠0. Let us
+   292→denote the value function and the action-value function of the optimal policy as 𝑉∗≡𝑉𝜋∗
+   293→and 𝑄∗≡𝑄𝜋∗.
+   294→Let us observe that for a deterministic policy where there is only one action that is possible
+   295→under the policy at any given state. This gives us
+   296→𝜋∗(𝑠) = argmax
+   297→𝑎∈A
+   298→h
+   299→𝑟(𝑠, 𝑎) + 𝛾
+   300→Õ
+   301→𝑠′∈S
+   302→𝑃(𝑠′ | 𝑠, 𝑎) 𝑉∗(𝑠′)
+   303→i
+   304→.
+   305→(17.2.7)
+   306→A good mnemonic to remember this is that the optimal action at state 𝑠(for a deterministic
+   307→policy) is the one that maximizes the sum of reward 𝑟(𝑠, 𝑎) from the first stage and the
+   308→average return of the trajectories starting from the next sate 𝑠′, averaged over all possible
+   309→next states 𝑠′ from the second stage.
+   310→17.2.5 Principle of Dynamic Programming
+   311→Our developement in the previous section in (17.2.2) or (17.2.5) can be turned into an
+   312→algorithm to compute the optimal value function 𝑉∗or the action-value function 𝑄∗, re-
+   313→spectively. Observe that
+   314→𝑉∗(𝑠) =
+   315→Õ
+   316→𝑎∈A
+   317→𝜋∗(𝑎| 𝑠)
+   318→h
+   319→𝑟(𝑠, 𝑎) + 𝛾
+   320→Õ
+   321→𝑠′∈S
+   322→𝑃(𝑠′ | 𝑠, 𝑎)𝑉∗(𝑠′)
+   323→i
+   324→; for all 𝑠∈S.
+   325→(17.2.8)
+   326→For a deterministic optimal policy 𝜋∗, since there is only one action that can be taken at
+   327→state 𝑠, we can also write
+   328→𝑉∗(𝑠) = argmax𝑎∈A
+   329→n
+   330→𝑟(𝑠, 𝑎) + 𝛾
+   331→Õ
+   332→𝑠′∈S
+   333→𝑃(𝑠′ | 𝑠, 𝑎)𝑉∗(𝑠′)
+   334→o
+   335→(17.2.9)
+   336→
+   337→===== صفحة الكتاب 828 =====
+   338→788
+   339→Reinforcement Learning
+   340→for all states 𝑠∈S. This identity is called the “principle of dynamic programming” (Bell-
+   341→man, 1952, Bellman, 1957). It was formulated by Richard Bellman in 1950s and we can
+   342→remember it as “the remainder of an optimal trajectory is also optimal”.
+   343→17.2.6 Value Iteration
+   344→We can turn the principle of dynamic programming into an algorithm for finding the optimal
+   345→value function called value iteration. The key idea behind value iteration is to think of this
+   346→identity as a set of constraints that tie together 𝑉∗(𝑠) at different states 𝑠∈S. We initialize
+   347→the value function to some arbitrary values 𝑉0(𝑠) for all states 𝑠∈S. At the 𝑘th iteration,
+   348→the Value Iteration algorithm updates the value function as
+   349→𝑉𝑘+1(𝑠) = max
+   350→𝑎∈A
+   351→n
+   352→𝑟(𝑠, 𝑎) + 𝛾
+   353→Õ
+   354→𝑠′∈S
+   355→𝑃(𝑠′ | 𝑠, 𝑎)𝑉𝑘(𝑠′)
+   356→o
+   357→; for all 𝑠∈S.
+   358→(17.2.10)
+   359→It turns out that as 𝑘→∞the value function estimated by the Value Iteration algorithm
+   360→converges to the optimal value function irrespective of the initialization 𝑉0,
+   361→𝑉∗(𝑠) = lim
+   362→𝑘→∞𝑉𝑘(𝑠); for all states 𝑠∈S.
+   363→(17.2.11)
+   364→The same Value Iteration algorithm can be equivalently written using the action-value func-
+   365→tion as
+   366→𝑄𝑘+1(𝑠, 𝑎) = 𝑟(𝑠, 𝑎) + 𝛾max
+   367→𝑎′∈A
+   368→Õ
+   369→𝑠′∈S
+   370→𝑃(𝑠′ | 𝑠, 𝑎)𝑄𝑘(𝑠′, 𝑎′); for all 𝑠∈S, 𝑎∈A.
+   371→(17.2.12)
+   372→In this case we initialize 𝑄0(𝑠, 𝑎) to some arbitrary values for all 𝑠∈S and 𝑎∈A. Again
+   373→we have 𝑄∗(𝑠, 𝑎) = lim𝑘→∞𝑄𝑘(𝑠, 𝑎) for all 𝑠∈S and 𝑎∈A.
+   374→17.2.7 Policy Evaluation
+   375→Value Iteration enables us to compute the optimal value function, i.e., 𝑉𝜋∗of the optimal
+   376→deterministic policy 𝜋∗. We can also use similar iterative updates to compute the value
+   377→function associated with any other, potentially stochastic, policy 𝜋. We again initialize
+   378→𝑉𝜋
+   379→0 (𝑠) to some arbitrary values for all states 𝑠∈S and at the 𝑘th iteration, perform the
+   380→updates
+   381→𝑉𝜋
+   382→𝑘+1(𝑠) =
+   383→Õ
+   384→𝑎∈A
+   385→𝜋(𝑎| 𝑠)
+   386→h
+   387→𝑟(𝑠, 𝑎) + 𝛾
+   388→Õ
+   389→𝑠′∈S
+   390→𝑃(𝑠′ | 𝑠, 𝑎)𝑉𝜋
+   391→𝑘(𝑠′)
+   392→i
+   393→; for all 𝑠∈S.
+   394→(17.2.13)
+   395→This algorithm is known as policy evaluation and is useful to compute the value function
+   396→given the policy. Again, it turns out that as 𝑘→∞these updates converge to the correct
+   397→value function irrespective of the initialization 𝑉0,
+   398→𝑉𝜋(𝑠) = lim
+   399→𝑘→∞𝑉𝜋
+   400→𝑘(𝑠); for all states 𝑠∈S.
+   401→(17.2.14)
+   402→The algorithm for computing the action-value function 𝑄𝜋(𝑠, 𝑎) of a policy 𝜋is analo-
+   403→gous.
+   404→
+   405→===== صفحة الكتاب 829 =====
+   406→789
+   407→Value Iteration
+   408→254
+   409→17.2.8 Implementation of Value Iteration
+   410→We next show how to implement Value Iteration for a navigation problem called FrozenLake
+   411→from Open AI Gym 254 . We first need to setup the enviroment as shown in the following
+   412→code.
+   413→%matplotlib inline
+   414→import random
+   415→import numpy as np
+   416→from d2l import torch as d2l
+   417→seed = 0
+   418→# Random number generator seed
+   419→gamma = 0.95
+   420→# Discount factor
+   421→num_iters = 10
+   422→# Number of iterations
+   423→random.seed(seed)
+   424→# Set the random seed to ensure results can be reproduced
+   425→np.random.seed(seed)
+   426→# Now set up the environment
+   427→env_info = d2l.make_env('FrozenLake-v1', seed=seed)
+   428→In the FrozenLake environment, the robot moves on a 4 × 4 grid (these are the states) with
+   429→actions that are “up” (↑), “down” (→), “left” (←), and “right” (→). The environment
+   430→contains a number of holes (H) cells and frozen (F) cells as well as a goal cell (G), all of
+   431→which are unknown to the robot. To keep the problem simple, we assume the robot has
+   432→reliable actions, i.e. 𝑃(𝑠′ | 𝑠, 𝑎) = 1 for all 𝑠∈S, 𝑎∈A. If the robot reaches the goal, the
+   433→trial ends and the robot receives a reward of 1 irrespective of the action; the reward at any
+   434→other state is 0 for all actions. The objective of the robot is to learn a policy that reaches the
+   435→goal location (G) from a given start location (S) (this is 𝑠0) to maximize the return.
+   436→The following function implements Value Iteration, where env_info contains MDP and
+   437→environment related information and gamma is the discount factor:
+   438→def value_iteration(env_info, gamma, num_iters):
+   439→env_desc = env_info['desc']
+   440→# 2D array shows what each item means
+   441→prob_idx = env_info['trans_prob_idx']
+   442→nextstate_idx = env_info['nextstate_idx']
+   443→reward_idx = env_info['reward_idx']
+   444→num_states = env_info['num_states']
+   445→num_actions = env_info['num_actions']
+   446→mdp = env_info['mdp']
+   447→V
+   448→= np.zeros((num_iters + 1, num_states))
+   449→Q
+   450→= np.zeros((num_iters + 1, num_states, num_actions))
+   451→pi = np.zeros((num_iters + 1, num_states))
+   452→for k in range(1, num_iters + 1):
+   453→for s in range(num_states):
+   454→for a in range(num_actions):
+   455→# Calculate \sum_{s'} p(s'\mid s,a) [r + \gamma v_k(s')]
+   456→for pxrds in mdp[(s,a)]:
+   457→# mdp(s,a): [(p1,next1,r1,d1),(p2,next2,r2,d2),..]
+   458→pr = pxrds[prob_idx]
+   459→# p(s'\mid s,a)
+   460→(continues on next page)
+   461→
+   462→===== صفحة الكتاب 830 =====
+   463→790
+   464→Reinforcement Learning
+   465→(continued from previous page)
+   466→nextstate = pxrds[nextstate_idx]
+   467→# Next state
+   468→reward = pxrds[reward_idx]
+   469→# Reward
+   470→Q[k,s,a] += pr * (reward + gamma * V[k - 1, nextstate])
+   471→# Record max value and max action
+   472→V[k,s] = np.max(Q[k,s,:])
+   473→pi[k,s] = np.argmax(Q[k,s,:])
+   474→d2l.show_value_function_progress(env_desc, V[:-1], pi[:-1])
+   475→value_iteration(env_info=env_info, gamma=gamma, num_iters=num_iters)
+   476→The above pictures show the policy (the arrow indicates the action) and value function (the
+   477→change in color shows how the value function changes over time from the initial value shown
+   478→by dark color to the optimal value shown by light colors.). As we see, Value Iteration finds
+   479→the optimal value function after 10 iterations and the goal state (G) can be reached starting
+   480→from any state as long as it is not an H cell. Another interesting aspect of the implementation
+   481→is that in addition to finding the optimal value function, we also automatically found the
+   482→optimal policy 𝜋∗corresponding to this value function.
+   483→17.2.9 Summary
+   484→The main idea behind the Value Iteration algorithm is to use the principle of dynamic pro-
+   485→gramming to find the optimal average return obtained from a given state. Note that imple-
+   486→
+   487→===== صفحة الكتاب 831 =====
+   488→791
+   489→Q-Learning
+   490→255
+   491→menting the Value Iteration algorithm requires that we know the Markov decision process
+   492→(MDP), e.g., the transition and reward functions, completely.
+   493→17.2.10 Exercises
+   494→1. Try increasing the grid size to 8 × 8. Compared with 4 × 4 grid, how many iterations
+   495→does it take to find the optimal value function?
+   496→2. What is the computational complexity of the Value Iteration algorithm?
+   497→3. Run the Value Iteration algorithm again with 𝛾(i.e. “gamma” in the above code) when
+   498→it equals to 0, 0.5, and 1 and analyze its results.
+   499→4. How does the value of 𝛾affect the number of iterations taken by Value Iteration to
+   500→converge? What happens when 𝛾= 1?
+   501→Discussions255.
+   502→17.3 Q-Learning
+   503→In the previous section, we discussed the Value Iteration algorithm which requires accessing
+   504→the complete Markov decision process (MDP), e.g., the transition and reward functions. In
+   505→this section, we will look at Q-Learning (Watkins and Dayan, 1992) which is an algorithm
+   506→to learn the value function without necessarily knowing the MDP. This algorithm embodies
+   507→the central idea behind reinforcement learning: it will enable the robot to obtain its own
+   508→data.
+   509→17.3.1 The Q-Learning Algorithm
+   510→Recall that value iteration for the action-value function in Value Iteration (page 785) cor-
+   511→responds to the update
+   512→𝑄𝑘+1(𝑠, 𝑎) = 𝑟(𝑠, 𝑎) + 𝛾
+   513→Õ
+   514→𝑠′∈S
+   515→𝑃(𝑠′ | 𝑠, 𝑎) max
+   516→𝑎′∈A 𝑄𝑘(𝑠′, 𝑎′); for all 𝑠∈S and 𝑎∈A.
+   517→(17.3.1)
+   518→As we discussed, implementing this algorithm requires knowing the MDP, specifically the
+   519→transition function 𝑃(𝑠′ | 𝑠, 𝑎). The key idea behind Q-Learning is to replace the summa-
+   520→tion over all 𝑠′ ∈S in the above expression by a summation over the states visited by the
+   521→robot. This allows us to subvert the need to know the transition function.
+   522→17.3.2 An Optimization Problem Underlying Q-Learning
+   523→Let us imagine that the robot uses a policy 𝜋𝑒(𝑎| 𝑠) to take actions. Just like the previous
+   524→chapter, it collects a dataset of 𝑛trajectories of 𝑇timesteps each {(𝑠𝑖
+   525→𝑡, 𝑎𝑖
+   526→𝑡)𝑡=0,...,𝑇−1}𝑖=1,...,𝑛.
+   527→Recall that value iteration is really a set of constraints that ties together the action-value
+   528→
+   529→===== صفحة الكتاب 832 =====
+   530→792
+   531→Reinforcement Learning
+   532→𝑄∗(𝑠, 𝑎) of different states and actions to each other. We can implement an approximate
+   533→version of value iteration using the data that the robot has collected using 𝜋𝑒as
+   534→ˆ𝑄= min
+   535→𝑄
+   536→1
+   537→𝑛𝑇
+   538→𝑛
+   539→Õ
+   540→𝑖=1
+   541→𝑇−1
+   542→Õ
+   543→𝑡=0
+   544→(𝑄(𝑠𝑖
+   545→𝑡, 𝑎𝑖
+   546→𝑡) −𝑟(𝑠𝑖
+   547→𝑡, 𝑎𝑖
+   548→𝑡) −𝛾max
+   549→𝑎′ 𝑄(𝑠𝑖
+   550→𝑡+1, 𝑎′))2
+   551→|                                                                   {z                                                                   }
+   552→def= ℓ(𝑄)
+   553→.
+   554→(17.3.2)
+   555→Let us first observe the similarities and differences between this expression and value iter-
+   556→ation above. If the robot’s policy 𝜋𝑒were equal to the optimal policy 𝜋∗, and if it collected
+   557→an infinite amount of data, then this optimization problem would be identical to the opti-
+   558→mization problem underlying value iteration. But while value iteration requires us to know
+   559→𝑃(𝑠′ | 𝑠, 𝑎), the optimization objective does not have this term. We have not cheated: as
+   560→the robot uses the policy 𝜋𝑒to take an action 𝑎𝑖
+   561→𝑡at state 𝑠𝑖
+   562→𝑡, the next state 𝑠𝑖
+   563→𝑡+1 is a sample
+   564→drawn from the transition function. So the optimization objective also has access to the
+   565→transition function, but implicitly in terms of the data collected by the robot.
+   566→The variables of our optimization problem are 𝑄(𝑠, 𝑎) for all 𝑠∈S and 𝑎∈A. We can
+   567→minimize the objective using gradient descent. For every pair (𝑠𝑖
+   568→𝑡, 𝑎𝑖
+   569→𝑡) in our dataset, we
+   570→can write
+   571→𝑄(𝑠𝑖
+   572→𝑡, 𝑎𝑖
+   573→𝑡) ←𝑄(𝑠𝑖
+   574→𝑡, 𝑎𝑖
+   575→𝑡) −𝛼∇𝑄(𝑠𝑖
+   576→𝑡,𝑎𝑖
+   577→𝑡)ℓ(𝑄)
+   578→= (1 −𝛼)𝑄(𝑠𝑖
+   579→𝑡, 𝑎𝑖
+   580→𝑡) −𝛼
+   581→
+   582→𝑟(𝑠𝑖
+   583→𝑡, 𝑎𝑖
+   584→𝑡) + 𝛾max
+   585→𝑎′ 𝑄(𝑠𝑖
+   586→𝑡+1, 𝑎′)
+   587→
+   588→,
+   589→(17.3.3)
+   590→where 𝛼is the learning rate. Typically in real problems, when the robot reaches the goal
+   591→location, the trajectories end. The value of such a terminal state is zero because the robot
+   592→does not take any further actions beyond this state. We should modify our update to handle
+   593→such states as
+   594→𝑄(𝑠𝑖
+   595→𝑡, 𝑎𝑖
+   596→𝑡) = (1 −𝛼)𝑄(𝑠𝑖
+   597→𝑡, 𝑎𝑖
+   598→𝑡) −𝛼
+   599→
+   600→𝑟(𝑠𝑖
+   601→𝑡, 𝑎𝑖
+   602→𝑡) + 𝛾(1 −⊮𝑠𝑖
+   603→𝑡+1 is terminal) max
+   604→𝑎′ 𝑄(𝑠𝑖
+   605→𝑡+1, 𝑎′)
+   606→
+   607→.
+   608→(17.3.4)
+   609→where ⊮𝑠𝑖
+   610→𝑡+1 is terminal is an indicator variable that is one if 𝑠𝑖
+   611→𝑡+1 is a terminal state and zero
+   612→otherwise. The value of state-action tuples (𝑠, 𝑎) that are not a part of the dataset is set to
+   613→−∞. This algorithm is known as Q-Learning.
+   614→Given the solution of these updates ˆ𝑄, which is an approximation of the optimal value
+   615→function 𝑄∗, we can obtain the optimal deterministic policy corresponding to this value
+   616→function easily using
+   617→ˆ𝜋(𝑠) = argmax𝑎ˆ𝑄(𝑠, 𝑎).
+   618→(17.3.5)
+   619→There can be situations when there are multiple deterministic policies that correspond to
+   620→the same optimal value function; such ties can be broken arbitrarily because they have the
+   621→same value function.
+   622→17.3.3 Exploration in Q-Learning
+   623→
+   624→===== صفحة الكتاب 833 =====
+   625→793
+   626→Q-Learning
+   627→The policy used by the robot to collect data 𝜋𝑒is critical to ensure that Q-Learning works
+   628→well. Afterall, we have replaced the expectation over 𝑠′ using the transition function 𝑃(𝑠′ |
+   629→𝑠, 𝑎) using the data collected by the robot. If the policy 𝜋𝑒does not reach diverse parts of
+   630→the state-action space, then it is easy to imagine our estimate ˆ𝑄will be a poor approximation
+   631→of the optimal 𝑄∗. It is also important to note that in such a situation, the estimate of 𝑄∗at
+   632→all states 𝑠∈S will be bad, not just the ones visited by 𝜋𝑒. This is because the Q-Learning
+   633→objective (or value iteration) is a constraint that ties together the value of all state-action
+   634→pairs. It is therefore critical to pick the correct policy 𝜋𝑒to collect data.
+   635→We can mitigate this concern by picking a completely random policy 𝜋𝑒that samples actions
+   636→uniformly randomly from A. Such a policy would visit all states, but it will take a large
+   637→number of trajectories before it does so.
+   638→We thus arrive at the second key idea in Q-Learning, namely exploration. Typical im-
+   639→plementations of Q-Learning tie together the current estimate of 𝑄and the policy 𝜋𝑒to
+   640→set
+   641→𝜋𝑒(𝑎| 𝑠) =
+   642→(
+   643→argmax𝑎′ ˆ𝑄(𝑠, 𝑎′)
+   644→with prob. 1 −𝜖
+   645→uniform(A)
+   646→with prob. 𝜖,
+   647→(17.3.6)
+   648→where 𝜖is called the “exploration parameter” and is chosen by the user. The policy 𝜋𝑒is
+   649→called an exploration policy. This particular 𝜋𝑒is called an 𝜖-greedy exploration policy
+   650→because it chooses the optimal action (under the current estimate ˆ𝑄) with probability 1 −𝜖
+   651→but explores randomly with the remainder probability 𝜖. We can also use the so-called
+   652→softmax exploration policy
+   653→𝜋𝑒(𝑎| 𝑠) =
+   654→𝑒ˆ𝑄(𝑠,𝑎)/𝑇
+   655→Í
+   656→𝑎′ 𝑒ˆ𝑄(𝑠,𝑎′)/𝑇;
+   657→(17.3.7)
+   658→where the hyper-parameter 𝑇is called temperature. A large value of 𝜖in 𝜖-greedy policy
+   659→functions similarly to a large value of temperature 𝑇for the softmax policy.
+   660→It is important to note that when we pick an exploration that depends upon the current
+   661→estimate of the action-value function ˆ𝑄, we need to resolve the optimization problem peri-
+   662→odically. Typical implementations of Q-Learning make one mini-batch update using a few
+   663→state-action pairs in the collected dataset (typically the ones collected from the previous
+   664→timestep of the robot) after taking every action using 𝜋𝑒.
+   665→17.3.4 The “Self-correcting” Property of Q-Learning
+   666→The dataset collected by the robot during Q-Learning grows with time. Both the exploration
+   667→policy 𝜋𝑒and the estimate ˆ𝑄evolve as the robot collects more data. This gives us a key
+   668→insight into why Q-Learning works well. Consider a state 𝑠: if a particular action 𝑎has
+   669→a large value under the current estimate ˆ𝑄(𝑠, 𝑎), then both the 𝜖-greedy and the softmax
+   670→exploration policies have a larger probability of picking this action. If this action actually is
+   671→not the ideal action, then the future states that arise from this action will have poor rewards.
+   672→The next update of the Q-Learning objective will therefore reduce the value ˆ𝑄(𝑠, 𝑎), which
+   673→will reduce the probability of picking this action the next time the robot visits state 𝑠. Bad
+   674→
+   675→===== صفحة الكتاب 834 =====
+   676→794
+   677→Reinforcement Learning
+   678→256
+   679→actions, e.g., ones whose value is overestimated in ˆ𝑄(𝑠, 𝑎), are explored by the robot but
+   680→their value is correct in the next update of the Q-Learning objective. Good actions, e.g.,
+   681→whose value ˆ𝑄(𝑠, 𝑎) is large, are explored more often by the robot and thereby reinforced.
+   682→This property can be used to show that Q-Learning can converge to the optimal policy even
+   683→if it begins with a random policy 𝜋𝑒(Watkins and Dayan, 1992).
+   684→This ability to not only collect new data but also collect the right kind of data is the cen-
+   685→tral feature of reinforcement learning algorithms, and this is what distinguishes them from
+   686→supervised learning. Q-Learning, using deep neural networks (which we will see in the
+   687→DQN chapeter later), is responsible for the resurgence of reinforcement learning (Mnih et
+   688→al., 2013).
+   689→17.3.5 Implementation of Q-Learning
+   690→We now show how to implement Q-Learning on FrozenLake from Open AI Gym256. Note
+   691→this is the same setup as we consider in Value Iteration (page 785) experiment.
+   692→%matplotlib inline
+   693→import random
+   694→import numpy as np
+   695→from d2l import torch as d2l
+   696→seed = 0
+   697→# Random number generator seed
+   698→gamma = 0.95
+   699→# Discount factor
+   700→num_iters = 256
+   701→# Number of iterations
+   702→alpha
+   703→= 0.9
+   704→# Learing rate
+   705→epsilon = 0.9
+   706→# Epsilon in epsilion gready algorithm
+   707→random.seed(seed)
+   708→# Set the random seed
+   709→np.random.seed(seed)
+   710→# Now set up the environment
+   711→env_info = d2l.make_env('FrozenLake-v1', seed=seed)
+   712→In the FrozenLake environment, the robot moves on a 4 × 4 grid (these are the states) with
+   713→actions that are “up” (↑), “down” (→), “left” (←), and “right” (→). The environment
+   714→contains a number of holes (H) cells and frozen (F) cells as well as a goal cell (G), all of
+   715→which are unknown to the robot. To keep the problem simple, we assume the robot has
+   716→reliable actions, i.e. 𝑃(𝑠′ | 𝑠, 𝑎) = 1 for all 𝑠∈S, 𝑎∈A. If the robot reaches the goal, the
+   717→trial ends and the robot receives a reward of 1 irrespective of the action; the reward at any
+   718→other state is 0 for all actions. The objective of the robot is to learn a policy that reaches the
+   719→goal location (G) from a given start location (S) (this is 𝑠0) to maximize the return.
+   720→We first implement 𝜖-greedy method as follows:
+   721→def e_greedy(env, Q, s, epsilon):
+   722→if random.random() < epsilon:
+   723→return env.action_space.sample()
+   724→else:
+   725→return np.argmax(Q[s,:])
+   726→
+   727→===== صفحة الكتاب 835 =====
+   728→795
+   729→Q-Learning
+   730→We are now ready to implement Q-learning:
+   731→def q_learning(env_info, gamma, num_iters, alpha, epsilon):
+   732→env_desc = env_info['desc']
+   733→# 2D array specifying what each grid item␣
+   734→↩→means
+   735→env = env_info['env']
+   736→# 2D array specifying what each grid item means
+   737→num_states = env_info['num_states']
+   738→num_actions = env_info['num_actions']
+   739→Q
+   740→= np.zeros((num_states, num_actions))
+   741→V
+   742→= np.zeros((num_iters + 1, num_states))
+   743→pi = np.zeros((num_iters + 1, num_states))
+   744→for k in range(1, num_iters + 1):
+   745→# Reset environment
+   746→state, done = env.reset(), False
+   747→while not done:
+   748→# Select an action for a given state and acts in env based on␣
+   749→↩→selected action
+   750→action = e_greedy(env, Q, state, epsilon)
+   751→next_state, reward, done, _ = env.step(action)
+   752→# Q-update:
+   753→y = reward + gamma * np.max(Q[next_state,:])
+   754→Q[state, action] = Q[state, action] + alpha * (y - Q[state,␣
+   755→↩→action])
+   756→# Move to the next state
+   757→state = next_state
+   758→# Record max value and max action for visualization purpose only
+   759→for s in range(num_states):
+   760→V[k,s]
+   761→= np.max(Q[s,:])
+   762→pi[k,s] = np.argmax(Q[s,:])
+   763→d2l.show_Q_function_progress(env_desc, V[:-1], pi[:-1])
+   764→q_learning(env_info=env_info, gamma=gamma, num_iters=num_iters, alpha=alpha,␣
+   765→↩→epsilon=epsilon)
+   766→This result shows that Q-learning can find the optimal solution for this problem roughly after
+   767→250 iterations. However, when we compare this result with the Value Iteration algorithm’s
+   768→result (see Implementation of Value Iteration (page 789)), we can see that the Value Iteration
+   769→algorithm needs way fewer iterations to find the optimal solution for this problem. This
+   770→happens because the Value Iteration algorithm has access to the full MDP whereas Q-
+   771→learning does not.
+   772→17.3.6 Summary
+   773→Q-learning is one of the most fundamental reinforcement-learning algorithms. It has been
+   774→at the epicenter of the recent success of reinforcement learning, most notably in learning
+   775→to play video games (Mnih et al., 2013). Implementing Q-learning does not require that
+   776→we know the Markov decision process (MDP), e.g., the transition and reward functions,
+   777→completely.
+   778→
+   779→===== صفحة الكتاب 836 =====
+   780→796
+   781→Reinforcement Learning
+   782→257
+   783→17.3.7 Exercises
+   784→1. Try increasing the grid size to 8 × 8. Compared with 4 × 4 grid, how many iterations
+   785→does it take to find the optimal value function?
+   786→2. Run the Q-learning algorithm again with 𝛾(i.e. “gamma” in the above code) when it
+   787→equals to 0, 0.5, and 1 and analyze its results.
+   788→3. Run the Q-learning algorithm again with 𝜖(i.e. “epsilon” in the above code) when it
+   789→equals to 0, 0.5, and 1 and analyze its results.
+   790→Discussions257.
+   791→

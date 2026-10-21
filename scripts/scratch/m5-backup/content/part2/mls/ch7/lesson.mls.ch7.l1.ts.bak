@@ -1,0 +1,206 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * mls.ch7.l1 — "Neural Networks: Neurons, Layers, and the Forward Pass"
+ * الشبكات العصبية: العصبونات والطبقات والتمرير الأمامي
+ * Aligned with MLS ch7 s1 (Concept). All expression is original — a paraphrase
+ * of the source's ideas, never a verbatim translation.
+ * Runnable design: hand-written 2-8-1 network as literal weight lists; pure
+ * loop forward pass printing every neuron's pre-activation and ReLU output.
+ * Deterministic only: no input(), no exit(), no LCG needed here.
+ */
+const lesson = {
+  id: 'mls.ch7.l1',
+  version: 1,
+  part: 'II',
+  track: 'A3',
+  book: 'MLS',
+  chapter: 7,
+  title: {
+    ar: 'الشبكات العصبية: العصبونات والطبقات والتمرير الأمامي',
+    en: 'Neural Networks: Neurons, Layers, and the Forward Pass',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['mls.ch6.l5'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'سمعة الشبكات العصبية "الصندوق الأسود السحري" تختفي بمجرد أن تمرّر نقطة واحدة عبر شبكة بعينيك: مجموع موزون، ثم تفعيل، ثم طبقة تالية تكرر الأمر نفسه. في هذا الدرس نفتح الصندوق على شبكة صغيرة 2-8-1 بأوزان مكتوبة يدويًا، ونطبع كل عصبون على حدة. ثم نجيب على السؤال الأهم: من أين تأتي الأوزان؟ الخسارة والنزول التدريجي وفكرة back propagation.',
+        en: 'The "magical black box" reputation of neural networks dissolves the moment you push one data point through a network with your own eyes: a weighted sum, then an activation, then the next layer repeats the recipe. This lesson opens the box on a tiny 2-8-1 network with hand-written weights and prints every neuron along the way. Then it answers the real question: where do the weights come from? Loss, gradient descent, and the idea of back propagation.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'بنية الشبكة ثم تدريبها', en: 'Network structure, then training it' },
+      chunks: [
+        {
+          ar: 'الشبكة العصبية الأمامية (feed-forward) تنظم العصبونات في طبقات: طبقة إدخال تحمل قيم المتنبئات، ثم طبقة مخفية واحدة أو أكثر، ثم طبقة إخراج تحمل التوقع. يُحسب كل عصبون مخفي على مرحلتين: مجموع موزون لكل عصبونات الطبقة السابقة زائد حد ثابت bias، ثم دالة تفعيل لاخطية مثل ReLU أي f(x) = max(x, 0). يكتب الكتاب العلاقة لكل طبقة بصيغة h = W z + c ثم z = f(h) حيث W مصفوفة الأوزان وc متجه الانحيازات. عصبونات الإخراج تكرر الوصفة نفسها، وفي مسائل الانحدار يكون التفعيل الأخير خطيًا (دالة محايدة تعيد الدخل كما هو). ولأن مخرجات كل طبقة هي دخل التالية، فالشبكة كلها دالة مركبة واحدة: التمرير الأمامي يعني ببساطة تقييمها طبقة بعد طبقة من x حتى التوقع.',
+          en: 'A feed-forward neural network organizes neurons in layers: an input layer holding the predictor values, one or more hidden layers, and an output layer holding the prediction. Each hidden neuron is computed in two stages: a weighted sum of every neuron in the previous layer plus a bias, then a nonlinear activation function such as ReLU, f(x) = max(x, 0). The book writes each layer as h = W z + c followed by z = f(h), where W is the weight matrix and c the bias vector. Output neurons repeat the same recipe, and for regression the final activation is linear — the identity that returns its input. Because each layer becomes the next layer\u2019s input, the whole network is one composite function: the forward pass simply evaluates it layer by layer, from x to the prediction.',
+        },
+        {
+          ar: 'التدريب يعني اختيار الأوزان W والانحيازات c. نقيّم شبكة مرشحة بدالة خسارة: مربع الخطأ (y - ŷ)² للانحدار، أو خسارة اللوغاريتم للتصنيف الثنائي. ثم يُحسِّن النزول التدريجي الأوزان خطوة خطوة: w ← w - η · ∂L/∂w. لكن من أين تأتي المشتقة عبر ملايين الأوزان؟ هنا يجيب back propagation بقاعدة السلسلة معكوسة الاتجاه: نبدأ من الخسارة عند المخرجات، ونحسب تدرجها، ثم نعيد استخدام تدرج كل طبقة كدخل للطبقة السابقة، متحركين بالشبكة من النهاية إلى البداية. وحقيقة مفيدة تجعل كل هذا رخيصًا حسابيًا: مشتقة ReLU تساوي 1 حيث الدخل موجب و0 حيث لا يكون، والمشتقة σ\' = σ(1 - σ) للسيغمويد، فكل مشتقة نحتاجها جاهزة الصيغة.',
+          en: 'Training means choosing the weights W and biases c. We score a candidate network with a loss: squared error (y - ŷ)² for regression, or log loss for binary classification. Gradient descent then improves the weights step by step: w ← w - η · ∂L/∂w. But how do we obtain that derivative through thousands of weights? Back propagation answers with the chain rule run backwards: start at the loss at the output, compute its gradient there, then reuse each layer\u2019s gradient as input to the previous one, moving from the network\u2019s end back to its start. A handy fact makes every needed derivative cheap: ReLU\u2019s derivative is 1 where its input is positive and 0 otherwise, and the sigmoid satisfies σ\u2019 = σ(1 - σ).',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'تمرير أمامي كامل عبر شبكة 2-8-1', en: 'A full forward pass through a 2-8-1 net' },
+      code: "x = [1.0, -2.0]\n\nW1 = [\n    [1.0, 0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0],\n    [1.0, 1.0], [-1.0, -1.0], [0.5, -0.5], [-0.5, 0.5],\n]\nb1 = [0.0, 0.0, 0.0, 0.0, -0.5, -0.5, 1.0, 1.0]\nW2 = [1.0, 2.0, 0.5, -1.0, 0.0, 1.5, -2.0, 0.0]\nb2 = 0.25\n\ndef relu(v):\n    return v if v > 0 else 0.0\n\nh = []\nfor j in range(8):\n    pre = b1[j] + W1[j][0] * x[0] + W1[j][1] * x[1]\n    h.append(relu(pre))\n    print('neuron %d: pre=%+.2f -> relu=%.2f' % (j, pre, h[j]))\n\ny = b2\nfor j in range(8):\n    y += W2[j] * h[j]\nprint('output y = %.4f' % y)",
+      explanation: {
+        ar: 'المدخل x = [1.0, -2.0] يمر عبر 8 عصبونات مخفية: كل سطر يطبع قبل-التفعيل ثم قيمة ReLU. لاحظ أن العصبونات 1 و2 و4 و7 ماتت (قبل-التفعيل سالب فانطأ ReLU على صفر) — هذا هو "المفتاح" الذي يقرر أي قنوات تعمل. العصبونات الحية 0 و3 و5 و6 تحمل القيم 1.0 و2.0 و0.5 و2.5. طبقة الإخراج الخطية تجمع: y = 0.25 + 1·1.0 + 2·0 + 0.5·0 + (-1)·2.0 + 0·0 + 1.5·0.5 + (-2)·2.5 + 0·0 = -5.0. عشرون وزنًا وانحيازًا كتبناها يدويًا أنتجت توقعًا واحدًا — وكل مهمة الشبكة أن تتعلم الأوزان التي تجعل هذا التوقع صائبًا.',
+        en: 'The input x = [1.0, -2.0] flows through 8 hidden neurons: each line prints the pre-activation and its ReLU. Neurons 1, 2, 4 and 7 die (negative pre-activation, so ReLU floors them at 0) — that is the switch deciding which channels work. The live neurons 0, 3, 5, 6 carry 1.0, 2.0, 0.5 and 2.5. The linear output layer then sums: y = 0.25 + 1·1.0 + 2·0 + 0.5·0 + (-1)·2.0 + 0·0 + 1.5·0.5 + (-2)·2.5 + 0·0 = -5.0. Twenty hand-written weights and biases produced one prediction — and the network\u2019s whole job is to learn weights that make such predictions right.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.forward-function',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'أكمل دالتين تلفان الشبكة نفسها: dense(xv, W, b) تعيد قائمة قبل-التفعيلات (صف لكل عصبون: b[j] زائد حاصل الضرب القياسي لصف W[j] مع xv)، وforward(xv) تعيد مخرج الشبكة العددي: dense على الطبقة المخفية ثم ReLU ثم dense على طبقة الإخراج. بلا مكتبات — حلقات فقط.',
+        en: 'Complete two functions that wrap the same network: dense(xv, W, b) returns the list of pre-activations (one per neuron row j: b[j] plus the dot product of W[j] with xv), and forward(xv) returns the numeric network output: dense on the hidden layer, then ReLU, then dense on the output layer. No libraries — plain loops.',
+      },
+      starterCode: "x = [1.0, -2.0]\nW1 = [\n    [1.0, 0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0],\n    [1.0, 1.0], [-1.0, -1.0], [0.5, -0.5], [-0.5, 0.5],\n]\nb1 = [0.0, 0.0, 0.0, 0.0, -0.5, -0.5, 1.0, 1.0]\nW2 = [1.0, 2.0, 0.5, -1.0, 0.0, 1.5, -2.0, 0.0]\nb2 = 0.25\n\ndef relu(v):\n    return v if v > 0 else 0.0\n\ndef dense(xv, W, b):\n    ...  # TODO: one pre-activation per row j: b[j] + sum of W[j][d] * xv[d]\n\ndef forward(xv):\n    ...  # TODO: dense -> ReLU -> dense with W2, b2; return the scalar output\n",
+      solution: "x = [1.0, -2.0]\nW1 = [\n    [1.0, 0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0],\n    [1.0, 1.0], [-1.0, -1.0], [0.5, -0.5], [-0.5, 0.5],\n]\nb1 = [0.0, 0.0, 0.0, 0.0, -0.5, -0.5, 1.0, 1.0]\nW2 = [1.0, 2.0, 0.5, -1.0, 0.0, 1.5, -2.0, 0.0]\nb2 = 0.25\n\ndef relu(v):\n    return v if v > 0 else 0.0\n\ndef dense(xv, W, b):\n    out = []\n    for j in range(len(W)):\n        s = b[j]\n        for d in range(len(xv)):\n            s += W[j][d] * xv[d]\n        out.append(s)\n    return out\n\ndef forward(xv):\n    h = [relu(v) for v in dense(xv, W1, b1)]\n    return dense(h, [W2], [b2])[0]",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'قبل-التفعيلات الثمانية صحيحة', en: 'The eight pre-activations are correct' },
+          code: "expected = [1.0, -2.0, -1.0, 2.0, -1.5, 0.5, 2.5, -0.5]\ngot = dense(x, W1, b1)\nassert all(abs(g - e) < 1e-9 for g, e in zip(got, expected)), 'expected %r | actual: %r' % (expected, got)",
+          expected: '[1.0, -2.0, -1.0, 2.0, -1.5, 0.5, 2.5, -0.5]',
+        },
+        {
+          id: 't2',
+          name: { ar: 'مخرج الشبكة عند x = [1.0, -2.0] يساوي -5', en: 'Output at x = [1.0, -2.0] equals -5' },
+          code: "assert abs(forward(x) - (-5.0)) < 1e-9, 'expected -5.0 | actual: %r' % forward(x)",
+          expected: '-5.0',
+        },
+        {
+          id: 't3',
+          name: { ar: 'مخرج الشبكة عند x = [0.5, 0.5] يساوي -0.25', en: 'Output at x = [0.5, 0.5] equals -0.25' },
+          code: "assert abs(forward([0.5, 0.5]) - (-0.25)) < 1e-9, 'expected -0.25 | actual: %r' % forward([0.5, 0.5])",
+          expected: '-0.25',
+        },
+      ],
+      hints: [
+        { ar: 'لكل صف j ابدأ بـ s = b[j] ثم أضف W[j][d] * xv[d] لكل عنصر d في xv — هذا هو المجموع الموزون مع الانحياز.', en: 'For each row j start from s = b[j], then add W[j][d] * xv[d] for every d in xv — the weighted sum plus bias.' },
+        { ar: 'في forward مرّر dense أولاً على W1 وb1، مرّر الناتج على relu عنصرًا عنصرًا، ثم مرره مرة أخيرة على dense مع W2 المغلفة بقائمة [[W2]] و[b2].', en: 'In forward, apply dense first with W1 and b1, map relu over the result element-wise, then apply dense once more wrapping the output weights as [W2] and [b2].' },
+        { ar: 'طبقة الإخراج فيها عصبون واحد، فdense(h, [W2], [b2]) تعيد قائمة من عنصر واحد — خذ العنصر الأول بـ [0] لتعيد عددًا لا قائمة.', en: 'The output layer has a single neuron, so dense(h, [W2], [b2]) returns a one-element list — take [0] to return a number, not a list.' },
+        { ar: 'قيم تحقق: dense(x, W1, b1) = [1.0, -2.0, -1.0, 2.0, -1.5, 0.5, 2.5, -0.5]، وforward(x) = -5.0، وforward([0.5, 0.5]) = -0.25.', en: 'Sanity values: dense(x, W1, b1) = [1.0, -2.0, -1.0, 2.0, -1.5, 0.5, 2.5, -0.5], forward(x) = -5.0, forward([0.5, 0.5]) = -0.25.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.why-nonlinearity',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'لماذا نحتاج دالة تفعيل لاخطية مثل ReLU بين الطبقات؟ لو حذفناها وبقيت الطبقات مجرد مجموعات موزونة، فماذا يحدث لشبكة من ثلاث طبقات خطية؟',
+        en: 'Why do we need a nonlinear activation such as ReLU between layers? If we dropped it and every layer stayed a plain weighted sum, what would a three-layer linear network amount to?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'ستصبح أسرع حسابيًا دون أي تغيير في ما يمكنها تمثيله', en: 'It would run faster computationally with no change in what it can represent' } },
+        { id: 'b', text: { ar: 'تنهار الطبقات الثلاث إلى تحويل خطي واحد مكافئ، فتفقد الشبكة قدرتها على تمثيل العلاقات اللاخطية', en: 'The three layers collapse into one equivalent linear map, and the network loses its power to represent nonlinear relationships' } },
+        { id: 'c', text: { ar: 'ستتعلم تلقائيًا تفعيلًا بديلًا من البيانات نفسها', en: 'It would automatically learn a substitute activation from the data itself' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'ركّب تحويلين خطيين: A(Bx + c1) + c2 يعود (A·B)x + (A·c1 + c2) — أي خطي من جديد.', en: 'Compose two linear maps: A(Bx + c1) + c2 comes back as (A·B)x + (A·c1 + c2) — linear again.' },
+        { ar: 'استمر بالتركيب عبر ثلاث طبقات: يبقى مصفوفة واحدة مضروبة في المتجه مع متجه انحياز واحد.', en: 'Keep composing across three layers: what remains is one matrix times the vector plus one bias vector.' },
+        { ar: 'لذلك تعمل ReLU كمفتاح يقطع الخطية: عند كل عصبون قرار (مرّ أو انطأ) يكسر انهيار التراكيب.', en: 'That is why ReLU acts as a switch that breaks the linearity: at each neuron a pass-or-zero decision stops the collapse of compositions.' },
+        { ar: 'الجواب: b — بلا تفعيل لاخطي فالشبكة العميقة مكافئة لانحدار خطي واحد.', en: 'Answer: b — without a nonlinear activation a deep network is equivalent to a single linear regression.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "W1 = [\n    [1.0, 0.0], [0.0, 1.0], [-1.0, 0.0], [0.0, -1.0],\n    [1.0, 1.0], [-1.0, -1.0], [0.5, -0.5], [-0.5, 0.5],\n]\nb1 = [0.0, 0.0, 0.0, 0.0, -0.5, -0.5, 1.0, 1.0]\nW2 = [1.0, 2.0, 0.5, -1.0, 0.0, 1.5, -2.0, 0.0]\nb2 = 0.25\n\ndef relu(v):\n    return v if v > 0 else 0.0\n\ndef dense(xv, W, b):\n    out = []\n    for j in range(len(W)):\n        s = b[j]\n        for d in range(len(xv)):\n            s += W[j][d] * xv[d]\n        out.append(s)\n    return out\n\ndef forward(xv):\n    h = [relu(v) for v in dense(xv, W1, b1)]\n    return dense(h, [W2], [b2])[0]\n\nfor t in [-3, -2, -1, 0, 1, 2, 3]:\n    print('x=[%+d, 1] -> y=%+.4f' % (t, forward([float(t), 1.0])))\n\n# جرّب: أي العصبونات الثمانية تبقى حية عند x=[2, -1]؟ اطبع dense وrelu لكل مرحلة.\n# try: which of the eight neurons stay alive at x=[2, -1]? print dense and relu per stage.\n# جرّب: صفّر W2[6] وأعد المسح — كم يتغير المخرج؟\n# try: zero out W2[6] and rescan — how much does the output move?\n",
+      prompt: {
+        ar: 'الملعب يمرّر سبعة مدخلات عبر شبكتك ويعرض المخرجات. لا اختبارات هنا — اسأل الشبكة أسئلتك: أي عصبونات تنطوي؟ وماذا لو عدّلت وزنًا واحدًا؟',
+        en: 'The sandbox pushes seven inputs through your network and lists the outputs. No tests here — interrogate the net: which neurons switch off, and what happens if you nudge a single weight?',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ما الذي يحسبه عصبون واحد في طبقة مخفية أثناء التمرير الأمامي؟',
+            en: 'What does a single hidden-layer neuron compute during the forward pass?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'مجموعًا موزونًا لكل عصبونات الطبقة السابقة زائد انحياز، ثم دالة تفعيل', en: 'A weighted sum of all previous-layer neurons plus a bias, then an activation function' } },
+            { id: 'b', text: { ar: 'متوسط قيم y في بيانات التدريب', en: 'The average of the y values in the training data' } },
+            { id: 'c', text: { ar: 'مشتقة الخسارة بالنسبة إلى وزنه فقط', en: 'The derivative of the loss with respect to its own weight' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'وصفة العصبون من مرحلتين: h = w·z + c ثم z_next = f(h). التفعيل f مثل ReLU هو ما يضيف اللالخطية؛ المشتقات تأتي لاحقًا في طور back propagation لا في التمرير الأمامي.',
+            en: 'The neuron recipe has two stages: h = w·z + c then z_next = f(h). The activation f, such as ReLU, is what adds nonlinearity; derivatives come later, in the back-propagation phase, not the forward pass.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'أي قاعدة تحدد عدد عصبونات طبقة الإدخال في شبكة عصبية أمامية؟',
+            en: 'Which rule fixes the number of neurons in the input layer of a feed-forward network?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'يُختار دائمًا 8 عصبونات قياسًا', en: 'It is always chosen to be 8 by convention' } },
+            { id: 'b', text: { ar: 'يجب أن يساوي عدد المتنبئات D في كل ملاحظة', en: 'It must equal the number of predictors D per observation' } },
+            { id: 'c', text: { ar: 'يجب أن يساوي عدد الطبقات المخفية', en: 'It must equal the number of hidden layers' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'طبقة الإدخال تحمل قيم المتنبئات نفسها فعددها محكوم بـ D، وطبقة الإخراج بعدد الأهداف. أما أحجام الطبقات المخفية فيختارها المصمم: قليل جدًا يقود نقص مطابقة، وكثير جدًا يقود فرط مطابقة.',
+            en: 'The input layer holds the predictor values themselves, so its size is pinned by D, and the output layer by the number of targets. Hidden-layer sizes are the modeler\u2019s choice: too few invites underfitting, too many invites overfitting.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'لماذا سُمي back propagation بـ"الانتشار العكسي"؟',
+            en: 'Why is back propagation called "back" propagation?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن التدريب يعيد البيانات إلى الوراء في الزمن', en: 'Because training rewinds the data back in time' } },
+            { id: 'b', text: { ar: 'لأن المخرجات تُحذف ثم تُحسب من جديد من طبقة الإدخال', en: 'Because outputs are deleted and recomputed starting from the input layer' } },
+            { id: 'c', text: { ar: 'لأن التدرجات تُحسب من الخسارة عند المخرجات ثم تنتشر نحو الطبقات السابقة بقاعدة السلسلة', en: 'Because gradients are computed from the loss at the output and then propagated toward earlier layers via the chain rule' } },
+          ],
+          answer: 'c',
+          explanation: {
+            ar: 'التمرير الأمامي يسير من الإدخال إلى الإخراج، وحساب التدرجات يعكس المسار: تدرج الخسارة عند المخرجات أولًا، ثم يُعاد استخدام كل تدرج طبقة كدخل للطبقة التي قبلها — لذلك "عكسي".',
+            en: 'The forward pass runs from input to output; the gradient computation reverses the route: the loss gradient at the output comes first, then each layer\u2019s gradient is reused as input for the layer before it — hence "back".',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'الشبكة الأمامية = طبقات من العصبونات: إدخال (بعدد المتنبئات D)، مخفية (يختار حجمها المصمم)، وإخراج (بعدد الأهداف). كل عصبون: مجموع موزون + انحياز ثم تفعيل.', en: 'A feed-forward network is layers of neurons: input (D predictors), hidden (modeler-chosen sizes), and output (one per target). Each neuron: weighted sum + bias, then an activation.' },
+        { ar: 'ReLU = max(x, 0) يطفئ العصبونات السالبة ويعمل كمفتاح قنوات؛ التفعيل الأخير في الانحدار خطي. بلا تفعيل لاخطي تنهار الطبقات إلى تحويل خطي واحد.', en: 'ReLU = max(x, 0) switches negative neurons off and acts as a channel gate; the final activation is linear for regression. Without a nonlinear activation the layers collapse into one linear map.' },
+        { ar: 'التدريب: خسارة (مربع خطأ أو لوغاريتمية) + نزول تدريجي w ← w - η·∂L/∂w، والتدرجات تأتي من back propagation: قاعدة سلسلة تنتشر من المخرجات نحو البداية معادلةً استخدام تدرج كل طبقة.', en: 'Training: a loss (squared error or log loss) + gradient descent w ← w - η·∂L/∂w, with gradients supplied by back propagation — a chain-rule sweep from output back to input that reuses each layer\u2019s gradient.' },
+      ],
+      reflectPrompt: {
+        ar: 'في المثال المنفذ ماتت 4 عصبونات من 8 عند المدخل [1.0, -2.0]. كيف يغيّر هذا النظر إلى "حجم" الشبكة: هل العصبون الميت هدر دائم أم أنه موارد تُفعَّل عند مدخلات أخرى؟',
+        en: 'In the worked example 4 of 8 neurons died at the input [1.0, -2.0]. How does that reshape your view of network "size": is a dead neuron pure waste, or capacity waiting for other inputs?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.ch7.s1' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'MLS', section: 'mls.ch7.s1' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

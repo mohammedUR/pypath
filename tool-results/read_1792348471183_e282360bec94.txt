@@ -1,0 +1,801 @@
+     1→
+     2→===== صفحة الكتاب 343 =====
+     3→Chapter 13 — Software Engineering in the Age of AI
+     4→Where we are. Every previous chapter described a durable engineering discipline — process, requirements,
+     5→design, checking, testing, metrics, teamwork. This chapter asks what happens to those disciplines when
+     6→generative AI and coding agents can draft code, tests, requirements, and designs in seconds. We separate
+     7→what genuinely changes from what stubbornly does not, walk the whole lifecycle stage by stage, look
+     8→honestly at the evidence (which is more mixed than the marketing), read the o16g “Outcome Engineering”
+     9→manifesto as a provocation for the agentic era, and end with the concrete practices now emerging to work
+    10→this way — spec-driven development, agent instruction files (CLAUDE.md/AGENTS.md), and loop
+    11→engineering.
+    12→The headline claim of the moment is that AI writes the code now. A more useful way to describe the change is that
+    13→AI moves the engineering bottleneck. For decades the bottleneck was producing correct code fast enough. As
+    14→producing gets cheap, the bottleneck moves to deciding what to build and proving it works — which are the very
+    15→activities this book has been teaching. The engineer who internalized Chapters 1–12 is the person best positioned
+    16→to direct the agents.
+    17→Note — what will age here. This chapter mixes two kinds of content with very different half-lives. Named
+    18→tools, model capabilities, benchmark and study results, prices, and specific agent behaviors are edition-
+    19→specific: they describe early 2026 and will drift, so treat every product name and number as a dated
+    20→snapshot. The durable content is the principles — verify before you trust, keep a human accountable for
+    21→what ships, write specifications precise enough to execute, and preserve traceability from requirement to
+    22→change. When this edition’s numbers age out, those principles are the part meant to remain.
+    23→13.1 What AI Changes — and What It Doesn’t
+    24→13.1.1 Essential vs. Accidental Complexity, Revisited
+    25→Recall from Chapter 1 the split between essential complexity (inherent in the problem) and accidental complexity
+    26→(from our tools and toil). Generative AI is a spectacular weapon against accidental complexity: boilerplate, glue
+    27→code, format conversions, first drafts of tests, “how do I call this API” friction. It is far weaker against essential
+    28→complexity: deciding what the system should actually do, resolving conflicting goals, choosing an architecture
+    29→whose likely changes are cheap. That boundary is the single most important idea in this chapter. Delegate the toil;
+    30→own the essence.
+    31→
+    32→===== صفحة الكتاب 344 =====
+    33→13.1.2 The Four Pressures Still Hold
+    34→The book’s four cross-cutting pressures do not go away — AI just shifts them:
+    35→Software is complex. Agents can generate complexity faster than ever, including accidental complexity
+    36→you did not ask for. Architecture (Chapters 6–7) matters more.
+    37→Requirements change. AI lowers the cost of responding to change, which raises the premium on knowing
+    38→which change is worth making (Chapters 3–4).
+    39→Defects are inevitable. AI produces plausible-looking defects at scale. Reviews, static checking, and tests
+    40→(Chapters 9–10) become the load-bearing walls.
+    41→Teams need coordination. “Teams” now include non-human members. Coordinating a swarm of agents is
+    42→a new and unsolved organizational problem (see §13.4).
+    43→13.1.3 A Ladder of Assistance: From Autocomplete to Agents
+    44→“AI coding” is not one thing. It helps to name the rungs, because the engineering questions differ at each:
+    45→
+    46→===== صفحة الكتاب 345 =====
+    47→As assistance deepens from autocomplete toward a full agent swarm, the human’s job moves from typing toward
+    48→specifying, supervising, and verifying — and the cost of a confident-but-wrong output rises, because more
+    49→happens between your instruction and your review.
+    50→13.1.4 The Productivity Paradox
+    51→Does AI make developers faster? The honest answer is it depends, and the evidence is mixed enough to demand
+    52→humility.
+    53→Perceived gains are large — and the headline numbers are vendor-reported. In GitHub’s own 2022
+    54→research, surveyed Copilot users (about 2,000) reported feeling more productive, and in the companion
+    55→controlled experiment — 95 developers, one well-specified task, building an HTTP server — the Copilot
+    56→
+    57→===== صفحة الكتاب 346 =====
+    58→group finished about 55% faster.1 2 These are honest but narrow measurements, reported by the vendor of
+    59→the product being measured, of one task type at one moment in the tools’ evolution.
+    60→Measured gains are smaller and sometimes negative. In a 2025 randomized controlled trial, METR had
+    61→experienced open-source developers do real tasks in repositories they knew well. Developers predicted AI
+    62→would make them ~24% faster; in fact they were about 19% slower with AI — and still believed they’d
+    63→been faster afterward.3 The slowdown came largely from the overhead of reviewing and integrating
+    64→generated output. Scope the finding as carefully as the researchers did: it describes that specific setting —
+    65→experienced developers, mature and familiar repositories, high quality standards, early-2025 tools — not
+    66→AI-assisted work in general, and tools have moved since.
+    67→Principle. Perceived productivity is not measured productivity. On familiar, high-standards code, the time
+    68→you save typing can be swamped by the time you spend verifying what the agent produced. Verification is
+    69→the new bottleneck — a theme this whole chapter returns to.
+    70→The lesson is not “AI is useless” — gains are real for boilerplate, unfamiliar APIs, greenfield prototypes, and well-
+    71→specified narrow tasks. These results suggest that AI provides more leverage to people who can judge its
+    72→output well. Measure its effect on delivered work instead of relying on the subjective feeling of moving faster, as
+    73→discussed in Chapter 12.
+    74→13.2 AI Across the Lifecycle
+    75→Here we walk the lifecycle, mapping AI’s role onto each chapter’s discipline. For each stage: what AI does well
+    76→now, where it fails, and what fundamental the human still owns.
+    77→
+    78→===== صفحة الكتاب 347 =====
+    79→
+    80→===== صفحة الكتاب 348 =====
+    81→13.2.1 Process and Teamwork (Chapter 2)
+    82→AI compresses many process activities: drafting sprint plans, summarizing standups, writing retro notes, triaging
+    83→issues, generating first-pass estimates. Agents can now take a ticket and open a pull request unattended, which
+    84→strains the assumptions of Scrum and XP — what is a “sprint” when a swarm can attempt fifty backlog items
+    85→overnight?
+    86→Fails at: judgment about value and sequencing; reading the human dynamics of a team; owning
+    87→accountability for what ships.
+    88→Human owns: the definition of done, the choice of what to build next, and responsibility. The agile
+    89→principle “working software is the primary measure of progress” gets sharper, not softer — see the
+    90→manifesto’s “verified reality” in §13.4.4
+    91→13.2.2 Requirements (Chapter 3)
+    92→Large language models are genuinely useful for elicitation and drafting: turning interview notes, tickets, and
+    93→support logs into candidate user stories, acceptance criteria (Given/When/Then), and edge-case lists. Studies
+    94→report LLM-drafted requirements that reviewers rate as complete, consistent first drafts — comparable to an
+    95→entry-level engineer’s — produced far faster and cheaper.5 6
+    96→Fails at: knowing what users actually need versus what is plausible; an LLM will cheerfully invent
+    97→requirements that sound reasonable and are wrong (hallucinated requirements), and its fluency can
+    98→manufacture false consensus.7
+    99→Human owns: talking to real stakeholders, resolving conflicting goals (Chapter 3’s goal hierarchies), and
+   100→validating that a story reflects a real need. Use AI to widen the net of candidate requirements; use humans
+   101→to decide which are true.
+   102→13.2.3 Estimation and Analysis (Chapter 4)
+   103→AI can suggest story-point estimates from historical data and surface comparable past work. But recall why we
+   104→estimate in Chapter 4: story points model human uncertainty and drive prioritization, not stopwatch time. When
+   105→agents do the building, the estimation question shifts from “how many engineer-hours?” toward “how much
+   106→compute/ budget, and is the outcome worth it?” — precisely the manifesto’s cost, not time reframing (§13.4).
+   107→MoSCoW, value/cost/risk, and Kano analysis remain the right tools; the “cost” axis just gets a new currency.
+   108→13.2.4 Use Cases (Chapter 5)
+   109→Given a goal and a happy path, models are good at enumerating alternative flows and exception cases — exactly
+   110→the tedious part of use-case writing that people skip. That coverage is valuable. But an agent cannot tell you which
+   111→actor goals matter, and it tends to pad use cases with flows no user will ever take.
+   112→
+   113→===== صفحة الكتاب 349 =====
+   114→Human owns: the actor–goal list (what the system is for) and pruning generated flows down to the ones
+   115→that carry real risk or value.
+   116→13.2.5 Design and Architecture (Chapters 6–7)
+   117→This is where the human-owned layer is thickest. AI can propose class structures, generate Architecture Decision
+   118→Records (ADRs), suggest applicable patterns from Chapter 7, and even prototype competing designs to compare.
+   119→Research on multi-agent systems that go from requirements to candidate architectures is active but early, and leans
+   120→on role specialization to fight hallucination.8 9
+   121→Fails at: the significant, expensive-to-change decisions that define architecture (Chapter 6); it has no stake
+   122→in your five-year maintenance cost and cannot feel the pain of high coupling.
+   123→Human owns: modularity, coupling/cohesion trade-offs, and choosing which likely changes to make
+   124→cheap. Let AI draft and compare designs; keep the decision and its rationale human and written down.
+   125→13.2.6 Static Checking and Code Review (Chapter 9)
+   126→AI both helps and harms here, sharply. AI reviewers and smarter static analyzers catch real bugs, explain them,
+   127→and suggest fixes.10 But a growing share of code under review is now itself AI-generated — by late 2024
+   128→Google reported more than a quarter of its new code was — which inverts the problem from Chapter 9: the scarce
+   129→resource, reviewer trust and attention, is now spent on machine output produced faster than humans can vet it.11
+   130→Pitfall. A 2023 controlled study found developers with an AI assistant wrote less secure code while being
+   131→more confident it was secure — a false sense of safety.12 In the AI era, static analysis and human review are
+   132→the brakes that make the speed usable.
+   133→Human owns: deciding intent and trust (does this change do what we meant?), and keeping review
+   134→standards from eroding under volume. Precision/recall trade-offs for analyzers (Chapter 9) matter more as
+   135→more code flows through them.
+   136→13.2.7 Testing (Chapter 10)
+   137→Testing is where agentic AI has advanced most measurably. Benchmarks like SWE-bench (fix a real GitHub
+   138→issue) and SWT-bench (generate a bug-reproducing test) have driven rapid progress in automated test generation
+   139→and program repair; as of 2025, agents resolve a substantial fraction of such benchmark issues end to end.13 14
+   140→Treat those numbers with care, though: passing a benchmark’s tests is evidence, not proof, of a correct fix —
+   141→studies of SWE-bench-style evaluation have found patches that pass the benchmark suite while failing developer-
+   142→written tests or behaving differently from the true fix, so weak or incomplete test suites can inflate reported
+   143→
+   144→===== صفحة الكتاب 350 =====
+   145→resolution rates (the oracle problem again, wearing a benchmark’s clothes).15 Models are also strong at
+   146→generating unit tests, property-based tests, and boundary cases (Chapter 10’s black-box techniques).16
+   147→But the deepest problem in testing survives untouched: the oracle problem. A generated test encodes what the
+   148→model thinks correct behavior is — which may simply mirror a misunderstanding also baked into the generated
+   149→code. Coverage numbers can look great while the tests assert the wrong thing. Apply the same rule to an AI-
+   150→generated test as to a human-written one (§10.1.5): never trust a test you have never seen fail. Introduce or restore
+   151→the defect it claims to detect, confirm it fails for the expected reason, and only then count its passing result as
+   152→evidence.
+   153→Chapter 10’s discount example makes the failure concrete: suppose the billing spec says half-cent prices round up,
+   154→while the generated code trips a language-specific rounding or representation trap — named in each variant’s
+   155→leading comment — and the generated test asserts whatever the code already returns.
+   156→Coverage looked great; the oracle was wrong. The suite agrees with the code because both encode the same
+   157→mistake, and only a reviewer who knows the billing spec can see that the last cent rounded the wrong way — each
+   158→variant’s final print line shows the value the spec required.
+   159→Human owns: the oracle — the specification of correct behavior — and the coverage criteria that decide
+   160→when testing is enough (statement/branch/MC/DC, §§10.3–10.5). Generated tests are a starting point to be
+   161→reviewed, not ground truth.
+   162→13.2.8 Security (Chapter 11)
+   163→Security is changed on both sides: AI writes vulnerabilities as fluently as it writes features, and AI-driven tools
+   164→now hunt for them — autonomous pentest agents that validate findings with working exploits (§11.3). The human
+   165→still owns the authorization to test, the judgment that a finding is real, and the secure-by-design decisions no
+   166→scanner makes for you.
+   167→def apply_discount(price, percent):     # AI-generated: Python round() = banker's rounding
+   168→return round(price * (1 - percent / 100), 2)
+   169→def test_half_off():                    # AI-generated: asserts the code's own behavior
+   170→assert apply_discount(10.25, 50) == 5.12
+   171→test_half_off()                         # passes — and every line of the unit is covered
+   172→print(apply_discount(10.25, 50))        # 5.12; the billing spec says 5.13 (half up)
+   173→
+   174→===== صفحة الكتاب 351 =====
+   175→13.2.9 Quality and Metrics (Chapter 12)
+   176→AI forces a reckoning with what we measure. Lines of code and commit counts were always weak proxies; when
+   177→a machine emits thousands of lines on request, they become actively misleading. One industry analysis reports
+   178→that as AI assistance spread (2021→2024), the share of duplicated/cloned code rose while refactoring fell — a
+   179→maintainability warning sign that raw output volume hides, though it awaits independent academic replication.17
+   180→Human owns: choosing metrics that resist gaming (Chapter 12’s Goodhart’s-Law discipline) and that
+   181→measure outcomes — defect-removal efficiency, customer-found defects, DORA delivery metrics (Chapter
+   182→14), verified value delivered — rather than agent activity. This is the empirical backbone of Outcome
+   183→Engineering (§13.4).
+   184→13.2.10 The Team Project (Appendix A)
+   185→In your own project, treat agents as fast, tireless, over-confident junior teammates. Let them scaffold, draft tests,
+   186→and explain unfamiliar code — but require the same evidence you would from a human: a green test suite, a
+   187→passing review, and a metric that moved. Record where you used AI and how you verified it; that provenance is
+   188→part of honest engineering (and of your final report).
+   189→13.3 The Evidence: Productivity, Quality, Security
+   190→A balanced reading of the current research:
+   191→Dimension
+   192→What the evidence suggests
+   193→Caveat
+   194→Productivity
+   195→Real gains on boilerplate, unfamiliar
+   196→APIs, greenfield, narrow well-specified
+   197→tasks.
+   198→On familiar, high-standards code, a 2025 RCT found a
+   199→~19% slowdown; perception overstates gains.3
+   200→Quality
+   201→Faster first drafts; good at tests and
+   202→explanations.
+   203→Rising code duplication and falling refactoring in one
+   204→industry analysis point to maintainability debt.17
+   205→Security
+   206→Analyzers + AI review can catch known
+   207→bug patterns.
+   208→~40% of AI-generated programs in one study contained
+   209→vulnerabilities; users felt more secure while being less
+   210→so.18 12
+   211→The through-line: AI is a power tool, and a power tool amplifies the operator. In skilled hands with strong
+   212→verification (specs, tests, reviews, metrics), it is a real multiplier. Without those disciplines, it multiplies output
+   213→while quietly degrading quality — and the operator won’t feel it happening.
+   214→
+   215→===== صفحة الكتاب 352 =====
+   216→Principle. In the AI era, the fundamentals in this book are not obsolete — they are your verification layer.
+   217→Specs say what “correct” means; tests and reviews check it; metrics prove it in production. That layer is
+   218→what turns fast generation into trustworthy software.
+   219→13.4 Outcome Engineering: The o16g Manifesto
+   220→In 2026, Cory Ondrejka (co-creator of Second Life; former engineering leader at Google and Meta; CTO of
+   221→Onebrief) published the o16g manifesto — Outcome Engineering — arguing that agentic development demands a
+   222→new frame.19 20 Its thesis: “It was never about the code.” Code is “the incantation transforming computation
+   223→into magic,” a mechanism for delivering an idea. Once agents remove the constraint of human typing bandwidth,
+   224→the manifesto argues, creation is limited by the cost of compute, not human capacity — and the profession should
+   225→move “beyond software engineering” toward engineering outcomes.19
+   226→Treat this as an emerging framing, not a settled body of practice: at this writing the manifesto is months old, its
+   227→vocabulary is still contested, and no independent evidence yet shows teams shipping better outcomes by adopting
+   228→it. Read it the way you would read the Agile Manifesto in 2001 — a position paper whose worth the next decade
+   229→will decide.
+   230→It is organized around four shifts and 16 principles in two parts.19 Whatever you make of its rhetoric, its
+   231→principles map with surprising directness onto the disciplines in this book — which is itself an argument that the
+   232→fundamentals endure.
+   233→The four shifts: Creation not code. Cost not time. Capacity not backlog. Certainty not vibes.19
+   234→Part I — The Goals (“superpowered creation”)
+   235→1. The Voyage — Human Intent. Agents explore paths; humans choose the destination. Don’t abdicate
+   236→vision to the machine. (This book: requirements and goals, Ch. 3.)
+   237→2. The Truth — Verified Reality is the Only Truth. Code is a vanity metric; grade agents on the verified
+   238→rate of positive change delivered, not lines written. (Testing & metrics, Ch. 10, 12.)
+   239→3. The Teamwork — No More Single Player Mode. Outcome engineering is a team sport; define explicit
+   240→protocols for debate, decision, and delivery. (Process, Ch. 2.)
+   241→4. The Liberation — The Backlog is Dead. Never reject an idea for lack of time, only lack of budget;
+   242→manage to cost, not capacity. (Prioritization reframed, Ch. 4.)
+   243→5. The Joy — Unleash the Builders. Write code only when it brings joy; delegate the toil. (Essential vs.
+   244→accidental complexity, Ch. 1.)
+   245→6. The Map — No Wandering in the Dark. Never dispatch an agent without context; map the territory
+   246→before building. (Architecture description, Ch. 6.)
+   247→
+   248→===== صفحة الكتاب 353 =====
+   249→7. The Tech Island — Build It All. When code is the cheapest resource, build to answer questions and test
+   250→hypotheses. (Prototyping to reduce risk, Ch. 2.)
+   251→8. The Artifacts — Failures are Artifacts. Don’t just roll back; dissect the failure and debug the decision,
+   252→not only the code. (Retrospectives & post-mortems, Ch. 2, 14.)
+   253→Part II — The Building (“the iron price”)
+   254→9. The Orchestration — Agentic Coordination is a New Org. Scaling agents mirrors scaling people,
+   255→“faster, weirder, and harder”; design the org chart for the swarm. (Team structure, Ch. 2 / Appendix A.)
+   256→10. The Law — Code the Constitution. Encode mission, vision, and rules into the environment so agents can
+   257→parse intent; ambiguity is the enemy of alignment. (Specifications & acceptance criteria, Ch. 3, 5.)
+   258→11. The Graph — All the Context, Everywhere. Embed context into the infrastructure (a knowledge graph),
+   259→not just the prompt. (Architectural views & documentation, Ch. 6.)
+   260→12. The Order — Priorities Drive Compute. Compute is still a cost; always know the next most important
+   261→task. (Value/cost/risk prioritization, Ch. 4.)
+   262→13. The Documentation — Show Your Work. Code is the what; reasoning is the why — require agents to
+   263→record discoveries and rejected paths. (ADRs & rationale, Ch. 6.)
+   264→14. The Immune System — Continuous Improvement. Repeating a mistake is a system failure; spend
+   265→compute on the post-mortem and inoculate against recurrence. (Process improvement & metrics, Ch. 2, 12.)
+   266→15. The Gate — Risk Stops the Line. Make risk a blocking function; if risk is unknown or unmitigated, the
+   267→line stops. (Static checking as a quality gate, Ch. 9.)
+   268→16. The Validation — Audit the Outcomes. Trust is a vulnerability; models drift, so continuously audit agents
+   269→against the domain. (Test adequacy & monitoring, Ch. 10–11.)
+   270→A reading: what’s strong, what’s open
+   271→What’s compelling. The manifesto’s center of gravity — verified reality over vanity metrics, outcomes over
+   272→activity, encode intent explicitly, make risk a blocking gate, audit continuously — is essentially this book’s quality
+   273→philosophy, restated for a world where a machine writes the first draft. Principles 2, 10, 14, 15, and 16 are almost a
+   274→summary of Chapters 9–12. Across these sources, cheaper generation shifts more of the engineering work
+   275→toward specifying desired outcomes and verifying the result.
+   276→What’s open to challenge. Treat it as a provocation, not gospel:
+   277→“The backlog is dead / cost not capacity” assumes compute is cheap and value is easy to price.
+   278→Prioritization under scarcity (Chapter 4) does not vanish; its currency changes.
+   279→“Certainty, not vibes” is a high bar. The oracle problem (§13.2.7) means some outcomes remain expensive
+   280→or impossible to verify automatically; “verified reality” has real limits.
+   281→The productivity paradox (§13.1.4) cautions against assuming agents are a pure accelerator; the
+   282→verification bottleneck can dominate.
+   283→
+   284→===== صفحة الكتاب 354 =====
+   285→Deskilling risk: if engineers stop writing and reviewing code closely, who retains the judgment to audit the
+   286→outcomes? The manifesto’s own Principle 16 depends on expertise it could erode.
+   287→Held critically, Outcome Engineering is a useful lens: it names the shift from producing software to directing and
+   288→verifying its production — which is exactly the shift this chapter has been describing.
+   289→13.5 Spec-Driven Development
+   290→The manifesto argues for encoding intent explicitly (“Code the Constitution”) and treating verified reality as the
+   291→only truth. Spec-driven development (SDD) is the concrete practice that does exactly that. Its core move is an
+   292→inversion: in ordinary coding the specification serves the code — a document you write to explain software that
+   293→already exists, and that drifts out of date the moment you stop maintaining it. In spec-driven development the code
+   294→serves the specification. The spec is the durable artifact; the code is a generated, replaceable output of it.21
+   295→That inversion only became practical when a machine could regenerate the code cheaply. When typing was the
+   296→bottleneck, rewriting an implementation to match a changed spec was expensive, so specs decayed. When an
+   297→agent can regenerate the implementation in minutes, the spec can be the thing you maintain and the code the thing
+   298→you regenerate — which is what Chapter 3 always wanted requirements to be.
+   299→The workflow. Open-source toolkits such as GitHub’s Spec Kit structure SDD as a pipeline of phases with a
+   300→human checkpoint between each, so the agent never runs ahead of a decision you have not made:21
+   301→
+   302→===== صفحة الكتاب 355 =====
+   303→Each phase has one job, and you do not advance until its artifact is validated:
+   304→Constitution — the project’s non-negotiable principles (language, testing bar, security rules, style). Written
+   305→once, referenced by every later phase. This is Chapter 3’s non-functional requirements and Chapter 6’s
+   306→constraints made machine-readable — the same idea the manifesto calls “Code the Constitution” (§13.4,
+   307→P10).
+   308→Specify — what to build and why, deliberately silent on the tech stack. This is user-story and acceptance-
+   309→criteria work (Chapters 3, 5), often written as Given/When/Then scenarios so that “done” is executable, not
+   310→a matter of taste.
+   311→Plan — how: the architecture, stack, and interfaces the implementation will use (Chapters 6–7).
+   312→Tasks — the plan decomposed into small, independently testable units, ordered by dependency: the vertical
+   313→slices of Chapter 2.
+   314→
+   315→===== صفحة الكتاب 356 =====
+   316→Implement — the agent writes code and tests against the tasks one slice at a time, so its context never fills
+   317→with the whole system at once.
+   318→Between phases sit human approval gates. Their point is not ceremony; it is that a wrong decision caught in the
+   319→spec is cheap to fix and the same decision discovered in production is not — §13.1.3’s rising cost of a confident-
+   320→but-wrong output, front-loaded to the cheapest place to catch it.
+   321→Principle. In spec-driven development the specification is the source and the code is the build output. If the
+   322→two disagree, the spec wins and you regenerate — which is only safe if the spec is precise enough to serve as
+   323→a contract.
+   324→Early adopters report several-fold higher first-pass success from agents on non-trivial tasks when a real spec
+   325→precedes the code, versus prompting from a one-line description.21 Treat such figures as encouraging practitioner
+   326→reports, not controlled measurements — but the mechanism is sound and familiar to this book: most agent
+   327→failures are underspecification failures, and SDD front-loads the specification. The bdfinst agentic-dev-team
+   328→project is a working template of the same shape — a /specs → /plan → /build → /pr loop in which acceptance-
+   329→test, design, and UX critic agents challenge the plan before any code is written, and red-green-refactor discipline
+   330→(Chapter 10) is enforced during the build.22
+   331→The catch is the one §13.2.7 already raised about generated tests: a spec written carelessly encodes a
+   332→misunderstanding just as fluently as careless code does — and now that misunderstanding is the source of truth.
+   333→SDD moves the human’s effort to where it belongs, into writing an unambiguous specification. That does not
+   334→remove the human from the work; it puts more weight on the part that was always the hardest.
+   335→13.6 Context as Infrastructure: CLAUDE.md, AGENTS.md, and Skills
+   336→Out of the box, an agent begins a session knowing nothing about your project: your conventions, your build
+   337→command, which directories are off-limits, what “done” means on your team. You can paste that briefing into the
+   338→prompt every time — and pay to re-explain it forever, to every agent and every session. Or you can write it down
+   339→once, in a file the agent reads automatically at the start of every run. The playbook of loop engineering (§13.7)
+   340→names the recurring cost of not doing so as intent debt: the price of explaining “what this project is, what the
+   341→rules are, where the traps are” over and over.23
+   342→A small standard has emerged for paying that debt down. An agent instructions file — CLAUDE.md for Claude
+   343→Code, or the tool-neutral AGENTS.md — is a Markdown briefing checked into the repository and loaded at the start
+   344→of every session.24 25 AGENTS.md was formalized as an open specification in 2025 (led by OpenAI with Google,
+   345→Cursor, and others) and donated to the Linux Foundation’s Agentic AI Foundation in December 2025; by then
+   346→more than 60,000 projects had adopted it and more than twenty agent tools could read it.24 It is deliberately just
+   347→Markdown with no required structure — “a README for agents.”
+   348→
+   349→===== صفحة الكتاب 357 =====
+   350→Think of it as the standing brief you hand a contractor on their first morning: exactly what they need, in the order
+   351→they need it, with no ambiguity tolerated. The practices that make one effective are the practices of good technical
+   352→writing under a hard constraint — the file is read every session, so every line spends context budget:25
+   353→High-signal only. Include what materially changes a decision — the build command, the test bar, the
+   354→directories not to touch — not what the agent can infer by reading the code.
+   355→Imperative, not aspirational. “Never use inline mocks; use the factories in test/factories/” beats “we
+   356→generally try to avoid mocks.”
+   357→Few load-bearing rules. If every rule is marked important, none is. Keep the list short enough that all of it
+   358→survives a skim.
+   359→Workflow constraints. Say when the agent should stop and ask a human — the checkpoint the manifesto
+   360→and §13.7 both insist on.
+   361→This is the manifesto’s “All the Context, Everywhere” (§13.4, P11) at the scale of one repository: context
+   362→embedded in the infrastructure rather than retyped into each prompt. It is also the mechanism behind Principle 10
+   363→— the spec-driven constitution of §13.5 is often exactly this file.
+   364→One standard, many dialects. AGENTS.md buys you portability of facts — the build command and the test bar are
+   365→the same sentence to any agent. It does not buy portability of tone, because each vendor trained and tuned its
+   366→model differently and each publishes its own guide for how to phrase what goes inside. When present, most agents
+   367→still read their own file — CLAUDE.md for Claude Code, GEMINI.md for the Gemini CLI, .cursor/rules/*.mdc for
+   368→Cursor, .github/copilot-instructions.md for Copilot — and the way a rule lands differs between them:
+   369→Agent
+   370→Instruction file(s)
+   371→Where its house guide lives
+   372→Claude Code (Anthropic)
+   373→CLAUDE.md, .claude/skills/
+   374→Claude Code best practices25
+   375→Codex (OpenAI)
+   376→AGENTS.md
+   377→Codex prompting guide26
+   378→Cursor
+   379→.cursor/rules/*.mdc, AGENTS.md
+   380→Cursor Rules docs27
+   381→Gemini CLI (Google)
+   382→GEMINI.md
+   383→Gemini CLI docs27
+   384→Copilot (GitHub)
+   385→copilot-instructions.md
+   386→Copilot docs27
+   387→portable baseline
+   388→AGENTS.md
+   389→agents.md24
+   390→The clearest example is capitalization. Anthropic’s Claude Code guide explicitly lists it as a lever: “you can tune
+   391→instructions by adding emphasis (e.g., IMPORTANT or YOU MUST) to improve adherence.”25 OpenAI’s Codex guide
+   392→says nothing of the kind; it stresses instead that instructions be verifiable and decomposed — give the agent “a
+   393→specific outcome, measurable target, or test criteria,” and “break [work] into smaller, focused steps.”26 So the
+   394→same shouted rule that sharpens a priority for one agent may be wasted characters for another: put colloquially,
+   395→
+   396→===== صفحة الكتاب 358 =====
+   397→one assistant hears emphasis where another just hears yelling. The lesson is not that one guide is right — it is that
+   398→instruction phrasing does not port, so you read the guide for the tool you actually use and tune tone in that tool’s
+   399→own file.
+   400→One habit does port everywhere: explain the why. A rule with its rationale — “never log raw card numbers, it
+   401→violates PCI scope” — survives translation between tools and lets any model apply the principle to a case the rule
+   402→never named, where a bare NEVER LOG CARD NUMBERS does not. That is this book’s house style, and it is also the
+   403→most portable prompt-writing advice there is.
+   404→Pitfall. Instruction phrasing does not port cleanly between agents. A CLAUDE.md leaning on IMPORTANT/YOU
+   405→MUST emphasis can read as noise to a different tool; a terse, verification-first AGENTS.md can under-specify
+   406→for a model that leans on stated priorities. Keep the portable facts (commands, conventions, definition of
+   407→done) in AGENTS.md; tune tone per tool, against that tool’s published guide.
+   408→Skills push the idea one step further. Where an instructions file is standing context loaded every time, a skill is a
+   409→named, reusable unit of project knowledge — “how we cut a release,” “how we triage failing CI” — that an agent
+   410→invokes only when the task calls for it. A skill can be versioned, tested, and improved like any other artifact; a
+   411→prompt pasted into a script rarely is. That distinction matters for the loops of the next section: a loop that discovers
+   412→its own work should trigger a named skill, not a wall of instructions buried in a cron job that no one will ever
+   413→update.
+   414→Principle. Encode project intent once, in a file the agent reads automatically, and maintain it like code.
+   415→Every convention you leave only in your head is a convention the agent will violate — confidently, and at
+   416→scale.
+   417→For your team project (Appendix A), an AGENTS.md (or CLAUDE.md) is a high-leverage first artifact: capture your
+   418→stack, your test and lint commands, your definition of done, and your review rules. It is living documentation that
+   419→agents obey and humans can read — and writing it forces the team to make its tacit conventions explicit, which is
+   420→worth doing even if no agent ever reads it.
+   421→13.7 Loop Engineering
+   422→The rungs of §13.1.3 ran from autocomplete to autonomous agents. There is a further rung beyond the ones drawn
+   423→there, and in 2026 it acquired a name. Within a single week that June, three practitioners independently described
+   424→the same shift: Peter Steinberger argued that the relevant skill was no longer prompting agents but designing the
+   425→loops that prompt them; Boris Cherny, who built Claude Code, said from the vendor side that his job was now to
+   426→write the loops that drive the agent; and Addy Osmani wrote it up and named it loop engineering.23 Its one-line
+   427→
+   428→===== صفحة الكتاب 359 =====
+   429→definition is deliberately unsettling: loop engineering is replacing yourself — designing the system that prompts
+   430→the agent, so that you no longer feed it one instruction at a time.23
+   431→Four layers. Loop engineering is the widest layer of a progression the industry backed into, each layer minding
+   432→something larger than the one before it:
+   433→Prompt engineering minds one exchange; context engineering minds one window (§13.6); harness engineering
+   434→arms one run (which tools an agent may call, and what counts as finished); loop engineering minds the widest
+   435→scope of all — the system that runs the harness again and again with no human hand between turns. The first three
+   436→layers still assume a person at the keyboard, directing the agent line by line. Loop engineering removes that
+   437→assumption: the practitioner moves from inside the loop to outside it, building the loop rather than being it.23
+   438→This layer belongs in a discussion of engineering discipline because it increases the consequences of mistakes.
+   439→As §13.1.3 noted, a confident but incorrect output becomes more costly as the system performs more actions
+   440→before a person reviews it. A loop is, by construction, a machine for maximizing that distance — it can run all
+   441→
+   442→===== صفحة الكتاب 360 =====
+   443→night, change code you never looked at, and feed its own output back as tomorrow’s input. Every discipline below
+   444→exists to shorten the gap between a mistake and its discovery.
+   445→13.7.1 The Anatomy of a Loop
+   446→A useful loop does five things each turn, and drops any one of them at its peril:23
+   447→Discovery — the loop finds its own work (reads failing CI, open issues, recent commits) rather than being
+   448→handed a task list. Ideally this logic lives in a skill (§13.6), not a static prompt.
+   449→Handoff — each unit of work goes to an agent in an isolated workspace. In git that means a separate
+   450→worktree per task, so parallel agents editing the same repository do not overwrite one another.
+   451→Verification — a separate agent, defaulting to skeptical, checks the work. This is the load-bearing move;
+   452→§13.7.2 is about why.
+   453→
+   454→===== صفحة الكتاب 361 =====
+   455→Persistence — results land somewhere that outlives the conversation: a pull request, a ticket, a state file on
+   456→disk. The agent forgets when its context clears; the repository does not.
+   457→Scheduling — an automation (a timer, a CI trigger, a chat reaction) makes the loop run again without
+   458→anyone remembering to start it. This is what turns a script you run by hand into a loop that runs itself.
+   459→Miss one move and the loop fails in a characteristic way. The anti-patterns are the shadows of the skipped
+   460→moves:23
+   461→Move
+   462→skipped
+   463→How the loop fails
+   464→Verification
+   465→The nodding loop — the agent grades its own work, approves it, and accumulates plausible
+   466→mistakes at machine speed. The most common failure.
+   467→Persistence
+   468→The amnesiac loop — good work is done, then forgotten when context clears; the next run redoes
+   469→it or collides with it.
+   470→Scheduling
+   471→The manual loop — five good moves that a human still has to remember to trigger, and eventually
+   472→won’t.
+   473→Discovery
+   474→The blind loop — the human still hand-feeds work each morning, so the expensive part (deciding
+   475→what to do) was never automated.
+   476→Handoff
+   477→The tangled loop — parallel agents share one working directory and their edits collide into a mess
+   478→no one can untangle.
+   479→13.7.2 The Generator and the Evaluator
+   480→The hardest part of a loop is not getting an agent to do the work — it is building something that can say “no.” And
+   481→the agent that wrote the code is the worst possible judge of it.
+   482→Ask an agent to grade what it just produced and it tends to praise it, because the context in which the code was
+   483→written is already full of the reasons it was written that way; looking back, the agent sees its own justification, not
+   484→the result. Anthropic’s engineering team, building agents that code autonomously for hours, hit this directly:
+   485→agents overrate their own output, especially on subjective work.28 Their fix — borrowed explicitly from
+   486→generative adversarial networks (GANs) — was structural, not a matter of wording. You cannot reliably make
+   487→an author self-critical, but you can hand the work to a different agent, with different instructions, that carries none
+   488→of the first one’s self-persuasion:28
+   489→
+   490→===== صفحة الكتاب 362 =====
+   491→Two refinements make the evaluator real. First, an evaluator should execute the software and inspect its
+   492→observed behavior, not only read the code. Anthropic’s evaluator used browser automation to operate the live
+   493→application, capture screenshots, and grade the result against calibrated criteria.28 Second, it should begin from
+   494→skepticism: treat the code as unverified until a check demonstrates that it behaves correctly. This is the old
+   495→maker–checker principle from banking — the person entering a large transfer and the person approving it must
+   496→differ — applied to the stop condition of a loop.
+   497→Pitfall. A loop whose only reviewer is the agent that wrote the code is a loop nodding at itself. Coverage
+   498→numbers, green checkmarks, and confident self-assessment all rise together while real quality does not —
+   499→the §13.2.7 oracle problem, now running unattended. The reliable fix is structural: a separate evaluator, on a
+   500→different model where you can, that defaults to “no.”
+   501→This is §13.4’s Principle 2 (“Verified Reality is the Only Truth”) and §13.3’s through-line, arriving from the
+   502→practitioners’ side: when generation is nearly free, the scarce resource is judgment, and a loop’s judgment lives
+   503→in its evaluator. A strong generator with a weak evaluator produces confident garbage, faster; a modest generator
+   504→with a sharp evaluator produces slow, reliable progress — and only the second compounds safely over many turns.
+   505→13.7.3 The Costs That Accrue Silently
+   506→A loop that runs itself is also a loop that makes mistakes by itself, and the more cheerfully it runs, the more quietly
+   507→it errs. Four costs build up with no alarm while the loop is running, and they reinforce one another:23
+   508→Verification debt — merged, unverified output piling up in the gap between “it ran” and “it’s right,”
+   509→waiting for one morning when it comes due all at once.
+   510→Comprehension rot — the codebase grows faster than anyone’s understanding of it, because reading
+   511→generated code is duller than writing it and the loop never stops to read. A bug in a corner no human has
+   512→read tends to surface first as a production incident.
+   513→Cognitive surrender — the gradual loss of willingness to examine or challenge the system’s output. As the
+   514→loop becomes more reliable, users may stop forming an independent judgment.
+   515→Token blowout — the only cost that hits the bill directly. An idle bug can spin all night, burning budget on
+   516→rounds that produce nothing, unless a hard cap stops it.
+   517→The defenses are inexpensive and familiar. Read a representative sample of the loop’s output each day to
+   518→preserve comprehension. Set hard budget caps before unattended execution begins. Keep at least one human
+   519→
+   520→===== صفحة الكتاب 363 =====
+   521→checkpoint where the loop pauses for review, so that people remain able and prepared to intervene.
+   522→Case study — Stripe’s “Minions.” Stripe’s internal coding agents produce roughly 1,300 pull requests each
+   523→week after being triggered by an emoji reaction in Slack.29 Their reliability comes from the constraints
+   524→surrounding the harness, which is a fork of the open-source Goose. A deterministic orchestrator assembles
+   525→context and runs hard-coded quality gates (a linter the agent cannot skip, then a commit step) before and
+   526→after the probabilistic model does its part; anything a rule can decide is kept out of the model’s hands. Every
+   527→one of those PRs is still reviewed by an engineer — the humans did not leave, their time moved from writing
+   528→to reviewing. Reliability came from the discipline around the loop, not the size of the model in it.29
+   529→13.7.4 Stay the Engineer
+   530→The unsettling framing — “loop engineering is replacing yourself” — has a sharp corollary. A loop is a faithful
+   531→multiplier of whatever its builder brings: give it sound judgment and it executes good decisions a hundredfold;
+   532→give it a lapse and it executes the lapse a hundredfold, faithfully, without ever pausing to ask whether it was
+   533→right.23 The same loop, built by two engineers, can end in opposite places — one who reads the code and holds a
+   534→firm sense of direction uses it to move faster on work they have mastered; one who stops reading uses it to never
+   535→have to understand again, and six months later is the gatekeeper of a machine they can no longer audit.
+   536→That is the deskilling risk of §13.4 stated operationally, and it resolves the same way: the human review point is
+   537→not a temporary scaffold to remove once the loop is trusted. It is the permanent feature that keeps the loop
+   538→trustworthy, and the day it is removed is the day comprehension rot begins in earnest. Build the loop in a way that
+   539→preserves your ability and responsibility to review its work.
+   540→Principle. Stop prompting the agent; design the system that prompts it. But design that system so a human
+   541→can always still say “no” — a loop can execute judgment, it cannot supply it.
+   542→Start small. A first loop should be almost embarrassingly modest: one finding, discovered and handled end to end,
+   543→on a timer, with a separate check and a budget cap. Add parallelism last, after the checks have caught real
+   544→mistakes — the Stripe pipeline is the end of that road, hardened over years, not the place to begin.
+   545→13.8 Principles for the AI-Augmented Engineer
+   546→Synthesizing the evidence and the manifesto into working advice:
+   547→1. Own intent and verification. Choose the destination and define “correct”; let agents explore paths. You
+   548→are accountable for what ships (Chapter 1’s ethics do not delegate).
+   549→2. Keep the fundamentals. You cannot safely accept what you cannot evaluate. Understand the design, the
+   550→tests, and the metrics well enough to catch a confident wrong answer.
+   551→
+   552→===== صفحة الكتاب 364 =====
+   553→3. Shift your effort up the stack. Spend the time AI frees on specifying (clear requirements, acceptance
+   554→criteria, ADRs) and checking (reviews, coverage, metrics) — not on generating more code.
+   555→4. Manage the new risks. Security defects, license/provenance of generated code, hallucination, over-trust,
+   556→and skill atrophy are now first-class engineering concerns.
+   557→5. Measure outcomes, not activity. Judge yourself and your agents by verified value delivered and defects
+   558→escaped — never by lines or PR counts.
+   559→6. Automate the loop, not the judgment. As agents begin to run themselves, encode your intent where they
+   560→read it (§13.6), specify before you generate (§13.5), and keep a separate check and a human gate in every
+   561→loop (§13.7). Speed is only safe behind verification you control.
+   562→13.9 Conclusion
+   563→AI does not repeal the four pressures of software engineering; it relocates their weight. Producing code gets
+   564→cheaper, so deciding what to build and proving it works — the subject of every chapter in this book — becomes
+   565→the differentiator. The disciplines you learned are promoted, not made quaint. Requirements are now what you
+   566→hand the agent to build from. The specification becomes the constitution it works under. Tests and reviews are the
+   567→layer that decides whether the volume of generated code can be trusted, and metrics are the evidence that a real
+   568→outcome shipped rather than mere output.
+   569→The o16g manifesto pushes this to its edge — it was never about the code — and whether or not you accept its
+   570→every claim, it points where the profession may be heading: engineers who direct fleets of agents toward well-
+   571→specified, rigorously verified outcomes. The practices are arriving to match — you write the spec, encode the
+   572→constitution in a file the agents read, and design the loop that runs them — but in every one of them the human’s
+   573→job is the same: own the intent, keep the check, and stay able to say “no.” That job is not less engineering. It is
+   574→more of the hardest, most human parts of it.
+   575→Sources
+   576→1 GitHub (Eirini Kalliamvakou), Research: Quantifying GitHub Copilot’s Impact on Developer Productivity and Happiness
+   577→(2022). github.blog.
+   578→2 Sida Peng, Eirini Kalliamvakou, Peter Cihon, and Mert Demirer, The Impact of AI on Developer Productivity: Evidence from
+   579→GitHub Copilot (2023). arXiv 2302.06590.
+   580→3 METR (Joel Becker, Nate Rush, Elizabeth Barnes, and David Rein), Measuring the Impact of Early-2025 AI on Experienced
+   581→Open-Source Developer Productivity (2025). metr.org · arXiv 2507.09089.
+   582→4 Kent Beck et al., Principles behind the Agile Manifesto (2001). agilemanifesto.org.
+   583→5 Madhava Krishna, Bhagesh Gaur, Arsh Verma, and Pankaj Jalote, Using LLMs in Software Requirements Specifications: An
+   584→Empirical Evaluation (2024). arXiv 2404.17842.
+   585→
+   586→===== صفحة الكتاب 365 =====
+   587→6 Asma Yamani, Malak Baslyman, and Moataz Ahmed, Leveraging LLMs for User Stories in AI Systems: UStAI Dataset (2025).
+   588→arXiv 2504.00513.
+   589→7 Haowei Cheng et al., Generative AI for Requirements Engineering: A Systematic Literature Review (2024). arXiv 2409.06741.
+   590→8 Sirui Hong et al., MetaGPT: Meta Programming for a Multi-Agent Collaborative Framework (2023). arXiv 2308.00352.
+   591→9 Ruiyin Li et al., Bridging Requirements and Architecture: Multi-Agent Orchestration with External Knowledge and Hierarchical
+   592→Memory (2026). arXiv 2606.01385.
+   593→10 Google Research, Resolving Code Review Comments with Machine Learning (2023). research.google.
+   594→11 Sundar Pichai, Alphabet Q3 2024 earnings-call remarks — more than a quarter of new code at Google is AI-generated, then
+   595→reviewed by engineers — as reported by Fortune (2024). fortune.com.
+   596→12 Neil Perry, Megha Srivastava, Deepak Kumar, and Dan Boneh, Do Users Write More Insecure Code with AI Assistants? (CCS
+   597→2023). arXiv 2211.03622.
+   598→13 Carlos E. Jimenez et al., SWE-bench: Can Language Models Resolve Real-World GitHub Issues? (2023). arXiv 2310.06770 ·
+   599→leaderboard at swebench.com.
+   600→14 Niels Mündler, Mark Niklas Müller, Jingxuan He, and Martin Vechev, SWT-Bench: Testing and Validating Real-World Bug-
+   601→Fixes with Code Agents (2024). arXiv 2406.12952.
+   602→15 Reem Aleithan et al., SWE-Bench+: Enhanced Coding Benchmark for LLMs (2024). arXiv 2410.06992.
+   603→16 Max Schäfer, Sarah Nadi, Aryaz Eghbali, and Frank Tip, An Empirical Evaluation of Using Large Language Models for
+   604→Automated Unit Test Generation (2023). arXiv 2302.06527.
+   605→17 GitClear (William Harding et al.), AI Copilot Code Quality: 2025 Research (2025). gitclear.com.
+   606→18 Hammond Pearce et al., Asleep at the Keyboard? Assessing the Security of GitHub Copilot’s Code Contributions (2021). arXiv
+   607→2108.09293.
+   608→19 Cory Ondrejka, Outcome Engineering — The o16g Manifesto (2026). o16g.com.
+   609→20 Onebrief, Onebrief Hires Cory Ondrejka as Chief Technology Officer (2026). businesswire.com.
+   610→21 GitHub, Spec Kit — a toolkit for spec-driven development (2025–2026). github.com/github/spec-kit · intro at github.blog.
+   611→Source of the constitution → specify → plan → tasks → implement phases and the “code serves the spec” inversion; first-pass-
+   612→success figures are early-adopter reports, not controlled studies.
+   613→22 bdfinst, agentic-dev-team — Claude Code plugins for a spec-to-shipping workflow (2026). github.com/bdfinst/agentic-dev-
+   614→team. The /specs → /plan → /build → /pr loop with review-critic personas and enforced red-green-refactor gates.
+   615→23 Addy Osmani, Loop Engineering (2026). addyo.substack.com · overview at O’Reilly Radar. The name and one-line definition,
+   616→the four-layer stack, the five moves and their anti-patterns, intent debt, and the four silent costs (the term surfaced the same
+   617→week from Peter Steinberger and Boris Cherny, June 2026).
+   618→24 AGENTS.md — an open standard for agent instruction files. agents.md. Formalized as an open spec in 2025 (OpenAI with
+   619→Google, Cursor, and others) and donated to the Linux Foundation’s Agentic AI Foundation in December 2025; adopted by
+   620→60,000+ projects and 20+ tools.
+   621→25 Anthropic, Manage Claude’s memory — Claude Code documentation. code.claude.com/docs/en/memory. CLAUDE.md loading
+   622→and the practices that make an instructions file effective (high-signal, imperative, few load-bearing rules).
+   623→
+   624→===== صفحة الكتاب 366 =====
+   625→26 OpenAI, Codex — Prompting and Best practices (2026). developers.openai.com/codex/prompting · /codex/learn/best-practices.
+   626→Stresses verifiable, decomposed instructions with measurable success criteria; unlike Anthropic’s guide, it gives no
+   627→capitalization/emphasis advice. See also Anthropic, Best practices for Claude Code — code.claude.com/docs/en/best-practices
+   628→— for the IMPORTANT/ YOU MUST emphasis lever quoted in §13.6.
+   629→27 Per-tool instruction conventions: Cursor, Rules — cursor.com/docs/rules; Google, Provide context with GEMINI.md files
+   630→(Gemini CLI) — geminicli.com/docs/cli/gemini-md; GitHub, Adding repository custom instructions for Copilot —
+   631→docs.github.com.
+   632→28 Anthropic, Harness design for long-running application development (2026). anthropic.com/engineering. The generator–
+   633→evaluator (and planner) architecture, its GAN inspiration, browser-driven evaluation, and the finding that agents overrate their
+   634→own output.
+   635→29 Steve Kaliski (Stripe), How Stripe built “minions” — AI coding agents that ship 1,300 PRs weekly from Slack reactions, How I
+   636→AI podcast (2026). lennysnewsletter.com · coverage at InfoQ. Deterministic gates around a Goose fork; reliability from
+   637→constraints, not model size.
+   638→Key takeaways are summarized above in §13.9.
+   639→Continue to the Exercises.
+   640→Go deeper with the Open Resources for this chapter.
+   641→
+   642→===== صفحة الكتاب 367 =====
+   643→
+   644→===== صفحة الكتاب 368 =====
+   645→Chapter 13 — Exercises
+   646→Tags: [warm‑up] checks understanding · [analysis] asks you to reason.
+   647→Concepts
+   648→1. [warm‑up] In your own words, restate the distinction between essential and accidental complexity
+   649→(Chapter 1) and give one software task at each end that AI handles well or poorly. Why does the boundary
+   650→predict where AI helps?
+   651→2. [warm‑up] Name the five rungs of the “ladder of assistance” (§13.1.3). For each, state one thing the human
+   652→must still do.
+   653→3. [warm‑up] What is the oracle problem, and why does it limit AI-generated tests even when coverage
+   654→numbers look high?
+   655→Analysis
+   656→4. [analysis] The 2025 METR trial found experienced developers were ~19% slower with AI while believing
+   657→they were faster. Give two plausible mechanisms for the gap, and describe an experiment (using Chapter 12
+   658→methods) you could run on your own team to measure your real speedup instead of trusting the feeling.
+   659→5. [analysis] Pick any three lifecycle stages from §13.2. For each, write one sentence on what AI does well
+   660→and one on the specific fundamental a human still owns. Cite the chapter each maps to.
+   661→6. [analysis] §13.2.6 says AI “inverts” the code-review problem. Explain the inversion, and propose two
+   662→concrete team policies that keep reviewer trust (Chapter 9) from eroding when most code under review is
+   663→machine-generated.
+   664→7. [analysis] The security evidence (§13.3) shows users of AI assistants writing less secure code while feeling
+   665→more secure. Which cognitive bias from Chapter 4 does this resemble, and what process safeguard would
+   666→you add?
+   667→The o16g manifesto
+   668→8. [analysis] Map any five of the sixteen o16g principles to specific chapters of this book, and for each say
+   669→whether it restates an existing discipline or proposes something genuinely new.
+   670→9. [analysis] The manifesto declares “The Backlog is Dead — manage to cost, not capacity.” Argue for and
+   671→against this claim using Chapter 4’s prioritization tools. Under what conditions does it hold?
+   672→10. [analysis] Principle 16 (“Audit the Outcomes”) depends on human expertise, yet heavy reliance on agents
+   673→may erode that expertise (the deskilling risk). Explain the tension and propose how a team could stay able
+   674→to audit what its agents produce.
+   675→
+   676→===== صفحة الكتاب 369 =====
+   677→11. [analysis] “Certainty, not vibes” is the manifesto’s verification slogan. Give one kind of outcome that is
+   678→cheap to verify automatically and one that is expensive or impossible, and connect the second to the oracle
+   679→problem.
+   680→Agentic practice
+   681→12. [warm‑up] State the “inversion” at the heart of spec-driven development (§13.5) in one sentence. Which
+   682→two chapters supply the skills the Specify phase depends on?
+   683→13. [warm‑up] Name the five moves a loop makes each turn (§13.7.1). For each, name the anti-pattern that
+   684→appears when it is skipped.
+   685→14. [analysis] Write a first-draft AGENTS.md (about 10–15 lines) for your team project (Appendix A). Then
+   686→justify each line against the §13.6 tests: does it materially change a decision, or could the agent infer it by
+   687→reading the code? Delete anything that fails.
+   688→15. [analysis] §13.7.2 argues the agent that wrote the code is the worst judge of it, and the fix is a separate
+   689→evaluator that defaults to “no.” Explain why this is the same problem as the oracle problem (§13.2.7), and
+   690→why swapping in a different model or agent helps where “asking the author to be more critical” does not.
+   691→16. [analysis] Pick two of the four silent costs of a running loop (§13.7.3) — verification debt, comprehension
+   692→rot, cognitive surrender, token blowout. For each, describe a concrete symptom you would expect to see
+   693→first, and the specific discipline (from this book) that guards against it.
+   694→17. [analysis] Stripe’s “Minions” ship ~1,300 PRs a week on a fork of a mid-tier open-source harness, not a
+   695→frontier model (§13.7.3). Explain, using the five moves, where that pipeline’s reliability actually comes
+   696→from — and why “use a bigger model” would not have produced it.
+   697→18. [analysis] §13.6 argues that an AGENTS.md ports facts between tools but not tone — Anthropic documents
+   698→IMPORTANT/YOU MUST emphasis as a lever, while OpenAI’s Codex guide stresses verifiable, decomposed
+   699→instructions instead. Take one rule from your team’s AGENTS.md and rewrite it two ways: once emphasis-
+   700→first, once rationale-first (“do X because Y”). Which version would you expect to survive being read by a
+   701→different agent than the one you wrote it for, and why?
+   702→
+   703→===== صفحة الكتاب 370 =====
+   704→
+   705→===== صفحة الكتاب 371 =====
+   706→Chapter 13 — Open Resources
+   707→Free, open-licensed, or freely accessible primary sources behind this chapter. Types: 📘 open text · 🎓 course ·
+   708→📄 primary source/paper · 🎥 video. Licenses vary and are noted where known. AI moves fast — prefer primary
+   709→studies over vendor blogs, and check dates.
+   710→The o16g manifesto (used in §13.4)
+   711→📄 o16g — the Outcome Engineering manifesto, Cory Ondrejka — o16g.com/manifesto. The 16
+   712→principles and the “it was never about the code” thesis. Read it in full and form your own view.
+   713→📄 Onebrief, “Onebrief Hires Cory Ondrejka as Chief Technology Officer” (2026) —
+   714→businesswire.com. Background on the manifesto’s author.
+   715→Productivity evidence (used in §13.1.4, §13.3)
+   716→📄 METR, “Measuring the Impact of Early-2025 AI on Experienced Open-Source Developer
+   717→Productivity” (2025) — metr.org study · arXiv 2507.09089. The randomized trial that found a ~19%
+   718→slowdown and a large perception gap.
+   719→📄 “The Impact of LLM-Assistants on Software Developer Productivity: A Systematic Review”
+   720→(2025) — arXiv 2507.03156.
+   721→📄 GitHub, “Research: Quantifying GitHub Copilot’s Impact on Developer Productivity and
+   722→Happiness” (2022) — github.blog. The perceived-productivity survey.
+   723→📄 Peng et al., “The Impact of AI on Developer Productivity: Evidence from GitHub Copilot” (2023)
+   724→— arXiv 2302.06590. The vendor experiment behind the eye-catching “55.8% faster” number.
+   725→📄 Sundar Pichai’s Alphabet Q3 2024 earnings-call remark that more than a quarter of new code at Google
+   726→is AI-generated, then reviewed by engineers — reported by Fortune.
+   727→📄 DORA / State of DevOps reports on AI’s effect on delivery — dora.dev.
+   728→Code quality & security (used in §13.3)
+   729→📄 GitClear, “AI Copilot Code Quality: 2025 Research” (rising code clones, falling refactoring) —
+   730→gitclear.com research.
+   731→📄 Perry et al., “Do Users Write More Insecure Code with AI Assistants?” (Stanford) — arXiv
+   732→2211.03622. The “false sense of security” study.
+   733→📄 Pearce et al., “Asleep at the Keyboard? Assessing the Security of GitHub Copilot’s Code
+   734→Contributions” — arXiv 2108.09293.
+   735→
+   736→===== صفحة الكتاب 372 =====
+   737→📄 Google Research, “Resolving Code Review Comments with Machine Learning” (2023) —
+   738→research.google. ML-suggested fixes for review comments at Google scale.
+   739→AI in requirements, design, testing (used in §13.2)
+   740→📄 “Generative AI for Requirements Engineering: A Systematic Literature Review” — arXiv
+   741→2409.06741.
+   742→📄 “Leveraging LLMs for User Stories in AI Systems (UStAI)” (FSE 2025) — arXiv 2504.00513.
+   743→📄 Krishna et al., “Using LLMs in Software Requirements Specifications: An Empirical Evaluation”
+   744→(2024) — arXiv 2404.17842. LLM-drafted SRS quality vs. entry-level engineers, plus time/cost savings.
+   745→📄 Hong et al., “MetaGPT: Meta Programming for a Multi-Agent Collaborative Framework” (2023)
+   746→— arXiv 2308.00352. Role specialization to reduce errors in multi-agent software generation.
+   747→📄 Li et al., “Bridging Requirements and Architecture: Multi-Agent Orchestration with External
+   748→Knowledge and Hierarchical Memory” (2026) — arXiv 2606.01385. Specialized agents that turn
+   749→requirements into candidate architectures.
+   750→📄 Schäfer et al., “An Empirical Evaluation of Using Large Language Models for Automated Unit
+   751→Test Generation” (2023) — arXiv 2302.06527.
+   752→📄 “Context Matters: Evaluating Context Strategies for Automated ADR Generation Using LLMs”
+   753→(architecture decisions) — arXiv 2604.03826.
+   754→📄 SWE-bench (resolve real GitHub issues) — swebench.com · arXiv 2310.06770; and SWT-bench
+   755→(generate bug-reproducing tests) — arXiv 2406.12952.
+   756→📄 Aleithan et al., “SWE-Bench+: Enhanced Coding Benchmark for LLMs” (2024) — arXiv
+   757→2410.06992. Solution leakage and weak test suites can inflate reported benchmark resolution rates.
+   758→Agentic development in practice (used in §§13.5–13.7)
+   759→📄 GitHub, Spec Kit — an open toolkit for spec-driven development — github.com/github/spec-kit; intro
+   760→on the GitHub Blog. The constitution → specify → plan → tasks → implement pipeline.
+   761→📄 AGENTS.md — the open standard for agent instruction files — agents.md. “A README for agents”;
+   762→donated to the Linux Foundation’s Agentic AI Foundation in December 2025.
+   763→📄 Anthropic, “Manage Claude’s memory” (Claude Code docs) — code.claude.com/docs/en/memory.
+   764→How CLAUDE.md is loaded and what makes an instructions file effective.
+   765→📄 Addy Osmani, “Loop Engineering” (2026) — addyo.substack.com; overview at O’Reilly Radar. The
+   766→four-layer stack, the five moves, the anti-patterns, and the four silent costs.
+   767→📄 Anthropic, “Harness design for long-running application development” (2026) —
+   768→anthropic.com/engineering. The GAN-inspired planner / generator / evaluator architecture and why agents
+   769→overrate their own output.
+   770→🎥 Steve Kaliski, “How Stripe built ‘minions’” (How I AI, 2026) — lennysnewsletter.com; coverage at
+   771→InfoQ. ~1,300 PRs/week from deterministic gates around a Goose fork.
+   772→
+   773→===== صفحة الكتاب 373 =====
+   774→📄 bdfinst/agentic-dev-team — Claude Code plugins for a spec-to-shipping workflow —
+   775→github.com/bdfinst/agentic-dev-team. A working /specs → /plan → /build → /pr template with critic
+   776→agents and TDD gates.
+   777→Per-tool instruction guides (used in §13.6)
+   778→Each agent ships its own guide for how to phrase instructions — the facts port via AGENTS.md, the tone does not.
+   779→Read the guide for the tool you actually use.
+   780→📄 Anthropic, “Best practices for Claude Code” — code.claude.com/docs/en/best-practices and
+   781→“Manage Claude’s memory” — …/memory. Source of the IMPORTANT/YOU MUST emphasis lever and the
+   782→“prune ruthlessly” rule.
+   783→📄 OpenAI, “Codex — Prompting” — developers.openai.com/codex/prompting — and “Best practices”
+   784→— …/learn/best-practices. Verifiable, decomposed instructions; no capitalization advice.
+   785→📄 Cursor, “Rules” — cursor.com/docs/rules. Glob-scoped .mdc rule files (and native AGENTS.md support).
+   786→📄 Google, “Provide context with GEMINI.md files” (Gemini CLI) — geminicli.com/docs/cli/gemini-md.
+   787→📄 GitHub, “Adding repository custom instructions for Copilot” — docs.github.com. The
+   788→.github/copilot-instructions.md convention.
+   789→Foundations & agentic engineering
+   790→📄 Manifesto for Agile Software Development — agilemanifesto.org (the historical counterpoint the
+   791→o16g manifesto positions itself against).
+   792→📄 “Toward Agentic Software Engineering Beyond Code: Vision, Values, and Vocabulary” — arXiv
+   793→2510.19692.
+   794→🎥 Talks and courses on AI-assisted development appear frequently; prefer university/primary sources and
+   795→always check the publication date.
+   796→License note
+   797→Linked resources remain under their own licenses; this page is CC BY-SA 4.0. The o16g manifesto is quoted
+   798→briefly for commentary and attributed to its author.
+   799→
+   800→===== صفحة الكتاب 374 =====
+   801→

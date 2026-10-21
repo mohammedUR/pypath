@@ -1,0 +1,679 @@
+     1→     1→
+     2→     2→===== صفحة الكتاب 207 =====
+     3→     3→Chapter 8 — Version Control with Git
+     4→     4→Where we are. Chapters 1–7 taught you to decide what to build and how to structure it: process,
+     5→     5→requirements, use cases, design, architecture. All of that produces code — and the moment code exists, a
+     6→     6→problem appears that no amount of good design solves on its own. More than one person will change it.
+     7→     7→Even working alone, you will change it across weeks, take a wrong turn, and need to get back to something
+     8→     8→that worked. You will want to know who wrote a line and why, try a risky idea without endangering what
+     9→     9→already runs, and combine your work with a teammate’s without either of you losing an afternoon. A version
+    10→    10→control system makes all of that safe and routine, and for essentially the whole industry that system is Git.
+    11→    11→Every discipline in the rest of this book sits on top of it: the code reviews of Chapter 9 happen on Git
+    12→    12→branches, the delivery pipeline of Chapter 14 runs on every Git commit, and the team project of Appendix A
+    13→    13→is impossible to coordinate without it.
+    14→    14→Git is close to universal. In recent Stack Overflow developer surveys roughly 93–94% of professional developers
+    15→    15→report using it,1 and the platforms built on it — GitHub, GitLab, and others — are where modern software is
+    16→    16→written, reviewed, and shipped. Yet Git also has a reputation for being hard to learn, and the difficulty is partly
+    17→    17→deserved: its command interface is inconsistent and exposes internal concepts that beginners do not yet
+    18→    18→understand.2 This chapter therefore begins with the underlying mental model, so that the commands have a
+    19→    19→coherent explanation. Once you know what Git actually stores, the commands stop being incantations and start
+    20→    20→being obvious.
+    21→    21→Principle. Version control is the substrate of collaboration. You cannot review, integrate continuously, test
+    22→    22→on every change, or ship safely as a team until every change has a name, a history, and an owner. That is
+    23→    23→precisely what version control gives you, and it is why this chapter comes before the quality and delivery
+    24→    24→chapters that depend on it.
+    25→    25→8.1 Why Version Control
+    26→    26→8.1.1 Life Without It
+    27→    27→Picture a shared folder that has grown these files over a week:
+    28→    28→report.docx        report_final.docx          report_FINAL_jing_use_this.docx
+    29→    29→report_v2.docx     report_final_ACTUAL.docx
+    30→    30→
+    31→    31→===== صفحة الكتاب 208 =====
+    32→    32→Everyone has lived some version of this. It is the manual, error-prone answer to a real need — keeping old
+    33→    33→versions around in case you have to go back — and Pro Git calls the copy-into-a-timestamped-folder approach
+    34→    34→exactly that: error-prone, because “it is easy to forget which directory you’re in and accidentally write to the
+    35→    35→wrong file or copy over files you don’t mean to.”3
+    36→    36→Now make it code, and make it a team. Two people edit the same file and email copies back and forth; the second
+    37→    37→person to save wins, and the first person’s afternoon is gone. A change three weeks ago introduced a bug, but
+    38→    38→nobody can say which change, or why it was made, or what the file looked like before. Someone wants to try a
+    39→    39→bold refactor but is afraid to, because there is no safe way back if it fails. These are not tooling annoyances; they
+    40→    40→are the daily friction that makes software built by more than one person hard. A version control system (VCS) is,
+    41→    41→in Pro Git’s words, “a system that records changes to a file or set of files over time so that you can recall specific
+    42→    42→versions later.”3 It gives you four things the shared folder cannot: a complete history you can travel back through,
+    43→    43→attribution so you can see who changed a line and read why, isolation so you can experiment without
+    44→    44→endangering working code, and integration so several people can change the same project at once and combine
+    45→    45→the results on purpose rather than by luck.
+    46→    46→Early systems solved pieces of this. Local tools such as RCS tracked a single developer’s file history on one
+    47→    47→machine. Centralized systems — CVS, then Subversion (SVN), then Perforce — put all the versioned files on one
+    48→    48→server that clients check out from, which finally let a team collaborate and gave administrators fine-grained
+    49→    49→control.4 But a central server is a single point of failure: if it is down, as Pro Git notes, “nobody can collaborate at
+    50→    50→all or save versioned changes,” and if its disk is lost without a backup, “you lose absolutely everything — the
+    51→    51→entire history of the project.”4 That weakness is what the next generation was built to remove.
+    52→    52→8.1.2 What Git Is
+    53→    53→Git is a distributed version control system. When you git clone a project you do not check out the latest files
+    54→    54→the way you would from a central server; you “fully mirror the repository, including its full history.”4 Every clone
+    55→    55→is a complete, independent backup. Any developer’s copy can restore a dead server, you can commit and browse
+    56→    56→history on a plane with no network, and there is no single machine everyone must be able to reach to get work
+    57→    57→done.
+    58→    58→Git was written in a hurry for a serious job. In early 2005 the Linux kernel project lost free use of BitKeeper, the
+    59→    59→proprietary distributed system it had relied on, after a license dispute.5 Linus Torvalds started writing a
+    60→    60→replacement on 3 April 2005, announced it on the 6th, had it hosting its own source the next day, and used it to
+    61→    61→manage the Linux kernel 2.6.12 release that June; he handed maintenance to Junio Hamano — still the maintainer
+    62→    62→today — a few months later.5 Torvalds set four goals: avoid everything he disliked about CVS, support a
+    63→    63→distributed BitKeeper-style workflow, provide “very strong safeguards against corruption,” and be fast.5 (He also,
+    64→    64→by his own cheerful admission, named it after himself; the manual page calls Git “the stupid content tracker.”)
+    65→    65→
+    66→    66→===== صفحة الكتاب 209 =====
+    67→    67→Two design decisions from that origin explain almost everything about how Git behaves. The first is that Git
+    68→    68→stores snapshots, not differences. Older systems store, per file, a list of changes over time — a base version plus
+    69→    69→a stack of diffs you add up to reconstruct any version. Git instead “thinks of its data more like a series of
+    70→    70→snapshots”: every commit records a picture of all your files at that moment, and for any file that did not change, it
+    71→    71→stores “a link to the previous identical file it has already stored.”6 The second is that everything is checksummed.
+    72→    72→Git names each piece of content by the SHA-1 hash of the content itself — a 40-character fingerprint — and
+    73→    73→stores it under that name rather than under a filename.6 You cannot change a file, or a commit, without changing
+    74→    74→its hash, so corruption cannot hide, and identical content is automatically stored only once. (Git is migrating from
+    75→    75→SHA-1 to SHA-256 following a 2017 demonstration that SHA-1 collisions are feasible, but the idea is
+    76→    76→unchanged.)
+    77→    77→8.1.3 How to Think About Git: A Graph of Snapshots
+    78→    78→Begin with a graph of snapshots; the later commands follow from this representation. Underneath, Git is a key-
+    79→    79→value store: hand it content, it hashes the content and hands back the fingerprint. Three kinds of object are built on
+    80→    80→that store.7 A blob holds the contents of one file. A tree maps names to blobs and other trees — it is a snapshot of
+    81→    81→a directory. A commit points to one top-level tree (the snapshot of your whole project), carries an author, a
+    82→    82→timestamp, and a message, and points back to its parent commit — the state the project was in just before. The
+    83→    83→first commit has no parent; a normal commit has one; a merge has two or more.
+    84→    84→Follow those parent pointers backward and you are walking the project’s history. Because a commit can have
+    85→    85→several children (two people build on the same starting point) and a merge has several parents, the shape this
+    86→    86→makes is not a straight line but a directed acyclic graph (DAG) of snapshots. “History” in Git is just this graph,
+    87→    87→read backward.
+    88→    88→The arrows between commits run from child to parent: each commit knows where it came from. A branch is the
+    89→    89→last piece, and it is smaller than beginners expect. A branch “is simply a lightweight movable pointer” to one
+    90→    90→commit — literally a small file containing a 40-character hash.8 Creating a branch costs about 41 bytes; that is
+    91→    91→why Git users make branches constantly and older tools, which copied the whole project into a new folder to
+    92→    92→branch, made people dread it. HEAD is one more pointer: it points at the branch you are currently on. When you
+    93→    93→commit, the commit is created with your current commit as its parent, and the branch HEAD points at slides
+    94→    94→forward to the new commit. Branches do not “contain” commits and have no built-in parent-child relationship to
+    95→    95→each other; they are just sticky notes you peel off and re-stick onto newer commits as you work.
+    96→    96→
+    97→    97→===== صفحة الكتاب 210 =====
+    98→    98→Pitfall. The single most common misconception is that Git stores diffs. It stores whole snapshots keyed by
+    99→    99→content hash. Viewing commits as snapshots connected in a graph explains why branches are cheap, how
+   100→   100→merges and rebases operate, and how Git can recover work that seems lost.2
+   101→   101→8.2 The Everyday Workflow
+   102→   102→8.2.1 Setting Up Once
+   103→   103→Before your first commit, tell Git who you are, because that name and email are stamped onto every commit you
+   104→   104→make:
+   105→   105→git config --global user.name "Your Name"
+   106→   106→git config --global user.email "you@example.com"
+   107→   107→You get a repository in one of two ways. If the project already exists on a server, copy it and its whole history to
+   108→   108→your machine with git clone <url>.9 If you are starting fresh locally, run git init inside your project directory
+   109→   109→to create the hidden .git/ subdirectory that holds the object database — then, when you are ready to share it,
+   110→   110→connect it to a remote with git remote add origin <url> and git push -u origin main.
+   111→   111→A note on the default branch name. Historically Git’s first branch was called master; modern Git and GitHub
+   112→   112→create it as main instead. Both are ordinary branches with no special powers — wherever this chapter says main,
+   113→   113→use whatever your repository’s default branch is called. Finally, pushing to a service like GitHub requires
+   114→   114→authentication: GitHub removed account-password authentication in 2021, so the two normal paths are HTTPS
+   115→   115→with a personal access token (which you paste in place of a password) or an SSH key you generate once and add
+   116→   116→to your account.
+   117→   117→8.2.2 The Three Areas
+   118→   118→Every change flows through three places, and understanding them is the thing that most separates people who are
+   119→   119→comfortable with Git from people who fight it. The working tree is the ordinary directory of files you edit. The
+   120→   120→repository (.git/) is the committed history. Between them sits the piece with no equivalent in Dropbox or a
+   121→   121→“Save” button: the staging area, also called the index, which holds exactly the changes that will go into your next
+   122→   122→commit.10
+   123→   123→
+   124→   124→===== صفحة الكتاب 211 =====
+   125→   125→Why an intermediate step? Because a commit should be one coherent change, and your working tree is usually a
+   126→   126→mess of several. Staging lets you compose the next commit deliberately — these three files, this part of a fourth —
+   127→   127→rather than dumping everything you happened to touch. The everyday loop is: edit files in the working tree, stage
+   128→   128→the pieces you want with git add, and commit the staged snapshot to history.
+   129→   129→8.2.3 Recording Changes
+   130→   130→git status is the command you will run more than any other; it shows what is untracked, what is modified but
+   131→   131→unstaged, and what is staged and ready to commit.11 git add <file> stages a file’s current content into the index.
+   132→   132→git commit records the staged snapshot as a new commit — either opening an editor for the message or taking it
+   133→   133→inline with git commit -m "...".
+   134→   134→git status                         # what changed, and what is staged
+   135→   135→git add src/login.py               # stage this file's current content
+   136→   136→git add -p                         # stage selected chunks, interactively
+   137→   137→git commit -m "Fix redirect loop on expired session (#143)"
+   138→   138→git log --oneline --graph          # see history as a labeled graph
+   139→   139→git diff                           # unstaged changes (working tree vs. index)
+   140→   140→git diff --staged                  # what the next commit will record
+   141→   141→The staging area is also where beginners get their first genuine surprise, so it is worth seeing once on purpose. If
+   142→   142→you git add a file and then edit it again, the newer edits are not in the commit — the commit records what was
+   143→   143→staged at add-time, not what is in the working tree now. git status will helpfully list the file as both “staged” and
+   144→   144→“modified” to tell you so. This is not a bug; it is the whole point of staging being a separate step. The shortcut git
+   145→   145→commit -a -m "..." auto-stages every already-tracked modified file and commits in one move, which is
+   146→   146→convenient but skips exactly the deliberate selection that makes staging useful — and it silently omits brand-new
+   147→   147→files, which are not yet tracked.11
+   148→   148→Pitfall. “git commit saved my files” and “git commit -a captures everything” are both false in ways that
+   149→   149→bite. A commit records only what is staged, and -a stages only files Git is already tracking. Run git status
+   150→   150→before you commit until reading it is second nature.
+   151→   151→
+   152→   152→===== صفحة الكتاب 212 =====
+   153→   153→8.2.4 What Not to Track: .gitignore
+   154→   154→Not everything in your working directory belongs in history. Compiled output, dependency folders like
+   155→   155→node_modules/, editor scratch files, and — most importantly — secrets such as API keys and passwords should
+   156→   156→never be committed. You tell Git to ignore them with a .gitignore file listing patterns (*.log, build/, .env) at
+   157→   157→the repository root.12
+   158→   158→Two facts about .gitignore cause real damage when learned too late. First, it only affects files Git is not already
+   159→   159→tracking. Adding a path to .gitignore does nothing to a file you already committed; to stop tracking it you must
+   160→   160→git rm --cached <file> and commit that removal. Second, and far more serious: Git history is forever. Deleting
+   161→   161→a secret in a new commit does not remove it — it still sits in every earlier commit, every clone, and every fork. If
+   162→   162→you commit a credential, the credential is compromised the moment it is pushed; rotate it immediately, and only
+   163→   163→then scrub it from history with a tool such as git filter-repo.13
+   164→   164→Principle. Create .gitignore first, before your first git add .. It is far cheaper to never commit a secret or
+   165→   165→a build artifact than to purge one from history after the fact.
+   166→   166→8.2.5 Undoing Things Safely
+   167→   167→Git’s reputation for danger is mostly undeserved, but it has a real basis: a few commands change your working
+   168→   168→files and a few rewrite history, and beginners reach for the dangerous ones by accident. The commands sort
+   169→   169→cleanly by which of the three areas they touch.14
+   170→   170→To…
+   171→   171→Use
+   172→   172→Touches
+   173→   173→Safe?
+   174→   174→Discard unstaged edits to a file
+   175→   175→git restore <file>
+   176→   176→working tree
+   177→   177→destructive (edits
+   178→   178→gone)
+   179→   179→Unstage a file, keep the edits
+   180→   180→git restore --staged
+   181→   181→<file>
+   182→   182→index
+   183→   183→safe
+   184→   184→Fix the last (unpushed) commit
+   185→   185→git commit --amend
+   186→   186→last commit
+   187→   187→safe if not pushed
+   188→   188→Undo an old commit with a new
+   189→   189→one
+   190→   190→git revert <hash>
+   191→   191→adds a commit
+   192→   192→safe, shareable
+   193→   193→Move a branch back, keep edits
+   194→   194→git reset --soft / --mixed
+   195→   195→history +
+   196→   196→index
+   197→   197→recoverable
+   198→   198→Move a branch back, discard edits
+   199→   199→git reset --hard <hash>
+   200→   200→all three
+   201→   201→destructive
+   202→   202→Two ideas make this manageable. git revert is the collaboration-safe undo: instead of erasing an old commit, it
+   203→   203→adds a new commit that reverses it, so history stays intact for everyone who already has it. And the safety net
+   204→   204→
+   205→   205→===== صفحة الكتاب 213 =====
+   206→   206→beneath all of it is git reflog, which records every position HEAD has held. Because Git “generally only adds
+   207→   207→data,” committed work is almost impossible to truly lose; when you think you have destroyed something, the
+   208→   208→answer is usually git reflog to find the commit’s hash and git reset --hard <hash> (or git branch recover
+   209→   209→<hash>) to get it back — not deleting the folder and re-cloning in despair.15
+   210→   210→Pitfall. As a default team policy, never --amend, reset, or force-push a commit you have already shared.
+   211→   211→You are not editing your copy; you are rewriting history other people have built on, and their next pull
+   212→   212→becomes a mess. The rare exceptions — a coordinated --force-with-lease on your own feature branch,
+   213→   213→scrubbing a leaked secret — are announced, not improvised. Rewrite freely before you push; treat pushed
+   214→   214→history as public record.
+   215→   215→8.3 Branching and Merging
+   216→   216→8.3.1 A Branch Is a Pointer
+   217→   217→Because a branch is just a movable pointer (§8.1.3), making one is instant and free, and that cheapness is what
+   218→   218→enables Git’s whole style of work: open a branch for every feature or experiment, and keep the shared main
+   219→   219→branch clean. The commands split the two things the old, overloaded git checkout used to do —
+   220→   220→creating/switching branches and discarding file changes — into the clearer modern pair git switch and git
+   221→   221→restore, introduced in Git 2.23.16
+   222→   222→git branch                 # list branches; * marks the one you are on (HEAD)
+   223→   223→git switch -c add-search   # create a new branch and move onto it
+   224→   224→# ...edit and commit; the add-search pointer advances, main stays put...
+   225→   225→git switch main            # back to main (working tree updates to its snapshot)
+   226→   226→When you switch, HEAD moves to the named branch and your working tree is rewritten to that branch’s snapshot;
+   227→   227→when you commit, the branch you are on advances to the new commit while every other branch stays exactly
+   228→   228→where it was.
+   229→   229→8.3.2 Merging
+   230→   230→Eventually you want the work on a branch back in main. git merge does this, and it takes one of two shapes.17 If
+   231→   231→main has not moved since you branched, Git can simply slide the main pointer forward to your branch’s latest
+   232→   232→commit — a fast-forward, no new commit needed. If main has moved (a teammate merged something
+   233→   233→meanwhile), Git performs a three-way merge: it finds the common ancestor of the two branches, combines the
+   234→   234→two sets of changes, and records the result as a new merge commit with two parents — one on each branch.
+   235→   235→
+   236→   236→===== صفحة الكتاب 214 =====
+   237→   237→The merge commit is not clutter; it is an honest record that two lines of development came together here, and it is
+   238→   238→what lets Git combine work that others based on either side.
+   239→   239→8.3.3 Merge or Rebase?
+   240→   240→There is a second way to combine branches, and the choice between them is one of the few genuine debates in
+   241→   241→everyday Git. git rebase takes the commits on your branch and replays them, one at a time, on top of the latest
+   242→   242→main, as if you had started your work from there.18 The result is a straight, linear history with no merge commit
+   243→   243→— which many teams find easier to read. The cost is that rebasing creates new commits (same changes, new
+   244→   244→hashes): it rewrites history. That leads to the nearest thing everyday Git has to an iron rule.
+   245→   245→Principle — the Golden Rule of Rebasing. Unless the whole team has coordinated the rewrite, never
+   246→   246→rebase commits that exist outside your own local repository — that is, commits you have already pushed and
+   247→   247→others may have.19 Rebase your own unpushed work to tidy it before sharing; use merge to integrate work
+   248→   248→that is already public. Break this rule and you force everyone else into a painful reconciliation of two
+   249→   249→divergent histories.
+   250→   250→A useful default for a student team: rebase your short-lived feature branch onto the latest main before you open a
+   251→   251→pull request (so your changes sit cleanly on top of current work), and let the final integration into main be a
+   252→   252→merge.
+   253→   253→8.4 Working with Others
+   254→   254→8.4.1 Remotes
+   255→   255→A remote is another copy of the repository, usually the shared one on GitHub, and by convention it is named
+   256→   256→origin. Four commands move commits between your machine and it.20 git clone copies a remote and its
+   257→   257→history down for the first time. git fetch downloads new commits from the remote but does not change your
+   258→   258→working files — it just updates your view of where the remote’s branches are (the origin/* “remote-tracking”
+   259→   259→
+   260→   260→===== صفحة الكتاب 215 =====
+   261→   261→branches). git pull is git fetch followed by a merge (or rebase) of those new commits into your current
+   262→   262→branch. git push uploads your commits to the remote.
+   263→   263→The moment every beginner hits is the rejected push:
+   264→   264→! [rejected]        main -> main (fetch first)
+   265→   265→error: failed to push some refs to '...'
+   266→   266→hint: Updates were rejected because the remote contains work that you
+   267→   267→hint: do not have locally.
+   268→   268→This is not an error so much as Git protecting a teammate’s work: someone pushed to main after you last pulled,
+   269→   269→and blindly overwriting the remote would discard their commits. The fix is always the same — git pull
+   270→   270→(integrate their work into yours, resolving any conflict), then git push. Never reach for git push --force to
+   271→   271→make the message go away on a shared branch; that is exactly the overwrite Git was preventing.
+   272→   272→8.4.2 The Daily Team Loop
+   273→   273→Put the pieces together and a team’s day has a rhythm. Almost every task follows the same loop, and internalizing
+   274→   274→it as one motion is more valuable than any single command.
+   275→   275→1. Start from an up-to-date main (git switch main, then git pull).
+   276→   276→2. Branch for the task with a descriptive name ( git switch -c feature/search).
+   277→   277→3. Do the work in small commits; push the branch early (git push -u origin feature/search), both to back
+   278→   278→it up and to let others see it.
+   279→   279→4. Open a pull request, get it reviewed and past CI, and merge it into main.
+   280→   280→5. Delete the branch and return to step 1.
+   281→   281→8.4.3 Pull Requests and Code Review
+   282→   282→A pull request (PR) — GitLab calls it a merge request — is the ritual that turns “I changed some code” into “the
+   283→   283→team accepted this change.” You push a branch, open a PR proposing to merge it into main, request reviewers, and
+   284→   284→a conversation happens on the diff: reviewers comment, may “request changes,” and you push more commits to
+   285→   285→the same branch until it is approved. The PR is where the code review of Chapter 9 actually takes place, and
+   286→   286→where the continuous-integration pipeline of Chapter 14 reports whether your change passes the tests and checks.
+   287→   287→There are two shapes of PR depending on your access. If you have write access to the shared repository — a
+   288→   288→normal student team — you push a branch to it directly and open the PR from there (the branch-and-PR model).
+   289→   289→If you do not — the usual case when contributing to someone else’s open-source project — you fork the
+   290→   290→
+   291→   291→===== صفحة الكتاب 216 =====
+   292→   292→repository to your own account, push your branch there, and open the PR across from your fork to the original (the
+   293→   293→fork-and-PR model).
+   294→   294→This is also the answer to a question every team asks: why can’t I just push to main? Because main is a protected
+   295→   295→branch. On a well-run project, GitHub is configured to reject direct pushes to main and to require that every
+   296→   296→change arrive through a PR that has an approving review (§9.3) and a passing CI run (§14.2) before it can
+   297→   297→merge.21 That single setting is what turns “we should review our code” from a good intention into something the
+   298→   298→system actually enforces.
+   299→   299→8.4.4 Team Workflows and Their Trade-offs
+   300→   300→A workflow is your team’s shared convention for how work leaves a laptop and becomes part of the product. Four
+   301→   301→are worth knowing, and — this matters — they are not equally good for a modern web project.
+   302→   302→Trunk-based development keeps one shared mainline (the trunk, i.e. main) that every developer integrates into at
+   303→   303→least daily, using only very short-lived branches that live hours to a day or two.22 Incomplete work is hidden
+   304→   304→behind feature flags rather than kept on a long branch. This is the workflow the research literature associates with
+   305→   305→elite delivery performance, precisely because frequent integration keeps merges tiny.23
+   306→   306→GitHub Flow (feature-branch workflow) is the lightly-more-structured version most student teams should use:
+   307→   307→main is always deployable, you branch for each change, open a PR, review, and merge.24 It keeps the PR-and-
+   308→   308→review ritual while staying close to trunk-based development if the branches stay short.
+   309→   309→Gitflow deserves a specific warning. For years it was the answer — a memorable diagram with five kinds of
+   310→   310→branch (main, develop, feature, release, hotfix).25 It suits software that ships in discrete, versioned releases,
+   311→   311→but it is heavyweight for anything continuously deployed, and its own author added a note in 2020 walking it back
+   312→   312→for web teams that “deliver continuously.”25 If your instinct is that “the Git workflow” means Gitflow, unlearn
+   313→   313→that; it is a specialized tool, not the default.
+   314→   314→The forking workflow is how open source runs: contributors have no write access, so each forks the canonical
+   315→   315→repository, works in their fork, and proposes changes by PR.26
+   316→   316→
+   317→   317→===== صفحة الكتاب 217 =====
+   318→   318→Workflow
+   319→   319→Branches
+   320→   320→Best for
+   321→   321→Watch out for
+   322→   322→Trunk-
+   323→   323→based
+   324→   324→trunk + hours-long
+   325→   325→continuously deployed products,
+   326→   326→strong CI
+   327→   327→needs feature flags to hide
+   328→   328→incomplete work
+   329→   329→GitHub
+   330→   330→Flow
+   331→   331→main + short feature
+   332→   332→branches
+   333→   333→most teams, including student
+   334→   334→projects
+   335→   335→let branches live too long and
+   336→   336→merges hurt
+   337→   337→Gitflow
+   338→   338→main, develop, +3
+   339→   339→kinds
+   340→   340→versioned, scheduled releases
+   341→   341→overkill and slow for continuous
+   342→   342→delivery
+   343→   343→Forking
+   344→   344→one fork per contributor
+   345→   345→open source, untrusted
+   346→   346→contributors
+   347→   347→extra step to sync your fork with
+   348→   348→upstream
+   349→   349→Pitfall. Long-lived feature branches are the single most common cause of “merge hell.” A branch that
+   350→   350→diverges from main for three weeks accumulates three weeks of conflicts to untangle at the worst possible
+   351→   351→moment. Whatever workflow you choose, keep branches short and integrate often — this is the most reliable
+   352→   352→conflict-prevention technique there is.
+   353→   353→8.5 Merge Conflicts
+   354→   354→8.5.1 What Causes a Conflict
+   355→   355→A merge conflict is Git admitting it cannot safely combine two changes on its own, so it stops and hands the
+   356→   356→decision to you. It happens when the two branches being merged changed the same lines of the same file in
+   357→   357→different ways, or when one side edited a file the other deleted.27 When Git can see that two changes touch
+   358→   358→different regions, it merges them silently; a conflict is specifically the case where the changes overlap and only a
+   359→   359→human can say what the combined result should be.
+   360→   360→It is important to know what Git does not catch. It detects textual overlap, not semantic incompatibility. If you
+   361→   361→rename a function on your branch while a teammate adds a new call to the old name on theirs, and the two edits
+   362→   362→are in different files, Git merges them without complaint — and the build breaks. Conflicts are the visible
+   363→   363→disagreements; the invisible ones are why review and tests still matter after a clean merge.
+   364→   364→8.5.2 Reading the Markers
+   365→   365→When a conflict happens, Git pauses the merge and rewrites the conflicted region of the file with markers showing
+   366→   366→both versions:27
+   367→   367→
+   368→   368→===== صفحة الكتاب 218 =====
+   369→   369→<<<<<<< HEAD
+   370→   370→price = subtotal * 1.08          # our change: 8% tax
+   371→   371→=======
+   372→   372→price = subtotal * 1.095         # their change: 9.5% tax
+   373→   373→>>>>>>> feature/tax-update
+   374→   374→Read it as three parts. Everything between <<<<<<< HEAD and ======= is “ours” — the version on the branch you
+   375→   375→are currently on. Everything between ======= and >>>>>>> is “theirs” — the version coming in from the branch
+   376→   376→you are merging. The label after >>>>>>> names that incoming branch. A one-time configuration, git config --
+   377→   377→global merge.conflictstyle zdiff3, adds a third section showing the common ancestor — what the line said
+   378→   378→before either change — which usually makes the right resolution obvious.
+   379→   379→Pitfall. “Ours” and “theirs” are relative to what you checked out, and they flip between a merge and a rebase
+   380→   380→(because a rebase replays your commits onto their branch, so “ours” becomes the branch you are landing
+   381→   381→on). When in doubt, do not guess from the label — read the actual content and the ancestor.
+   382→   382→8.5.3 Resolving One, Step by Step
+   383→   383→The resolution is less mysterious than the markers make it look:28
+   384→   384→1. Run git status — conflicted files are listed under “Unmerged paths.”
+   385→   385→2. Open each one and edit the conflicted region into the single result you actually want — which may be ours,
+   386→   386→theirs, a blend, or something new. Delete all three marker lines (<<<<<<<, =======, >>>>>>>) as you go.
+   387→   387→3. Stage the resolved file with git add <file> — staging is how you tell Git a file is resolved.
+   388→   388→4. When every file is staged, finish with git commit (Git pre-fills a merge message) or git merge --
+   389→   389→continue.
+   390→   390→Most editors make this friendlier. VS Code and other IDEs show a three-way merge view with “Accept Current,”
+   391→   391→“Accept Incoming,” and “Accept Both” buttons and a live preview of the merged result.29 They are a real help —
+   392→   392→but treat “Accept Both” with suspicion: it simply concatenates the two versions, which often produces duplicated
+   393→   393→or contradictory code that compiles and is still wrong.
+   394→   394→And the escape hatch, which is the first thing to learn, not the last: if a merge goes sideways and you want to be
+   395→   395→back exactly where you started, run git merge --abort (or git rebase --abort during a rebase). Nothing is lost;
+   396→   396→both sides were preserved the whole time. Knowing this makes conflicts stop feeling dangerous.
+   397→   397→Pitfall. git add will happily stage a file that still contains <<<<<<< markers, and the broken text sails into
+   398→   398→your commit and then the build. After resolving, search the file for the marker characters before you stage.
+   399→   399→
+   400→   400→===== صفحة الكتاب 219 =====
+   401→   401→8.5.4 Preventing Conflicts on a Team
+   402→   402→You cannot eliminate conflicts, but a team can make them rare and small, and the techniques follow directly from
+   403→   403→what causes conflicts — overlapping edits that sit unmerged for a long time.30
+   404→   404→Integrate often. Pull main into your work (or rebase onto it) at least daily. The longer two branches
+   405→   405→diverge, the more they overlap.
+   406→   406→Keep branches short-lived and changes small. A branch open for a day conflicts far less than one open
+   407→   407→for three weeks; a small pull request (§9.3) touches fewer lines to collide.
+   408→   408→Divide the work by module. Good design pays off here directly: if the architecture (Chapters 6–7) gives
+   409→   409→people separate, cohesive modules to own, they edit different files and rarely collide. Conflict frequency is
+   410→   410→a quiet signal about coupling.
+   411→   411→Communicate ownership. A thirty-second “I’m refactoring the auth module this afternoon” prevents the
+   412→   412→conflict that a day of silent parallel edits all but guarantees.
+   413→   413→Agree on formatting. A shared auto-formatter (§9.1) means diffs contain real changes, not whitespace and
+   414→   414→reflowing that manufacture conflicts out of nothing.
+   415→   415→Principle. The size and pain of a merge scale with how long branches diverge and how much they overlap.
+   416→   416→Every effective conflict-prevention practice — short branches, frequent integration, modular ownership — is
+   417→   417→an attack on one of those two variables.
+   418→   418→8.6 Habits That Make Git Work for a Team
+   419→   419→Everything above is mechanism. What makes Git genuinely work for a team is a handful of habits that keep
+   420→   420→history readable, changes reviewable, and mistakes recoverable.31
+   421→   421→Commit small, coherent changes. Each commit should do one thing — one fix, one feature step, one refactor —
+   422→   422→so that history can be read, a bad change can be reverted cleanly, and a bug can be traced to a single commit. A
+   423→   423→commit that mixes a feature, a reformat, and an unrelated fix is impossible to review or undo in isolation.
+   424→   424→Write commit messages for the next reader. The convention that has settled across the industry is a short subject
+   425→   425→line in the imperative mood — “Fix redirect loop,” not “Fixed” or “Fixes” — kept under about 50 characters,
+   426→   426→and, when the change deserves it, a blank line and a body that explains why rather than what (the diff already
+   427→   427→shows the what).32 The imperative reads as an instruction the commit carries out, which is also how Git’s own
+   428→   428→generated messages are phrased. Many teams formalize this with Conventional Commits (feat:, fix:,
+   429→   429→docs:…), a prefix scheme that makes history scannable and can drive automated versioning.33
+   430→   430→Commit and push often. Small, frequent commits are cheaper to review and safer to integrate; pushing often
+   431→   431→backs your work up and lets teammates see it. Never commit secrets or large binaries (§8.2.4). Protect main
+   432→   432→
+   433→   433→===== صفحة الكتاب 220 =====
+   434→   434→and require review plus a green pipeline before merge (§8.4.3). Tag releases with annotated tags and a semantic
+   435→   435→version so a specific shipped state has a name you can return to.34 And keep git reflog in mind as the safety net
+   436→   436→that means an afternoon’s work is essentially never truly lost.
+   437→   437→8.7 Markdown, READMEs, and Project Documentation
+   438→   438→Teams create documentation alongside code. Every repository carries a README, every pull request carries a
+   439→   439→description, every issue and design note is prose — and almost all of it is written in one lightweight format:
+   440→   440→Markdown. Learning it is a small investment that pays off in every chapter after this one and in every deliverable
+   441→   441→of the project (Appendix A).
+   442→   442→8.7.1 Why Markdown
+   443→   443→Markdown is a plain-text writing format — a handful of formatting conventions (created by John Gruber in
+   444→   444→2004) that a tool renders into HTML.35 Its whole appeal for software is that it is plain text, so it lives in the
+   445→   445→repository right beside the code, shows up as a clean line-by-line diff, and is reviewed in a pull request like any
+   446→   446→other change. The same “docs-as-code” property that version control gives your source, Markdown gives your
+   447→   447→writing.36 It is the native format of READMEs, issues, pull requests, wikis, chat, and documentation sites —
+   448→   448→including this book, which is written in Markdown. The flavor you will actually type is GitHub Flavored
+   449→   449→Markdown (GFM), which is what GitHub and GitLab render.37
+   450→   450→8.7.2 The Syntax You Need
+   451→   451→You can write almost everything with about a dozen constructs. Here is the working set as you would type it:
+   452→   452→
+   453→   453→===== صفحة الكتاب 221 =====
+   454→   454→# Heading   (use ## and ### for sub-headings)
+   455→   455→A blank line separates paragraphs. *italic*, **bold**, and `inline code`.
+   456→   456→- a bullet list          1. a numbered list
+   457→   457→- indent to nest           2. second item
+   458→   458→[link text](https://example.com)   ![image alt text](diagram.png)
+   459→   459→> a blockquote, useful for notes and warnings
+   460→   460→| Column | Column |
+   461→   461→| ------ | ------ |
+   462→   462→| cell   | cell   |
+   463→   463→- [x] a finished task     - [ ] an unfinished task
+   464→   464→For a block of code, open a line with three backticks and a language name (```python) and close with three
+   465→   465→backticks — that is what produces the highlighted code boxes throughout this book. The one rule beginners trip on
+   466→   466→is the blank line: a list, heading, or code block that is not preceded by a blank line often will not render as one.38
+   467→   467→8.7.3 The README: Your Project’s Front Door
+   468→   468→A repository’s README.md is the first thing GitHub shows a visitor, rendered automatically on the landing page,39
+   469→   469→so it is where a stranger — a teammate, a grader, a future employer — decides in a minute whether they
+   470→   470→understand your project. For a student team project, a good README answers all of these:
+   471→   471→Project name and a one-line description of what it does and why.
+   472→   472→Team members (and who owns what).
+   473→   473→Setup instructions — how to install dependencies and configure the project.
+   474→   474→How to run it locally, and how to run the tests (Chapter 10).
+   475→   475→The deployment link to the live application (Chapter 14).
+   476→   476→Known limitations — what does not work yet, honestly stated.
+   477→   477→A link to your AI-use / provenance log (Chapter 13, and the individual write-up).
+   478→   478→8.7.4 Writing Pull Request Descriptions
+   479→   479→The description of a pull request (§8.4.3) is where you explain a change to the teammate who will review it. A
+   480→   480→blank “updated stuff” tells a reviewer nothing; a short, structured description tells them what to look at and how to
+   481→   481→check it. A reliable template:
+   482→   482→
+   483→   483→===== صفحة الكتاب 222 =====
+   484→   484→## What changed
+   485→   485→Added password-reset validation.
+   486→   486→## Why
+   487→   487→Users need a safe way to recover access without exposing accounts.
+   488→   488→## How to test
+   489→   489→- Run `npm test`
+   490→   490→- Try a reset with an expired token
+   491→   491→- Try a reset with mismatched passwords
+   492→   492→## Screenshots
+   493→   493→(before / after images of the reset screen)
+   494→   494→Written this way, the description makes the review faster and, months later, explains the change to anyone reading
+   495→   495→the history.
+   496→   496→8.7.5 Markdown as Evidence
+   497→   497→There is a reason this section sits inside the version-control chapter. In the individual write-up and the final report
+   498→   498→(Appendix A), you are asked to show evidence of what you did — and that evidence is almost entirely Markdown-
+   499→   499→and-Git artifacts: your commit messages, your pull request descriptions and review comments, your README,
+   500→   500→and the issues you opened and closed. Clear commits and well-written pull requests create a durable, timestamped
+   501→   501→record of who changed the repository, what changed, and why — and that record is what lets you, and your grader,
+   502→   502→see each member’s contribution. Write it as though it is evidence, because it is.
+   503→   503→8.8 Conclusion
+   504→   504→Git looks like a pile of arbitrary commands until you see the small idea underneath: a graph of content-addressed
+   505→   505→snapshots, with branches as cheap movable pointers into it. Hold that picture and the everyday workflow — stage
+   506→   506→a coherent change, commit it, branch to isolate work, merge or rebase to bring it back — becomes routine, and
+   507→   507→even the scary moments (a wrecked merge, a lost commit, a rejected push) become recoverable and ordinary.
+   508→   508→The deeper reason this chapter comes before the ones on quality and delivery is that version control is what makes
+   509→   509→team engineering possible at all. It gives every change a name, a history, and an owner, which is the precondition
+   510→   510→for reviewing changes (Chapter 9), running a pipeline on every one of them (Chapter 14), and coordinating four
+   511→   511→people around a single codebase for a semester (Appendix A). Set up your repository, protect main, keep your
+   512→   512→branches short, and commit like someone will read it — because someone will, and often that someone is you.
+   513→   513→
+   514→   514→===== صفحة الكتاب 223 =====
+   515→   515→Sources
+   516→   516→1 Stack Overflow, Annual Developer Survey (version-control usage), summarized in Beyond Git: the other version control systems
+   517→   517→developers use (2023). stackoverflow.blog.
+   518→   518→2 Anish Athalye et al., MIT Missing Semester — Version Control (Git) (“Git’s interface is a leaky abstraction”).
+   519→   519→missing.csail.mit.edu.
+   520→   520→3 Scott Chacon & Ben Straub, Pro Git, §1.1 “About Version Control” (2nd ed.). git-scm.com.
+   521→   521→4 Scott Chacon & Ben Straub, Pro Git, §1.1 — local, centralized, and distributed version control. git-scm.com.
+   522→   522→5 Linus Torvalds, Kernel SCM saga.. and follow-ups, linux-kernel mailing list (April 6–8, 2005) — the primary record: the
+   523→   523→announcement, the design goals (a distributed workflow, CVS as an example of what not to do, protection against corruption,
+   524→   524→speed), and the early timeline. lkml.org. See also Scott Chacon and Ben Straub, Pro Git, 2nd ed., §1.2 “A Short History of Git”
+   525→   525→— the Git project’s own account of the BitKeeper dispute and Git’s goals. git-scm.com.
+   526→   526→6 Scott Chacon & Ben Straub, Pro Git, §1.3 “What is Git?” — snapshots not differences, and integrity by checksum. git-scm.com.
+   527→   527→7 Scott Chacon & Ben Straub, Pro Git, §10.2 “Git Internals: Git Objects” — blobs, trees, and commits. git-scm.com.
+   528→   528→8 Scott Chacon & Ben Straub, Pro Git, §3.1 “Branches in a Nutshell” — a branch as a lightweight movable pointer. git-scm.com.
+   529→   529→9 Scott Chacon & Ben Straub, Pro Git, §2.1 “Getting a Git Repository” ( init vs clone). git-scm.com.
+   530→   530→10 Julia Evans, How Git Works and Confusing git terminology — the working tree, the index/staging area, and building an
+   531→   531→accurate mental model. wizardzines.com, jvns.ca.
+   532→   532→11 Scott Chacon & Ben Straub, Pro Git, §2.2 “Recording Changes to the Repository.” git-scm.com.
+   533→   533→12 GitHub Docs, Ignoring files (.gitignore patterns) and the gitignore manual page. docs.github.com.
+   534→   534→13 GitHub Docs, Removing sensitive data from a repository — rotate the secret first; history is public. docs.github.com.
+   535→   535→14 Scott Chacon & Ben Straub, Pro Git, §2.4 “Undoing Things” and §7.7 “Reset Demystified.” git-scm.com.
+   536→   536→15 git-reflog manual page — recovering lost commits. git-scm.com.
+   537→   537→16 GitHub Blog, Highlights from Git 2.23 — the new git switch and git restore commands. github.blog.
+   538→   538→17 Atlassian, Git Merge — fast-forward versus three-way merges. atlassian.com.
+   539→   539→18 Scott Chacon & Ben Straub, Pro Git, §3.6 “Rebasing.” git-scm.com.
+   540→   540→19 Atlassian, The Golden Rule of Rebasing. atlassian.com.
+   541→   541→20 Scott Chacon & Ben Straub, Pro Git, §3.5 “Remote Branches” (fetch, pull, push). git-scm.com.
+   542→   542→21 GitHub Docs, About protected branches — required reviews and status checks before merge. docs.github.com.
+   543→   543→22 Trunk-Based Development — one mainline, very short-lived branches. trunkbaseddevelopment.com.
+   544→   544→23 DORA, Capabilities: Trunk-based development — its correlation with elite delivery performance. dora.dev.
+   545→   545→24 GitHub Docs, GitHub flow. docs.github.com.
+   546→   546→25 Vincent Driessen, A successful Git branching model (Gitflow), including the author’s 2020 note of reflection for continuously
+   547→   547→delivered software. nvie.com.
+   548→   548→
+   549→   549→===== صفحة الكتاب 224 =====
+   550→   550→26 Atlassian, Forking Workflow. atlassian.com.
+   551→   551→27 git-merge documentation — how conflicts arise and how they are presented. git-scm.com.
+   552→   552→28 GitHub Docs, Resolving a merge conflict using the command line. docs.github.com.
+   553→   553→29 VS Code Docs, Resolve merge conflicts — the three-way merge editor. code.visualstudio.com.
+   554→   554→30 Atlassian, Trunk-Based Development and Merge Conflicts — short-lived branches and frequent integration as conflict
+   555→   555→prevention. atlassian.com.
+   556→   556→31 Scott Chacon & Ben Straub, Pro Git, §5.2 “Contributing to a Project” — commit and collaboration discipline. git-scm.com.
+   557→   557→32 Chris Beams, How to Write a Git Commit Message — the seven rules and the imperative-mood convention. cbea.ms.
+   558→   558→33 Conventional Commits 1.0.0. conventionalcommits.org.
+   559→   559→34 Tom Preston-Werner et al., Semantic Versioning 2.0.0, and Pro Git §2.6 “Tagging.” semver.org.
+   560→   560→35 John Gruber, Markdown — the plain-text writing format and its readability-first design goal. daringfireball.net.
+   561→   561→36 Docs as Code — Write the Docs (documentation written with the same tools as code). writethedocs.org.
+   562→   562→37 GitHub Flavored Markdown Spec — the CommonMark superset GitHub and GitLab render. github.github.com/gfm.
+   563→   563→38 Basic Syntax — Markdown Guide (headings, lists, code, and the blank-line rule). markdownguide.org.
+   564→   564→39 GitHub Docs, About READMEs — the repository’s front door and what it should say. docs.github.com.
+   565→   565→Key takeaways are summarized above in §8.8.
+   566→   566→Continue to the Exercises.
+   567→   567→Go deeper with the Open Resources for this chapter.
+   568→   568→
+   569→   569→===== صفحة الكتاب 225 =====
+   570→   570→
+   571→   571→===== صفحة الكتاب 226 =====
+   572→   572→Chapter 8 — Exercises
+   573→   573→Exercises are graded by depth: [warm‑up] checks understanding, [analysis] asks you to reason about how Git
+   574→   574→behaves and how a team should use it.
+   575→   575→Concepts
+   576→   576→1. [warm‑up] In one or two sentences each, define working tree, staging area (index), and repository, and
+   577→   577→name the command that moves a change from each one to the next.
+   578→   578→2. [warm‑up] Explain, in your own words, why creating a branch in Git is nearly instantaneous when creating
+   579→   579→one in an older tool like Subversion was slow. Your answer should use the phrase “a branch is a pointer.”
+   580→   580→3. [warm‑up] A classmate says, “Git stores the diffs between versions of my files.” Correct the statement and
+   581→   581→explain what Git actually stores, and why the distinction matters.
+   582→   582→4. [warm‑up] Distinguish git fetch from git pull. Which one changes the files in your working tree, and
+   583→   583→which one does not?
+   584→   584→5. [warm‑up] Give one example each of a file that should be committed to a repository and a file that should
+   585→   585→be listed in .gitignore, and say why.
+   586→   586→6. [warm‑up] In Markdown (§8.7), write the source for: a top-level heading, a sentence with one bold and
+   587→   587→one italic word, a three-item bulleted list, a link, and a fenced code block with a language tag. Explain what
+   588→   588→the blank-line rule is and give one example where forgetting it breaks the output.
+   589→   589→Analysis
+   590→   590→7. [analysis] You run git add report.py, then edit report.py again, then git commit. Which version of
+   591→   591→report.py is in the commit — the one you staged or the one now in your working tree? Explain using the
+   592→   592→three-areas model, and say what git status would show between the second edit and the commit.
+   593→   593→8. [analysis] A teammate accidentally ran git reset --hard and believes a morning’s committed work is
+   594→   594→gone forever. Explain why it very likely is not gone, name the command you would use to find it, and
+   595→   595→outline the recovery. Then state the one situation in which work genuinely is unrecoverable.
+   596→   596→9. [analysis] Draw (by hand or in Mermaid) the commit graph for this sequence: commit A on main; branch
+   597→   597→feature off A; commit B on feature; switch to main and commit C; then merge feature into main. Label
+   598→   598→the merge commit and its parents, and explain why this is a three-way merge rather than a fast-forward.
+   599→   599→
+   600→   600→===== صفحة الكتاب 227 =====
+   601→   601→10. [analysis] You resolve a merge conflict, but you accidentally leave one ======= marker line in the file, run
+   602→   602→git add, and commit. What happens, and at which later stage (Chapter 9 review, Chapter 14 CI, or
+   603→   603→production) is this most likely to be caught? What habit would have prevented it?
+   604→   604→11. [analysis] Your team keeps hitting large, painful merge conflicts near every deadline. Using the causes of
+   605→   605→conflicts from §8.5, propose three concrete changes to how the team works that would make conflicts
+   606→   606→smaller and rarer, and justify each in terms of branch lifetime or overlap.
+   607→   607→12. [analysis] Explain the Golden Rule of Rebasing and construct a short scenario in which breaking it
+   608→   608→damages a teammate’s repository. Then describe a use of rebase that is perfectly safe, and say what
+   609→   609→distinguishes the two.
+   610→   610→13. [analysis] Your instructor requires that main be a protected branch. Explain what a protected branch is, list
+   611→   611→two rules a team might require before a merge is allowed, and connect each rule to a practice from another
+   612→   612→chapter (code review in §9.3, continuous integration in §14.2).
+   613→   613→14. [analysis] Draft a README.md for your team project that answers every field in §8.7.3 (name and purpose,
+   614→   614→team, setup, run locally, run tests, deployment link, known limitations, AI-use log link). Then write a pull
+   615→   615→request description for one real change, using the What changed / Why / How to test structure from §8.7.4,
+   616→   616→and explain why each section helps the reviewer.
+   617→   617→
+   618→   618→===== صفحة الكتاب 228 =====
+   619→   619→
+   620→   620→===== صفحة الكتاب 229 =====
+   621→   621→Chapter 8 — Open Resources
+   622→   622→Free, open-licensed, or freely accessible materials that reinforce this chapter. Types: 📘 open text · 🎓 course ·
+   623→   623→📄 primary source · 🎥 video. Licenses vary and are noted where known.
+   624→   624→Foundations: what Git is and how it works (used in §8.1)
+   625→   625→📘 Scott Chacon & Ben Straub — Pro Git (2nd ed.) — git-scm.com/book. The canonical, complete
+   626→   626→reference and the primary source for most of this chapter: version control (§1.1), the snapshot model (§1.3),
+   627→   627→Git objects (§10.2), branching and merging (§3), and undoing things (§2.4, §7.7). License: Creative
+   628→   628→Commons BY-NC-SA 3.0 — free to read and reuse.
+   629→   629→🎓 MIT “The Missing Semester of Your CS Education” — Version Control (Git) —
+   630→   630→missing.csail.mit.edu. Teaches Git data-model-first, the same approach this chapter takes. License: CC BY-
+   631→   631→NC-SA 4.0.
+   632→   632→📄 Linus Torvalds — “Kernel SCM saga..” (linux-kernel mailing list, April 2005) — lkml.org. The
+   633→   633→primary record of Git’s origin: the announcement, the design goals, and the early timeline, in Torvalds’ own
+   634→   634→words. Access: free archive.
+   635→   635→📘 Chacon & Straub — Pro Git, §1.2 “A Short History of Git” — git-scm.com/book. The Git project’s
+   636→   636→own account of the BitKeeper dispute and how Git came to manage the Linux kernel. License: CC BY-NC-
+   637→   637→SA 3.0.
+   638→   638→Building the right mental model (used in §8.1, §8.3)
+   639→   639→📘 Julia Evans — How Git Works (Wizard Zines) — wizardzines.com/zines/git. Short, illustrated
+   640→   640→explanations aimed exactly at the mental-model gap that makes Git confusing; her free blog posts on
+   641→   641→branches and HEAD are excellent companions. Access: blog posts free; the zine is a paid PDF.
+   642→   642→📄 De Rosso & Jackson — “What’s Wrong with Git?” and the conceptual redesign — onward13.pdf,
+   643→   643→oopsla16.pdf. The research behind the claim that Git’s difficulty is a conceptual-model problem, not a you
+   644→   644→problem. Access: free PDFs.
+   645→   645→Hands-on practice and everyday commands (used in §8.2, §8.4)
+   646→   646→🎓 Atlassian Git Tutorials — atlassian.com/git/tutorials. Clear, example-driven walkthroughs of the
+   647→   647→everyday commands, merging vs. rebasing, and comparing team workflows. Access: free.
+   648→   648→📄 GitHub Docs — Git basics, GitHub Flow, and pull requests — docs.github.com. The mechanics of
+   649→   649→branches, pull requests, and protected branches. Access: free.
+   650→   650→
+   651→   651→===== صفحة الكتاب 230 =====
+   652→   652→🎥 “Oh Shit, Git!?!” — ohshitgit.com (and the PG-rated dangitgit.com). A recovery cookbook for the
+   653→   653→specific messes beginners create; keep it open next to your terminal. Access: free.
+   654→   654→Team workflows and conflicts (used in §8.4, §8.5)
+   655→   655→📄 Trunk-Based Development — trunkbaseddevelopment.com. The reference for short-lived branches
+   656→   656→and daily integration, with the DORA evidence for why it correlates with elite delivery. Access: free.
+   657→   657→📄 Martin Fowler — “Patterns for Managing Source Code Branches” — martinfowler.com. A careful,
+   658→   658→vocabulary-building survey of branching patterns and their trade-offs. Access: free.
+   659→   659→📄 Vincent Driessen — “A successful Git branching model” (Gitflow), with the 2020 note —
+   660→   660→nvie.com. Read it including the author’s own caveat about continuous delivery, discussed in §8.4.4. Access:
+   661→   661→free.
+   662→   662→Commit and history discipline (used in §8.6)
+   663→   663→📄 Chris Beams — “How to Write a Git Commit Message” — cbea.ms/git-commit. The seven rules and
+   664→   664→the imperative-mood convention this chapter recommends. Access: free.
+   665→   665→📄 Conventional Commits 1.0.0 — conventionalcommits.org and Semantic Versioning 2.0.0 —
+   666→   666→semver.org. The prefix scheme and the version grammar that structured histories and releases build on.
+   667→   667→Access: free.
+   668→   668→Markdown and documentation (used in §8.7)
+   669→   669→📄 Markdown Guide — Basic and Extended Syntax — markdownguide.org. The most practical
+   670→   670→reference for the syntax in §8.7, with a printable cheat sheet. Access: free.
+   671→   671→📄 CommonMark — commonmark.org and GitHub Flavored Markdown — github.github.com/gfm.
+   672→   672→The standardized spec and the GitHub superset (tables, task lists) you will actually type. Access: free.
+   673→   673→📄 GitHub — Basic writing and formatting syntax and About READMEs — docs.github.com. How
+   674→   674→Markdown renders on GitHub, and what a README should contain. Access: free.
+   675→   675→🎓 Write the Docs — Docs as Code — writethedocs.org and Make a README — makeareadme.com.
+   676→   676→The philosophy behind keeping docs in the repo, and a template for the project README. Access: free.
+   677→   677→
+   678→   678→===== صفحة الكتاب 231 =====
+   679→   679→

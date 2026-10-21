@@ -1,0 +1,313 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * py4e.ch11.l5 — "Escaping and Practical Patterns / محرف الهروب والأنماط العملية"
+ * Aligned with PY4E ch11 s4 (محرف الهروب) + s6 (معلومات إضافية لمستخدمي UNIX/LINUX).
+ * All expression is original.
+ * Note: s6 is authored from the TOC title + known PY4E content (the extracted
+ * source ends mid-s4) — flagged for the M5 Arabic proofread pass.
+ */
+const lesson = {
+  id: 'py4e.ch11.l5',
+  version: 1,
+  part: 'I',
+  track: 'P1',
+  book: 'PY4E',
+  chapter: 11,
+  title: { ar: 'محرف الهروب والأنماط العملية', en: 'Escaping and Practical Patterns' },
+  estimatedMinutes: 16,
+  prerequisites: ['py4e.ch11.l4'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'تعلمنا أن ^ مرساة وأن . أي-محرف وأن $ ونجم النهايات — لكن الفواتير تحمل دولارًا حقيقيًا والملفات تحمل نقطة حقيقية في امتدادها. كيف نطلب من اللغة أن تطابق الرمز نفسه بدل معناه؟ اليوم محرف الهروب يقلب الرموز إلى محارف، وتختم بمشاهدة عملية: هذه المهارة نفسها تعمل خارج بايثون في أدوات UNIX/LINUX. بنهاية الدرس ستكون قادرًا على: الهروب من الرموز الخاصة بـ \\، وشرح لماذا لا يلزم الهروب داخل الفئات، وبناء أنماط لأسعار وأوقات وترويسات، ووصف موقع grep من كل هذا.',
+        en: 'You learned that ^ anchors, that . is any-character, that $ ends lines — but invoices carry a real dollar sign and files carry a real dot in their extension. How do you ask the language to match the symbol itself instead of its meaning? Today the escape character turns symbols back into characters, and we close with a practical sighting: this very skill runs outside Python in UNIX/LINUX tools. By the end of this lesson you will be able to: escape special symbols with \\, explain why classes need no escaping, build patterns for prices, times and headers, and place grep within all of this.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "import re\ns = 'We just received $10.00 for cookies.'\nprint(re.findall(r'\\$[0-9.]+', s))\nprint(re.findall(r'[0-9.]+', s))",
+      question: {
+        ar: 'الاستدعاءان على النص نفسه: الأول سبق أرقامه بعلامة $ مهربة، والثاني اقتنص الفئتين وحدهما. لماذا احتفظ الأول بالدولار وسقط منها؟ ومن المفقود الأخير في القائمة الثانية؟',
+        en: 'Two calls on the same text: the first prefixes its digits with an escaped $, the second grabs the class alone. Why did the first keep the dollar while the second dropped it? And what is the last, unexpected item in the second list?',
+      },
+      reveal: {
+        ar: "الأول أعاد ['$10.00'] لأن \\$ تطابق الدولار الحرفي ثم [0-9.]+ التقطت الرقم ونقطته. الثاني أعاد ['10.00', '.'] — سقط الدولار لأن الفئة لا تحيط به، والمفاجأة أنه أمسك نقطة وحيدة في آخر السطر خلف cookies: النقطة داخل الفئة محرف عادي يُقبل حتى وحيدًا. الفئة أوسع مما تظن — والهروب هو الذي يحدد من يدخل الحصاد.",
+        en: "The first returned ['$10.00'] because \\$ matches the literal dollar, then [0-9.]+ took the digits and their dot. The second returned ['10.00', '.'] — the dollar fell away because the class does not enclose it, and the surprise is a lone dot caught at the very end behind cookies: inside a class the dot is an ordinary character, accepted even alone. The class is broader than you think — escaping decides who joins the harvest.",
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'محرف الهروب: الرمز يعود محرفًا', en: 'The escape character: a symbol turns back into a character' },
+      chunks: [
+        {
+          ar: 'حين نستخدم رموز التعابير النمطية لمطابقة بداية السطر أو نهايته أو التكرار — ^ و$ و* و+ — نحتاج وسيلة للتفريق بينها وبين المحارف العادية التي قد نريد مطابقتها كما هي، كإشارة $ في فاتورة أو ^ في نص. القاعدة: ضع الشرطة المائلة للخلف \\ قبله فيبحث النمط حقًا عن هذا المحرف بدل أن ينفذ معناه. فالتعبير \\$[0-9.]+ يجد القيم المالية: دولارًا حقيقيًا ثم رقمًا. وبهذا المنطق \\. نقطة حقيقية و\\\\ شرطة مائلة حقيقية.',
+          en: 'When regex symbols match line starts, line ends or repetition — ^, $, * and + — we need a way to tell them apart from ordinary characters we might want to match as themselves, like the $ on an invoice. The rule: put the backslash \\ before it, and the pattern truly hunts for that character instead of executing its meaning. So \\$[0-9.]+ finds money values: a real dollar then a number. By the same logic \\. is a real dot and \\\\ a real backslash.',
+        },
+        {
+          ar: 'وحين تكتب الأنماط في نصوص خام r"..." تمر الشرطات كما هي إلى المكتبة بلا تدخل بايثون — عادة صارت واجبة في درسنا لأن كل نمط فيه شرطة مائلة. وبلا النص الخام قد تبتلع بايثون الشرطة لنفسها فتصل إلى المكتبة كلمة مشوّهة.',
+          en: 'When you write patterns in raw strings r"..." the backslashes pass to the library untouched by Python — a habit that became mandatory in our lessons because every pattern carries a backslash. Without the raw string Python may swallow the backslash for itself and hand the library a mangled token.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'داخل الفئة لا هروب — والأنماط العملية', en: 'No escaping inside classes — and practical patterns' },
+      chunks: [
+        {
+          ar: 'الكتاب يقرر قاعدة ثمينة: داخل الأقواس المربعة المحارف ليست خاصة بالتعابير النمطية. فالنمط [0-9.] يعني حقًا أرقامًا أو فاصلة عشرية — النقطة فيه نقطة عادية تشير إلى الفاصلة العشرية، بلا أي هروب. أما خارج الأقواس فالنقطة رمز التعبير النمطي وتطابق أي محرف. فإذا أردت مطابقة امتداد ملف مثل mbox\\.txt خارج الفئة فستحتاج \\. — أو تحبس النقطة داخل فئة كما فعلنا طوال الفصل.',
+          en: 'The book states a precious rule: inside square brackets characters are not special to regular expressions. So [0-9.] truly means digits or a decimal point — the dot there is an ordinary character denoting the decimal, no escaping needed. Outside the brackets the dot is the regex symbol matching any character. To match a filename like mbox.txt outside a class you would need \\. — or cage the dot in a class as we did all chapter.',
+        },
+        {
+          ar: 'ومن الأنماط العملية التي بناها الفصل: ^X\\S*: [0-9.]+ لترويسات القيم، و^From .* ([0-9][0-9]): لاستخراج ساعة كل رسالة من سطر From — خانتان قبل النقطتين. وقبل أن نختم: لو كنت من مستخدمي UNIX/LINUX فالمهارة كلها تنتقل إلى سطر الأوامر — أداة grep تأخذ تعبيرًا نمطيًا وملفًا فتطبع الأسطر المطابقة فورًا: grep \'^From:\' mbox.txt — وsed يحرر النصوص بالأنماط نفسها. ما تتعلمه هنا لغة موحدة بين بايثون وأدوات النظام.',
+          en: 'Among the practical patterns this chapter built: ^X\\S*: [0-9.]+ for value headers, and ^From .* ([0-9][0-9]): to extract each message\u2019s hour from a From line — two digits before the colon. Before we close: if you are a UNIX/LINUX user, the whole skill transfers to the command line — the grep tool takes a regular expression and a file and instantly prints matching lines: grep \'^From:\' mbox.txt — while sed edits text with the same patterns. What you learn here is one language shared by Python and system tools.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'فاتورة: الهروب والاستخراج والتجميع', en: 'An invoice: escape, extract, accumulate' },
+      code: "import re\nreceipt = 'cookies: $10.00, milk: $3.50, bread: $2.25'\nprices = re.findall(r'\\$([0-9.]+)', receipt)\ntotal = 0.0\nfor p in prices:\n    total = total + float(p)\nprint(len(prices))\nprint('total: %.2f' % total)",
+      explanation: {
+        ar: 'ثلاث أدوات في سطر واحد: \\$ للدولار الحرفي، والفئة [0-9.]+ للسعر، والأقواس للاستخراج — فخرجت قائمة أسعار بالسلاسل: 10.00 و3.50 و2.25. ثم حلقة من الفصل الخامس حولتها إلى أعداد بـ float وجمعتها، و%.2f من الفصل السادس طبع المجموع بمنزلتين: 15.75. لاحظ أننا لم نضطر لتجزئة واحدة أو find يدوي — النمط كفى.',
+        en: 'Three tools in one line: \\$ for the literal dollar, the class [0-9.]+ for the price, and parentheses for extraction — out came [\'10.00\', \'3.50\', \'2.25\'] as strings. Then a chapter-5 loop turned them into numbers with float and summed them, and %.2f from chapter 6 printed the total to two places: 15.75. Notice not a single split or manual find — the pattern sufficed.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.header-values',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: "الأسطر معطاة في المحرر. في حلقة for استخرج قيمة كل ترويسة تبدأ بـ X باستخدام re.findall بالنمط r'^X\\S*: ([0-9.]+)'، وأضف الرقم المستخرج إلى قائمة vals عند وجود مطابقة، واجمع قيمته العددية في total. بعد الحلقة اطبع vals ثم اطبع total بتنسيق '%.4f'. المتوقع: قائمة من قيمتين ثم 0.8475.",
+        en: "The lines are given in the editor. In a for loop, extract each X-header\u2019s value with re.findall and the pattern r'^X\\S*: ([0-9.]+)', append the extracted number to a list named vals when a match exists, and accumulate its numeric value into total. After the loop print vals, then print total formatted as '%.4f'. Expected: a two-value list, then 0.8475.",
+      },
+      starterCode: "lines = ['X-DSPAM-Confidence: 0.8475', 'X-DSPAM-Probability: 0.0000', 'Subject: 42']\nimport re\nvals = []\ntotal = 0.0\n# حلقة: استخرج بـ ^X\\S*: ([0-9.]+) واجمع / loop: extract and accumulate\n",
+      solution: "import re\nlines = ['X-DSPAM-Confidence: 0.8475', 'X-DSPAM-Probability: 0.0000', 'Subject: 42']\nvals = []\ntotal = 0.0\nfor line in lines:\n    x = re.findall(r'^X\\S*: ([0-9.]+)', line)\n    if len(x) > 0:\n        vals.append(x[0])\n        total = total + float(x[0])\nprint(vals)\nprint('%.4f' % total)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'vals تحوي القيمتين كسلاسل', en: 'vals holds the two values as strings' },
+          code: "assert vals == ['0.8475', '0.0000'], 'expected: two values | actual: %r' % (vals,)",
+          expected: 'two values',
+        },
+        {
+          id: 't2',
+          name: { ar: 'المجموع 0.8475', en: 'The total is 0.8475' },
+          code: "assert abs(total - 0.8475) < 0.000001, 'expected: total 0.8475 | actual: %r' % (total,)",
+          expected: 'total 0.8475',
+        },
+        {
+          id: 't3',
+          name: { ar: 'Subject استبعد — المرساة عملت', en: 'Subject excluded — the anchor worked' },
+          code: "assert 'Subject' not in __learner_output__ and \"['0.8475', '0.0000']\" in __learner_output__ and '0.8475' in __learner_output__, ('expected: vals list and 0.8475, no Subject | actual: %r' % __learner_output__)",
+          expected: "vals list and 0.8475, no Subject",
+        },
+      ],
+      hints: [
+        { ar: 'Subject: 42 لا تبدأ بـ X — المرساة ^ ستستبعدها تلقائيًا، فلا تضف شرطًا يدويًا.', en: 'Subject: 42 does not start with X — the anchor ^ excludes it automatically, so add no manual condition.' },
+        { ar: 'اجمع القيمة كسلسلة في vals ورقمها في total: vals.append(x[0]) ثم float(x[0]).', en: 'Keep the string in vals and the number in total: vals.append(x[0]) then float(x[0]).' },
+        { ar: "الهيكل:\nfor line in lines:\n    x = re.findall(r'^X\\S*: ([0-9.]+)', line)\n    if len(x) > 0:\n        vals.append(x[0])\n        total = total + float(x[0])\nprint(vals)\nprint('%.4f' % total)", en: "The skeleton:\nfor line in lines:\n    x = re.findall(r'^X\\S*: ([0-9.]+)', line)\n    if len(x) > 0:\n        vals.append(x[0])\n        total = total + float(x[0])\nprint(vals)\nprint('%.4f' % total)" },
+        { ar: "import re\nfor line in lines:\n    x = re.findall(r'^X\\S*: ([0-9.]+)', line)\n    if len(x) > 0:\n        vals.append(x[0])\n        total = total + float(x[0])\nprint(vals)\nprint('%.4f' % total)", en: "import re\nfor line in lines:\n    x = re.findall(r'^X\\S*: ([0-9.]+)', line)\n    if len(x) > 0:\n        vals.append(x[0])\n        total = total + float(x[0])\nprint(vals)\nprint('%.4f' % total)" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-escape',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرْجه بالضبط — سطرًا لكل طباعة — دون تشغيله.',
+        en: 'Read the code and predict its exact output — one line per print — without running it.',
+      },
+      code: "import re\nx = re.findall(r'\\$([0-9.]+)', 'cost: $5.25 and $10.00 total')\nprint(len(x))\nprint(x[0])\nprint(bool(re.search(r'\\.', 'a.b')))\nprint(bool(re.search(r'\\d\\.\\d', 'a.b')))",
+      solution: '2\n5.25\nTrue\nFalse',
+      answer: '2\n5.25\nTrue\nFalse',
+      hints: [
+        { ar: '\\$([0-9.]+) تمسك الدولار ثم الرقم — لكن الأقواس تعيد الرقم وحده. كم سعرًا؟', en: '\\$([0-9.]+) takes the dollar then the number — but the parens return the number alone. How many prices?' },
+        { ar: '\\. تبحث عن نقطة حقيقية — وa.b فيها نقطة واحدة.', en: '\\. hunts a real dot — and a.b holds exactly one.' },
+        { ar: '\\d\\.\\d تطلب رقمًا ثم نقطة ثم رقمًا — وفي a.b لا أرقام أصلًا.', en: '\\d\\.\\d demands a digit, a dot, a digit — and a.b holds no digits at all.' },
+        { ar: 'الخرْج:\n2\n5.25\nTrue\nFalse', en: 'The output:\n2\n5.25\nTrue\nFalse' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-escape-dot',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'لمطابقة نقطة حرفية خارج الأقواس المربعة نكتب؟',
+        en: 'To match a literal dot outside square brackets, we write?',
+      },
+      options: [
+        { id: 'a', text: { ar: '\\.', en: '\\.' } },
+        { id: 'b', text: { ar: '.', en: '.' } },
+        { id: 'c', text: { ar: '*', en: '*' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'النقطة المجردة تطابق أي محرف — تذكّر F..m: التي قبلت F12m.', en: 'The bare dot matches any character — recall F..m: accepting F12m.' },
+        { ar: 'الهروب يقلب الرمز إلى محرف عادي — نفس عمل \\$ مع الدولار.', en: 'Escaping turns a symbol back into an ordinary character — same job \\$ did for the dollar.' },
+        { ar: 'النجمة مكرر لا نقطة.', en: 'The star is a repeater, not a dot.' },
+        { ar: 'الجواب: \\.', en: 'Answer: \\.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-raw',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: "أكمل الفراغ بحرف واحد: نسبق نص النمط بالحرف ____ ليصبح نصًّا خامًا لا تعالج بايثون شرطته المائلة، كما في r\"\\$[0-9.]+\".",
+        en: "Fill the blank with one character: prefix the pattern text with ____ so it becomes a raw string whose backslash Python leaves alone, as in r\"\\$[0-9.]+\".",
+      },
+      answer: 'r',
+      solution: 'r',
+      hints: [
+        { ar: 'حرف واحد يقف خارج علامتي الاقتباس مباشرة.', en: 'A single letter standing right outside the quotes.' },
+        { ar: 'اختصار كلمة raw أي خام.', en: 'Short for raw.' },
+        { ar: 'رأيته ملاصقًا لكل اقتباس افتتح فيه نمطًا هذا الفصل.', en: 'You saw it glued to every quote that opened a pattern this chapter.' },
+        { ar: 'الجواب: r', en: 'Answer: r' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: '# ملعبك الحرّ — الهروب في كل اتجاه\n# Your playground — escaping in every direction\n\nimport re\n\nprint(re.findall(r"\\$\\d+\\.\\d\\d", "pay $10.00 or $5.50, not 7.25"))\nprint(re.findall(r"\\.", "mbox.txt and mbox2txt"))\nprint(re.findall(r"mbox\\.txt", "open mbox.txt or read mbox2txt"))\nprint(re.findall(r"mbox.txt", "open mbox.txt or read mbox2txt"))\nprint(re.findall(r"\\d\\d:\\d\\d", "at 09:14 then 9:15 late"))',
+      prompt: {
+        ar: 'جرّب بنفسك: قارن السطرين الأخيرين — mbox\\.txt بالنقطة المجردة التقطت mbox2txt أيضًا! ثم جرّب \\$\\d+\\.\\d\\d على أسعار بخانتين عشريتين، وشاهد 9:15 يهرب من \\d\\d:\\d\\d لافتقاده الصفر. لا اختبار هنا — فضولك فقط.',
+        en: 'Try it yourself: compare the last two lines — the bare-dot mbox.txt pattern caught mbox2txt too! Then try \\$\\d+\\.\\d\\d on two-decimal prices, and watch 9:15 escape \\d\\d:\\d\\d for lacking the leading zero. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ما معنى $ وحدها في نمط، وما معنى \\$؟',
+            en: 'What does a bare $ mean in a pattern, and what does \\$ mean?',
+          },
+          options: [
+            { id: 'a', text: { ar: '$ نهاية السطر، و\\$ محرف الدولار الحرفي', en: '$ is the end of the line; \\$ is the literal dollar character' } },
+            { id: 'b', text: { ar: '$ دولار حرفي، و\\$ نهاية السطر', en: '$ is the literal dollar; \\$ is the end of the line' } },
+            { id: 'c', text: { ar: 'كلتاهما تطابق الدولار', en: 'Both match the dollar' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الهروب قلب المعنى: الرمز الخاص صار محرفًا عاديًا — ولهذا فشلت $[0-9.]+ المجرّدة في فاتورة عملت بها \\$[0-9.]+.',
+            en: 'Escaping flips the meaning: the special symbol became an ordinary character — which is why the bare $[0-9.]+ failed on an invoice where \\$[0-9.]+ worked.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ومن الفصل السادس: قبل التعابير النمطية، أي عامل كان يفحص احتواء سلسلة في أخرى؟',
+            en: 'From chapter 6: before regular expressions, which operator tested whether one string sits inside another?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'عامل in — "From:" in line', en: 'The in operator — "From:" in line' } },
+            { id: 'b', text: { ar: 'عامل is — line is "From:"', en: 'The is operator — line is "From:"' } },
+            { id: 'c', text: { ar: 'عامل ** — line ** "From:"', en: 'The ** operator — line ** "From:"' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'in كان فاحصنا الحرفي الأول — والتعابير النمطية عممت الفحص إلى الأشكال: بداية وفئة وتكرار، مع بقاء in صالحًا للسلاسل الحرفية.',
+            en: 'in was our first literal tester — regular expressions generalized testing to shapes: anchors, classes, repetition, while in stays valid for literals.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'ومن الفصل السابع وملاحظة UNIX: grep يطبع أسطر الملف المطابقة — أي جزء من برامجنا كان يؤدي دوره؟',
+            en: 'From chapter 7 and the UNIX note: grep prints the file\u2019s matching lines — which part of our programs played its role?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'حلقة for على الملف مع if re.search داخلها', en: 'The for loop over the file with if re.search inside' } },
+            { id: 'b', text: { ar: 'استدعاء float على الأرقام', en: 'Calling float on the numbers' } },
+            { id: 'c', text: { ar: 'التنسيق %d و%s', en: 'The %d and %s formatting' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'grep يشغّل الحلقة والفحص دفعة واحدة من سطر الأوامر — برنامجنا كان يعيد بناءها بيدنا: open ثم for ثم if re.search ثم print.',
+            en: 'grep runs the loop and the check in one shot from the command line — our programs hand-built them: open, then for, then if re.search, then print.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'لماذا لم نهرّب النقطة في [0-9.] طوال الفصل؟',
+            en: 'Why did we never escape the dot inside [0-9.] all chapter?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن المحارف داخل الفئة ليست خاصة — النقطة هناك نقطة عادية', en: 'Because characters inside a class are not special — the dot there is ordinary' } },
+            { id: 'b', text: { ar: 'لأن بايثون تهربها تلقائيًا', en: 'Because Python escapes it automatically' } },
+            { id: 'c', text: { ar: 'لأن الفئة ترفض النقاط', en: 'Because the class refuses dots' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'قاعدة الكتاب: الأقواس المربعة ملجأ المحارف — ف[0-9.] وصفت الفاصلة العشرية بلا هروب، بينما احتاجت النقطة خارجها \\. في mbox\\.txt.',
+            en: 'The book\u2019s rule: square brackets are the character refuge — so [0-9.] described the decimal point with no escape, while outside it mbox.txt needed \\..',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: "re.findall(r'$[0-9.]+', 'We received $10.00')",
+          right: "re.findall(r'\\$[0-9.]+', 'We received $10.00')",
+          note: {
+            ar: '$ المجردة تعني نهاية السطر — والسطر لا ينتهي بـ $ فلن يطابق النمط شيئًا أبدًا ويعيد []. دولار الفاتورة يحتاج \\$.',
+            en: 'A bare $ means end-of-line — and the line never ends with $, so the pattern matches nothing, ever, returning []. An invoice dollar needs \\$.',
+          },
+        },
+        {
+          wrong: "re.findall(r'\\', s)",
+          right: "re.findall(r'\\\\', s)",
+          note: {
+            ar: "مطابقة الشرطة المائلة نفسها تحتاج شرطتين في النمط r'\\\\' — والمفردة r'\\' تلغي اقتباس السلسلة فترمي SyntaxError قبل أي تشغيل.",
+            en: "Matching the backslash itself needs two of them in the pattern r'\\\\' — the single r'\\' escapes the closing quote and throws SyntaxError before anything runs.",
+          },
+        },
+        {
+          wrong: "re.findall(r'mbox.txt', 'open mbox.txt or mbox2txt')",
+          right: "re.findall(r'mbox\\.txt', 'open mbox.txt or mbox2txt')",
+          note: {
+            ar: 'النقطة المجردة أي-محرف: طابقت mbox2txt أيضًا وضاع الفلتر. امتداد الملف نقطة حقيقية — اهربها \\., أو اجعل الفئة [.] تقبض عليها.',
+            en: 'The bare dot is any-character: it matched mbox2txt too and the filter leaked. A file extension is a real dot — escape it \\., or let a [.] class hold it.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'الشرطة المائلة \\ قبل الرمز الخاص تجعله محرفًا حرفيًا: \\$ دولارًا و\\. نقطة و\\\\ شرطة.', en: 'A backslash \\ before a special symbol makes it literal: \\$ a dollar, \\. a dot, \\\\ a backslash.' },
+        { ar: 'داخل الأقواس المربعة لا رموز خاصة — [0-9.] نقطة عشرية حقيقية بلا هروب.', en: 'Inside square brackets there are no special symbols — [0-9.] is a real decimal point, no escape needed.' },
+        { ar: 'الأنماط العملية تجتمع: ترويسات القيم ^X\\S*: [0-9.]+ وساعة الرسالة ^From .* ([0-9][0-9]): والأسعار \\$([0-9.]+).', en: 'Practical patterns combine: value headers ^X\\S*: [0-9.]+, the message hour ^From .* ([0-9][0-9]):, and prices \\$([0-9.]+).' },
+        { ar: 'للنصوص الخام r"..." تحمي الشرطات من معالجة بايثون — وللمهارة امتداد خارج بايثون: grep وsed في UNIX/LINUX.', en: 'Raw strings r"..." shield backslashes from Python processing — and the skill extends beyond Python: grep and sed in UNIX/LINUX.' },
+      ],
+      reflectPrompt: {
+        ar: 'افكر في ثلاثة مواضع يومية تتدخل فيها رموز خاصة في نصوصك: أسعار، امتدادات ملفات، مسارات نوافذ فيها شرطات مائلة — اكتب نمط الهروب المناسب لكل واحد وجرّبه في sandbox.',
+        en: 'Think of three everyday places where special symbols invade your text: prices, file extensions, Windows paths with backslashes — write the fitting escape pattern for each and try them in the sandbox.',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'PY4E', section: 'py4e.ch11.s4', pages: 'ص183 / pp.183' },
+        { book: 'PY4E', section: 'py4e.ch11.s6', pages: 'ص185 / pp.185' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'PY4E', section: 'py4e.ch11.s4', pages: 'ص183 / pp.183' },
+    { book: 'PY4E', section: 'py4e.ch11.s6', pages: 'ص185 / pp.185' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

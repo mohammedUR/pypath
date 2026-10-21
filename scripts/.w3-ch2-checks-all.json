@@ -1,0 +1,194 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch2.l1",
+   "id": "ex1.trace-velocity",
+   "code": "pts = {'login': 5, 'search': 8, 'export': 3}\nsprint = ['export', 'login']\nvelocity = 0\nfor item in sprint:\n    velocity = velocity + pts[item]\nprint('velocity: %d' % velocity)\nprint('left: %d' % (sum(pts.values()) - velocity))",
+   "answer": "velocity: 8\nleft: 8"
+  },
+  {
+   "lesson": "swe.ch2.l2",
+   "id": "ex1.trace-steps",
+   "code": "ledger = ['red', 'green', 'refactor', 'red', 'green']\ngreens = 0\nfor step in ledger:\n    if step == 'green':\n        greens = greens + 1\nprint('steps: %d' % len(ledger))\nprint('greens: %d' % greens)\nprint('reds: %d' % ledger.count('red'))",
+   "answer": "steps: 5\ngreens: 2\nreds: 2"
+  },
+  {
+   "lesson": "swe.ch2.l3",
+   "id": "ex1.trace-pair",
+   "code": "PAIR = {'unit': 'implementation', 'integration': 'detailed design', 'system': 'architecture'}\nprint(PAIR['unit'])\nprint(PAIR.get('acceptance', 'requirements'))\nprint(PAIR['system'])",
+   "answer": "implementation\nrequirements\narchitecture"
+  },
+  {
+   "lesson": "swe.ch2.l4",
+   "id": "ex1.trace-exposure",
+   "code": "R = [('A', 2, 5), ('B', 4, 3), ('C', 1, 5)]\nfor rid, p, i in sorted(R, key=lambda r: r[1] * r[2], reverse=True):\n    print('%s: %d' % (rid, p * i))",
+   "answer": "B: 12\nA: 10\nC: 5"
+  },
+  {
+   "lesson": "swe.ch2.l5",
+   "id": "ex2.trace-appetite",
+   "code": "PITCHES = [('P1', 6), ('P2', 8), ('P3', 2), ('P4', 6)]\nBIG_BATCH = 6\nfor pid, appetite in PITCHES:\n    if appetite > BIG_BATCH:\n        print('%s: narrow' % pid)\n    else:\n        print('%s: bet' % pid)",
+   "answer": "P1: bet\nP2: narrow\nP3: bet\nP4: bet"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch2.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "BACKLOG = {'login': 5, 'search': 8, 'export': 3}\ndone_sprint1 = ['login', 'export']\npoints = sum(BACKLOG[item] for item in done_sprint1)\nprint(points)\nprint('remaining: %d' % (sum(BACKLOG.values()) - points))"
+  },
+  {
+   "lesson": "swe.ch2.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "BACKLOG = [('login', 5), ('search', 8), ('export', 3), ('alerts', 2), ('reports', 13)]\nDONE = {1: ['login', 'export'], 2: ['search', 'alerts'], 3: ['reports']}\n\ntotal = sum(pts for _, pts in BACKLOG)\npts_of = dict(BACKLOG)\nremaining = total\nfor sprint in sorted(DONE):\n    velocity = sum(pts_of[item] for item in DONE[sprint])\n    remaining -= velocity\n    print('sprint %d velocity: %d remaining: %d' % (sprint, velocity, remaining))\nprint('total points: %d' % total)"
+  },
+  {
+   "lesson": "swe.ch2.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "BACKLOG = [('login', 5), ('search', 8), ('export', 3), ('alerts', 2), ('reports', 13)]\nDONE = {1: ['login', 'export'], 2: ['search', 'alerts'], 3: ['reports']}\npts_of = dict(BACKLOG)\n\n# release backlog: الشريحة الثالثة بين قائمة المنتج وقائمة السبرنت — بنود إصدار بعينه\n# release backlog: the third scope between product and sprint backlog — one release's items\nrelease = ['login', 'search', 'export']\nrelease_pts = sum(pts_of[i] for i in release)\nprint('release points: %d' % release_pts)\n\ndone_in_release = [i for s in sorted(DONE) for i in DONE[s] if i in release]\nprint('release done: %d of %d points' % (sum(pts_of[i] for i in done_in_release), release_pts))\n\n# جرّب: أضف بندًا للقائمة (على سبيل 21 نقطة) وشاهد كيف يتحرك عمود المتبقي في كل السبرنتات\n# try: add a backlog item (say 21 points) and watch the remaining column shift in every sprint\n# جرّب: انقل 'search' من السبرنت 2 إلى 3 — أي رقم يتبدل ولمن يهم ذلك في المراجعة؟\n# try: move 'search' from sprint 2 to sprint 3 — which number flips, and who cares at the review?\n"
+  },
+  {
+   "lesson": "swe.ch2.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "try:\n    is_overdue(4, 3)\nexcept NameError:\n    print('red: NameError')\n\ndef is_overdue(days_late, limit):\n    return days_late > limit\n\nprint('green: %s' % is_overdue(4, 3))"
+  },
+  {
+   "lesson": "swe.ch2.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "CASES = [((4, 3), True), ((3, 3), False), ((0, 5), False)]\n\ndef run_suite(fn):\n    failed = 0\n    for (days, limit), want in CASES:\n        if fn(days, limit) != want:\n            failed += 1\n    return failed\n\ntry:\n    run_suite(is_overdue)\n    print('red: suite passed unexpectedly')\nexcept NameError:\n    print('red: NameError - failure is the missing behavior')\n\ndef is_overdue(days_late, grace_days):\n    return days_late > grace_days\n\nfailed = run_suite(is_overdue)\nprint('green: failures %d' % failed)\n\ndef is_overdue(days_late, grace_days):\n    # renamed for clarity; behavior unchanged\n    return days_late > grace_days\n\nprint('refactor: failures %d' % run_suite(is_overdue))"
+  },
+  {
+   "lesson": "swe.ch2.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "MERGES = [('m1', True), ('m2', True), ('m3', False), ('m4', True), ('m5', True), ('m6', True)]\n\n# عدّادات الدمج المستمر — جرّب تغيير التسلسل وشاهد السلسلة\n# continuous-integration counters — change the sequence and watch the streak\ngreens = 0\nbroken = 0\nstreak = 0\nbest = 0\nfor name, ok in MERGES:\n    if ok:\n        greens += 1\n        streak += 1\n        best = max(best, streak)\n    else:\n        broken += 1\n        streak = 0\n    print('%s: %s streak: %d' % (name, 'green' if ok else 'broken', streak))\nprint('merges: %d green: %d broken: %d streak: %d' % (len(MERGES), greens, broken, best))\n\n# جرّب: اجعل m4 كاسرًا — أين تصير أطول سلسلة؟ وماذا يعني ذلك لثقة الفريق بعد الظهر؟\n# try: make m4 a break — where does the longest streak land? and what does that do to afternoon confidence?\n# جرّب: أضف خمس عمليات دمج خضراء بعد m6 — هل يتغير best؟ قارن مع «دمج الجمعة الكبير»\n# try: add five green merges after m6 — does best change? compare with a big Friday merge\n"
+  },
+  {
+   "lesson": "swe.ch2.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "PAIR = {'unit': 'implementation', 'integration': 'detailed design', 'system': 'architecture'}\nprint(PAIR['unit'])\nprint(PAIR['system'])\nprint('acceptance -> ?')"
+  },
+  {
+   "lesson": "swe.ch2.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "V_PAIRS = [\n    ('requirements', 'acceptance'),\n    ('architecture', 'system'),\n    ('detailed design', 'integration'),\n    ('implementation', 'unit'),\n]\nfor left, right in V_PAIRS:\n    print('%s <-> %s' % (left, right))\n\nBASE_HOURS = 2\nMULT = {'requirements': 1, 'design': 5, 'implementation': 20, 'testing': 50, 'production': 100}\nfor phase in MULT:\n    print('caught in %s cost: %dh' % (phase, BASE_HOURS * MULT[phase]))"
+  },
+  {
+   "lesson": "swe.ch2.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "V_PAIRS = [\n    ('requirements', 'acceptance'),\n    ('architecture', 'system'),\n    ('detailed design', 'integration'),\n    ('implementation', 'unit'),\n]\nfor left, right in V_PAIRS:\n    print('%s <-> %s' % (left, right))\n\nBASE_HOURS = 2\nMULT = {'requirements': 1, 'design': 5, 'implementation': 20, 'testing': 50, 'production': 100}\nfor phase in MULT:\n    print('caught in %s cost: %dh' % (phase, BASE_HOURS * MULT[phase]))\n\n# جرّب: ثبّت BASE_HOURS = 5 — هل تتغير النسبة بين الإنتاج والمتطلبات؟ لماذا؟\n# try: set BASE_HOURS = 5 — does the production-to-requirements ratio change? why?\n# جرّب: أنشئ زوجًا جديدًا للمرآة بمستوى خامس تتخيله (مثل ops) — أي مستوى اختبار يقابله؟\n# try: invent a fifth mirror pair for a level you imagine (say ops) — which test level pairs?\n"
+  },
+  {
+   "lesson": "swe.ch2.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "RISKS = [('R1', 4, 5), ('R2', 2, 5), ('R3', 3, 2)]\nfor rid, p, i in RISKS:\n    print(rid, p * i)"
+  },
+  {
+   "lesson": "swe.ch2.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "RISKS = [\n    ('R1', 'technical', 4, 5),\n    ('R2', 'requirements', 3, 4),\n    ('R3', 'external', 1, 5),\n    ('R4', 'schedule', 2, 2),\n]\n\npending = sorted(RISKS, key=lambda r: r[2] * r[3], reverse=True)\nloop_no = 0\nwhile pending:\n    loop_no += 1\n    rid, cat, p, imp = pending.pop(0)\n    print('loop %d: attack %s (%s) exposure %d -> prototype' % (loop_no, rid, cat, p * imp))\nprint('loops: %d' % loop_no)"
+  },
+  {
+   "lesson": "swe.ch2.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "RISKS = [\n    ('R1', 'technical', 4, 5),\n    ('R2', 'requirements', 3, 4),\n    ('R3', 'external', 1, 5),\n    ('R4', 'schedule', 2, 2),\n]\n\n# الدوّار: كل دورة تهاجم أعلى خطر باقٍ بالتعرض\n# the stepper: each loop attacks the highest remaining exposure\npending = sorted(RISKS, key=lambda r: r[2] * r[3], reverse=True)\nloop_no = 0\nwhile pending:\n    loop_no += 1\n    rid, cat, p, imp = pending.pop(0)\n    print('loop %d: attack %s (%s) exposure %d -> prototype' % (loop_no, rid, cat, p * imp))\n\n# جرّب: ارفع أثر R4 من 2 إلى 5 — أي خطر يصير هدف الحلقة الثانية؟\n# try: raise R4's impact from 2 to 5 — which risk becomes loop two's target?\n# جرّب: أضف خطر نادرًا كارثيًا مثل ('R5', 'technical', 1, 9) — أين يحل في الترتيب؟\n# try: add a rare catastrophic risk like ('R5', 'technical', 1, 9) — where does it rank?\n"
+  },
+  {
+   "lesson": "swe.ch2.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "TOTAL = 10\nWINDOW = 4\ndone = 0\nfor fid, pts, defect in [('A', 3, 1), ('B', 4, 1), ('C', 3, 1)]:\n    done += pts\n    fresh = done >= TOTAL - WINDOW\n    print(fid, 'fresh' if fresh else 'cold')"
+  },
+  {
+   "lesson": "swe.ch2.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "WORK = [('G1', 2, 0), ('G2', 3, 1), ('G3', 2, 1), ('G4', 1, 0)]\nWINDOW = 7\nEARLY_FIX = 4\n\ntotal_defects = sum(f[2] for f in WORK)\ncost = 0\nfound = 0\nfor i in range(0, len(WORK), 2):\n    batch = WORK[i:i + 2]\n    built = 0\n    for fid, pts, defect in batch:\n        cost += pts\n        built += pts\n    print('iter %d: build %d points, test fresh' % (i // 2 + 1, built))\n    for fid, pts, defect in batch:\n        if defect and built <= WINDOW:\n            found += 1\n            cost += EARLY_FIX\n            print('agile: fix %s inside iteration for %d' % (fid, EARLY_FIX))\nprint('agile: found %d/%d defects cost %d' % (found, total_defects, cost))"
+  },
+  {
+   "lesson": "swe.ch2.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "WORK = [\n    ('F1', 3, 0),\n    ('F2', 2, 1),\n    ('F3', 4, 0),\n    ('F4', 2, 1),\n    ('F5', 3, 1),\n    ('F6', 2, 0),\n]\nWINDOW = 7\nLATE_FIX = 9\nEARLY_FIX = 4\nESCAPED_COST = 12\n\ndef defects(work):\n    return sum(f[2] for f in work)\n\ndef simulate_waterfall(work, window=WINDOW):\n    total = sum(f[1] for f in work)\n    found = escaped = 0\n    cost = total\n    done = 0\n    for fid, pts, defect in work:\n        done += pts\n        if defect:\n            if done >= total - window:\n                found += 1\n                cost += LATE_FIX\n            else:\n                escaped += 1\n                cost += ESCAPED_COST\n    print('waterfall: found %d/%d defects cost %d' % (found, defects(work), cost))\n    return found, escaped, cost\n\ndef simulate_agile(work, per_iter=2, window=WINDOW):\n    found = escaped = 0\n    cost = 0\n    for i in range(0, len(work), per_iter):\n        batch = work[i:i + per_iter]\n        built = 0\n        for fid, pts, defect in batch:\n            cost += pts\n            built += pts\n        for fid, pts, defect in batch:\n            if defect:\n                if built <= window:\n                    found += 1\n                    cost += EARLY_FIX\n                else:\n                    escaped += 1\n                    cost += ESCAPED_COST\n    print('agile: found %d/%d defects cost %d' % (found, defects(work), cost))\n    return found, escaped, cost\n\nsimulate_waterfall(WORK)\nsimulate_agile(WORK)\n\n# جرّب: ارفع WINDOW إلى 16 — هل يتحول الشلال إلى رشيق؟ بأي كلفة من الصدق؟\n# try: raise WINDOW to 16 — does the waterfall turn agile? at what cost to the truth?\n# جرّب: اخفض WINDOW إلى 4 — حتى الرشيق يخسر عيوبه: أي دفعات بردت؟\n# try: drop WINDOW to 4 — even the agile side loses defects: which batches went cold?\n# جرّب: أضف ('F7', 2, 1) آخر القائمة — من يمسك عيبها أولًا؟\n# try: append ('F7', 2, 1) at the end of the list — who catches its defect first?\n"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch2.l1",
+   "id": "ex3.mcq-accountabilities",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch2.l2",
+   "id": "ex3.mcq-yagni",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch2.l3",
+   "id": "ex3.mcq-acceptance",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch2.l3",
+   "id": "ex4.numeric-integration",
+   "answer": "40",
+   "solution": "40"
+  },
+  {
+   "lesson": "swe.ch2.l4",
+   "id": "ex3.mcq-transfer",
+   "answer": "c",
+   "solution": "c"
+  },
+  {
+   "lesson": "swe.ch2.l5",
+   "id": "ex3.mcq-shapeup",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch2.l5",
+   "id": "ex4.numeric-cooldown",
+   "answer": "8",
+   "solution": "8"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch2.l1",
+   "id": "ex4.fill-done",
+   "answer": "Done"
+  },
+  {
+   "lesson": "swe.ch2.l2",
+   "id": "ex4.fill-refactor",
+   "answer": "refactor"
+  },
+  {
+   "lesson": "swe.ch2.l4",
+   "id": "ex4.fill-impact",
+   "answer": "impact"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch2.l5",
+   "id": "ex5.debug-blind-waterfall",
+   "brokenCode": "WORK = [\n    ('F1', 3, 0),\n    ('F2', 2, 1),\n    ('F3', 4, 0),\n    ('F4', 2, 1),\n    ('F5', 3, 1),\n    ('F6', 2, 0),\n]\nWINDOW = 7\nLATE_FIX = 9\nESCAPED_COST = 12\nTOTAL = sum(f[1] for f in WORK)\nN_DEFECTS = sum(f[2] for f in WORK)\n\nfound = 0\nescaped = 0\ncost = 0\ndone = 0\nfor fid, pts, defect in WORK:\n    cost += pts\n    done += pts\n    if defect:\n        if done >= TOTAL - WINDOW:\n            found += 1\n            cost += LATE_FIX\n            print('waterfall: fix %s late for %d' % (fid, LATE_FIX))\n        else:\n            pass  # عيب بارد: لا شيء يُسجل هنا، صحيح؟\nprint('waterfall: found %d/%d defects cost %d' % (found, N_DEFECTS, cost))\nif escaped == 0:\n    print('escape check: clean')"
+  }
+ ]
+}

@@ -1,0 +1,436 @@
+     1→     1→/**
+     2→     2→ * Lesson swe.ch6.l1 — دور المعمارية وتصميم الأنظمة المعيارية
+     3→     3→ *   / The Role of Architecture and Modular Design
+     4→     4→ * Book: SWE — Chapter 6 'Design and Architecture'
+     5→     5→ *   §6.1 The Role of Architecture (pp.145-149), §6.2 Designing Modular Systems (pp.149-153)
+     6→     6→ * Runnable design: a module dependency graph held in dicts -> compute fan-in/fan-out
+     7→     7→ *   per module and print a deterministic coupling summary (short ASCII lines).
+     8→     8→ * Deterministic only: no input(), no exit(), no random, no unittest.main.
+     9→     9→ */
+    10→    10→import type { Lesson } from '../../../../src/lib/content/schema';
+    11→    11→
+    12→    12→const lesson = {
+    13→    13→  id: 'swe.ch6.l1',
+    14→    14→  version: 1,
+    15→    15→  part: 'I',
+    16→    16→  track: 'P3',
+    17→    17→  book: 'SWE',
+    18→    18→  chapter: 6,
+    19→    19→  title: {
+    20→    20→    ar: 'دور المعمارية وتصميم الأنظمة المعيارية',
+    21→    21→    en: 'The Role of Architecture and Modular Design',
+    22→    22→  },
+    23→    23→  estimatedMinutes: 30,
+    24→    24→  prerequisites: ['swe.ch5.l4'],
+    25→    25→  blocks: [
+    26→    26→    {
+    27→    27→      kind: 'hook',
+    28→    28→      text: {
+    29→    29→        ar: 'الساعة 2:47 فجرًا وصفحة الدفع متوقفة. الفريق يكتشف أن "تغييرًا صغيرًا" في مزوّد الدفع يمسّ أحد عشر ملفًا، لأن كل وحدة في النظام كانت تعرف تفاصيل المزوّد. هذه هي اللحظة التي تكتشف فيها أن لنظامك جدرانًا حملًا لم يرسمها أحد. هذا الفصل يعلّمك أن ترسم الجدران عن قصد — قبل أن تكتشفها في الإنتاج.',
+    30→    30→        en: 'It is 2:47 a.m. and checkout is down. The team discovers that a "small" change to the payment provider touches eleven files, because every module in the system knew the provider\'s details. This is the moment you learn your system has load-bearing walls nobody drew. This chapter teaches you to draw them on purpose — before production finds them for you.',
+    31→    31→      },
+    32→    32→    },
+    33→    33→    {
+    34→    34→      kind: 'predict',
+    35→    35→      code: `a = {"payments": ["card_api", "ledger", "email", "logging"]}
+    36→    36→b = {"payments": ["pay_interface"],
+    37→    37→     "card_api": ["pay_interface"],
+    38→    38→     "ledger": ["pay_interface"],
+    39→    39→     "email": ["pay_interface"],
+    40→    40→     "logging": ["pay_interface"]}
+    41→    41→print("A edges:", sum(len(v) for v in a.values()))
+    42→    42→print("B edges:", sum(len(v) for v in b.values()))
+    43→    43→print("B payments imports:", b["payments"])`,
+    44→    44→      question: {
+    45→    45→        ar: 'نفس التطبيق موصول بطريقتين. أي التصميمين يسمح بتغيير مزوّد الدفع دون لمس بقية الوحدات — ولماذا يخدعك عدد الحواف وحده؟',
+    46→    46→        en: 'The same app, wired two ways. Which design lets you swap the payment provider without touching the rest — and why does the edge count alone mislead you?',
+    47→    47→      },
+    48→    48→      reveal: {
+    49→    49→        ar: 'التصميم B. في A تعرف أربعة أجزاء تفاصيل المزوّد؛ في B يدور كل شيء حول واجهة pay_interface واحدة صغيرة. حواف B أكثر (5 مقابل 4) — المعمارية لا تُقاس بعدد الأسلاك بل بأين تشير: القرار المتغيّر (أي مزوّد؟) مخفي خلف واجهة واحدة.',
+    50→    50→        en: 'Design B. In A, four parts know the provider\'s details; in B everything orbits one small pay_interface. B has more edges (5 vs 4) — architecture is not wire count but where wires point: the volatile decision (which provider?) hides behind one interface.',
+    51→    51→      },
+    52→    52→    },
+    53→    53→    {
+    54→    54→      kind: 'concept',
+    55→    55→      heading: { ar: 'ما المعمارية فعلًا؟', en: 'What Architecture Actually Is' },
+    56→    56→      chunks: [
+    57→    57→        {
+    58→    58→          ar: 'المعمارية ليست رسمًا جميلًا يُعلَّق على الحائط. عرّفها هكذا: مجموعة القرارات المهمة حول بنية النظام — مكوّناته components، مسؤوليات كل مكوّن وواجهاته interfaces، والعلاقات والقيود بينها — المختارة لخدمة متطلبات الجودة الأهم. الكلمة الحاسمة هي "المهمة": هل تأخذ الدالة المساعدة وسيطين أم ثلاثة؟ قرار محلي تغيّره ظهر الثلاثاء ولن يلاحظه أحد. هل تخزن الحالة في قاعدة بيانات واحدة مشتركة أم لكل خدمة مخزنها؟ قرار قد يكلف سنة وإعادة كتابة كاملة لتراجعه. القاعدة العملية: القرارات المعمارية هي التي يصعب تغييرها بعد أن يُبنى غيرها عليها، ولهذا تستحق التفكير قبل الكود لا بعده.',
+    59→    59→          en: 'Architecture is not a pretty diagram on a wall. Define it as: the set of significant decisions about how the system is structured — its components, each component\'s responsibilities and interfaces, and the relationships and constraints among them — chosen to serve the most important quality requirements. The loaded word is significant. Does a helper take two arguments or three? A local decision you change on a Tuesday afternoon and nobody notices. Does state live in one shared database or one store per service? A decision that may cost a year and a rewrite to reverse. The practical rule: architectural decisions are the expensive-to-change ones — they deserve thought before the code, not after.',
+    60→    60→        },
+    61→    61→        {
+    62→    62→          ar: 'التفصيلة الثانية: المعمارية تتحدث عن "الخارج" لكل جزء. حين تقول "وحدة payments تتحدث مع ledger عبر واجهة موثّقة فقط" فأنت تصدر حكمًا معماريًا؛ وحين تقول "ledger يرتب مدخلاته بـ quicksort" فأنت تصف تنفيذًا داخليًا. الخط الفاصل هو بالضبط ما يمكن للآخرين الاعتماد عليه وما يجب ألا يعتمدوا عليه. وانتبه: التصميم continuum واحد متصل — المعمارية طرفه الأشد أثرًا: من تقسيم النظام إلى web client وAPI server وworker، وصولًا إلى بنية البيانات داخل دالة. كل مستوى يقيّد ما تحته ويُحقَّق بواسطته، ولا يمكن فصل "المعماريين" عن "المبرمجين" فصلًا كاملًا.',
+    63→    63→          en: 'Second subtlety: architecture speaks about each part\'s outside. "The payments module talks to the ledger only through a documented interface" is an architectural statement; "the ledger sorts its entries with quicksort" describes an implementation. The dividing line is exactly what others may depend on and what they must not. And note: design is one continuous spectrum — architecture is its most consequential end, from carving the system into a web client, an API server, and a worker, down to the data structure inside one function. Each level constrains the ones below and is realized by them; you cannot fully separate "the architects" from "the programmers".',
+    64→    64→        },
+    65→    65→      ],
+    66→    66→    },
+    67→    67→    {
+    68→    68→      kind: 'concept',
+    69→    69→      heading: { ar: 'كيف نحكم أن معمارية جيدة؟', en: 'Judging a Good Architecture' },
+    70→    70→      chunks: [
+    71→    71→        {
+    72→    72→          ar: 'لا توجد معمارية "صحيحة" واحدة، بل تراكيب تخدم أهدافًا مختلفة بأثمان مختلفة. أربعة اختبارات عملية: أولًا تناسب متطلبات الجودة المهمة — المتطلبات غير الوظيفية non-functional مثل الأداء والتوافر والأمان وقابلية التعديل هي التي تستبعد أغلب التراكيب، لأن الوظيفية تُحقَّق بتراكيب كثيرة. ثانيًا تجعل التغييرات المتوقعة رخيصة: لا معمارية تجعل كل تغيير رخيصًا؛ الرابح هو من يعزل الأجزاء الأكثر احتمالًا للتغيّر — الواجهة، قواعد الضريبة، مزوّد الدفع. ثالثًا يمكن فهمها: معمارية لا يحملها أحد في رأسه ستُخرَق حدودها. رابعًا قابلة للبناء والاختبار: هيكل يُجبر كل اختبار على إقامة النظام كاملًا هو هيكل سيئ.',
+    73→    73→          en: 'There is no single correct architecture, only structures that serve different goals at different prices. Four practical tests. First, it fits the important quality requirements — the non-functional ones like performance, availability, security, and modifiability rule out most structures, because functional ones can be met many ways. Second, it makes likely changes cheap: no architecture makes every change cheap; the winner isolates the parts most likely to change — the UI, tax rules, the payment provider. Third, it can be understood: an architecture nobody holds in their head will have its boundaries violated. Fourth, it is buildable and testable: a structure forcing every test to spin up the whole system is a bad one.',
+    74→    74→        },
+    75→    75→        {
+    76→    76→          ar: 'لأنك لا تستطيع تعظيم كل السمات معًا، المعمارية الجيدة تسجّل مقايضاتها trade-offs بوعي: أي جودة نشتري وأيها ندفع. ولتحويل "النظام يجب أن يكون سريعًا" إلى شيء قابل للحكم، اكتب سيناريو جودة quality-attribute scenario: مثير stimulus (طلب حجز أو انهيار مزوّد)، بيئة environment (ذروة الصباح)، استجابة response (تأكيد الحجز على الشاشة)، ومقياس استجابة response measure (أقل من ثانية لـ 95% من الطلبات). لاحظ أن المقياس هو معيار القياس fit criterion من الفصل 3 بثياب معمارية. السيناريو اختبار معمارية تجريه على الورق قبل أن يصير اختبارًا حقيقيًا — والجودة بلا سيناريو تبقى رأيًا لا يستبعد أي تصميم.',
+    77→    77→          en: 'Because you cannot maximize all qualities at once, a good architecture records its trade-offs deliberately: which quality you buy and which you pay for. To turn "the system should be fast" into something judgeable, write a quality-attribute scenario: a stimulus (a booking request or a provider outage), an environment (morning peak), a response (the booking is confirmed on screen), and a response measure (under one second for 95% of submissions). Note the measure is ch3\'s fit criterion wearing architectural clothes. The scenario is an architecture test you run on paper before it becomes a real test — and a quality with no scenario stays an opinion that rules out no design.',
+    78→    78→        },
+    79→    79→      ],
+    80→    80→    },
+    81→    81→    {
+    82→    82→      kind: 'concept',
+    83→    83→      heading: { ar: 'التصميم المعياري: إخفاء وترابط وتماسك', en: 'Modular Design: Hiding, Coupling, Cohesion' },
+    84→    84→      chunks: [
+    85→    85→        {
+    86→    86→          ar: 'أقوى فكرة في التصميم: ابنِ النظام من وحدات modules يمكن فهم كل واحدة وبناءها واختبارها بمفردها. قيمة الوحدة تأتي من ما تخفيه: صمّم كل وحدة حول قرار — عادة قرار متوقع أنه سيتغير — وأخفه خلف واجهة صغيرة. وحدة سجلات المستخدمين تكشف find وsave فقط وتخفي هل التخزين ملف JSON أم قاعدة بيانات؛ حين يتبدّل السرّ لا يتأثر أي مستدعٍ اعتمد الوعد فقط. إخفاء المعلومات information hiding هو القصد، والتغليف encapsulation هو الإنفيذ الذي تفرضه اللغة. وكل طريقة عامة وعدٌ لا تستطيع التراجع عنه بهدوء — لهذا يقاتل المصممون المتمرسون على إبقاء الواجهات ضيقة.',
+    87→    87→          en: 'The most powerful idea in design: build the system from modules that can each be understood, built, and tested alone. A module\'s value comes from what it hides: design each module around a decision — usually one expected to change — and hide it behind a small interface. A user-records module exposes only find and save and hides whether storage is a JSON file or a database; when the secret changes, no caller relying on the promise breaks. Information hiding is the intent; encapsulation is the enforcement the language provides. Every public method is a promise you cannot quietly walk back — which is why veterans fight to keep interfaces narrow.',
+    88→    88→        },
+    89→    89→        {
+    90→    90→          ar: 'مقياسان يحكمان جودة التقسيم ويسيران معًا: الترابط coupling بين الوحدات — أرده منخفضًا — والتماسك cohesion داخل الوحدة — أريده عاليًا. سلّم الترابط من الأسوأ للأفضل: content (تلاعب بمفاصل وحدة أخرى) ثم common (حالة عالمية مشتركة) ثم control (راية تختار السلوك) ثم stamp (تمرير سجل كامل لأجل حقليه) ثم data (معاملات بسيطة فقط). وسلّم التماسك: coincidental (كيس utils) ثم logical ثم temporal حتى functional: كل جزء يخدم مهمة واحدة محددة. ارفع التماسك ينخفض الترابط تلقائيًا. قاعدة ذهبية: إن لم تستطع وصف مهمة الوحدة بجملة واحدة بلا "و" فافصلها. وتجنّب الدورات: وحدتان تتبعيان بعضهما وحدة واحدة بخطٍ فوقها.',
+    91→    91→          en: 'Two measures judge a decomposition and travel together: coupling between modules — want it low — and cohesion inside each — want it high. The coupling ladder, worst to best: content (reaching into another\'s internals), common (shared global state), control (a flag picking behavior), stamp (passing a whole record for two fields), data (simple parameters only). The cohesion ladder: coincidental (a utils grab-bag), logical, temporal, up to functional: every part serves one well-defined task. Raise cohesion and coupling falls. Golden rule: if you cannot state a module\'s job in one sentence without "and", split it. Avoid cycles: two modules depending on each other are one module with a line through it.',
+    92→    92→        },
+    93→    93→      ],
+    94→    94→    },
+    95→    95→    {
+    96→    96→      kind: 'worked',
+    97→    97→      title: { ar: 'نحسب fan-out وfan-in لخريطة الوحدات', en: 'Computing fan-out and fan-in for a module map' },
+    98→    98→      code: `imports = {
+    99→    99→    "ui": ["app", "format"],
+   100→   100→    "app": ["domain", "store"],
+   101→   101→    "domain": [],
+   102→   102→    "store": ["domain"],
+   103→   103→    "format": [],
+   104→   104→}
+   105→   105→
+   106→   106→fan_out = {m: len(deps) for m, deps in imports.items()}
+   107→   107→fan_in = {m: 0 for m in imports}
+   108→   108→for deps in imports.values():
+   109→   109→    for d in deps:
+   110→   110→        fan_in[d] += 1
+   111→   111→
+   112→   112→for m in imports:
+   113→   113→    print(m, "fan-out", fan_out[m], "fan-in", fan_in[m])
+   114→   114→
+   115→   115→hub = max(fan_in, key=lambda m: fan_in[m])
+   116→   116→busiest = max(fan_out, key=lambda m: fan_out[m])
+   117→   117→print(f"most depended-on: {hub} ({fan_in[hub]} importers)")
+   118→   118→print(f"widest caller: {busiest} ({fan_out[busiest]} imports)")`,
+   119→   119→      explanation: {
+   120→   120→        ar: 'القاموس imports هو منظور التطوير development view مصغّرًا: كل وحدة وما تستورده. fan-out = كم وحدة تستوردها؛ fan-in = كم وحدة تستوردها. لاحظ domain: تجذب استيرادين وتستورد صفرًا — قلب مستقر لا يعتمد على أحد. وui أوسع مستدعٍ. هذان الرقمان يفتحان أي حديث جدي عن الترابط coupling قبل أن تفتح المخططات.',
+   121→   121→        en: 'The imports dict is a miniature development view: each module and what it imports. fan-out = how many modules it imports; fan-in = how many import it. Watch domain: it pulls two importers and imports nothing — a stable heart. ui is the widest caller. These two numbers open any serious conversation about coupling before any diagram does.',
+   122→   122→      },
+   123→   123→    },
+   124→   124→    {
+   125→   125→      kind: 'exercise',
+   126→   126→      id: 'ex1.coupling-kind',
+   127→   127→      exKind: 'mcq',
+   128→   128→      required: true,
+   129→   129→      prompt: {
+   130→   130→        ar: 'في مراجعة كود وجدت دالة process(data, mode) حيث mode يختار بين تسعير B2B وتسعير التجزئة، والمستدعي مضطر لفهم فروع الدالة الداخلية ليختار mode الصحيح. أي نوع ترابط coupling هذا؟',
+   131→   131→        en: 'In code review you find process(data, mode) where mode picks between B2B and retail pricing, and the caller must understand the function\'s internal branches to pass the right mode. Which kind of coupling is this?',
+   132→   132→      },
+   133→   133→      options: [
+   134→   134→        { id: 'a', text: { ar: 'data coupling — معاملات بسيطة فقط', en: 'data coupling — simple parameters only' } },
+   135→   135→        { id: 'b', text: { ar: 'control coupling — راية تختار السلوك', en: 'control coupling — a flag choosing behavior' } },
+   136→   136→        { id: 'c', text: { ar: 'common coupling — حالة عالمية مشتركة', en: 'common coupling — shared global state' } },
+   137→   137→        { id: 'd', text: { ar: 'stamp coupling — تمرير سجل كامل لأجل حقلين', en: 'stamp coupling — passing a whole record for two fields' } },
+   138→   138→      ],
+   139→   139→      answer: 'b',
+   140→   140→      solution: 'b',
+   141→   141→      hints: [
+   142→   142→        { ar: 'اسأل: ما الذي يمرّ في mode فعليًا؟ ليس بيانات يحتاجها المستدَى — بل أمرًا يبدّل سلوكه.', en: 'Ask: what actually travels in mode? Not data the callee needs — an instruction that switches its behavior.' },
+   143→   143→        { ar: 'حين يجب على المستدعي فهم منطق المستدَى الداخلي ليختار الوسيطة الصحيحة، فأنت فوق data coupling في السلّم بدرجة.', en: 'When the caller must understand the callee\'s internal logic to choose the right argument, you are one rung above data coupling.' },
+   144→   144→        { ar: 'لو قسّمت process إلى process_b2b وprocess_retail لاختفت الحاجة إلى mode كليًا — هذه بصمة النوع المذنب.', en: 'Split process into process_b2b and process_retail and the need for mode vanishes — that is the guilty kind\'s fingerprint.' },
+   145→   145→        { ar: 'النوع هو control coupling: وسيطة control تُخفي فروع المستدَى داخل واجهته.', en: 'The kind is control coupling: a control argument hides the callee\'s branches inside its interface.' },
+   146→   146→      ],
+   147→   147→    },
+   148→   148→    {
+   149→   149→      kind: 'exercise',
+   150→   150→      id: 'ex2.coupling-report',
+   151→   151→      exKind: 'write_code',
+   152→   152→      required: true,
+   153→   153→      prompt: {
+   154→   154→        ar: 'ابنِ تقرير الترابط الأول: احسب fan-out وfan-in لكل وحدة في الخريطة المعطاة، واطبع سطرًا لكل وحدة بالصيغة name fan-out X fan-in Y، ثم اطبع محور الاعتماد بالصيغة hub: NAME (الوحدة صاحبة أعلى fan-in).',
+   155→   155→        en: 'Build the first coupling report: compute each module\'s fan-out and fan-in in the given map, print one line per module as name fan-out X fan-in Y, then print the dependency hub as hub: NAME (the module with the highest fan-in).',
+   156→   156→      },
+   157→   157→      starterCode: `imports = {
+   158→   158→    "ui": ["app", "format"],
+   159→   159→    "app": ["domain", "store"],
+   160→   160→    "domain": [],
+   161→   161→    "store": ["domain"],
+   162→   162→    "format": [],
+   163→   163→}
+   164→   164→
+   165→   165→# 1) build fan_out: module -> how many modules it imports
+   166→   166→# 2) build fan_in:  module -> how many modules import it
+   167→   167→# 3) print one line per module:  name fan-out X fan-in Y
+   168→   168→# 4) print the hub:  hub: NAME   (highest fan-in)`,
+   169→   169→      solution: `imports = {
+   170→   170→    "ui": ["app", "format"],
+   171→   171→    "app": ["domain", "store"],
+   172→   172→    "domain": [],
+   173→   173→    "store": ["domain"],
+   174→   174→    "format": [],
+   175→   175→}
+   176→   176→
+   177→   177→fan_out = {}
+   178→   178→fan_in = {m: 0 for m in imports}
+   179→   179→for m, deps in imports.items():
+   180→   180→    fan_out[m] = len(deps)
+   181→   181→    for d in deps:
+   182→   182→        fan_in[d] += 1
+   183→   183→
+   184→   184→for m in imports:
+   185→   185→    print(m, "fan-out", fan_out[m], "fan-in", fan_in[m])
+   186→   186→
+   187→   187→hub = max(fan_in, key=lambda m: fan_in[m])
+   188→   188→print("hub:", hub)`,
+   189→   189→      tests: [
+   190→   190→        {
+   191→   191→          id: 't1',
+   192→   192→          name: { ar: 'سطر domain صحيح', en: 'domain line is right' },
+   193→   193→          code: `assert 'domain fan-out 0 fan-in 2' in __learner_output__, 'expected: domain fan-out 0 fan-in 2 | actual: %r' % __learner_output__`,
+   194→   194→        },
+   195→   195→        {
+   196→   196→          id: 't2',
+   197→   197→          name: { ar: 'المحور هو domain', en: 'hub is domain' },
+   198→   198→          code: `assert 'hub: domain' in __learner_output__, 'expected: hub: domain | actual: %r' % __learner_output__`,
+   199→   199→        },
+   200→   200→        {
+   201→   201→          id: 't3',
+   202→   202→          name: { ar: 'ستة أسطر تقرير', en: 'six report lines' },
+   203→   203→          code: `assert __learner_output__.strip().count("\\n") == 5, 'expected: 6 report lines | actual: %r' % __learner_output__`,
+   204→   204→        },
+   205→   205→      ],
+   206→   206→      hints: [
+   207→   207→        { ar: 'fan-out سهل: len(deps) لكل وحدة مباشرة من القاموس.', en: 'fan-out is easy: len(deps) per module, straight from the dict.' },
+   208→   208→        { ar: 'fan-in يحتاج مسحًا ثانيًا: ابدأ fan_in = {m: 0 for m in imports} ثم لكل قائمة تبعيات زد عدّاد الهدف واحدًا.', en: 'fan-in needs a second sweep: start with fan_in = {m: 0 for m in imports}, then for each dependency list bump the target\'s counter.' },
+   209→   209→        { ar: 'طبّع شكل السطر: print(m, "fan-out", fan_out[m], "fan-in", fan_in[m]) يعطي الاسم والفراغات المطلوبة تمامًا.', en: 'Normalize the line: print(m, "fan-out", fan_out[m], "fan-in", fan_in[m]) gives exactly the required spacing.' },
+   210→   210→        { ar: 'قريب من الحل: hub = max(fan_in, key=lambda m: fan_in[m]) ثم print("hub:", hub).', en: 'Nearly there: hub = max(fan_in, key=lambda m: fan_in[m]) then print("hub:", hub).' },
+   211→   211→      ],
+   212→   212→    },
+   213→   213→    {
+   214→   214→      kind: 'exercise',
+   215→   215→      id: 'ex3.trace-secret',
+   216→   216→      exKind: 'trace_output',
+   217→   217→      required: true,
+   218→   218→      prompt: {
+   219→   219→        ar: 'اقرأ الكود بتمعّن واكتب مخرجه الحرفي. السطران يوضحان الفرق بين الوعد (الواجهة) والسر (التنفيذ).',
+   220→   220→        en: 'Read the code carefully and write its exact output. The two lines illustrate the difference between the promise (the interface) and the secret (the implementation).',
+   221→   221→      },
+   222→   222→      code: `class Ledger:
+   223→   223→    def __init__(self):
+   224→   224→        self._entries = []          # the secret: the storage decision
+   225→   225→    def add(self, amount):
+   226→   226→        self._entries.append(amount)
+   227→   227→    def total(self):
+   228→   228→        return sum(self._entries)
+   229→   229→
+   230→   230→ledger = Ledger()
+   231→   231→ledger.add(30)
+   232→   232→ledger.add(12)
+   233→   233→print("total:", ledger.total())
+   234→   234→print("peeking at the secret:", ledger._entries)`,
+   235→   235→      answer: 'total: 42\npeeking at the secret: [30, 12]',
+   236→   236→      solution: 'total: 42\npeeking at the secret: [30, 12]',
+   237→   237→      hints: [
+   238→   238→        { ar: '_entries تبدأ قائمة فارغة، ثم يُلحق بها 30 ثم 12 بالترتيب.', en: '_entries starts as an empty list, then 30 and 12 are appended in order.' },
+   239→   239→        { ar: 'total() يجمع القائمة: 30 + 12.', en: 'total() sums the list: 30 + 12.' },
+   240→   240→        { ar: 'print بالفواصل يضيف فراغًا واحدًا بين الأجزاء: total: 42.', en: 'print with commas adds one space between parts: total: 42.' },
+   241→   241→        { ar: 'السطر الثاني يطبع القائمة الخام: [30, 12] — التسلل إلى السر ممكن في بايثون لكن الوعد يمنعه بالاصطلاح.', en: 'The second line prints the raw list: [30, 12] — peeking is possible in Python, but the promise forbids it by convention.' },
+   242→   242→      ],
+   243→   243→    },
+   244→   244→    {
+   245→   245→      kind: 'exercise',
+   246→   246→      id: 'ex4.fill-hiding',
+   247→   247→      exKind: 'fill_blank',
+   248→   248→      required: true,
+   249→   249→      prompt: {
+   250→   250→        ar: 'أكمل المصطلح: الوحدة المصمَّمة حول قرار متغيّر تخفيه خلف واجهة صغيرة تحقق مبدأ information ______ (كلمة إنجليزية واحدة).',
+   251→   251→        en: 'Complete the term: a module designed around a changeable decision hidden behind a small interface embodies information ______ (one English word).',
+   252→   252→      },
+   253→   253→      answer: 'hiding',
+   254→   254→      solution: 'hiding',
+   255→   255→      hints: [
+   256→   256→        { ar: 'المقصود القصد لا الإنفيذ — الإنفيذ اسمه encapsulation.', en: 'The intent, not the enforcement — enforcement is called encapsulation.' },
+   257→   257→        { ar: '"callers should not know how records are stored" هو وصف هذا المبدأ.', en: '"callers should not know how records are stored" describes this principle.' },
+   258→   258→        { ar: 'المصطلح الشهير المرتبط بورقة Parnas عام 1972.', en: 'The famous term tied to Parnas\'s 1972 paper.' },
+   259→   259→        { ar: 'الكلمة المطلوبة: hiding.', en: 'The word: hiding.' },
+   260→   260→      ],
+   261→   261→    },
+   262→   262→    {
+   263→   263→      kind: 'sandbox',
+   264→   264→      starterCode: `imports = {
+   265→   265→    "ui": ["app", "format"],
+   266→   266→    "app": ["domain", "store"],
+   267→   267→    "domain": [],
+   268→   268→    "store": ["domain"],
+   269→   269→    "format": [],
+   270→   270→}
+   271→   271→
+   272→   272→fan_out = {m: len(ds) for m, ds in imports.items()}
+   273→   273→fan_in = {m: 0 for m in imports}
+   274→   274→for ds in imports.values():
+   275→   275→    for d in ds:
+   276→   276→        fan_in[d] += 1
+   277→   277→
+   278→   278→for m in imports:
+   279→   279→    print(m, "fan-out", fan_out[m], "fan-in", fan_in[m])
+   280→   280→
+   281→   281→# Try it: make "format" import "domain" and re-run — watch domain's fan-in.
+   282→   282→# Then invent a module "helpers" that imports four things. What is its
+   283→   283→# fan-out, and would you flag it as a design smell?`,
+   284→   284→      prompt: {
+   285→   285→        ar: 'ميدان التجربة: أضف حوافًا جديدة للخريطة وراقب كيف يتحرك fan-in وfan-out. هل تستطيع بناء وحدة تجمع أعلى fan-in وأعلى fan-out معًا؟ ماذا تسمي هذه الوحدة؟',
+   286→   286→        en: 'Playground: add new edges and watch fan-in and fan-out move. Can you build a module that tops both fan-in and fan-out at once? What would you call such a module?',
+   287→   287→      },
+   288→   288→    },
+   289→   289→    {
+   290→   290→      kind: 'quiz',
+   291→   291→      id: 'quiz',
+   292→   292→      items: [
+   293→   293→        {
+   294→   294→          id: 'q1',
+   295→   295→          question: {
+   296→   296→            ar: 'أي القرارات التالية يعد قرارًا معماريًا architectural بمعنى هذا الفصل؟',
+   297→   297→            en: 'Which of the following is an architectural decision in this chapter\'s sense?',
+   298→   298→          },
+   299→   299→          options: [
+   300→   300→            { id: 'a', text: { ar: 'أن تأخذ الدالة المساعدة وسيطين بدل ثلاثة', en: 'Whether a helper takes two arguments instead of three' } },
+   301→   301→            { id: 'b', text: { ar: 'حالة واحدة في قاعدة بيانات مشتركة أم مخزن لكل خدمة', en: 'One shared database versus a store per service' } },
+   302→   302→            { id: 'c', text: { ar: 'تسمية المتغير total أو sum_so_far', en: 'Naming the variable total or sum_so_far' } },
+   303→   303→            { id: 'd', text: { ar: 'استخدام حلقة for أم list comprehension', en: 'A for loop versus a list comprehension' } },
+   304→   304→          ],
+   305→   305→          answer: 'b',
+   306→   306→          explanation: {
+   307→   307→            ar: 'القرار المعماري هو ما يصعب التراجع عنه بعد البناء عليه: خريطة التخزين قد تكلّف سنة وإعادة كتابة، والبقية قرارات محلية يومية.',
+   308→   308→            en: 'An architectural decision is one expensive to reverse once built upon: the storage map can cost a year and a rewrite; the rest are local daily choices.',
+   309→   309→          },
+   310→   310→        },
+   311→   311→        {
+   312→   312→          id: 'q2',
+   313→   313→          question: {
+   314→   314→            ar: 'ترفع تماسك وحدة cohesion. ما المتوقع أن يحدث لترابطها coupling مع بقية الوحدات؟',
+   315→   315→            en: 'You raise a module\'s cohesion. What is expected to happen to its coupling with the rest?',
+   316→   316→          },
+   317→   317→          options: [
+   318→   318→            { id: 'a', text: { ar: 'يرتفع لأن الوحدة أصبحت أكثر أهمية', en: 'It rises because the module became more important' } },
+   319→   319→            { id: 'b', text: { ar: 'ينخفض عادةً لأن المنطق المتقارب اجتمع فلم تعد تمتد يدها عبر الحدود', en: 'It usually falls because related logic now sits together, so the module reaches across fewer boundaries' } },
+   320→   320→            { id: 'c', text: { ar: 'لا علاقة بين المقياسين إطلاقًا', en: 'The two measures are unrelated' } },
+   321→   321→            { id: 'd', text: { ar: 'يتضاعف لأن عدد الاتصالات زاد', en: 'It doubles because the number of calls grew' } },
+   322→   322→          ],
+   323→   323→          answer: 'b',
+   324→   324→          explanation: {
+   325→   325→            ar: 'المقياسان يسيران في اتجاه واحد: وحدة تؤدي مهمة واحدة لا تحتاج إلى مسّ خمس وحدات أخرى لإنجازها.',
+   326→   326→            en: 'The two measures pull the same way: a module doing one job does not need to touch five other modules to do it.',
+   327→   327→          },
+   328→   328→        },
+   329→   329→        {
+   330→   330→          id: 'q3',
+   331→   331→          question: {
+   332→   332→            ar: 'بعودتك إلى تصنيف الفصل 3 للمتطلبات: أي نوع هو الذي يستبعد أغلب التراكيب الممكنة ويقود شكل المعمارية فعلًا؟',
+   333→   333→            en: 'Returning to ch3\'s taxonomy of requirements: which kind rules out most candidate structures and actually drives the architecture?',
+   334→   334→          },
+   335→   335→          options: [
+   336→   336→            { id: 'a', text: { ar: 'المتطلبات الوظيفية functional — تُحقَّق بتراكيب كثيرة', en: 'Functional requirements — many structures can meet them' } },
+   337→   337→            { id: 'b', text: { ar: 'متطلبات الجودة non-functional مثل الأداء والتوافر والأمان', en: 'Non-functional requirements like performance, availability, security' } },
+   338→   338→            { id: 'c', text: { ar: 'الملاحظات العابرة في اجتماع العميل', en: 'Passing remarks from the client meeting' } },
+   339→   339→            { id: 'd', text: { ar: 'تفضيلات المطورين للأدوات', en: 'The developers\' tooling preferences' } },
+   340→   340→          ],
+   341→   341→          answer: 'b',
+   342→   342→          explanation: {
+   343→   343→            ar: 'الوظيفية تُلبّى بتراكيب كثيرة، لكن الجودة تُسقط أغلبها — ولهذا تُكتب كسيناريوهات جودة بمقياس استجابة، وهو تطبيق لمعيار القياس fit criterion من الفصل 3.',
+   344→   344→            en: 'Functional needs can be met many ways; quality needs rule most structures out — which is why they are written as quality-attribute scenarios with a response measure, ch3\'s fit criterion applied to architecture.',
+   345→   345→          },
+   346→   346→        },
+   347→   347→        {
+   348→   348→          id: 'q4',
+   349→   349→          question: {
+   350→   350→            ar: 'ما الفرق الدقيق بين information hiding وencapsulation؟',
+   351→   351→            en: 'What is the precise difference between information hiding and encapsulation?',
+   352→   352→          },
+   353→   353→          options: [
+   354→   354→            { id: 'a', text: { ar: 'مترادفان تمامًا ويمكن تبادلهما', en: 'They are exact synonyms, interchangeable' } },
+   355→   355→            { id: 'b', text: { ar: 'الإخفاء هو القصد التصميمي، والتغليف هو الإنفيذ الذي تفرضه اللغة على الحدود', en: 'Hiding is the design intent; encapsulation is the enforcement the language imposes at the boundary' } },
+   356→   356→            { id: 'c', text: { ar: 'التغليف يعني جعل كل حقول الصنف خاصة private', en: 'Encapsulation means making every field private' } },
+   357→   357→            { id: 'd', text: { ar: 'الإخفاء يعني إخفاء الكود عن بقية الفريق', en: 'Hiding means hiding code from the rest of the team' } },
+   358→   358→          ],
+   359→   359→          answer: 'b',
+   360→   360→          explanation: {
+   361→   361→            ar: 'قد توفر اللغة تغليفًا كاملًا ومع ذلك يتسرب السر عبر واجهة تعيد بنية داخلية: القصد شيء والإنفيذ شيء آخر.',
+   362→   362→            en: 'A language can enforce encapsulation perfectly while the secret still leaks through an interface that returns internal structures: intent and enforcement are different things.',
+   363→   363→          },
+   364→   364→        },
+   365→   365→      ],
+   366→   366→    },
+   367→   367→    {
+   368→   368→      kind: 'pitfalls',
+   369→   369→      items: [
+   370→   370→        {
+   371→   371→          wrong: 'أنشأنا utils.py ونضع فيه كل ما هو مشترك — حل عملي وسريع.',
+   372→   372→          right: 'وحدة بلا مسؤولية واحدة تجذب تبعيات من كل الاتجاهات: fan-in مرتفع وفان-out مرتفع معًا. صف مهمتها بجملة واحدة بلا "و"؛ إن فشلت الجملة فقسّمها.',
+   373→   373→          note: {
+   374→   374→            ar: 'أشهر فشل تماسك يرتدي اسمًا ودودًا: utility. ستلاحظها بنفسك في مشروع هذا الفصل حين يصفّح محلل التبعيات.',
+   375→   375→            en: 'The most famous cohesion failure wears a friendly name: utility. You will catch one yourself in this chapter\'s project when the dependency analyzer calls it out.',
+   376→   376→          },
+   377→   377→        },
+   378→   378→        {
+   379→   379→          wrong: 'المعمارية شغل المعماري؛ أنا مبرمج أكتب دالة صغيرة.',
+   380→   380→          right: 'كل قرار في الكود قرار micro-architectural. إن تجاهلت الحدود المرسومة انحرفت المعمارية الحقيقية عن المرسومة، ولن ينقذها رسم جميل.',
+   381→   381→          note: {
+   382→   382→            ar: 'المعالجة: مراجعة التغييرات مقابل وثيقة المعمارية، وكتابتها بجانب الكود حيث يراها كل من يعدّل.',
+   383→   383→            en: 'The fix: review changes against the architecture document and keep it next to the code where every editor sees it.',
+   384→   384→          },
+   385→   385→        },
+   386→   386→        {
+   387→   387→          wrong: 'نبني طبقة تجريد لكل شيء تحسبًا لأي تغيير محتمل.',
+   388→   388→          right: 'المرونة تُشترى حيث التغيير متوقع فقط: المزوّدون الخارجيون، قواعد العمل، العرض. مرونة بلا سبب هي over-engineering — تعقيد عرضي يدفع ثمنه كل من يقرأ الكود.',
+   389→   389→          note: {
+   390→   390→            ar: 'لا معمارية تجعل كل تغيير رخيصًا؛ اختر تغييراتك المرشّحة واسقف فوقها فقط.',
+   391→   391→            en: 'No architecture makes every change cheap; pick your likely changes and roof over those alone.',
+   392→   392→          },
+   393→   393→        },
+   394→   394→      ],
+   395→   395→    },
+   396→   396→    {
+   397→   397→      kind: 'summary',
+   398→   398→      bullets: [
+   399→   399→        {
+   400→   400→          ar: 'المعمارية = القرارات المهمة (المكوّنات، الواجهات، العلاقات) المختارة لخدمة متطلبات الجودة؛ بصمتها أنها مكلفة التغيير بعد البناء عليها.',
+   401→   401→          en: 'Architecture = the significant decisions (components, interfaces, relationships) chosen to serve quality requirements; their signature is being expensive to change once built upon.',
+   402→   402→        },
+   403→   403→        {
+   404→   404→          ar: 'الوحدة الجيدة تخفي قرارًا واحدًا خلف واجهة صغيرة: إخفاء المعلومات قصدًا والتغليف إنفيذًا.',
+   405→   405→          en: 'A good module hides one decision behind a small interface: information hiding is the intent, encapsulation the enforcement.',
+   406→   406→        },
+   407→   407→        {
+   408→   408→          ar: 'ارفع التماسك وأخفض الترابط؛ سلّم الترابط من content إلى data، وافصل أي وحدة لا تُوصف بجملة بلا "و".',
+   409→   409→          en: 'Raise cohesion, lower coupling; the coupling ladder runs from content to data, and split any module you cannot describe in one "and"-free sentence.',
+   410→   410→        },
+   411→   411→        {
+   412→   412→          ar: 'رقما fan-out وfan-in يكشفان المحاور والرائحات قبل أن تصير حوادث إنتاج في الثالثة فجرًا.',
+   413→   413→          en: 'fan-out and fan-in expose hubs and smells before they become 3 a.m. production incidents.',
+   414→   414→        },
+   415→   415→      ],
+   416→   416→      reflectPrompt: {
+   417→   417→        ar: 'انظر إلى آخر مشروع كتبته: أي وحدة كانت utils متنكرة؟ وأي قرار كان يجب إخفاؤه خلف واجهة ولم يُخفَ؟',
+   418→   418→        en: 'Look at your last project: which module was a utils in disguise? And which decision should have been hidden behind an interface but was not?',
+   419→   419→      },
+   420→   420→    },
+   421→   421→    {
+   422→   422→      kind: 'sources',
+   423→   423→      items: [
+   424→   424→        { book: 'SWE', section: 'swe.ch6.s1', pages: 'ص145-149 / pp.145-149' },
+   425→   425→        { book: 'SWE', section: 'swe.ch6.s2', pages: 'ص149-153 / pp.149-153' },
+   426→   426→      ],
+   427→   427→    },
+   428→   428→  ],
+   429→   429→  sources: [
+   430→   430→    { book: 'SWE', section: 'swe.ch6.s1', pages: 'ص145-149 / pp.145-149' },
+   431→   431→    { book: 'SWE', section: 'swe.ch6.s2', pages: 'ص149-153 / pp.149-153' },
+   432→   432→  ],
+   433→   433→} satisfies Lesson;
+   434→   434→
+   435→   435→export default lesson;
+   436→   436→

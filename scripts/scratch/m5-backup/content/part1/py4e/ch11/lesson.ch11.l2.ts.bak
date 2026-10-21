@@ -1,0 +1,319 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * py4e.ch11.l2 — "Extracting Data with Regular Expressions /
+ * استخراج البيانات بالتعبيرات النمطية"
+ * Aligned with PY4E ch11 s2 (استخراج البيانات باستخدام التعابير النمطية).
+ * All expression is original.
+ * Patterns use raw strings (r'') so backslashes survive Python string
+ * processing untouched — the professional habit; the book's plain strings
+ * are equivalent for these patterns.
+ */
+const lesson = {
+  id: 'py4e.ch11.l2',
+  version: 1,
+  part: 'I',
+  track: 'P1',
+  book: 'PY4E',
+  chapter: 11,
+  title: { ar: 'استخراج البيانات بالتعبيرات النمطية', en: 'Extracting Data with Regular Expressions' },
+  estimatedMinutes: 16,
+  prerequisites: ['py4e.ch11.l1'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'الدرس الماضي أجاب عن سؤال واحد: هل يوجد النمط؟ أما أسئلة البيانات الحقيقية فتسأل: ما هي القيمة نفسها؟ أعطني العنوان، أعطني الرقم. اليوم نتعلم findall — التابع الذي لا يكتفي بقبول أو رفض بل يحصد كل ما يطابق النمط من داخل السطر. بنهاية الدرس ستكون قادرًا على: استعمال re.findall واستخراج قوائم المطابقات، وقراءة النمط \\S+@\\S+ محرفًا محرفًا، والتفريق بين search().group() وfindall، وبناء فلتر len(x) > 0 على أسطر كاملة.',
+        en: 'Last lesson answered one question: is the pattern there? Real data questions ask: what is the value itself? Give me the address, give me the number. Today we learn findall — the method that refuses to stop at yes or no and harvests everything matching the pattern from inside the line. By the end of this lesson you will be able to: use re.findall to pull lists of matches, read the pattern \\S+@\\S+ character by character, tell search().group() apart from findall, and build a len(x) > 0 filter over whole lines.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "import re\ns = 'A message from csev@umich.edu to cwen@iupui.edu about meeting @2PM'\nlst = re.findall(r'\\S+@\\S+', s)\nprint(len(lst))\nprint(lst[1])\nprint(len(re.findall(r'\\S+@\\S+', 'meet @2PM')))",
+      question: {
+        ar: 'ثلاثة أسطر خرْج: كم بريدًا التقطت findall من الرسالة؟ ما العنوان الثاني؟ ولماذا صاد السطر الأخير صفرًا مع نص فيه @2PM؟',
+        en: 'Three output lines: how many addresses did findall catch from the message? What is the second one? And why did the last line score zero on text that contains @2PM?',
+      },
+      reveal: {
+        ar: 'بريدان، والثاني cwen@iupui.edu، وصفر. السبب في الصفر: النمط \\S+@\\S+ يطلب محرفًا أو أكثر ليس مسافة قبل @ — وقبل @2PM مسافة فارغة، فالنمط لا يكتمل. لاحظ أن findall تجولت في السطر كلها وجمعت كل المطابقات: هذه ليست عملية هل/لا بل حصاد.',
+        en: 'Two addresses, the second cwen@iupui.edu, and zero. The zero is deliberate: the pattern \\S+@\\S+ demands one or more non-space characters before the @ — and before @2PM sits a blank space, so the pattern never completes. Notice findall roamed the whole line collecting every match: this is not a yes/no operation but a harvest.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'findall: من الفحص إلى الحصاد', en: 'findall: from checking to harvesting' },
+      chunks: [
+        {
+          ar: 'إذا أردنا استخراج البيانات من سلسلة نصية، فالتابع findall هو أداتنا: يعيد قائمة بكل السلاسل الجزئية substrings التي تطابق التعبير النمطي. لا صواب أو خطأ هنا — بل الحصاد نفسه. وحين لا يجد شيئًا يعيد قائمة فارغة بلا أي رسالة خطأ؛ لذلك سترى في كل برنامج قادم اختبار len(x) > 0 قبل المساس بالنتيجة. اكتب النمط داخل نص خام — نصًّا يسبقه r مثل r"\\S+@\\S+" — حتى تمر الشرطات المائلة إلى المكتبة كما هي دون أن تعالجها بايثون.',
+          en: 'To extract data from a string, findall is our tool: it returns a list of every substring matching the regular expression. No true or false here — the harvest itself. When it finds nothing it returns an empty list without any error message; that is why every program ahead tests len(x) > 0 before touching the result. Write the pattern inside a raw string — one prefixed with r, like r"\\S+@\\S+" — so the backslashes reach the library untouched by Python string processing.',
+        },
+        {
+          ar: 'ولنفكّك أشهر نمط في الفصل: \\S تعني أي محرف ليس مسافة فارغة، و+ تعني محرفًا أو أكثر مما قبلها. فالنمط \\S+@\\S+ يُقرأ: محرف واحد على الأقل ليس مسافة، ثم إشارة @، ثم محرف واحد على الأقل ليس مسافة. بهذا الوصف يلتقط أي شيء يشبه البريد الإلكتروني ويترك ما يشبهه من بعيد.',
+          en: 'Now take the chapter\u2019s most famous pattern apart: \\S means any character that is not whitespace, and + means one or more of what precedes. So \\S+@\\S+ reads: at least one non-space character, then an @ sign, then at least one non-space character. With that description it grabs anything that looks like an email address and leaves distant lookalikes.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'search().group() مقابل findall', en: 'search().group() vs findall' },
+      chunks: [
+        {
+          ar: 'الأداتان تعملان على النمط نفسه لكن بمواصفتين مختلفتين. re.search يعيد كائن مطابقة يصف أول موضع وُجد فيه النمط، وباستدعاء .group() على الكائن تسحب النص المطابق نفسه كسلسلة. أما re.findall فتعيد قائمة بكل المطابقات دفعة واحدة. القاعدة العملية: تريد أول مطابقة فقط وتريد التأكد من وجودها؟ search ثم group. تريد كل ما في السطر؟ findall — وسنعمّمها في الدرس القادم لاستخراج أجزاء مختارة بفضل الأقواس.',
+          en: 'The two tools run the same pattern with different specs. re.search returns a match object describing the first place the pattern was found, and calling .group() on that object pulls the matched text itself as a string. re.findall, meanwhile, returns every match at once as a list. The practical rule: want only the first match, with proof of existence? search then group. Want everything the line holds? findall — and next lesson we generalize it to extract chosen pieces thanks to parentheses.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الحصاد على أسطر ملف كاملة', en: 'Harvesting across whole file lines' },
+      chunks: [
+        {
+          ar: 'التطبيق الكتابي: حلقة على أسطر ملف الصندوق، وداخلها x = re.findall(r"\\S+@\\S+", line)، ثم if len(x) > 0: print(x). بما أن findall تعيد قائمة، يكفي فحص طولها — عادة الوصاية من الفصل الثامن بلغة جديدة. لكن انظر إلى الحصاد بعين ناقدة: ترويسات مثل Return-Path: تعطي عناوين تلتحق بها شوائب مثل < و; و) لأن \\S يقبل أي محرف غير مسافي — أي شيء عدا الفراغ. نضبط دقة النمط في الدرس القادم بفئات المحارف.',
+          en: 'The book\u2019s application: a loop over mailbox lines, inside it x = re.findall(r"\\S+@\\S+", line), then if len(x) > 0: print(x). Since findall returns a list, its length is the test — the chapter-8 guardian habit in a new language. But inspect the harvest critically: headers like Return-Path: yield addresses with junk attached such as <, ; and ) — because \\S accepts any non-space character, anything but a blank. We tighten the pattern next lesson with character classes.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'حصاد العناوين من أسطر mbox', en: 'Harvesting addresses from mbox lines' },
+      code: "import re\nlines = [\n    'From stephen.marquard@uct.ac.za Sat Jan  5 09:14:16 2008',\n    'Return-Path: <postmaster@collab.sakaiproject.org>',\n    'Received: (from apache@localhost)',\n    'Author: stephen.marquard@uct.ac.za',\n]\nfor line in lines:\n    line = line.rstrip()\n    x = re.findall(r'\\S+@\\S+', line)\n    if len(x) > 0:\n        print(x)",
+      explanation: {
+        ar: 'أربعة أسطر من صندوق بريد حقيقي، وأربعة قوائم خرجت: سطر From التقط العنوان نظيفًا، لكن Return-Path لاصق به القوس < في الطرفين، وسطر Received أسقط القوس ) على العنوان. هذا هو النمط \\S+@\\S+ يفي بالتزام حرفي: كل ما ليس مسافة يقبله — بما في ذلك علامات الترقيم. الكتاب يلاحظ أن خرج البرنامج قائمة كل عنصر فيها سلسلة نصية — وسنحسّن النقاء في الدرس القادم.',
+        en: 'Four lines from a real mailbox, four lists came out: the From line caught a clean address, but Return-Path carries the < bracket on both ends, and Received dropped a ) onto its address. The pattern \\S+@\\S+ kept its literal promise: everything that is not whitespace is accepted — punctuation included. The book notes the output is a list whose every element is a string — we refine purity next lesson.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.findall-emails',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: "النص معطى في المحرر. استخدم re.findall بالنمط r'\\S+@\\S+' لاستخراج كل ما يشبه البريد الإلكتروني في قائمة اسمها lst، ثم اطبع len(lst) ثم اطبع lst. المتوقع: 2 ثم قائمة تحوي العنوانين فقط.",
+        en: "The text is given in the editor. Use re.findall with the pattern r'\\S+@\\S+' to extract everything resembling an email into a list named lst, then print len(lst) and print lst. Expected: 2, then a list holding only the two addresses.",
+      },
+      starterCode: "s = 'A message from csev@umich.edu to cwen@iupui.edu about meeting @2PM'\nimport re\n# استخرج ثم اطبع العدد ثم القائمة / extract, print the count, then the list\n",
+      solution: "import re\ns = 'A message from csev@umich.edu to cwen@iupui.edu about meeting @2PM'\nlst = re.findall(r'\\S+@\\S+', s)\nprint(len(lst))\nprint(lst)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'lst تحوي العنوانين الصحيحين فقط', en: 'lst holds exactly the two correct addresses' },
+          code: "assert lst == ['csev@umich.edu', 'cwen@iupui.edu'], 'expected: the two addresses | actual: %r' % (lst,)",
+          expected: 'the two addresses',
+        },
+        {
+          id: 't2',
+          name: { ar: 'لا دخول لـ @2PM', en: 'No @2PM entry' },
+          code: "assert len(lst) == 2 and '@2PM' not in lst, ('expected: 2 matches without @2PM | actual: %r' % (lst,))",
+          expected: '2 matches without @2PM',
+        },
+        {
+          id: 't3',
+          name: { ar: 'العدد والقائمة مطبوعان', en: 'Count and list are printed' },
+          code: "assert 'cwen@iupui.edu' in __learner_output__ and \"['csev@umich.edu', 'cwen@iupui.edu']\" in __learner_output__, ('expected: the list printed | actual: %r' % __learner_output__)",
+          expected: "['csev@umich.edu', 'cwen@iupui.edu']",
+        },
+      ],
+      hints: [
+        { ar: 'استدعاء واحد يكفي: re.findall(r"\\S+@\\S+", s) — النمط وسيط أول والنص وسيط ثانٍ.', en: 'One call suffices: re.findall(r"\\S+@\\S+", s) — pattern first argument, text second.' },
+        { ar: 'انتبه لترتيب الطباعة: العدد أولًا بـ len(lst) ثم القائمة نفسها.', en: 'Mind the print order: the count first via len(lst), then the list itself.' },
+        { ar: 'الهيكل:\nimport re\ns = ...\nlst = re.findall(r"\\S+@\\S+", s)\nprint(len(lst))\nprint(lst)', en: 'The skeleton:\nimport re\ns = ...\nlst = re.findall(r"\\S+@\\S+", s)\nprint(len(lst))\nprint(lst)' },
+        { ar: "import re\ns = 'A message from csev@umich.edu to cwen@iupui.edu about meeting @2PM'\nlst = re.findall(r'\\S+@\\S+', s)\nprint(len(lst))\nprint(lst)", en: "import re\ns = 'A message from csev@umich.edu to cwen@iupui.edu about meeting @2PM'\nlst = re.findall(r'\\S+@\\S+', s)\nprint(len(lst))\nprint(lst)" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-findall',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرْجه بالضبط — سطرًا لكل طباعة — دون تشغيله.',
+        en: 'Read the code and predict its exact output — one line per print — without running it.',
+      },
+      code: "import re\ns = 'from csev@umich.edu to cwen@iupui.edu @2PM'\nx = re.findall(r'\\S+@\\S+', s)\nprint(len(x))\nprint(x[0])\nprint(bool(re.search(r'\\S+@\\S+', 'meet @2PM')))",
+      solution: '2\ncsev@umich.edu\nFalse',
+      answer: '2\ncsev@umich.edu\nFalse',
+      hints: [
+        { ar: 'السؤال الأول: كم عنوانًا يطابق النمط في السلسلة؟ اذكرهم واحدًا واحدًا.', en: 'First question: how many addresses match the pattern in the string? Name them one by one.' },
+        { ar: 'السؤال الثاني: x[0] هو أول عنصر في قائمة المطابقات — من هو؟', en: 'Second question: x[0] is the first element of the match list — who is it?' },
+        { ar: 'السؤال الثالث: في meet @2PM لا يوجد محرف غير مسافي قبل @ — فهل يكتمل النمط؟', en: 'Third question: in meet @2PM no non-space character precedes the @ — does the pattern complete?' },
+        { ar: 'الخرْج:\n2\ncsev@umich.edu\nFalse', en: 'The output:\n2\ncsev@umich.edu\nFalse' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-backslash-s',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'ماذا يعني \\S+ في التعبير النمطي؟',
+        en: 'What does \\S+ mean in a regular expression?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'محرف واحد أو أكثر ليس مسافة فارغة', en: 'One or more characters that are not whitespace' } },
+        { id: 'b', text: { ar: 'مسافة فارغة واحدة أو أكثر', en: 'One or more whitespace characters' } },
+        { id: 'c', text: { ar: 'حرف S مكرر حرفيًا', en: 'The letter S repeated literally' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'الشرطة المائلة تحوّل S من حرف عادي إلى رمز له معنى خاص.', en: 'The backslash turns S from a plain letter into a symbol with a meaning.' },
+        { ar: 'التقط الحروف الكبيرة والصغيرة: \\S نقيض \\s تمامًا.', en: 'Mind the case: \\S is the exact opposite of \\s.' },
+        { ar: 'و+ تزيد على \\S تكرارًا: محرف أو أكثر — لذلك التقطت العنوان كله حتى أول فراغ.', en: 'And + adds repetition to \\S: one or more — that is why it grabbed the whole address up to the first blank.' },
+        { ar: 'الجواب: محرف واحد أو أكثر ليس مسافة فارغة.', en: 'Answer: one or more characters that are not whitespace.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-findall',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'أكمل الفراغ بكلمة واحدة: التابع re.____ يعيد قائمة بكل السلاسل الجزئية المطابقة للنمط في السلسلة.',
+        en: 'Fill the blank with one word: the method re.____ returns a list of every substring matching the pattern in the string.',
+      },
+      answer: 'findall',
+      solution: 'findall',
+      hints: [
+        { ar: 'اسمه يجمع فعلين: يجد ويجمع الكل.', en: 'Its name fuses two verbs: it finds and gathers all.' },
+        { ar: 'search يعيد كائنًا واحدًا، وهذا يعيد قائمة كاملة.', en: 'search returns one object; this one returns a whole list.' },
+        { ar: 'سبعة أحرف وتبدأ بـ find.', en: 'Seven letters and starts with find.' },
+        { ar: 'الجواب: findall', en: 'Answer: findall' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: '# ملعبك الحرّ — احصد ما تشاء\n# Your playground — harvest at will\n\nimport re\n\ns = "ping alice@ex.com, bob@ex.org and trudy@ex.net before 3PM"\nlst = re.findall(r"\\S+@\\S+", s)\nprint(lst)\nprint(len(lst))\nprint(re.search(r"\\S+@\\S+", s).group())\nprint(re.findall(r"\\S+", s))\nprint(re.findall(r"@", s))',
+      prompt: {
+        ar: 'جرّب بنفسك: غيّر النص وأضف عناوين ملتصقة بعلامات ترقيم ولاحظ ما يلتصق بها \\S+، وقارن بين findall (قائمة الكل) وsearch().group() (أول واحد فقط)، وجرّب النمط r"\\S+" وحده لترى كل الكلمات غير المسافية. لا اختبار هنا — فضولك فقط.',
+        en: 'Try it yourself: change the text, glue punctuation onto addresses and watch what \\S+ drags along; compare findall (the whole list) with search().group() (first only); and try the pattern r"\\S+" alone to see every non-space word. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'أي النمطين يلتقط البريد من "mail me at a@b.c soon"؟',
+            en: 'Which pattern grabs the address from "mail me at a@b.c soon"?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'r"\\S+@\\S+" — غير مسافي ثم @ ثم غير مسافي', en: 'r"\\S+@\\S+" — non-space, then @, then non-space' } },
+            { id: 'b', text: { ar: 'r"\\s+@\\s+" — مسافات حول @', en: 'r"\\s+@\\s+" — spaces around the @' } },
+            { id: 'c', text: { ar: 'r"@@@" — ثلاث إشارات @', en: 'r"@@@" — three @ signs' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'العنوان قليلة المسافات: يحيط بـ @ محرفان غير مسافيين — فالنمط الصحيح هو الذي يطابق غير المسافي. أما \\s فتطابق المسافات نفسها ولن تجد بريدًا.',
+            en: 'The address is space-poor: non-space characters surround the @ — the correct pattern is the one matching non-space. \\s matches spaces themselves and finds no mail.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ومن الفصل الثامن: findall أعادت قائمة — أي العمليتين تعملان فورًا على نتيجتها؟',
+            en: 'From chapter 8: findall returned a list — which two operations apply to it immediately?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'len(x) لقياس الطول وx[0] لفهرسة أول عنصر', en: 'len(x) for length and x[0] to index the first element' } },
+            { id: 'b', text: { ar: 'rstrip وlower على القائمة كلها', en: 'rstrip and lower on the whole list' } },
+            { id: 'c', text: { ar: 'لا شيء — القائمة الناتجة ميتة', en: 'Nothing — the resulting list is dead' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'قائمة findall قائمة بكل حقوق الفصل الثامن: len وlen(x) > 0 والفهرسة والشريحة — ولهذا بنينا عليها فلتر الوصاية.',
+            en: 'A findall list carries full chapter-8 rights: len, len(x) > 0, indexing and slicing — which is how we built the guardian filter on it.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'ومن الفصل السابع: في حلقة على أسطر ملف حقيقي، لماذا نكتب line = line.rstrip() قبل findall؟',
+            en: 'From chapter 7: in a loop over a real file\u2019s lines, why write line = line.rstrip() before findall?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لحذف محرف السطر الجديد \\n من نهاية السطر المقروء', en: 'To strip the newline \\n from the end of the read line' } },
+            { id: 'b', text: { ar: 'لأن findall يرفض الأسطر الطويلة', en: 'Because findall refuses long lines' } },
+            { id: 'c', text: { ar: 'لتحويل السطر إلى قائمة كلمات', en: 'To convert the line into a list of words' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الملف يسلّم كل سطر محملاً محرف \\n الخفي — وrstrip ينظف النهاية قبل أي معالجة، عادة اتخذناها في كل قراءة ملف منذ الفصل السابع.',
+            en: 'The file hands over every line carrying a hidden \\n — rstrip cleans the tail before any processing, the habit we took in every file read since chapter 7.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'تريد سحب كل العناوين من سطر واحد دفعة واحدة — أي استدعاء تختار؟',
+            en: 'You want every address from one line in a single pull — which call do you pick?',
+          },
+          options: [
+            { id: 'a', text: { ar: 're.findall(r"\\S+@\\S+", line)', en: 're.findall(r"\\S+@\\S+", line)' } },
+            { id: 'b', text: { ar: 're.search(r"\\S+@\\S+", line).group()', en: 're.search(r"\\S+@\\S+", line).group()' } },
+            { id: 'c', text: { ar: 'line.find("@")', en: 'line.find("@")' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'search().group() تسلمك أول مطابقة فقط؛ findall تسلم قائمة بكل المطابقات — ولذا هي أداة الحصاد الجماعي.',
+            en: 'search().group() hands you the first match only; findall hands a list of them all — hence it is the bulk-harvest tool.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: "re.findall(r'\\s+@\\s+', s)",
+          right: "re.findall(r'\\S+@\\S+', s)",
+          note: {
+            ar: 'حرف واحد قلب النتيجة: \\s تعني مسافة فارغة و\\S تعني نقيضها. النمط الخاطئ يطابق مسافات حول @ ولن يلتقط بريدًا واحدًا — ويعيد قائمة فارغة بصمت.',
+            en: 'One letter flipped the result: \\s means whitespace and \\S its opposite. The wrong pattern matches spaces around @, catches no address, and returns an empty list in silence.',
+          },
+        },
+        {
+          wrong: "x = re.findall(r'\\S+@\\S+', s)\nif x > 0:",
+          right: "x = re.findall(r'\\S+@\\S+', s)\nif len(x) > 0:",
+          note: {
+            ar: 'القائمة لا تُقارن بعدد مباشرة: x > 0 ترمي TypeError: ">" not supported between instances of "list" and "int". قِس الطول بـ len أولًا.',
+            en: 'A list does not compare against a number directly: x > 0 throws TypeError: ">" not supported between instances of "list" and "int". Measure with len first.',
+          },
+        },
+        {
+          wrong: "x = re.findall(r'\\S+@\\S+', line)\nprint(x[0])",
+          right: "x = re.findall(r'\\S+@\\S+', line)\nif len(x) > 0:\n    print(x[0])",
+          note: {
+            ar: 'القائمة الفارغة بلا وصاية ترمي IndexError: list index out of range — وfindall لا تحذر قبل الفشل، فهي تعيد [] بهدوء. احمِ الفهرسة بفحص الطول.',
+            en: 'An unguarded empty list throws IndexError: list index out of range — findall never warns before failing, it quietly returns []. Protect indexing with a length check.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'findall تعيد قائمة بكل السلاسل الجزئية المطابقة — وقائمة فارغة بلا أي خطأ حين يخفق النمط.', en: 'findall returns a list of every matching substring — and an empty list, error-free, when the pattern fails.' },
+        { ar: 'النمط \\S+@\\S+ يُقرأ: غير مسافي مرة على الأقل، ثم @، ثم غير مسافي مرة على الأقل — ويفضّل كتابته في نص خام r"..."', en: 'The pattern \\S+@\\S+ reads: at least one non-space, then @, then at least one non-space — best written as a raw string r"..."' },
+        { ar: 'search().group() تعطي أول مطابقة نصية، وfindall تعطي الكل — اختر بحسب سؤالك.', en: 'search().group() yields the first textual match; findall yields them all — choose by your question.' },
+        { ar: 'فلتر len(x) > 0 يحمي كل حصاد — عادة الوصاية انتقلت من القوائم إلى المطابقات.', en: 'The len(x) > 0 filter guards every harvest — the guardian habit moved from lists to matches.' },
+      ],
+      reflectPrompt: {
+        ar: 'في سطر ملف صندوق بريدك، كم عنوان بريد في المتوسط؟ جرّب findall خارج المنصة على أسطر حقيقية ولاحظ الشوائب < و; التي تلتصق بالعناوين — كيف تتخيل نمطًا يرفضها؟',
+        en: 'In a line of your mailbox file, how many addresses on average? Try findall outside the platform on real lines and watch the < and ; junk sticking to addresses — how would you imagine a pattern refusing them?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'PY4E', section: 'py4e.ch11.s2', pages: 'ص175 / pp.175' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'PY4E', section: 'py4e.ch11.s2', pages: 'ص175 / pp.175' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

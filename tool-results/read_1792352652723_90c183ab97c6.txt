@@ -1,0 +1,1218 @@
+     1→{
+     2→ "code": "D2L",
+     3→ "title": "Dive into Deep Learning",
+     4→ "authors": [
+     5→  "Aston Zhang",
+     6→  "Zachary C. Lipton",
+     7→  "Mu Li",
+     8→  "Alexander J. Smola"
+     9→ ],
+    10→ "license": "License not stated inside the PDF; d2l.ai site publishes under CC BY-NC-SA 4.0 (verify before publishing any content — OQ-3).",
+    11→ "url": "https://d2l.ai/",
+    12→ "chapters": [
+    13→  {
+    14→   "id": "d2l.ch1",
+    15→   "number": 1,
+    16→   "title": "Introduction",
+    17→   "pdfPage": 41,
+    18→   "bookPage": 41,
+    19→   "sections": [
+    20→    {
+    21→     "id": "d2l.ch1.s1",
+    22→     "number": "1.1",
+    23→     "title": "A Motivating Example",
+    24→     "pdfPage": 42,
+    25→     "bookPage": 42
+    26→    },
+    27→    {
+    28→     "id": "d2l.ch1.s2",
+    29→     "number": "1.2",
+    30→     "title": "Key Components",
+    31→     "pdfPage": 44,
+    32→     "bookPage": 44
+    33→    },
+    34→    {
+    35→     "id": "d2l.ch1.s3",
+    36→     "number": "1.3",
+    37→     "title": "Kinds of Machine Learning Problems",
+    38→     "pdfPage": 47,
+    39→     "bookPage": 47
+    40→    },
+    41→    {
+    42→     "id": "d2l.ch1.s4",
+    43→     "number": "1.4",
+    44→     "title": "Roots",
+    45→     "pdfPage": 60,
+    46→     "bookPage": 60
+    47→    },
+    48→    {
+    49→     "id": "d2l.ch1.s5",
+    50→     "number": "1.5",
+    51→     "title": "The Road to Deep Learning",
+    52→     "pdfPage": 62,
+    53→     "bookPage": 62
+    54→    },
+    55→    {
+    56→     "id": "d2l.ch1.s6",
+    57→     "number": "1.6",
+    58→     "title": "Success Stories",
+    59→     "pdfPage": 65,
+    60→     "bookPage": 65
+    61→    },
+    62→    {
+    63→     "id": "d2l.ch1.s7",
+    64→     "number": "1.7",
+    65→     "title": "The Essence of Deep Learning",
+    66→     "pdfPage": 67,
+    67→     "bookPage": 67
+    68→    },
+    69→    {
+    70→     "id": "d2l.ch1.s8",
+    71→     "number": "1.8",
+    72→     "title": "Summary",
+    73→     "pdfPage": 69,
+    74→     "bookPage": 69
+    75→    },
+    76→    {
+    77→     "id": "d2l.ch1.s9",
+    78→     "number": "1.9",
+    79→     "title": "Exercises",
+    80→     "pdfPage": 69,
+    81→     "bookPage": 69
+    82→    }
+    83→   ]
+    84→  },
+    85→  {
+    86→   "id": "d2l.ch2",
+    87→   "number": 2,
+    88→   "title": "Preliminaries",
+    89→   "pdfPage": 70,
+    90→   "bookPage": 70,
+    91→   "sections": [
+    92→    {
+    93→     "id": "d2l.ch2.s1",
+    94→     "number": "2.1",
+    95→     "title": "Data Manipulation",
+    96→     "pdfPage": 70,
+    97→     "bookPage": 70
+    98→    },
+    99→    {
+   100→     "id": "d2l.ch2.s2",
+   101→     "number": "2.2",
+   102→     "title": "Data Preprocessing",
+   103→     "pdfPage": 78,
+   104→     "bookPage": 78
+   105→    },
+   106→    {
+   107→     "id": "d2l.ch2.s3",
+   108→     "number": "2.3",
+   109→     "title": "Linear Algebra",
+   110→     "pdfPage": 81,
+   111→     "bookPage": 81
+   112→    },
+   113→    {
+   114→     "id": "d2l.ch2.s4",
+   115→     "number": "2.4",
+   116→     "title": "Calculus",
+   117→     "pdfPage": 94,
+   118→     "bookPage": 94
+   119→    },
+   120→    {
+   121→     "id": "d2l.ch2.s5",
+   122→     "number": "2.5",
+   123→     "title": "Automatic Differentiation",
+   124→     "pdfPage": 99,
+   125→     "bookPage": 99
+   126→    },
+   127→    {
+   128→     "id": "d2l.ch2.s6",
+   129→     "number": "2.6",
+   130→     "title": "Probability and Statistics",
+   131→     "pdfPage": 105,
+   132→     "bookPage": 105
+   133→    },
+   134→    {
+   135→     "id": "d2l.ch2.s7",
+   136→     "number": "2.7",
+   137→     "title": "Documentation",
+   138→     "pdfPage": 118,
+   139→     "bookPage": 118
+   140→    }
+   141→   ]
+   142→  },
+   143→  {
+   144→   "id": "d2l.ch3",
+   145→   "number": 3,
+   146→   "title": "Linear Neural Networks for Regression",
+   147→   "pdfPage": 122,
+   148→   "bookPage": 122,
+   149→   "sections": [
+   150→    {
+   151→     "id": "d2l.ch3.s1",
+   152→     "number": "3.1",
+   153→     "title": "Linear Regression",
+   154→     "pdfPage": 122,
+   155→     "bookPage": 122
+   156→    },
+   157→    {
+   158→     "id": "d2l.ch3.s2",
+   159→     "number": "3.2",
+   160→     "title": "Object-Oriented Design for Implementation",
+   161→     "pdfPage": 133,
+   162→     "bookPage": 133
+   163→    },
+   164→    {
+   165→     "id": "d2l.ch3.s3",
+   166→     "number": "3.3",
+   167→     "title": "Synthetic Regression Data",
+   168→     "pdfPage": 139,
+   169→     "bookPage": 139
+   170→    },
+   171→    {
+   172→     "id": "d2l.ch3.s4",
+   173→     "number": "3.4",
+   174→     "title": "Linear Regression Implementation from Scratch",
+   175→     "pdfPage": 142,
+   176→     "bookPage": 142
+   177→    },
+   178→    {
+   179→     "id": "d2l.ch3.s5",
+   180→     "number": "3.5",
+   181→     "title": "Concise Implementation of Linear Regression",
+   182→     "pdfPage": 148,
+   183→     "bookPage": 148
+   184→    },
+   185→    {
+   186→     "id": "d2l.ch3.s6",
+   187→     "number": "3.6",
+   188→     "title": "Generalization",
+   189→     "pdfPage": 152,
+   190→     "bookPage": 152
+   191→    },
+   192→    {
+   193→     "id": "d2l.ch3.s7",
+   194→     "number": "3.7",
+   195→     "title": "Weight Decay",
+   196→     "pdfPage": 158,
+   197→     "bookPage": 158
+   198→    }
+   199→   ]
+   200→  },
+   201→  {
+   202→   "id": "d2l.ch4",
+   203→   "number": 4,
+   204→   "title": "Linear Neural Networks for Classification",
+   205→   "pdfPage": 165,
+   206→   "bookPage": 165,
+   207→   "sections": [
+   208→    {
+   209→     "id": "d2l.ch4.s1",
+   210→     "number": "4.1",
+   211→     "title": "Softmax Regression",
+   212→     "pdfPage": 165,
+   213→     "bookPage": 165
+   214→    },
+   215→    {
+   216→     "id": "d2l.ch4.s2",
+   217→     "number": "4.2",
+   218→     "title": "The Image Classification Dataset",
+   219→     "pdfPage": 173,
+   220→     "bookPage": 173
+   221→    },
+   222→    {
+   223→     "id": "d2l.ch4.s3",
+   224→     "number": "4.3",
+   225→     "title": "The Base Classification Model",
+   226→     "pdfPage": 177,
+   227→     "bookPage": 177
+   228→    },
+   229→    {
+   230→     "id": "d2l.ch4.s4",
+   231→     "number": "4.4",
+   232→     "title": "Softmax Regression Implementation from Scratch",
+   233→     "pdfPage": 179,
+   234→     "bookPage": 179
+   235→    },
+   236→    {
+   237→     "id": "d2l.ch4.s5",
+   238→     "number": "4.5",
+   239→     "title": "Concise Implementation of Softmax Regression",
+   240→     "pdfPage": 184,
+   241→     "bookPage": 184
+   242→    },
+   243→    {
+   244→     "id": "d2l.ch4.s6",
+   245→     "number": "4.6",
+   246→     "title": "Generalization in Classification",
+   247→     "pdfPage": 187,
+   248→     "bookPage": 187
+   249→    },
+   250→    {
+   251→     "id": "d2l.ch4.s7",
+   252→     "number": "4.7",
+   253→     "title": "Environment and Distribution Shift",
+   254→     "pdfPage": 194,
+   255→     "bookPage": 194
+   256→    }
+   257→   ]
+   258→  },
+   259→  {
+   260→   "id": "d2l.ch5",
+   261→   "number": 5,
+   262→   "title": "Multilayer Perceptrons",
+   263→   "pdfPage": 207,
+   264→   "bookPage": 207,
+   265→   "sections": [
+   266→    {
+   267→     "id": "d2l.ch5.s1",
+   268→     "number": "5.1",
+   269→     "title": "Multilayer Perceptrons",
+   270→     "pdfPage": 207,
+   271→     "bookPage": 207
+   272→    },
+   273→    {
+   274→     "id": "d2l.ch5.s2",
+   275→     "number": "5.2",
+   276→     "title": "Implementation of Multilayer Perceptrons",
+   277→     "pdfPage": 215,
+   278→     "bookPage": 215
+   279→    },
+   280→    {
+   281→     "id": "d2l.ch5.s3",
+   282→     "number": "5.3",
+   283→     "title": "Forward Propagation, Backward Propagation, and Computational Graphs",
+   284→     "pdfPage": 219,
+   285→     "bookPage": 219
+   286→    },
+   287→    {
+   288→     "id": "d2l.ch5.s4",
+   289→     "number": "5.4",
+   290→     "title": "Numerical Stability and Initialization",
+   291→     "pdfPage": 224,
+   292→     "bookPage": 224
+   293→    },
+   294→    {
+   295→     "id": "d2l.ch5.s5",
+   296→     "number": "5.5",
+   297→     "title": "Generalization in Deep Learning",
+   298→     "pdfPage": 229,
+   299→     "bookPage": 229
+   300→    },
+   301→    {
+   302→     "id": "d2l.ch5.s6",
+   303→     "number": "5.6",
+   304→     "title": "Dropout",
+   305→     "pdfPage": 234,
+   306→     "bookPage": 234
+   307→    },
+   308→    {
+   309→     "id": "d2l.ch5.s7",
+   310→     "number": "5.7",
+   311→     "title": "Predicting House Prices on Kaggle",
+   312→     "pdfPage": 239,
+   313→     "bookPage": 239
+   314→    }
+   315→   ]
+   316→  },
+   317→  {
+   318→   "id": "d2l.ch6",
+   319→   "number": 6,
+   320→   "title": "Builders' Guide",
+   321→   "pdfPage": 247,
+   322→   "bookPage": 247,
+   323→   "sections": [
+   324→    {
+   325→     "id": "d2l.ch6.s1",
+   326→     "number": "6.1",
+   327→     "title": "Layers and Modules",
+   328→     "pdfPage": 247,
+   329→     "bookPage": 247
+   330→    },
+   331→    {
+   332→     "id": "d2l.ch6.s2",
+   333→     "number": "6.2",
+   334→     "title": "Parameter Management",
+   335→     "pdfPage": 253,
+   336→     "bookPage": 253
+   337→    },
+   338→    {
+   339→     "id": "d2l.ch6.s3",
+   340→     "number": "6.3",
+   341→     "title": "Parameter Initialization",
+   342→     "pdfPage": 256,
+   343→     "bookPage": 256
+   344→    },
+   345→    {
+   346→     "id": "d2l.ch6.s4",
+   347→     "number": "6.4",
+   348→     "title": "Lazy Initialization",
+   349→     "pdfPage": 259,
+   350→     "bookPage": 259
+   351→    },
+   352→    {
+   353→     "id": "d2l.ch6.s5",
+   354→     "number": "6.5",
+   355→     "title": "Custom Layers",
+   356→     "pdfPage": 261,
+   357→     "bookPage": 261
+   358→    },
+   359→    {
+   360→     "id": "d2l.ch6.s6",
+   361→     "number": "6.6",
+   362→     "title": "File I/O",
+   363→     "pdfPage": 263,
+   364→     "bookPage": 263
+   365→    },
+   366→    {
+   367→     "id": "d2l.ch6.s7",
+   368→     "number": "6.7",
+   369→     "title": "GPUs",
+   370→     "pdfPage": 266,
+   371→     "bookPage": 266
+   372→    }
+   373→   ]
+   374→  },
+   375→  {
+   376→   "id": "d2l.ch7",
+   377→   "number": 7,
+   378→   "title": "Convolutional Neural Networks",
+   379→   "pdfPage": 273,
+   380→   "bookPage": 273,
+   381→   "sections": [
+   382→    {
+   383→     "id": "d2l.ch7.s1",
+   384→     "number": "7.1",
+   385→     "title": "From Fully Connected Layers to Convolutions",
+   386→     "pdfPage": 274,
+   387→     "bookPage": 274
+   388→    },
+   389→    {
+   390→     "id": "d2l.ch7.s2",
+   391→     "number": "7.2",
+   392→     "title": "Convolutions for Images",
+   393→     "pdfPage": 280,
+   394→     "bookPage": 280
+   395→    },
+   396→    {
+   397→     "id": "d2l.ch7.s3",
+   398→     "number": "7.3",
+   399→     "title": "Padding and Stride",
+   400→     "pdfPage": 287,
+   401→     "bookPage": 287
+   402→    },
+   403→    {
+   404→     "id": "d2l.ch7.s4",
+   405→     "number": "7.4",
+   406→     "title": "Multiple Input and Multiple Output Channels",
+   407→     "pdfPage": 292,
+   408→     "bookPage": 292
+   409→    },
+   410→    {
+   411→     "id": "d2l.ch7.s5",
+   412→     "number": "7.5",
+   413→     "title": "Pooling",
+   414→     "pdfPage": 297,
+   415→     "bookPage": 297
+   416→    },
+   417→    {
+   418→     "id": "d2l.ch7.s6",
+   419→     "number": "7.6",
+   420→     "title": "Convolutional Neural Networks (LeNet)",
+   421→     "pdfPage": 302,
+   422→     "bookPage": 302
+   423→    }
+   424→   ]
+   425→  },
+   426→  {
+   427→   "id": "d2l.ch8",
+   428→   "number": 8,
+   429→   "title": "Modern Convolutional Neural Networks",
+   430→   "pdfPage": 308,
+   431→   "bookPage": 308,
+   432→   "sections": [
+   433→    {
+   434→     "id": "d2l.ch8.s1",
+   435→     "number": "8.1",
+   436→     "title": "Deep Convolutional Neural Networks (AlexNet)",
+   437→     "pdfPage": 309,
+   438→     "bookPage": 309
+   439→    },
+   440→    {
+   441→     "id": "d2l.ch8.s2",
+   442→     "number": "8.2",
+   443→     "title": "Networks Using Blocks (VGG)",
+   444→     "pdfPage": 318,
+   445→     "bookPage": 318
+   446→    },
+   447→    {
+   448→     "id": "d2l.ch8.s3",
+   449→     "number": "8.3",
+   450→     "title": "Network in Network (NiN)",
+   451→     "pdfPage": 323,
+   452→     "bookPage": 323
+   453→    },
+   454→    {
+   455→     "id": "d2l.ch8.s4",
+   456→     "number": "8.4",
+   457→     "title": "Multi-Branch Networks (GoogLeNet)",
+   458→     "pdfPage": 327,
+   459→     "bookPage": 327
+   460→    },
+   461→    {
+   462→     "id": "d2l.ch8.s5",
+   463→     "number": "8.5",
+   464→     "title": "Batch Normalization",
+   465→     "pdfPage": 332,
+   466→     "bookPage": 332
+   467→    },
+   468→    {
+   469→     "id": "d2l.ch8.s6",
+   470→     "number": "8.6",
+   471→     "title": "Residual Networks (ResNet) and ResNeXt",
+   472→     "pdfPage": 342,
+   473→     "bookPage": 342
+   474→    },
+   475→    {
+   476→     "id": "d2l.ch8.s7",
+   477→     "number": "8.7",
+   478→     "title": "Densely Connected Networks (DenseNet)",
+   479→     "pdfPage": 352,
+   480→     "bookPage": 352
+   481→    },
+   482→    {
+   483→     "id": "d2l.ch8.s8",
+   484→     "number": "8.8",
+   485→     "title": "Designing Convolution Network Architectures",
+   486→     "pdfPage": 356,
+   487→     "bookPage": 356
+   488→    }
+   489→   ]
+   490→  },
+   491→  {
+   492→   "id": "d2l.ch9",
+   493→   "number": 9,
+   494→   "title": "Recurrent Neural Networks",
+   495→   "pdfPage": 365,
+   496→   "bookPage": 365,
+   497→   "sections": [
+   498→    {
+   499→     "id": "d2l.ch9.s1",
+   500→     "number": "9.1",
+   501→     "title": "Working with Sequences",
+   502→     "pdfPage": 367,
+   503→     "bookPage": 367
+   504→    },
+   505→    {
+   506→     "id": "d2l.ch9.s2",
+   507→     "number": "9.2",
+   508→     "title": "Converting Raw Text into Sequence Data",
+   509→     "pdfPage": 376,
+   510→     "bookPage": 376
+   511→    },
+   512→    {
+   513→     "id": "d2l.ch9.s3",
+   514→     "number": "9.3",
+   515→     "title": "Language Models",
+   516→     "pdfPage": 382,
+   517→     "bookPage": 382
+   518→    },
+   519→    {
+   520→     "id": "d2l.ch9.s4",
+   521→     "number": "9.4",
+   522→     "title": "Recurrent Neural Networks",
+   523→     "pdfPage": 388,
+   524→     "bookPage": 388
+   525→    },
+   526→    {
+   527→     "id": "d2l.ch9.s5",
+   528→     "number": "9.5",
+   529→     "title": "Recurrent Neural Network Implementation from Scratch",
+   530→     "pdfPage": 392,
+   531→     "bookPage": 392
+   532→    },
+   533→    {
+   534→     "id": "d2l.ch9.s6",
+   535→     "number": "9.6",
+   536→     "title": "Concise Implementation of Recurrent Neural Networks",
+   537→     "pdfPage": 400,
+   538→     "bookPage": 400
+   539→    },
+   540→    {
+   541→     "id": "d2l.ch9.s7",
+   542→     "number": "9.7",
+   543→     "title": "Backpropagation Through Time",
+   544→     "pdfPage": 402,
+   545→     "bookPage": 402
+   546→    }
+   547→   ]
+   548→  },
+   549→  {
+   550→   "id": "d2l.ch10",
+   551→   "number": 10,
+   552→   "title": "Modern Recurrent Neural Networks",
+   553→   "pdfPage": 409,
+   554→   "bookPage": 409,
+   555→   "sections": [
+   556→    {
+   557→     "id": "d2l.ch10.s1",
+   558→     "number": "10.1",
+   559→     "title": "Long Short-Term Memory (LSTM)",
+   560→     "pdfPage": 409,
+   561→     "bookPage": 409
+   562→    },
+   563→    {
+   564→     "id": "d2l.ch10.s2",
+   565→     "number": "10.2",
+   566→     "title": "Gated Recurrent Units (GRU)",
+   567→     "pdfPage": 416,
+   568→     "bookPage": 416
+   569→    },
+   570→    {
+   571→     "id": "d2l.ch10.s3",
+   572→     "number": "10.3",
+   573→     "title": "Deep Recurrent Neural Networks",
+   574→     "pdfPage": 421,
+   575→     "bookPage": 421
+   576→    },
+   577→    {
+   578→     "id": "d2l.ch10.s4",
+   579→     "number": "10.4",
+   580→     "title": "Bidirectional Recurrent Neural Networks",
+   581→     "pdfPage": 425,
+   582→     "bookPage": 425
+   583→    },
+   584→    {
+   585→     "id": "d2l.ch10.s5",
+   586→     "number": "10.5",
+   587→     "title": "Machine Translation and the Dataset",
+   588→     "pdfPage": 428,
+   589→     "bookPage": 428
+   590→    },
+   591→    {
+   592→     "id": "d2l.ch10.s6",
+   593→     "number": "10.6",
+   594→     "title": "The Encoder-Decoder Architecture",
+   595→     "pdfPage": 434,
+   596→     "bookPage": 434
+   597→    },
+   598→    {
+   599→     "id": "d2l.ch10.s7",
+   600→     "number": "10.7",
+   601→     "title": "Sequence-to-Sequence Learning for Machine Translation",
+   602→     "pdfPage": 436,
+   603→     "bookPage": 436
+   604→    },
+   605→    {
+   606→     "id": "d2l.ch10.s8",
+   607→     "number": "10.8",
+   608→     "title": "Beam Search",
+   609→     "pdfPage": 445,
+   610→     "bookPage": 445
+   611→    }
+   612→   ]
+   613→  },
+   614→  {
+   615→   "id": "d2l.ch11",
+   616→   "number": 11,
+   617→   "title": "Attention Mechanisms and Transformers",
+   618→   "pdfPage": 449,
+   619→   "bookPage": 449,
+   620→   "sections": [
+   621→    {
+   622→     "id": "d2l.ch11.s1",
+   623→     "number": "11.1",
+   624→     "title": "Queries, Keys, and Values",
+   625→     "pdfPage": 451,
+   626→     "bookPage": 451
+   627→    },
+   628→    {
+   629→     "id": "d2l.ch11.s2",
+   630→     "number": "11.2",
+   631→     "title": "Attention Pooling by Similarity",
+   632→     "pdfPage": 455,
+   633→     "bookPage": 455
+   634→    },
+   635→    {
+   636→     "id": "d2l.ch11.s3",
+   637→     "number": "11.3",
+   638→     "title": "Attention Scoring Functions",
+   639→     "pdfPage": 460,
+   640→     "bookPage": 460
+   641→    },
+   642→    {
+   643→     "id": "d2l.ch11.s4",
+   644→     "number": "11.4",
+   645→     "title": "The Bahdanau Attention Mechanism",
+   646→     "pdfPage": 466,
+   647→     "bookPage": 466
+   648→    },
+   649→    {
+   650→     "id": "d2l.ch11.s5",
+   651→     "number": "11.5",
+   652→     "title": "Multi-Head Attention",
+   653→     "pdfPage": 472,
+   654→     "bookPage": 472
+   655→    },
+   656→    {
+   657→     "id": "d2l.ch11.s6",
+   658→     "number": "11.6",
+   659→     "title": "Self-Attention and Positional Encoding",
+   660→     "pdfPage": 475,
+   661→     "bookPage": 475
+   662→    },
+   663→    {
+   664→     "id": "d2l.ch11.s7",
+   665→     "number": "11.7",
+   666→     "title": "The Transformer Architecture",
+   667→     "pdfPage": 480,
+   668→     "bookPage": 480
+   669→    },
+   670→    {
+   671→     "id": "d2l.ch11.s8",
+   672→     "number": "11.8",
+   673→     "title": "Transformers for Vision",
+   674→     "pdfPage": 491,
+   675→     "bookPage": 491
+   676→    },
+   677→    {
+   678→     "id": "d2l.ch11.s9",
+   679→     "number": "11.9",
+   680→     "title": "Large-Scale Pretraining with Transformers",
+   681→     "pdfPage": 496,
+   682→     "bookPage": 496
+   683→    }
+   684→   ]
+   685→  },
+   686→  {
+   687→   "id": "d2l.ch12",
+   688→   "number": 12,
+   689→   "title": "Optimization Algorithms",
+   690→   "pdfPage": 508,
+   691→   "bookPage": 508,
+   692→   "sections": [
+   693→    {
+   694→     "id": "d2l.ch12.s1",
+   695→     "number": "12.1",
+   696→     "title": "Optimization and Deep Learning",
+   697→     "pdfPage": 508,
+   698→     "bookPage": 508
+   699→    },
+   700→    {
+   701→     "id": "d2l.ch12.s2",
+   702→     "number": "12.2",
+   703→     "title": "Convexity",
+   704→     "pdfPage": 513,
+   705→     "bookPage": 513
+   706→    },
+   707→    {
+   708→     "id": "d2l.ch12.s3",
+   709→     "number": "12.3",
+   710→     "title": "Gradient Descent",
+   711→     "pdfPage": 522,
+   712→     "bookPage": 522
+   713→    },
+   714→    {
+   715→     "id": "d2l.ch12.s4",
+   716→     "number": "12.4",
+   717→     "title": "Stochastic Gradient Descent",
+   718→     "pdfPage": 532,
+   719→     "bookPage": 532
+   720→    },
+   721→    {
+   722→     "id": "d2l.ch12.s5",
+   723→     "number": "12.5",
+   724→     "title": "Minibatch Stochastic Gradient Descent",
+   725→     "pdfPage": 539,
+   726→     "bookPage": 539
+   727→    },
+   728→    {
+   729→     "id": "d2l.ch12.s6",
+   730→     "number": "12.6",
+   731→     "title": "Momentum",
+   732→     "pdfPage": 550,
+   733→     "bookPage": 550
+   734→    },
+   735→    {
+   736→     "id": "d2l.ch12.s7",
+   737→     "number": "12.7",
+   738→     "title": "Adagrad",
+   739→     "pdfPage": 559,
+   740→     "bookPage": 559
+   741→    },
+   742→    {
+   743→     "id": "d2l.ch12.s8",
+   744→     "number": "12.8",
+   745→     "title": "RMSProp",
+   746→     "pdfPage": 565,
+   747→     "bookPage": 565
+   748→    },
+   749→    {
+   750→     "id": "d2l.ch12.s9",
+   751→     "number": "12.9",
+   752→     "title": "Adadelta",
+   753→     "pdfPage": 569,
+   754→     "bookPage": 569
+   755→    },
+   756→    {
+   757→     "id": "d2l.ch12.s10",
+   758→     "number": "12.10",
+   759→     "title": "Adam",
+   760→     "pdfPage": 572,
+   761→     "bookPage": 572
+   762→    },
+   763→    {
+   764→     "id": "d2l.ch12.s11",
+   765→     "number": "12.11",
+   766→     "title": "Learning Rate Scheduling",
+   767→     "pdfPage": 576,
+   768→     "bookPage": 576
+   769→    }
+   770→   ]
+   771→  },
+   772→  {
+   773→   "id": "d2l.ch13",
+   774→   "number": 13,
+   775→   "title": "Computational Performance",
+   776→   "pdfPage": 587,
+   777→   "bookPage": 587,
+   778→   "sections": [
+   779→    {
+   780→     "id": "d2l.ch13.s1",
+   781→     "number": "13.1",
+   782→     "title": "Compilers and Interpreters",
+   783→     "pdfPage": 587,
+   784→     "bookPage": 587
+   785→    },
+   786→    {
+   787→     "id": "d2l.ch13.s2",
+   788→     "number": "13.2",
+   789→     "title": "Asynchronous Computation",
+   790→     "pdfPage": 592,
+   791→     "bookPage": 592
+   792→    },
+   793→    {
+   794→     "id": "d2l.ch13.s3",
+   795→     "number": "13.3",
+   796→     "title": "Automatic Parallelism",
+   797→     "pdfPage": 595,
+   798→     "bookPage": 595
+   799→    },
+   800→    {
+   801→     "id": "d2l.ch13.s4",
+   802→     "number": "13.4",
+   803→     "title": "Hardware",
+   804→     "pdfPage": 599,
+   805→     "bookPage": 599
+   806→    },
+   807→    {
+   808→     "id": "d2l.ch13.s5",
+   809→     "number": "13.5",
+   810→     "title": "Training on Multiple GPUs",
+   811→     "pdfPage": 612,
+   812→     "bookPage": 612
+   813→    },
+   814→    {
+   815→     "id": "d2l.ch13.s6",
+   816→     "number": "13.6",
+   817→     "title": "Concise Implementation for Multiple GPUs",
+   818→     "pdfPage": 620,
+   819→     "bookPage": 620
+   820→    },
+   821→    {
+   822→     "id": "d2l.ch13.s7",
+   823→     "number": "13.7",
+   824→     "title": "Parameter Servers",
+   825→     "pdfPage": 624,
+   826→     "bookPage": 624
+   827→    }
+   828→   ]
+   829→  },
+   830→  {
+   831→   "id": "d2l.ch14",
+   832→   "number": 14,
+   833→   "title": "Computer Vision",
+   834→   "pdfPage": 632,
+   835→   "bookPage": 632,
+   836→   "sections": [
+   837→    {
+   838→     "id": "d2l.ch14.s1",
+   839→     "number": "14.1",
+   840→     "title": "Image Augmentation",
+   841→     "pdfPage": 632,
+   842→     "bookPage": 632
+   843→    },
+   844→    {
+   845→     "id": "d2l.ch14.s2",
+   846→     "number": "14.2",
+   847→     "title": "Fine-Tuning",
+   848→     "pdfPage": 640,
+   849→     "bookPage": 640
+   850→    },
+   851→    {
+   852→     "id": "d2l.ch14.s3",
+   853→     "number": "14.3",
+   854→     "title": "Object Detection and Bounding Boxes",
+   855→     "pdfPage": 646,
+   856→     "bookPage": 646
+   857→    },
+   858→    {
+   859→     "id": "d2l.ch14.s4",
+   860→     "number": "14.4",
+   861→     "title": "Anchor Boxes",
+   862→     "pdfPage": 649,
+   863→     "bookPage": 649
+   864→    },
+   865→    {
+   866→     "id": "d2l.ch14.s5",
+   867→     "number": "14.5",
+   868→     "title": "Multiscale Object Detection",
+   869→     "pdfPage": 663,
+   870→     "bookPage": 663
+   871→    },
+   872→    {
+   873→     "id": "d2l.ch14.s6",
+   874→     "number": "14.6",
+   875→     "title": "The Object Detection Dataset",
+   876→     "pdfPage": 667,
+   877→     "bookPage": 667
+   878→    },
+   879→    {
+   880→     "id": "d2l.ch14.s7",
+   881→     "number": "14.7",
+   882→     "title": "Single Shot Multibox Detection",
+   883→     "pdfPage": 670,
+   884→     "bookPage": 670
+   885→    },
+   886→    {
+   887→     "id": "d2l.ch14.s8",
+   888→     "number": "14.8",
+   889→     "title": "Region-based CNNs (R-CNNs)",
+   890→     "pdfPage": 682,
+   891→     "bookPage": 682
+   892→    },
+   893→    {
+   894→     "id": "d2l.ch14.s9",
+   895→     "number": "14.9",
+   896→     "title": "Semantic Segmentation and the Dataset",
+   897→     "pdfPage": 687,
+   898→     "bookPage": 687
+   899→    },
+   900→    {
+   901→     "id": "d2l.ch14.s10",
+   902→     "number": "14.10",
+   903→     "title": "Transposed Convolution",
+   904→     "pdfPage": 694,
+   905→     "bookPage": 694
+   906→    },
+   907→    {
+   908→     "id": "d2l.ch14.s11",
+   909→     "number": "14.11",
+   910→     "title": "Fully Convolutional Networks",
+   911→     "pdfPage": 699,
+   912→     "bookPage": 699
+   913→    },
+   914→    {
+   915→     "id": "d2l.ch14.s12",
+   916→     "number": "14.12",
+   917→     "title": "Neural Style Transfer",
+   918→     "pdfPage": 706,
+   919→     "bookPage": 706
+   920→    },
+   921→    {
+   922→     "id": "d2l.ch14.s13",
+   923→     "number": "14.13",
+   924→     "title": "Image Classification (CIFAR-10) on Kaggle",
+   925→     "pdfPage": 714,
+   926→     "bookPage": 714
+   927→    },
+   928→    {
+   929→     "id": "d2l.ch14.s14",
+   930→     "number": "14.14",
+   931→     "title": "Dog Breed Identification (ImageNet Dogs) on Kaggle",
+   932→     "pdfPage": 722,
+   933→     "bookPage": 722
+   934→    }
+   935→   ]
+   936→  },
+   937→  {
+   938→   "id": "d2l.ch15",
+   939→   "number": 15,
+   940→   "title": "Natural Language Processing: Pretraining",
+   941→   "pdfPage": 730,
+   942→   "bookPage": 730,
+   943→   "sections": [
+   944→    {
+   945→     "id": "d2l.ch15.s1",
+   946→     "number": "15.1",
+   947→     "title": "Word Embedding (word2vec)",
+   948→     "pdfPage": 730,
+   949→     "bookPage": 730
+   950→    },
+   951→    {
+   952→     "id": "d2l.ch15.s2",
+   953→     "number": "15.2",
+   954→     "title": "Approximate Training",
+   955→     "pdfPage": 736,
+   956→     "bookPage": 736
+   957→    },
+   958→    {
+   959→     "id": "d2l.ch15.s3",
+   960→     "number": "15.3",
+   961→     "title": "The Dataset for Pretraining Word Embeddings",
+   962→     "pdfPage": 739,
+   963→     "bookPage": 739
+   964→    },
+   965→    {
+   966→     "id": "d2l.ch15.s4",
+   967→     "number": "15.4",
+   968→     "title": "Pretraining word2vec",
+   969→     "pdfPage": 747,
+   970→     "bookPage": 747
+   971→    },
+   972→    {
+   973→     "id": "d2l.ch15.s5",
+   974→     "number": "15.5",
+   975→     "title": "Word Embedding with Global Vectors (GloVe)",
+   976→     "pdfPage": 751,
+   977→     "bookPage": 751
+   978→    },
+   979→    {
+   980→     "id": "d2l.ch15.s6",
+   981→     "number": "15.6",
+   982→     "title": "Subword Embedding",
+   983→     "pdfPage": 755,
+   984→     "bookPage": 755
+   985→    },
+   986→    {
+   987→     "id": "d2l.ch15.s7",
+   988→     "number": "15.7",
+   989→     "title": "Word Similarity and Analogy",
+   990→     "pdfPage": 759,
+   991→     "bookPage": 759
+   992→    },
+   993→    {
+   994→     "id": "d2l.ch15.s8",
+   995→     "number": "15.8",
+   996→     "title": "Bidirectional Encoder Representations from Transformers (BERT)",
+   997→     "pdfPage": 764,
+   998→     "bookPage": 764
+   999→    },
+  1000→    {
+  1001→     "id": "d2l.ch15.s9",
+  1002→     "number": "15.9",
+  1003→     "title": "The Dataset for Pretraining BERT",
+  1004→     "pdfPage": 773,
+  1005→     "bookPage": 773
+  1006→    },
+  1007→    {
+  1008→     "id": "d2l.ch15.s10",
+  1009→     "number": "15.10",
+  1010→     "title": "Pretraining BERT",
+  1011→     "pdfPage": 779,
+  1012→     "bookPage": 779
+  1013→    }
+  1014→   ]
+  1015→  },
+  1016→  {
+  1017→   "id": "d2l.ch16",
+  1018→   "number": 16,
+  1019→   "title": "Natural Language Processing: Applications",
+  1020→   "pdfPage": 784,
+  1021→   "bookPage": 784,
+  1022→   "sections": [
+  1023→    {
+  1024→     "id": "d2l.ch16.s1",
+  1025→     "number": "16.1",
+  1026→     "title": "Sentiment Analysis and the Dataset",
+  1027→     "pdfPage": 785,
+  1028→     "bookPage": 785
+  1029→    },
+  1030→    {
+  1031→     "id": "d2l.ch16.s2",
+  1032→     "number": "16.2",
+  1033→     "title": "Sentiment Analysis: Using Recurrent Neural Networks",
+  1034→     "pdfPage": 788,
+  1035→     "bookPage": 788
+  1036→    },
+  1037→    {
+  1038→     "id": "d2l.ch16.s3",
+  1039→     "number": "16.3",
+  1040→     "title": "Sentiment Analysis: Using Convolutional Neural Networks",
+  1041→     "pdfPage": 792,
+  1042→     "bookPage": 792
+  1043→    },
+  1044→    {
+  1045→     "id": "d2l.ch16.s4",
+  1046→     "number": "16.4",
+  1047→     "title": "Natural Language Inference and the Dataset",
+  1048→     "pdfPage": 798,
+  1049→     "bookPage": 798
+  1050→    },
+  1051→    {
+  1052→     "id": "d2l.ch16.s5",
+  1053→     "number": "16.5",
+  1054→     "title": "Natural Language Inference: Using Attention",
+  1055→     "pdfPage": 803,
+  1056→     "bookPage": 803
+  1057→    },
+  1058→    {
+  1059→     "id": "d2l.ch16.s6",
+  1060→     "number": "16.6",
+  1061→     "title": "Fine-Tuning BERT for Sequence-Level and Token-Level Applications",
+  1062→     "pdfPage": 810,
+  1063→     "bookPage": 810
+  1064→    },
+  1065→    {
+  1066→     "id": "d2l.ch16.s7",
+  1067→     "number": "16.7",
+  1068→     "title": "Natural Language Inference: Fine-Tuning BERT",
+  1069→     "pdfPage": 815,
+  1070→     "bookPage": 815
+  1071→    }
+  1072→   ]
+  1073→  },
+  1074→  {
+  1075→   "id": "d2l.ch17",
+  1076→   "number": 17,
+  1077→   "title": "Reinforcement Learning",
+  1078→   "pdfPage": 821,
+  1079→   "bookPage": 821,
+  1080→   "sections": [
+  1081→    {
+  1082→     "id": "d2l.ch17.s1",
+  1083→     "number": "17.1",
+  1084→     "title": "Markov Decision Process (MDP)",
+  1085→     "pdfPage": 822,
+  1086→     "bookPage": 822
+  1087→    },
+  1088→    {
+  1089→     "id": "d2l.ch17.s2",
+  1090→     "number": "17.2",
+  1091→     "title": "Value Iteration",
+  1092→     "pdfPage": 825,
+  1093→     "bookPage": 825
+  1094→    },
+  1095→    {
+  1096→     "id": "d2l.ch17.s3",
+  1097→     "number": "17.3",
+  1098→     "title": "Q-Learning",
+  1099→     "pdfPage": 831,
+  1100→     "bookPage": 831
+  1101→    }
+  1102→   ]
+  1103→  },
+  1104→  {
+  1105→   "id": "d2l.ch18",
+  1106→   "number": 18,
+  1107→   "title": "Gaussian Processes",
+  1108→   "pdfPage": 837,
+  1109→   "bookPage": 837,
+  1110→   "sections": [
+  1111→    {
+  1112→     "id": "d2l.ch18.s1",
+  1113→     "number": "18.1",
+  1114→     "title": "Introduction to Gaussian Processes",
+  1115→     "pdfPage": 837,
+  1116→     "bookPage": 837
+  1117→    },
+  1118→    {
+  1119→     "id": "d2l.ch18.s2",
+  1120→     "number": "18.2",
+  1121→     "title": "Gaussian Process Priors",
+  1122→     "pdfPage": 849,
+  1123→     "bookPage": 849
+  1124→    },
+  1125→    {
+  1126→     "id": "d2l.ch18.s3",
+  1127→     "number": "18.3",
+  1128→     "title": "Gaussian Process Inference",
+  1129→     "pdfPage": 855,
+  1130→     "bookPage": 855
+  1131→    }
+  1132→   ]
+  1133→  },
+  1134→  {
+  1135→   "id": "d2l.ch19",
+  1136→   "number": 19,
+  1137→   "title": "Hyperparameter Optimization",
+  1138→   "pdfPage": 868,
+  1139→   "bookPage": 868,
+  1140→   "sections": [
+  1141→    {
+  1142→     "id": "d2l.ch19.s1",
+  1143→     "number": "19.1",
+  1144→     "title": "What Is Hyperparameter Optimization?",
+  1145→     "pdfPage": 868,
+  1146→     "bookPage": 868
+  1147→    },
+  1148→    {
+  1149→     "id": "d2l.ch19.s2",
+  1150→     "number": "19.2",
+  1151→     "title": "Hyperparameter Optimization API",
+  1152→     "pdfPage": 875,
+  1153→     "bookPage": 875
+  1154→    },
+  1155→    {
+  1156→     "id": "d2l.ch19.s3",
+  1157→     "number": "19.3",
+  1158→     "title": "Asynchronous Random Search",
+  1159→     "pdfPage": 882,
+  1160→     "bookPage": 882
+  1161→    },
+  1162→    {
+  1163→     "id": "d2l.ch19.s4",
+  1164→     "number": "19.4",
+  1165→     "title": "Multi-Fidelity Hyperparameter Optimization",
+  1166→     "pdfPage": 893,
+  1167→     "bookPage": 893
+  1168→    },
+  1169→    {
+  1170→     "id": "d2l.ch19.s5",
+  1171→     "number": "19.5",
+  1172→     "title": "Asynchronous Successive Halving",
+  1173→     "pdfPage": 906,
+  1174→     "bookPage": 906
+  1175→    }
+  1176→   ]
+  1177→  },
+  1178→  {
+  1179→   "id": "d2l.ch20",
+  1180→   "number": 20,
+  1181→   "title": "Generative Adversarial Networks",
+  1182→   "pdfPage": 920,
+  1183→   "bookPage": 920,
+  1184→   "sections": [
+  1185→    {
+  1186→     "id": "d2l.ch20.s1",
+  1187→     "number": "20.1",
+  1188→     "title": "Generative Adversarial Networks",
+  1189→     "pdfPage": 920,
+  1190→     "bookPage": 920
+  1191→    },
+  1192→    {
+  1193→     "id": "d2l.ch20.s2",
+  1194→     "number": "20.2",
+  1195→     "title": "Deep Convolutional Generative Adversarial Networks",
+  1196→     "pdfPage": 925,
+  1197→     "bookPage": 925
+  1198→    }
+  1199→   ]
+  1200→  },
+  1201→  {
+  1202→   "id": "d2l.ch21",
+  1203→   "number": 21,
+  1204→   "title": "Recommender Systems",
+  1205→   "pdfPage": 933,
+  1206→   "bookPage": 933,
+  1207→   "sections": [
+  1208→    {
+  1209→     "id": "d2l.ch21.s1",
+  1210→     "number": "21.1",
+  1211→     "title": "Overview of Recommender Systems",
+  1212→     "pdfPage": 933,
+  1213→     "bookPage": 933
+  1214→    }
+  1215→   ]
+  1216→  }
+  1217→ ]
+  1218→}

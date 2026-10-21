@@ -1,0 +1,28 @@
+import json
+
+payload = '''
+{
+  "status": "OK",
+  "results": [
+    {
+      "formatted_address": "Ann Arbor, MI, USA",
+      "lat": 42.2808,
+      "lng": -83.7430,
+      "place_id": "ChIJMx9D1A2wPIgR4rXIhkb5Cds"
+    }
+  ]
+}'''
+
+js = json.loads(payload)
+
+place = None
+if js['status'] == 'OK':
+    place = js['results'][0]
+
+if place is None:
+    print('status: error')
+else:
+    print('status: OK')
+    print('lat: %s' % place['lat'])
+    print('lng: %s' % place['lng'])
+    print('place id: %s' % place['place_id'])

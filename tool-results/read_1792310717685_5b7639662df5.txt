@@ -1,0 +1,715 @@
+     1→
+     2→===== صفحة الكتاب 35 =====
+     3→Chapter 2 — Software Development Processes
+     4→Where we are. Chapter 1 argued that software engineering is what you need when other people depend on
+     5→your program: a team must coordinate, requirements will change, complexity will accumulate, and defects
+     6→are inevitable. A development process is the team’s standing answer to all four pressures at once — the
+     7→agreed way you turn ideas into working, changeable software without stepping on each other. This chapter
+     8→surveys the main families of process, from lightweight agile frameworks to heavier plan-driven models, and
+     9→gives you a way to choose rather than cargo-cult.
+    10→A process is not paperwork. It is the set of habits that decides, on an ordinary Tuesday, who talks to the customer,
+    11→when code gets reviewed, how a half-finished feature gets integrated, and what happens when someone finds a
+    12→bug. Teams that never choose a process still have one — an accidental, undocumented one — and it is usually the
+    13→most expensive kind. This chapter gives you named, deliberate alternatives and, more importantly, the judgment to
+    14→pick among them.
+    15→2.1 Processes and Values Guide Development
+    16→2.1.1 What Is a Process?
+    17→A software development process is a repeatable way of organizing the activities that turn an idea into deployed,
+    18→maintained software: understanding what to build, designing it, writing it, checking it, releasing it, and changing
+    19→it. Every process has to account for the same core activities — the differences are in their order, their size, and
+    20→how often you revisit them.
+    21→It helps to separate two things that beginners conflate. A process model is the abstract shape: “work in two-week
+    22→iterations, each producing shippable software” or “gather all requirements, then design, then build.” A process —
+    23→the real one your team lives — is that model plus a thousand local decisions: which chat channel bugs go in, how
+    24→long a code review may sit, whether Friday afternoon is for demos. A process model provides a basic structure that
+    25→each team adapts to its project.
+    26→Principle. A good process makes the right thing the easy thing. If your process only works when everyone is
+    27→disciplined and heroic, it is not a process — it is a wish.
+    28→Why bother naming and choosing a process at all? Because the alternative is that every recurring decision gets re-
+    29→litigated every time it comes up, and because a shared process is how a team of people acts like a single competent
+    30→engineer instead of a crowd. A process also encodes feedback loops — the points at which you find out you were
+    31→
+    32→===== صفحة الكتاب 36 =====
+    33→wrong. As you will see repeatedly in this chapter, the single biggest thing distinguishing strong processes from
+    34→weak ones is how early and how often they expose mistakes.
+    35→2.1.2 Two Development Cultures: Plan versus Grow
+    36→Underneath the alphabet soup of methods lie two genuinely different philosophies about how software should
+    37→come into being.
+    38→The plan-driven culture treats software like a building. You decide what you are going to build, in detail, before
+    39→you build it. Requirements are elicited and frozen, a design is drawn, and construction follows the design.
+    40→Correctness means “conforms to the spec.” This culture prizes predictability, documentation, and up-front
+    41→analysis; it is strongest when the problem is well understood, the cost of a mistake is high, and change is rare —
+    42→avionics, medical devices, contracts with fixed deliverables.
+    43→The grow-it culture treats software like a garden or an organism. You start something small that works, then
+    44→evolve it through many small changes, each validated against reality before the next. Requirements are discovered
+    45→through working software, not frozen in advance. Correctness means “does something useful for a real user, and
+    46→can keep changing.” This culture prizes feedback, working code over documents, and adaptability; it is strongest
+    47→when the problem is poorly understood, the market is moving, and the cost of being wrong for two weeks is low.
+    48→Neither culture is “right.” They are tuned for different risk profiles. Most of this chapter’s methods — Scrum, XP,
+    49→the spiral — are attempts to get the feedback benefits of growing while keeping enough of the discipline of
+    50→planning. The waterfall and V models sit at the plan-driven end; you will study them not because you should copy
+    51→them wholesale but because understanding why they struggle is the fastest route to appreciating what the agile
+    52→methods are for.
+    53→2.1.3 Role Models: Unix Culture and Agile Values
+    54→Two well-documented value systems shaped modern practice, and both are worth internalizing because they are
+    55→values, not procedures — they tell you what to prefer when the manual runs out.
+    56→The Unix philosophy, distilled from the culture that built the Unix operating system, values small tools that each
+    57→do one thing well and compose through clean interfaces. Its maxims — write programs that do one thing well;
+    58→expect the output of one program to become the input of another; build a prototype as soon as possible; prefer
+    59→clarity over cleverness — are really a philosophy of decomposition and iteration.1 The connection to process is
+    60→direct: build small, integrate through narrow interfaces, and get something running early so reality can correct you.
+    61→Those instincts reappear in every good modern process.
+    62→The Agile Manifesto (2001) crystallized the grow-it culture into four value statements.2 In each, both sides have
+    63→worth, but the left is valued more:
+    64→Individuals and interactions over processes and tools.
+    65→
+    66→===== صفحة الكتاب 37 =====
+    67→Working software over comprehensive documentation.
+    68→Customer collaboration over contract negotiation.
+    69→Responding to change over following a plan.
+    70→Read carefully: this is a statement about what to trust when the two sides conflict, not a case against planning or
+    71→documentation. If your beautiful plan and your working software disagree, believe the software. If a document and
+    72→a conversation with the customer disagree, have the conversation. The manifesto’s twelve supporting principles
+    73→push further: deliver working software frequently, welcome changing requirements even late, maintain a
+    74→sustainable pace, and reflect regularly on how to improve.3 Every agile framework in this chapter is one concrete
+    75→way to live those values.
+    76→Principle. Values outrank rules. A team that follows Scrum’s ceremonies to the letter while ignoring
+    77→“responding to change” has missed the point more completely than a team that improvises but keeps the
+    78→feedback loops tight.
+    79→2.1.4 Selecting a Process Model
+    80→There is no universally best process, only a best process for this project, this team, this risk profile. A handful of
+    81→questions will steer you most of the way:
+    82→How well is the problem understood? Poorly understood problems reward iteration and early feedback;
+    83→well-understood ones tolerate up-front planning.
+    84→How likely and how costly is change? Volatile requirements favor short iterations; stable ones favor plan-
+    85→driven flow.
+    86→What does a mistake cost? A pacemaker’s software and a marketing microsite live at opposite ends; the
+    87→former justifies heavy verification, the latter does not.
+    88→How big and how distributed is the team? Small co-located teams can lean on conversation; large or
+    89→scattered teams need more explicit coordination.
+    90→What does the customer relationship allow? Fixed-price contracts push toward plan-driven scope;
+    91→ongoing partnerships enable collaboration and change.
+    92→Most real teams end up hybrids: agile iterations wrapped in enough up-front architecture and enough
+    93→documentation to satisfy their domain. Choose the process model that best fits the project’s risks and constraints.
+    94→Keep the four pressures from Chapter 1 in view — complexity, change, defects, coordination — and pick the
+    95→process that best answers the ones that dominate your project.
+    96→
+    97→===== صفحة الكتاب 38 =====
+    98→2.2 Structuring Teamwork: The Scrum Framework
+    99→2.2.1 Overview of Scrum
+   100→Scrum is one of the most widely used frameworks for organizing agile teamwork. It is deliberately minimal: it
+   101→does not tell you how to write code, design modules, or test. It tells you how to organize the team’s time and
+   102→decisions so that you deliver working software in short, regular cycles and improve as you go. You supply the
+   103→engineering practices (Section 2.3 covers a strong set); Scrum supplies the rhythm.
+   104→The heartbeat of Scrum is the sprint: a fixed-length iteration, usually one to four weeks, that produces a
+   105→potentially shippable increment of the product.4 Everything else in Scrum exists to plan a sprint, keep it on track,
+   106→ship its result, and learn from it.
+   107→The diagram shows the loop you repeat every sprint: pull the highest-value items from the product backlog into a
+   108→sprint backlog, work them through the sprint with a daily check-in, produce an increment, review it with
+   109→stakeholders (which reshapes the backlog), and reflect on the process itself. Scrum organizes work as a repeating
+   110→
+   111→===== صفحة الكتاب 39 =====
+   112→cycle of planning, delivery, review, and adaptation, and each turn of the cycle gives you a fresh chance to correct
+   113→course based on real, working software.
+   114→2.2.2 Scrum Accountabilities
+   115→The 2020 Scrum Guide defines three accountabilities — the Product Owner, the Scrum Master, and the
+   116→Developers — within a single Scrum Team.4 (Earlier versions called these “roles”; the 2020 edition prefers
+   117→accountabilities to stress that they describe responsibility, not job titles.)5 Confusing them is a common source of
+   118→dysfunction.
+   119→The Product Owner owns what and why. They represent the customer and stakeholders, maintain the product
+   120→backlog, and — crucially — decide priority. When two features compete, the Product Owner breaks the tie. A
+   121→single person holds this accountability so that the team gets one coherent voice about value, not a committee.
+   122→The Developers (the people building the product — programmers, testers, designers, and anyone else doing the
+   123→work) own how. They estimate, design, build, and test. In Scrum they are self-managing: no one outside the
+   124→group assigns tasks to individuals within it.4 The team collectively commits to a sprint goal and figures out how to
+   125→meet it.
+   126→The Scrum Master owns the process itself. They are not a project manager who assigns work; they are a coach
+   127→and an obstacle-remover. They help the team live the framework, facilitate the events, and clear the impediments
+   128→the team cannot clear alone — a flaky test environment, an unresponsive stakeholder, an unrealistic external
+   129→deadline. A good Scrum Master’s success is measured by the team needing them less over time.
+   130→Pitfall. When the Scrum Master or a manager starts assigning tasks to individuals and tracking their personal
+   131→output, self-organization dies and Scrum degrades into micromanagement with extra meetings. The team’s
+   132→collective ownership of the sprint goal is what makes the framework work.
+   133→2.2.3 Scrum Events
+   134→Scrum’s events are the framework’s feedback loops made concrete. Each has a purpose; running them as empty
+   135→ritual is a classic failure.
+   136→Sprint Planning opens the sprint. The team and Product Owner agree on a sprint goal and select backlog
+   137→items the team believes it can complete, breaking them into a plan of work — the sprint backlog. The
+   138→output answers two questions: what will we deliver, and how will we approach it.
+   139→The Daily Scrum (or standup) is a short, time-boxed check-in — fifteen minutes — where the Developers
+   140→synchronize and re-plan the next day’s work toward the sprint goal.4 It is for the team, not a status report to
+   141→a manager. The useful frame is “are we still on track for the goal, and what is in our way?” rather than
+   142→“what did I do yesterday” theater.
+   143→
+   144→===== صفحة الكتاب 40 =====
+   145→The Sprint Review closes the sprint’s product loop. The team demonstrates the working increment to
+   146→stakeholders and gathers feedback, which flows back into the product backlog. This is where requirements
+   147→get corrected by contact with reality.
+   148→The Sprint Retrospective closes the sprint’s process loop. The team reflects on how it worked — what to
+   149→keep, what to change — and commits to one or two concrete improvements for next sprint. A team that
+   150→skips retrospectives gives up its built-in way of getting better.
+   151→2.2.4 Scrum Artifacts
+   152→Scrum has three artifacts, each paired with a commitment that keeps it honest.4
+   153→The Product Backlog is the single, ordered list of everything that might be worth doing to the product —
+   154→features, fixes, improvements. It is never “done”; it evolves as you learn. Its commitment is the Product Goal, the
+   155→longer-term objective the backlog serves.
+   156→The Sprint Backlog is the subset the team pulls in for the current sprint, plus the plan for delivering it. It is owned
+   157→by the Developers and updated daily. Its commitment is the Sprint Goal.
+   158→Some teams — especially XP-influenced ones — keep a third scope between those two: the release backlog, the
+   159→subset of the product backlog targeted at a specific release. It sits between the product backlog (everything the
+   160→product might ever do) and the sprint backlog (what the team is doing this iteration), and it is the natural artifact of
+   161→release planning: you group stories by the release that will carry them, so everyone can see what “version 2.0”
+   162→actually means without wading through the whole product backlog.
+   163→The Increment is the sum of completed backlog items — actual working software that meets the team’s
+   164→Definition of Done, a shared, explicit checklist of what “finished” means (compiled, reviewed, tested,
+   165→documented, integrated). The Definition of Done is what stops “done” from meaning “done on my machine,
+   166→probably, mostly.”
+   167→Principle. A backlog item is not done because someone wrote the code. It is done when it meets the
+   168→Definition of Done. A weak Definition of Done is how teams accumulate a pile of “finished” work that does
+   169→not actually ship.
+   170→2.2.5 Summary
+   171→Scrum is a lightweight scaffold for teamwork: three accountabilities, a handful of events, three artifacts, all
+   172→serving one idea — deliver working software in short cycles and use each cycle’s feedback to steer. It says nothing
+   173→about engineering technique, which is both its flexibility and its danger: Scrum with weak engineering practices
+   174→produces increments that look done but rot. The next section supplies the practices that make each increment
+   175→genuinely solid.
+   176→
+   177→===== صفحة الكتاب 41 =====
+   178→2.3 Agile Development: Extreme Programming
+   179→Where Scrum organizes the team’s time, Extreme Programming (XP) prescribes the team’s engineering
+   180→discipline. XP takes practices that are known to be good — testing, code review, integration, simple design — and
+   181→turns their dials up to “extreme”: if testing is good, test constantly; if review is good, review continuously by
+   182→programming in pairs; if integration is good, integrate many times a day.6 The two frameworks are
+   183→complementary, and teams often combine them.
+   184→2.3.1 Listening to Customers: User Stories
+   185→XP captures requirements as user stories: short descriptions of a feature told from the user’s point of view, written
+   186→to fit on an index card. A common template is “As a <role>, I want <capability> so that <benefit>.” For
+   187→example: “As a front-desk clerk, I want to see unconfirmed appointments highlighted so that I can call those
+   188→patients before the day fills up.”
+   189→A story is deliberately not a specification. It is, in the well-worn phrase, a promise to have a conversation.7 The
+   190→card is a placeholder for a discussion between the developers and the customer about the details — details you
+   191→will understand far better once you build the first version and show it. Stories keep requirements small, concrete,
+   192→and grounded in user value, and their size makes them easy to prioritize, estimate, and slot into a sprint.
+   193→Good stories are often summarized by the acronym INVEST: Independent, Negotiable, Valuable, Estimable,
+   194→Small, and Testable (each unpacked in §3.4.1).8 That last property matters most for the next section: if you cannot
+   195→state how you would test that a story is satisfied, you do not yet understand it well enough to build it.
+   196→2.3.2 Testing: Make It Central to Development
+   197→XP’s most influential idea is that testing is not a phase that happens after development — it is part of
+   198→development, written continuously, run constantly, and used as a design tool.
+   199→The signature practice is test-driven development (TDD), a tight loop often summarized as red–green–refactor:
+   200→You write a small automated test for behavior that does not exist yet and watch it fail for the expected reason
+   201→(red). That failure confirms three things at once: the test is actually being executed, its failure is connected to the
+   202→missing behavior, and it can tell the current implementation apart from the one you intend to build. It also pins
+   203→
+   204→===== صفحة الكتاب 42 =====
+   205→down what “done” means for this slice. Then you write the least code that makes it pass (green). Then you
+   206→improve the design while the test guards against breakage (refactor). Repeat in minutes-long cycles.9
+   207→One turn of this loop on the clinic app’s appointment slots starts red — the slot-overlap function does not exist
+   208→yet, so the test run fails before a single assertion is checked (each language reports the missing function in its own
+   209→way; see the comment in the code):
+   210→The least code that makes both tests pass turns the run green:
+   211→This leads to a durable testing rule, one Chapter 10 returns to: never trust a test you have never seen fail — and
+   212→never trust a failure you have not understood. A red phase that comes from a broken setup, a missing import, or an
+   213→unrelated compiler error is not the red you are looking for.
+   214→Why work this way? Three reasons. First, tests written first are honest — they cannot be quietly shaped to match
+   215→whatever the code happens to do. Second, the growing suite is a regression net: it lets you change code fearlessly,
+   216→because a break announces itself immediately, which is what makes continuous refactoring safe. Third, writing the
+   217→test first forces you to use your own interface before you build it, which surfaces awkward designs early. Testing,
+   218→in XP, is less about catching bugs at the end and more about driving the design and enabling change — the very
+   219→properties Chapter 1 said good engineering is for.
+   220→2.3.3 When to Design?
+   221→Plan-driven cultures design everything up front. XP takes the opposite stance: design a little, all the time.
+   222→Because requirements are discovered, a comprehensive up-front design is largely a guess about a future you do not
+   223→yet understand — and guesses about the future are a major source of accidental complexity.
+   224→XP’s answer rests on three habits. Simple design: build the simplest thing that could possibly work for the stories
+   225→you have now, not the ones you imagine you might have later (resisting speculative generality is sometimes
+   226→captured as YAGNI — you aren’t gonna need it).10 Refactoring: continuously improve the design of existing
+   227→def test_overlapping_slots_conflict():
+   228→assert slots_overlap(("09:00", "09:30"), ("09:15", "09:45"))
+   229→def test_back_to_back_slots_do_not_conflict():
+   230→assert not slots_overlap(("09:00", "09:30"), ("09:30", "10:00"))
+   231→# Red: each test errors with "NameError: name 'slots_overlap' is not defined".
+   232→def slots_overlap(a, b):
+   233→return a[0] < b[1] and b[0] < a[1]
+   234→
+   235→===== صفحة الكتاب 43 =====
+   236→code without changing its behavior, so the structure keeps pace with your growing understanding. And the test
+   237→suite that makes refactoring safe. Together these let the design emerge: it is always as good as your current
+   238→understanding, and it improves as your understanding does, instead of being frozen at the moment you understood
+   239→least.
+   240→This does not mean no thinking ahead. Architectural decisions that are expensive to reverse — the shape of your
+   241→data, a choice of framework, a security model — still deserve deliberate up-front thought, a point the V and spiral
+   242→models (Sections 2.5 and 2.7) take seriously. The XP claim is narrower and correct: do not elaborate a detailed
+   243→design for requirements you have not yet validated.
+   244→Pitfall. “Emergent design” is not a license to skip thinking. Without disciplined refactoring and a strong test
+   245→suite, “we’ll design as we go” becomes “we’ll never design,” and the codebase collapses into the tangle
+   246→Chapter 1 called accidental complexity.
+   247→2.3.4 A Scrum+XP Hybrid
+   248→In practice, many strong teams run Scrum for the process and XP for the engineering. Scrum gives the cadence
+   249→— sprints, backlog, review, retrospective — and the accountabilities that keep priorities and impediments owned.
+   250→XP fills the sprint with the discipline that makes each increment genuinely done: TDD, pair or peer review,
+   251→refactoring, and continuous integration, in which everyone merges into a shared mainline many times a day and
+   252→an automated build-and-test pipeline verifies each merge.11 (Chapter 14 dissects that pipeline stage by stage and
+   253→follows it all the way to production.)
+   254→The combination is more than the sum of its parts. Scrum without engineering practice produces increments that
+   255→pass the demo and fail in maintenance; XP without a coordinating rhythm can drift without clear priorities or
+   256→stakeholder feedback. Together, Scrum’s what and when meets XP’s how well, and the Definition of Done can
+   257→honestly include “tested, reviewed, integrated” because the engineering practices actually deliver those properties.
+   258→2.3.5 Summary
+   259→XP treats testing, review, integration, and design as continuous activities rather than phases, turning known-good
+   260→practices up to the point where they reshape how you work. Requirements arrive as user stories — promises to
+   261→converse — and design emerges under the protection of an automated test suite. Paired with Scrum’s cadence,
+   262→XP’s practices are how a team keeps each short increment both valuable and solid.
+   263→2.4 Limitations of Waterfall Processes
+   264→To appreciate why the industry moved toward iteration, you have to understand what it moved away from. The
+   265→waterfall model runs the project as a single pass through a strict sequence of phases — requirements, design,
+   266→implementation, verification, maintenance — with each phase completed and signed off before the next begins,
+   267→
+   268→===== صفحة الكتاب 44 =====
+   269→like water flowing down a series of steps and never back up. (One historical note before we critique it: this strict,
+   270→single-pass model is the textbook waterfall. Royce’s 1970 paper — the usual citation — presented the strict
+   271→sequence and then argued it was risky and needed feedback and iteration.12 The industry largely adopted the
+   272→diagram and skipped the warning; this section critiques the model as it was actually practiced.)
+   273→Its appeal is real: it is simple to explain, easy to plan and bill against, and it front-loads the thinking. For well-
+   274→understood problems with stable requirements, a waterfall-ish flow can work fine. The trouble is that most
+   275→software is not well understood up front, and waterfall’s structure hides that trouble until the most expensive
+   276→possible moment.
+   277→2.4.1 The Perils of Big-Bang Integration and Testing
+   278→Waterfall’s deepest flaw is when it finds out it is wrong. Because verification is a late phase, the pieces built in
+   279→isolation are first brought together — integrated — near the end, and the system is first exercised as a whole near
+   280→the end. This is big-bang integration: months of separately developed components meeting for the first time at
+   281→once.
+   282→Two bad things happen at once. Integration surfaces every mismatched assumption between components
+   283→simultaneously — module A expected meters, module B produced feet; A assumed the list was sorted, B never
+   284→promised it — and untangling many interacting failures at once is far harder than fixing them one at a time.
+   285→Meanwhile, testing at the end means that requirements mistakes made in month one — the truly expensive kind —
+   286→are discovered in month ten, after everything built on them must be unwound. The project can look healthy right
+   287→up to the integration phase, then fall apart, because all the risk was deferred to the end.
+   288→Pitfall. In a strict waterfall, the moment you first learn whether the system actually works is also the
+   289→moment you have the least time and money left to fix it. Deferring integration and testing does not remove
+   290→risk; it concentrates it where it does the most damage.
+   291→The agile answer is precisely the opposite: continuous integration merges constantly so that at most one small
+   292→change’s worth of mismatch surfaces at a time, and continuous testing exercises the system every day so
+   293→mistakes are caught while they are cheap. Both are direct reactions to the big-bang pathology.
+   294→2.4.2 The Waterfall Cost-of-Change Curve
+   295→The economic argument against waterfall is captured by the cost-of-change curve. Studies of real projects have
+   296→long observed that the cost of fixing a defect or accommodating a change rises steeply the later it is discovered —
+   297→a requirements error caught during requirements is nearly free to fix; the same error caught after release can cost
+   298→orders of magnitude more, because so much work has been built on top of the mistake.13
+   299→
+   300→===== صفحة الكتاب 45 =====
+   301→The exact multipliers vary by study and context, and modern tooling flattens the curve considerably — automated
+   302→tests and fast deploys make late fixes cheaper than they once were. But the shape is robust and it drives process
+   303→design: if late changes are dramatically more expensive than early ones, then a process that defers discovery of
+   304→problems to the end is economically backwards. Every iterative method is, in part, a strategy for sliding discovery
+   305→leftward — finding your mistakes while they are still cheap.
+   306→2.4.3 Managing the Risks of Waterfall Processes
+   307→Waterfall is not always the wrong choice, and when constraints force something waterfall-like — a fixed-scope
+   308→contract, a regulatory sign-off gate — you can blunt its risks:
+   309→Prototype the risky parts first. Build a throwaway prototype of the hardest or least understood piece
+   310→before committing to the full design, so you learn early.
+   311→Review at every phase boundary. Since you cannot rely on late testing to catch early mistakes, inspect
+   312→requirements and designs rigorously before building on them (Chapter 9).
+   313→Integrate incrementally even within a plan. You can keep the phased structure while still bringing
+   314→components together in stages rather than all at once.
+   315→
+   316→===== صفحة الكتاب 46 =====
+   317→Keep the phases short and iterate the whole thing. A series of small waterfalls is much safer than one
+   318→giant one — which is, in effect, how iterative development was born.
+   319→Notice that every mitigation pulls waterfall toward iteration. That is the tell: the fixes for waterfall’s problems are
+   320→the defining features of the methods that replaced it.
+   321→2.4.4 Summary
+   322→Waterfall’s simplicity is seductive and its structure is treacherous: by deferring integration and testing to the end, it
+   323→concentrates risk exactly where you can least afford it, and the cost-of-change curve makes late discovery of
+   324→mistakes brutally expensive. The model is defensible mainly when requirements are genuinely stable and well
+   325→understood, or when contract or regulation forces its shape — and even then, incremental integration and phase
+   326→reviews are cheap insurance.
+   327→2.5 Levels of Design and Testing: V Processes
+   328→2.5.1 Overview of V Processes
+   329→The V-model is a refinement of waterfall that fixes one specific complaint: it makes testing a first-class citizen
+   330→and ties every level of design to a matching level of testing. Draw the phases descending on the left and ascending
+   331→on the right, forming a “V.” The left arm is decomposition — from broad requirements down to detailed design;
+   332→the right arm is integration and verification — from small units back up to the whole system.
+   333→
+   334→===== صفحة الكتاب 47 =====
+   335→The dashed lines carry the model’s central insight: each design activity has a corresponding test activity that
+   336→checks whether that design was right. The implementation is verified by unit tests; detailed module design by
+   337→integration tests, which check that the pieces fit together the way the design claimed; the architecture by system
+   338→
+   339→===== صفحة الكتاب 48 =====
+   340→tests; and the original requirements by acceptance tests. This pairing means you plan the tests while you do the
+   341→design, not as an afterthought — and it makes explicit that different mistakes are caught at different levels.
+   342→2.5.2 Levels of Testing from Unit to Acceptance
+   343→The right arm of the V names four levels of testing, each with a distinct question and scope. Getting these distinct
+   344→is one of the most useful mental models in all of software engineering, and every level maps back to a decision
+   345→made on the left arm.
+   346→Unit testing checks the smallest pieces — a single function, class, or module — in isolation, usually by the
+   347→developer who wrote them. Its question: does this piece do what its detailed design says? Unit tests are fast,
+   348→numerous, and the backbone of TDD.
+   349→Integration testing checks that units work together — that the interfaces and assumptions between
+   350→modules actually line up. Its question: do these pieces fit? This is precisely the risk that big-bang
+   351→integration mishandles; doing it incrementally is how you find interface mismatches one at a time.
+   352→System testing exercises the whole integrated system against its specified behavior, including non-
+   353→functional qualities like performance, security, and reliability. Its question: does the complete system meet
+   354→its specification?
+   355→Acceptance testing checks the system against the customer’s needs, ideally with the customer involved. Its
+   356→question: did we build the right thing? Passing system tests proves you built the system right; passing
+   357→acceptance tests proves you built the right system — and the two can diverge when the specification itself
+   358→was wrong.
+   359→These levels are not tied to waterfall; agile teams run all four, just continuously rather than in a final phase. The V-
+   360→model’s lasting contribution is its vocabulary: it gives you the ladder of testing levels that every process, iterative
+   361→or not, has to climb.
+   362→2.5.3 Summary
+   363→The V-model repairs waterfall’s neglect of testing by pairing each level of design with a matching level of
+   364→verification, from unit up to acceptance. Its schedule is still essentially sequential and inherits waterfall’s late-
+   365→integration risks, but its ladder of testing levels — unit, integration, system, acceptance — is a permanent part of
+   366→every engineer’s toolkit, whatever process you adopt.
+   367→2.6 Additional Project Risks
+   368→Process choice is really risk management in disguise, so it pays to think directly about risk. A risk is a potential
+   369→future problem: something that has not gone wrong yet but could, with some probability, cause some loss. Good
+   370→teams do not just react to problems; they enumerate the likely ones in advance and attack the biggest first.
+   371→
+   372→===== صفحة الكتاب 49 =====
+   373→2.6.1 Rough Risk Assessment
+   374→You do not need a heavy methodology to reason about risk usefully. A rough assessment ranks risks by exposure
+   375→— roughly, probability × impact — so you spend your limited attention where it matters.14 A defect that is very
+   376→likely but trivial ranks below one that is unlikely but catastrophic.
+   377→Common risk categories on software projects include:
+   378→Requirements risk: you are building the wrong thing, or requirements will churn.
+   379→Technical risk: an unproven technology, algorithm, or integration might not work.
+   380→Schedule and estimation risk: the work is larger than estimated.
+   381→People risk: key contributors leave, or the team lacks a needed skill.
+   382→External risk: a dependency, vendor, or regulator behaves unexpectedly.
+   383→The list becomes useful when the team defines a concrete response for each important risk. For each significant
+   384→risk you choose a strategy — avoid it (change the plan so it cannot occur), mitigate it (reduce its probability or
+   385→impact, e.g. prototype the risky component early), transfer it (insurance, a vendor SLA), or knowingly accept it.
+   386→The single most powerful risk-reduction technique in software is the one this whole chapter has been circling:
+   387→iterate, so that you confront each risk early and cheaply instead of late and expensively.
+   388→2.6.2 An Iterative Project That Succeeded
+   389→Consider how iteration handles risk in practice. Imagine a team building a new patient-portal feature that lets
+   390→people book their own clinic appointments — a genuinely uncertain project, since no one is sure patients will use
+   391→self-service or that it will integrate cleanly with the existing scheduling system.
+   392→An iterative team attacks the uncertainty head-on. In the first two-week sprint they build a deliberately thin slice:
+   393→one appointment type, no payments, booking against a copy of the real schedule, shown to a dozen real patients.
+   394→That tiny increment answers the project’s two biggest questions almost immediately — will patients use it? and
+   395→does the integration work? — while the cost of being wrong is two weeks, not two quarters. Each subsequent
+   396→sprint adds a slice (more appointment types, reminders, cancellations), and each sprint review lets real usage
+   397→reshape the backlog. Requirements that looked important on paper get dropped when usage data contradicts them;
+   398→unforeseen needs get added. The team did not predict the final system at the start. Short feedback cycles let it
+   399→identify mistakes early, revise the product at low cost, and converge on a useful result. This is the grow-it culture
+   400→paying off exactly as advertised.
+   401→2.6.3 A Troubled Project
+   402→Now a cautionary tale, drawn from a widely discussed episode in the history of web browsers. In the mid-1990s, a
+   403→leading browser maker shipped a hugely successful early version of its product. For the next major version, rather
+   404→
+   405→===== صفحة الكتاب 50 =====
+   406→than evolving the working codebase, the organization undertook a sweeping rewrite of large parts of the system at
+   407→once — a big, ambitious, mostly up-front effort to build the successor.15
+   408→The rewrite proved far harder and slower than planned. Because so much was rebuilt simultaneously, the familiar
+   409→big-bang pathology appeared: integration was painful, the new system was unstable for a long stretch, and the
+   410→release slipped badly while competitors kept shipping steady improvements to their own products. By the time the
+   411→ambitious successor stabilized, the organization had bled schedule, quality, and market position. Commentators
+   412→later treated the episode as a textbook argument against throwing away working software for a grand rewrite —
+   413→you discard hard-won knowledge embedded in code that already handles a thousand edge cases, and you take on
+   414→enormous integration and schedule risk all at once.15
+   415→The contrast with Section 2.6.2 shows how process choices affected the outcome. The successful project reduced
+   416→risk by evolving a working system in small, validated steps. The troubled one concentrated risk into a single large
+   417→leap — the same mistake, structurally, as big-bang integration and strict waterfall. Whether the risk is technical,
+   418→schedule, or requirements, the pattern repeats: large, late-validated bets are dangerous; small, early-validated ones
+   419→are far safer.
+   420→Principle. Prefer evolving working software to rewriting it wholesale. A rewrite throws away embedded
+   421→knowledge and takes on all its risk at once — exactly the concentration of risk that good process exists to
+   422→avoid.
+   423→2.7 Risk Reduction: The Spiral Framework
+   424→2.7.1 Overview of the Spiral Framework
+   425→The spiral model is an explicitly risk-driven process framework.16 Its central claim is that the risks of your
+   426→particular project — not a fixed schedule — should decide what you do next. It is best understood as a meta-
+   427→framework rather than a rival to waterfall or agile: at each turn it tells you which approach to apply based on
+   428→where your biggest uncertainties lie.
+   429→You proceed in a series of loops, each spiraling outward as the project grows more concrete and more expensive.
+   430→Every loop passes through four kinds of activity:
+   431→1. Determine objectives, alternatives, and constraints for this round — what are we trying to achieve, and
+   432→how might we achieve it?
+   433→2. Evaluate alternatives and identify and resolve risks — this is the heart of the model. Find the biggest
+   434→current risk and attack it, often by building a prototype or running an experiment to turn an unknown into a
+   435→known.
+   436→3. Develop and verify the deliverable for this round.
+   437→
+   438→===== صفحة الكتاب 51 =====
+   439→4. Plan the next round — and, critically, decide whether to continue at all.
+   440→Because each loop starts by confronting the biggest remaining risk, the spiral front-loads learning about whatever
+   441→is most likely to sink the project. A wildly uncertain project spends early loops on prototypes and feasibility
+   442→studies; a maturing one settles into more waterfall-like build-and-verify loops. The model also builds in explicit
+   443→go/no-go decisions: after each loop you may decide the risks are too high and stop, having spent only that loop’s
+   444→budget rather than the whole project’s.
+   445→The spiral’s spirit and the agile spirit are close cousins. Both iterate, both prize early feedback, both refuse to bet
+   446→everything on an up-front plan. The spiral emphasizes explicit risk analysis and prototyping and suits larger,
+   447→higher-stakes projects; agile methods emphasize frequent working software and customer collaboration and suit
+   448→smaller, faster ones. Both are answers to the same question the whole chapter has asked: how do you find out you
+   449→were wrong while it is still cheap to be wrong?
+   450→2.7.2 Summary
+   451→The spiral model makes risk the steering wheel: each loop identifies the biggest current uncertainty, resolves it
+   452→(often by prototyping), delivers and verifies a piece, and decides whether to keep going. It generalizes both plan-
+   453→driven and agile instincts into a single risk-first frame, and it is the clearest statement of this chapter’s core idea —
+   454→that a good process is, above all, a machine for reducing risk early.
+   455→2.8 Shape Up: Fixed Time, Variable Scope
+   456→Scrum, XP, and the spiral all iterate in short cycles and carry unfinished work forward on a backlog. Shape Up —
+   457→the method Basecamp published as a free online book — keeps the fixed cadence but makes three sharp bets that
+   458→set it apart: it fixes time and flexes scope, it refuses to keep a backlog, and it hands a team a whole shaped problem
+   459→rather than a list of tasks.17 It belongs in this chapter because it questions assumptions the other models share.
+   460→Shape Up runs in three phases that overlap across the calendar:
+   461→
+   462→===== صفحة الكتاب 52 =====
+   463→Shaping (what to build, and how much it’s worth). Before any team is committed, senior people shape the
+   464→work: they set an appetite — the fixed time the problem is worth (see §4.2.4) — and design a solution that is
+   465→deliberately rough (leaves room for the builders’ judgment), solved (the main elements are worked out, not
+   466→vague), and bounded (it says explicitly what is out of scope). The output is a pitch: problem, appetite, solution
+   467→sketch, rabbit holes to avoid, and no-gos. Shaping is where rabbit holes — unsolved design problems or untested
+   468→technical assumptions — get found and removed before anyone commits.18
+   469→Appetites come in two standard batch sizes. A small batch is a designer and one or two programmers for one to
+   470→two weeks; a big batch is that same small team for the full six-week cycle. An idea that will not fit even a big
+   471→batch is not given more time — it is narrowed until it fits, because the appetite, not the idea, is fixed.18
+   472→Shaping itself follows four steps, in order:
+   473→1. Set boundaries. Decide how much time the raw idea is worth — the appetite — and what the problem
+   474→actually is.
+   475→2. Rough out the elements. Sketch a solution at a level higher than wireframes, moving fast and exploring
+   476→alternatives while the drawing is still cheap.
+   477→
+   478→===== صفحة الكتاب 53 =====
+   479→3. Find risks and rabbit holes. Hunt for holes and unanswered questions, then amend the solution and spell
+   480→out the tricky spots before they can swallow a team.
+   481→4. Write the pitch. A formal write-up of problem, appetite, solution, rabbit holes, and no-gos, ready for the
+   482→betting table.
+   483→Who does this work? A shaper is a technically literate generalist doing strategic design work. They need not be
+   484→the team’s best programmer — they may not write production code at all — but they must know what is cheap and
+   485→what is expensive to build, or their sketches will make promises the appetite cannot keep.
+   486→Betting (deciding, without a backlog). During the two-week cool-down between cycles, a small betting table of
+   487→senior people reviews the shaped pitches and bets on a few for the next cycle. A bet commits one team to one
+   488→project for the whole cycle, uninterrupted, with the expectation of finishing.19
+   489→Principle — bets, not backlogs. Shape Up keeps no backlog. Unchosen ideas simply lapse; if one really
+   490→matters, it comes back and gets re-pitched. This trades the comfort of a tracked list for freedom from the
+   491→“always behind” guilt and the grooming overhead of a backlog that only ever grows.
+   492→No backlog also implies an etiquette for new raw ideas. A raw idea usually receives a provisional response —
+   493→“interesting — maybe someday” — rather than an on-the-spot yes or no. The team first shapes the idea enough to
+   494→decide whether it deserves a bet; only shaped work can be bet on. Do not shut down an idea you do not
+   495→understand, and keep a poker face even about ideas you love — visible enthusiasm commits you before anyone
+   496→has checked for rabbit holes. Bugs get no privileged lane either; Shape Up handles them three ways: fix them
+   497→during cool-down (that slack time exists partly for this), pitch a big bug at the betting table like any other project,
+   498→or run an occasional dedicated bug-smash cycle where the whole team pays down accumulated defects.19
+   499→Building (hand over the whole problem). The team gets the pitch, not a task breakdown — “splitting the project
+   500→into tasks up front is like putting the pitch through a paper shredder.”20 They define their own tasks and own how
+   501→the pieces fit. Three building practices are worth borrowing regardless of your process:
+   502→Get one piece done. Finish one vertically integrated slice early — front end wired to back end so
+   503→something works in week one — instead of building all of one layer then all of the next (where nothing
+   504→works until the end). Pick a first slice that is core, small, and novel so it proves the concept and kills the
+   505→biggest uncertainty first.
+   506→Map the scopes. Organize the project into scopes — parts that can be built, integrated, and finished
+   507→independently — named by function, not by layer or person. Scopes become the shared language for status.
+   508→Hill charts for progress. Track each scope as a dot on a hill: uphill is figuring it out (unknowns remain),
+   509→downhill is just execution (all unknowns solved). A dot that stops moving is a raised hand. This exposes
+   510→uncertainty in a way a to-do list cannot — see §12.3.
+   511→
+   512→===== صفحة الكتاب 54 =====
+   513→The circuit breaker. When the cycle ends, the project ships or it is dropped — it does not automatically get an
+   514→extension. The most you can lose is one cycle. Extending is allowed only if what remains is genuine must-have
+   515→work that is entirely downhill; any remaining uphill work means the shaping was wrong, so the project goes back
+   516→to shaping rather than dragging on.21
+   517→Shape Up vs. Scrum. The contrast sharpens both. Scrum re-plans every 1–4-week sprint and rolls unfinished
+   518→stories forward on a backlog; Shape Up makes a one-shot bet over a longer six-week cycle with no backlog and no
+   519→auto-extension. Scrum layers daily standups, reviews, and retrospectives; Shape Up gives one integrated team full
+   520→autonomy for the whole cycle and reads status from hill charts instead of ceremonies. Neither is universally right
+   521→— but Shape Up is a clean demonstration of this chapter’s theme that a process is a set of bets about where your
+   522→risk lives.
+   523→2.9 Conclusion
+   524→Strip away the terminology and every process in this chapter is answering one question: how do you find out you
+   525→were wrong while being wrong is still cheap? Plan-driven models — waterfall and the V — bet on getting the
+   526→answer right up front and pay dearly when the bet fails, because they defer integration and testing to the end where
+   527→the cost-of-change curve is steepest. Agile frameworks — Scrum for cadence, XP for engineering discipline — bet
+   528→instead on short cycles that expose mistakes constantly, while the spiral makes that same instinct explicit by
+   529→steering each loop toward the biggest remaining risk.
+   530→The practical takeaways connect straight back to Chapter 1’s four pressures:
+   531→Coordination: a named, deliberate process lets a team of people act like one competent engineer instead of
+   532→a crowd; Scrum’s accountabilities, events, and artifacts are one proven scaffold.
+   533→Change: short iterations make change cheaper by limiting how much work can pile up before feedback
+   534→arrives — shrinking the likelihood, and usually the size, of expensive rework — and by always adapting to
+   535→your latest understanding.
+   536→Defects: continuous testing and integration, structured by the V-model’s levels of verification, catch faults
+   537→while they are cheap instead of concentrating them in a final big bang.
+   538→Complexity: simple design plus disciplined refactoring under a strong test suite lets structure keep pace
+   539→with understanding, instead of freezing it at the moment you knew least.
+   540→There is no universally best process — only a best process for this project’s risks, team, and constraints. An
+   541→engineer should evaluate the project’s risks, select a process that addresses them early, and adapt that process as
+   542→conditions change.
+   543→Sources
+   544→1 M. D. McIlroy’s Unix maxims (1978), as collected in Eric S. Raymond, The Art of Unix Programming, ch. 1 (2003). catb.org.
+   545→
+   546→===== صفحة الكتاب 55 =====
+   547→2 Kent Beck et al., Manifesto for Agile Software Development (2001). agilemanifesto.org.
+   548→3 Principles behind the Agile Manifesto (2001). agilemanifesto.org.
+   549→4 Ken Schwaber and Jeff Sutherland, The Scrum Guide (2020). scrumguides.org.
+   550→5 Ken Schwaber and Jeff Sutherland, Scrum Guide Revisions (2020). scrumguides.org.
+   551→6 Kent Beck with Cynthia Andres, Extreme Programming Explained: Embrace Change, 2nd ed. (2004). informit.com.
+   552→7 Ron Jeffries, Essential XP: Card, Conversation, Confirmation (2001); the phrase “a promise for a conversation” is Alistair
+   553→Cockburn’s. ronjeffries.com.
+   554→8 Bill Wake, INVEST in Good Stories, and SMART Tasks (2003). xp123.com.
+   555→9 Kent Beck, Test-Driven Development: By Example (2002). informit.com.
+   556→10 Martin Fowler, Yagni (2015). martinfowler.com.
+   557→11 Martin Fowler, Continuous Integration (2024 revision). martinfowler.com.
+   558→12 Winston W. Royce, Managing the Development of Large Software Systems, Proceedings of IEEE WESCON (1970).
+   559→cs.umd.edu.
+   560→13 Barry Boehm and Victor R. Basili, Software Defect Reduction Top 10 List, IEEE Computer 34(1) (2001), summarizing data
+   561→reported in Barry W. Boehm, Software Engineering Economics (Prentice-Hall, 1981). cs.umd.edu.
+   562→14 Barry W. Boehm, Software Risk Management: Principles and Practices, IEEE Software 8(1) (1991). cs.virginia.edu.
+   563→15 Joel Spolsky, Things You Should Never Do, Part I (2000). joelonsoftware.com.
+   564→16 Barry W. Boehm, A Spiral Model of Software Development and Enhancement, IEEE Computer 21(5) (1988). cse.msu.edu.
+   565→17 Ryan Singer, Shape Up: Stop Running in Circles and Ship Work that Matters (Basecamp, 2019). basecamp.com/shapeup.
+   566→18 Ryan Singer, Shape Up, Part One: Shaping, chs. 2–6 (2019). basecamp.com.
+   567→19 Ryan Singer, Shape Up, Part Two: Betting, chs. 7–9 (2019). basecamp.com.
+   568→20 Ryan Singer, Shape Up, Part Three: Building, chs. 10–13 (2019). basecamp.com.
+   569→21 Ryan Singer, Shape Up, ch. 14, “Decide When to Stop” (2019). basecamp.com.
+   570→Key takeaways are summarized above in §2.9.
+   571→Continue to the Exercises.
+   572→Go deeper with the Open Resources for this chapter.
+   573→
+   574→===== صفحة الكتاب 56 =====
+   575→
+   576→===== صفحة الكتاب 57 =====
+   577→Chapter 2 — Exercises
+   578→Work these in order within a theme; each theme builds from recall toward judgment and practice. Tags:
+   579→[warm‑up] checks understanding, [analysis] asks you to reason about trade-offs.
+   580→Processes and values (§2.1)
+   581→1. [warm‑up] In your own words, distinguish a process model from the process a team actually lives. Give
+   582→one concrete decision (from an ordinary workday) that the model does not specify but the lived process
+   583→must.
+   584→2. [warm‑up] For each of the four Agile Manifesto value pairs, write one sentence explaining what the right-
+   585→hand side is good for. The manifesto values the left more — argue why that does not make the right side
+   586→worthless.
+   587→3. [analysis] The chapter contrasts a plan-driven culture and a grow-it culture. Name two real project
+   588→situations from your own experience or reading — one that clearly fits each culture — and justify the
+   589→match using the selection questions in §2.1.4.
+   590→Scrum (§2.2)
+   591→4. [warm‑up] Match each Scrum accountability to the question it owns — what/why, how, or the process
+   592→itself — and explain why the Product Owner accountability is held by a single person rather than a
+   593→committee.
+   594→5. [analysis] A manager reads the Daily Scrum minutes each morning and privately assigns the next day’s
+   595→tasks to individual developers based on them. Which Scrum principle is being violated, and what concrete
+   596→harm does the chapter predict? Rewrite the manager’s behavior so it supports the framework instead.
+   597→6. [analysis] A team reports that every item in last sprint’s backlog is “done,” yet the demo reveals features
+   598→that crash on bad input and were never code-reviewed. Diagnose the failure in terms of the Definition of
+   599→Done, and write four checklist items you would add to prevent a repeat.
+   600→XP and engineering practice (§2.3)
+   601→7. [warm‑up] Write a user story for a feature of an app you use often, using the “As a <role>, I want
+   602→<capability> so that <benefit>” template. Then state one testable acceptance criterion for it — the
+   603→property from INVEST that §2.3.1 says matters most for building it.
+   604→
+   605→===== صفحة الكتاب 58 =====
+   606→8. [analysis] Explain the red–green–refactor loop, then give two distinct reasons the chapter offers for writing
+   607→the test before the code. Which of the two reasons is about design rather than catching bugs?
+   608→9. [analysis] “Emergent design means we don’t need to think ahead.” Refute this using the §2.3.3 pitfall. In
+   609→your answer, name one kind of decision that XP still says deserves deliberate up-front thought, and explain
+   610→why it is an exception.
+   611→Plan-driven models and their risks (§§2.4–2.5)
+   612→10. [warm‑up] Draw the V-model and label, for each of the four testing levels, the single question it answers.
+   613→Explain why system testing can pass while acceptance testing fails.
+   614→11. [analysis] Explain big-bang integration and connect it to the cost-of-change curve. Then describe precisely
+   615→how continuous integration attacks the same risk, and why “one small mismatch at a time” is so much
+   616→cheaper than “all mismatches at once.”
+   617→12. [analysis] A client insists on a fixed-scope, fixed-price contract that forces a largely waterfall flow. Using
+   618→§2.4.3, propose three concrete mitigations you would build into the plan, and note how each one pulls the
+   619→project toward iteration.
+   620→Risk and the spiral (§§2.6–2.7)
+   621→13. [analysis] Compare the hypothetical iterative project (§2.6.2) with the troubled rewrite (§2.6.3). Identify
+   622→the single structural difference that the chapter says explains the different outcomes, and connect it to the
+   623→spiral model’s central claim in §2.7.1.
+   624→Shape Up (§2.8)
+   625→14. [analysis] Shape Up fixes time and flexes scope, keeps no backlog, and applies a circuit breaker when the
+   626→cycle ends. For a project you know, argue which one of these three bets would help the team most and
+   627→which would hurt it most, using the §2.8 “Shape Up vs. Scrum” contrast to justify both picks.
+   628→
+   629→===== صفحة الكتاب 59 =====
+   630→
+   631→===== صفحة الكتاب 60 =====
+   632→Chapter 2 — Open Resources
+   633→Free, open-licensed, or freely accessible material for going deeper on software development processes. Legend:
+   634→📘 book/book chapter · 🎓 course/courseware · 📄 paper or standard · 🎥 video/talk. Licenses vary and are
+   635→noted where known.
+   636→Foundational values
+   637→📄 Manifesto for Agile Software Development — the four values and twelve principles that define the
+   638→agile movement, plus the list of original signatories. https://agilemanifesto.org/ · Free to read; the manifesto
+   639→text is freely reproducible with attribution to its authors.
+   640→📄 The Scrum Guide (2020), Ken Schwaber and Jeff Sutherland — the definitive, vendor-neutral 13-page
+   641→definition of Scrum’s accountabilities, events, and artifacts; the site’s revision history documents the
+   642→changes from earlier editions. https://scrumguides.org/scrum-guide.html · Released under Creative
+   643→Commons Attribution-ShareAlike (CC BY-SA 4.0).
+   644→📘 Extreme Programming, Portland Pattern Repository (C2 wiki) — the original community wiki where
+   645→XP’s practices (TDD, pair programming, simple design, continuous integration) were discussed and
+   646→refined. http://wiki.c2.com/?ExtremeProgramming · Free to read.
+   647→📘 The Art of Unix Programming, Eric S. Raymond (2003) — chapter 1 collects the Unix philosophy’s
+   648→maxims, including Doug McIlroy’s “do one thing well” dicta and the rule that clarity is better than
+   649→cleverness. http://www.catb.org/esr/writings/taoup/html/ · Free to read online (full text posted by the
+   650→author).
+   651→📘 Extreme Programming Explained: Embrace Change (2nd ed.), Kent Beck with Cynthia Andres
+   652→(2004) — XP’s values and practices from their originator; the primary source for §2.3.
+   653→https://www.informit.com/store/extreme-programming-explained-embrace-change-9780321278654 ·
+   654→Commercial book (publisher page); widely held in libraries.
+   655→📘 Test-Driven Development: By Example, Kent Beck (2002) — the red–green–refactor loop worked
+   656→through complete examples; the primary source for TDD in §2.3.2. https://www.informit.com/store/test-
+   657→driven-development-by-example-9780321146533 · Commercial book (publisher page); widely held in
+   658→libraries.
+   659→📄 “Essential XP: Card, Conversation, Confirmation”, Ron Jeffries (2001) — the classic “three Cs”
+   660→statement of what a user story is (and is not); companion to Alistair Cockburn’s “promise for a
+   661→conversation.” https://ronjeffries.com/xprog/articles/expcardconversationconfirmation/ · Free to read.
+   662→
+   663→===== صفحة الكتاب 61 =====
+   664→📄 “INVEST in Good Stories, and SMART Tasks”, Bill Wake (2003) — the article that coined the
+   665→INVEST checklist for user stories used in §2.3.1 and Chapter 3. https://xp123.com/articles/invest-in-good-
+   666→stories-and-smart-tasks/ · Free to read.
+   667→📄 “Continuous Integration”, Martin Fowler (2024 revision) — the standard description of CI as an XP-
+   668→born practice: integrate at least daily, verify every merge with an automated build and tests.
+   669→https://martinfowler.com/articles/continuousIntegration.html · Free to read.
+   670→📄 “Yagni”, Martin Fowler (2015) — a careful unpacking of “you aren’t gonna need it” and its
+   671→relationship to XP’s simple-design practice. https://martinfowler.com/bliki/Yagni.html · Free to read.
+   672→Plan-driven and risk-driven models (primary sources)
+   673→📄 “Managing the Development of Large Software Systems”, Winston W. Royce (1970) — the paper
+   674→universally cited as the origin of the “waterfall” diagram. Read it carefully: Royce presents the strict
+   675→sequential model and then argues it is risky and must be iterated, which is the opposite of how it is usually
+   676→invoked. https://www.cs.umd.edu/class/spring2003/cmsc838p/Process/waterfall.pdf · Free to read (archival
+   677→scan mirrored on university course pages).
+   678→📄 “A Spiral Model of Software Development and Enhancement”, Barry W. Boehm (1988) — the
+   679→original, highly readable presentation of the risk-driven spiral framework, from IEEE Computer 21(5).
+   680→https://www.cse.msu.edu/~cse435/Homework/HW3/boehm.pdf · Free to read (university course mirror).
+   681→📄 “Software Risk Management: Principles and Practices”, Barry W. Boehm (1991) — defines risk
+   682→exposure as probability times loss and lays out the identify–analyze–respond cycle behind §2.6, from IEEE
+   683→Software 8(1). https://www.cs.virginia.edu/~sherriff/papers/Boehm%20-%201991.pdf · Free to read
+   684→(university course mirror).
+   685→📄 “Software Defect Reduction Top 10 List”, Barry Boehm and Victor R. Basili (2001) — the concise
+   686→empirical backing for the cost-of-change curve: finding and fixing a problem after delivery is often 100
+   687→times more expensive than during requirements and design, from IEEE Computer 34(1).
+   688→https://www.cs.umd.edu/projects/SoftEng/ESEG/papers/82.78.pdf · Free to read (author-affiliated
+   689→university copy).
+   690→📄 “Things You Should Never Do, Part I”, Joel Spolsky (2000) — the widely cited essay on the mid-
+   691→1990s browser rewrite behind §2.6.3, and why rewriting working software from scratch concentrates risk.
+   692→https://www.joelonsoftware.com/2000/04/06/things-you-should-never-do-part-i/ · Free to read.
+   693→
+   694→===== صفحة الكتاب 62 =====
+   695→Course material
+   696→📘🎓 Engineering Software as a Service (ESaaS), Armando Fox and David Patterson, UC Berkeley —
+   697→Chapter 1 surveys agile versus plan-and-document lifecycles, and Chapter 10 covers Scrum, pairing, and
+   698→project management in depth alongside a running project. Companion site with free materials, slides, and
+   699→MOOC links. https://www.saasbook.info/ · Free companion materials; MOOCs offered free to audit on
+   700→edX.
+   701→🎓 MIT OpenCourseWare, 6.005 “Software Construction” — open readings and problem sets on test-
+   702→first development, specifications, and designing for change that complement this chapter’s engineering
+   703→practices; the successor course 6.031’s readings are openly available at https://web.mit.edu/6.031/.
+   704→https://ocw.mit.edu/ · Creative Commons Attribution-NonCommercial-ShareAlike.
+   705→🎥 “Agile Product Ownership in a Nutshell”, Henrik Kniberg — a widely used 15-minute whiteboard
+   706→talk explaining backlogs, prioritization, and the Product Owner accountability. Searchable on YouTube. ·
+   707→Free to view.
+   708→📘 “Shape Up,” Ryan Singer (Basecamp) — the free online book behind §2.8: shaping, six-week cycles
+   709→plus a two-week cool-down, betting instead of backlogs, the circuit breaker, and hill charts.
+   710→https://basecamp.com/shapeup · Free to read online.
+   711→License note
+   712→Linked resources remain under their own licenses; this page is CC BY-SA 4.0.
+   713→
+   714→===== صفحة الكتاب 63 =====
+   715→

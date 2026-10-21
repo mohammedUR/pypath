@@ -1,0 +1,336 @@
+     1→import type { Lesson } from '@/lib/content/schema';
+     2→
+     3→/**
+     4→ * swe.ch1.l1 — "What Is Software Engineering and Why Is It Hard"
+     5→ * ما الهندسة البرمجية؟ ولماذا هي صعبة
+     6→ * Aligned with SWE ch1 s1 (What Is Software Engineering?, pp.19-21) +
+     7→ * s2 (The Requirements Challenge, pp.21-22).
+     8→ * All expression is original — a paraphrase of the CC BY-SA 4.0 source, never
+     9→ * a verbatim translation.
+    10→ * Runnable design: a deterministic team-communication counter (paths = n(n-1)/2),
+    11→ * a change-cost contrast (proportional to the change, not the system) and a
+    12→ * two-companies velocity trace — pure fixed-data arithmetic.
+    13→ * Deterministic only: no input(), no exit(), no random, no unittest.main.
+    14→ */
+    15→const lesson = {
+    16→  id: 'swe.ch1.l1',
+    17→  version: 1,
+    18→  part: 'I',
+    19→  track: 'P3',
+    20→  book: 'SWE',
+    21→  chapter: 1,
+    22→  title: { ar: 'ما الهندسة البرمجية؟ ولماذا هي صعبة', en: 'What Is Software Engineering and Why Is It Hard' },
+    23→  estimatedMinutes: 30,
+    24→  prerequisites: ['swe.ch15.l4'],
+    25→  blocks: [
+    26→    {
+    27→      kind: 'hook',
+    28→      text: {
+    29→        ar: 'اكتب برنامجًا يعمل مرة واحدة، على جهازك، بمدخلات اخترتها أنت — هذه برمجة. أما الهندسة البرمجية فتبدأ حين يعتمد غيرك على ذلك البرنامج: أن يبقى عاملًا العام القادم، بعد أن عدّله خمسة مطورين، على مدخلات لم يتوقعها أحد، وبمقياس لا يستوعبه عقل واحد. هذا الفصل الافتتاحي يقيس المسافة بين النشاطين ويكشف أين تسكن الصعوبة الحقيقية: ليست في كتابة الشيفرة بل في تحديد ما نبنيه أصلًا — وكيف وُلد التخصص من أزمة حقيقية في الستينيات. بنهاية الدرس ستكون قادرًا على: تعريف الهندسة البرمجية بدقة ووزن كلماتها الثقيلة الثلاث (فريق، تغيّر، مقياس)، وقراءة حكاية الشركتين كنموذج لاقتصاد الانضباط، وتفسير لماذا يجعل بروكس تحديد ما نبنيه أصعب جزء منفرد في العمل.',
+    30→        en: 'Write a program that works once, on your machine, for inputs you chose — that is programming. Software engineering begins when other people depend on that program: it must keep working next year, after five developers have changed it, on inputs nobody anticipated, at a scale no single mind can hold. This opening chapter measures the gap between the two activities and shows where the real difficulty lives: not in writing the code but in deciding what to build in the first place — and how the discipline was born from a genuine crisis in the 1960s. By the end you will be able to: define software engineering precisely and weigh its three loaded words (team, changing, scale), read the tale of two companies as a model of the economics of discipline, and explain why Brooks calls deciding what to build the hardest single part of the work.',
+    31→      },
+    32→    },
+    33→    {
+    34→      kind: 'predict',
+    35→      code: "def paths(n):\n    return n * (n - 1) // 2\n\nprint(paths(3))\nprint(paths(9))",
+    36→      question: {
+    37→        ar: 'فريقك من 3 مطورين ثم صار 9. الدالة تعدّ قنوات التواصل الممكنة بين الأفراد (قناة لكل زوج). كم قناة قبل وبعد؟ وهل تضاعفت بضعف الفريق نفسه؟',
+    38→        en: 'Your team grows from 3 developers to 9. The function counts the possible communication channels (one per pair). How many before and after — and did the count grow by the same factor as the team?',
+    39→      },
+    40→      reveal: {
+    41→        ar: '3 ثم 36 — تضاعف الفريق ثلاث مرات فتضاعفت القنوات اثنتي عشرة مرة. هذا ثمن كلمة team في التعريف: التنسيق والتواصل والفهم المشترك قلقان هندسيان من الدرجة الأولى لا تدبير إداري هامشي — وأول ما تكسره الحلول المرتجلة حين يتضخم المقياس.',
+    42→        en: '3, then 36 — the team tripled and the channels grew twelvefold. That is the price of the word team in the definition: coordination, communication and shared understanding are first-class engineering concerns, not managerial afterthoughts — and improvised solutions break on them first as scale grows.',
+    43→      },
+    44→    },
+    45→    {
+    46→      kind: 'concept',
+    47→      heading: { ar: 'من البرمجة إلى الهندسة: التعريف وكلماته الثقيلة', en: 'From programming to engineering: the definition and its loaded words' },
+    48→      chunks: [
+    49→        {
+    50→          ar: 'التعريف العملي: الهندسة البرمجية هي التطبيق المنضبط للمبادئ والأساليب والأدوات لبناء أنظمة برمجية وتطويرها — أنظمة مفيدة، صحيحة بالقدر الكافي، واقتصادية التغيير — عادةً بفريق، وغالبًا تحت متطلبات متغيرة، وبمقياس يحطم الجهد المرتجل. ثلاث كلمات تحمل ثقلًا زائدًا: فريق — لأن معظم البرمجيات الحقيقية تُبنى مجموعات، فيصير التنسيق والتواصل قلقًا هندسيًا أولًا؛ وتغيّر — لأن المتطلبات تُكتشف لا تُستلم جاهزة، والأساليب التي تفترض مواصفة مجمدة تفشل، ولهذا اتجهت الصناعة نحو التكرار القصير؛ ومقياس — فبعد عشرات آلاف الأسطر لا يفهم أحد النظام كله تفصيلًا، وإدارتك له بالتصميم والمعمارية: تقسيم يجعل كل جزء مفهومًا وقابلًا للتغيير والاختبار معزولًا نسبيًا.',
+    51→          en: 'The working definition: software engineering is the disciplined application of principles, methods and tools to build and evolve software systems — systems that are useful, correct enough, and economical to change — usually by a team, often under changing requirements, at a scale that defeats ad-hoc effort. Three words carry extra weight: team — most real software is built by groups, so coordination and communication become first-class engineering concerns; changing — requirements are discovered, not handed down, and methods assuming a frozen specification fail, which is why the industry moved to short iterations; scale — beyond a few tens of thousands of lines nobody understands the whole system in detail, so you manage it with design and architecture: a division that keeps every part understandable, changeable and testable in relative isolation.',
+    52→        },
+    53→        {
+    54→          ar: 'وما يفصل المهندس عن مجرد مبرمج هو التركيز على لماذا خلف كيف: أي مطور كفء يمكن إخباره «استعمل حقن التبعيات هنا»، لكن المهندس يفهم أي مشكلة يحلها ذلك (التقارن)، ومتى ينجع، ومتى يصير إفراطًا، وما مقايضاته — فيتخذ القرار في معمارية لم يرها من قبل. والتخصص وُلد من زمن حقيقي: في الستينيات قادت مارغريت هاملتون فريق برمجيات الملاحة لأبولو في معهد MIT، ودفعت مصطلح software engineering إلى الاستعمال عمدًا لتفضيل أن بناء برمجيات الطيران يستحق الصرامة ذاتها التي يحظى بها هندسة الطائرات. ودقائق قبل هبوط أبولو 11 إغرق الحاسوب الملاحي بمدخلات غير متوقعة فأطلق إنذارات — لكن جدولة الأولويات ألقت الأعمال الدنيا وأبقت مهمات الهبوط، فتعافى النظام بدل أن ينهار. قرار معماري اتُّخذ قبل الإطلاق أنقذ المهمة.',
+    55→          en: 'What separates the engineer from a mere coder is the focus on the why behind the how: any competent developer can be told to use dependency injection here, but the engineer understands what problem it solves (coupling), when it helps, when it is overkill, and its trade-offs — and makes the call on an architecture never seen before. The discipline was born in a real era: in the 1960s Margaret Hamilton led the Apollo flight-software team at MIT and pushed the term software engineering into use deliberately, to insist that building flight software deserved the same rigor as aerospace engineering. Minutes before the Apollo 11 landing the guidance computer was flooded with unexpected input and threw alarms — but priority scheduling shed low-priority work and kept the landing tasks, so the system recovered instead of crashing. An architectural decision made before launch saved the mission.',
+    56→        },
+    57→        {
+    58→          ar: 'وفي المقابل كانت مشاريع البرمجيات الكبيرة تتأخر مزمنًا وتنفجر ميزانياتها وتفشل في المهمات الحرجة، حتى منح مؤتمر ناتو في غارميش عام 1968 الحالة اسمها: أزمة البرمجيات — وكان عنوان المؤتمر هو الوصفة نفسها: اطوروا البرمجيات كتخصص هندسي بأساليب متعمدة لا برمجة مرتجلة وأبطال لحظيين. لكن الجواب النهائي لم يكن قانون بناء جامدًا — فالبرمجيات أكثر تغيرًا من أن تُقيَّد — بل نهجًا تجريبيًا على غرار العلوم: كرر بخطوات صغيرة، اطلب تغذية سريعة، فضّل تقدمًا تزايديًا قابلًا للتقييم، جرّب عند الشك، ودع الدليل المقاس يحسم لا الرأي أو السلطة. وكل عمليات ستتعلمها لاحقًا — سبرنتات سكرم واختبارات XP وحلقات المخاطر — مؤسَّسة على هذه الدورة ذاتها: كرر، قِس، عدّل.',
+    59→          en: 'Meanwhile large software projects ran chronically late, blew their budgets, and failed in mission-critical settings — until the 1968 NATO conference at Garmisch named the situation the software crisis, with the remedy in its very title: develop software like an engineering discipline, with deliberate methods, not ad-hoc programming and heroics. But the eventual answer was no fixed building code — software is too changeable for that — it was an empirical approach modeled on experimental science: iterate in small steps, seek fast feedback, prefer incremental progress you can evaluate, run experiments when unsure, and let measured evidence settle arguments, not opinion or authority. Every process you will learn later — Scrum sprints, XP tests, risk-driven spiral loops — institutionalizes the same cycle: iterate, measure, adjust.',
+    60→        },
+    61→      ],
+    62→    },
+    63→    {
+    64→      kind: 'concept',
+    65→      heading: { ar: 'حكاية شركتين: ثمن الانضباط المبكر', en: 'A tale of two companies: the price of early discipline' },
+    66→      chunks: [
+    67→        {
+    68→          ar: 'شركتان تبنيان المنتج ذاته: تطبيق جدولة للعيادات. الشركة A وظفت مبرمجين أقوياء وقالت لهم «أطلقوا فقط»: بلا متطلبات مكتوبة («نعرف ماذا يفعل التقويم»)، وبلا اختبارات («سنختبر بالاستعمال»)، ومعمارية تنمو بالتراكم. ثلاثة أشهر بدت أسرع من الجميع وعروض أسبوعية. ثم بدأت المتاعب: تعديل في معالجة المناطق الزمنية كسر التنبيهات ولم يلاحظه أحد أسبوعين؛ ضم مهندس رابع استغرق شهرًا لأن شخصًا واحدًا يفهم منطق الحجز؛ وكل ميزة جديدة تحمل فرصة إحياء عيب قديم. انهارت السرعة تحت ثقل تعقيد النظام ذاته. الشركة B أنفقت الأسبوعين الأولين في الحديث مع طاقم العيادة وكتابة قصص مستخدم ورسم معمارية وحدات وضبط اختبارات آلية ومراجعة شيفرة، وتأخر عرضها الأول أسبوعًا — وبالشهر الثالث لم يعد الفريقان يشبهان بعضهما: المهندس الجديد منتج في أيام، والتغييرات موضعية، والاختبار الساقط يمسك الانحدار قبل أن يصل مستخدمًا.',
+    69→          en: 'Two companies build the same product: a clinic scheduling app. Company A hires strong programmers and says just ship: no written requirements (we all know what a calendar does), no tests (we will test by using it), architecture growing by accretion. For three months they look fastest, with weekly demos. Then the trouble: a time-zone change breaks reminders and nobody notices for two weeks; onboarding a fourth engineer takes a month because one person understands the booking logic; every new feature risks resurrecting an old bug. Velocity collapses under the system\u2019s own complexity. Company B spends the first two weeks talking to clinic staff, writing user stories, sketching a modular architecture, setting up automated tests and code review — their first demo lands a week late. By month three the teams look nothing alike: new engineers productive in days, changes localized, a failing test catching regressions before users do.',
+    70→        },
+    71→        {
+    72→          ar: 'ولا فريق أذكى من الآخر — الفرق انضباط هندسي: الشركة B دفعت كلفة مبكرة صغيرة متوقعة لتفادي كلفة متأخرة كبيرة غير متوقعة. ومبدأ يختصر المنهج كله: كلفة التغيير ينبغي أن تتناسب مع حجم التغيير لا مع حجم النظام — وتحقيقه هو الهدف المركزي للعملية الجيدة والمعمارية الجيدة معًا: تكرارات قصيرة تُبقي الفريق متسقًا مع أحدث فهم لا مع مواصفة قديمة في مستوى العملية، وتصميم يجعل التغيير المحتمل يمس وحدة واحدة لا عشرين في مستوى التصميم. واحمل هذا معك في بقية الكتاب: فصوله القادمة فهرس للانضباطات التي تجعل الفريق يتصرف مثل الشركة B، مع حساب صادق لمتى تستحق كل منها كلفتها.',
+    73→          en: 'Neither team is smarter — the difference is engineering discipline: Company B paid a small, early, predictable cost to avoid a large, late, unpredictable one. And a principle compresses the whole approach: the cost of a change should be proportional to the size of the change, not to the size of the system — achieving that is the central goal of good process and good architecture alike: short iterations keep the team aligned with its latest understanding rather than a stale spec (process level), and design makes a likely change touch one module, not twenty (design level). Carry this into the rest of the book: its chapters are a catalog of the disciplines that make a team behave like Company B, with an honest account of when each is worth its cost.',
+    74→        },
+    75→      ],
+    76→    },
+    77→    {
+    78→      kind: 'concept',
+    79→      heading: { ar: 'تحدي المتطلبات: أصعب جزء هو تحديد ما نبنيه', en: 'The requirements challenge: the hardest part is deciding what to build' },
+    80→      chunks: [
+    81→        {
+    82→          ar: 'أصعب جزء في كثير من المشاريع ليس بناء النظام صحيحًا بل معرفة أي نظام نبني. فريد بروكس، مؤلف Mythical Man-Month، يجعل أصعب جزء منفرد في عمل البرمجيات هو أن تقرر بدقة ماذا ستبني — لأنه الجزء الوحيد الذي تشلّ أخطاؤه النتيجة أكثر ويعذّر إصلاحها لاحقًا أكثر. والمتطلب عبارة عن شيء يجب أن تفعله البرمجية أو صفة يجب أن تمتلكها. والعلة أن من لديه الحاجة ليس عادةً من يبنيها، ونادرًا ما يصوغها بدقة: المستخدم يصف حلًا («أضف قائمة منسدلة هنا») بينما ما لديه مشكلة («لا أستطيع تمييز المواعيد غير المؤكدة») — وجزء من عمل المهندس الحفر وراء الحل المطلوب إلى المشكلة الكامنة.',
+    83→          en: 'The hardest part of many projects is not building the system right but figuring out which system to build. Fred Brooks, author of The Mythical Man-Month, names deciding precisely what to build the hardest single part of software work — the one part whose mistakes most cripple the result and are hardest to fix later. A requirement is a statement of something the software must do or a quality it must have. The catch: the people who have the need are usually not the builders, and they rarely state it precisely — users describe solutions (add a dropdown here) when what they have is a problem (I cannot tell which appointments are unconfirmed). Part of the engineer\u2019s job is digging past the requested solution to the underlying problem.',
+    84→        },
+    85→        {
+    86→          ar: 'والمتطلبات لا تأتي من المستخدم النهائي وحده: لتطبيق جدولة العيادات مستخدمون أماميون — موظفو الاستقبال يحجزون — ومستخدمون ثانويون — الأطباء يعرضون الجداول — ورعاة يدفعون ويهتمون بالكلفة والالتزام، ومنظمون قواعدهم — الخصوصية وإتاحة الوصول — قيود غير قابلة للتفاوض. ثم إن المتطلبات تتغير وهذا طبيعي لا فشل: المستخدمون يتعلمون من النسخ المبكرة، والأسواق تتحرك، والتنظيمات تتحدث. ولأن التغيير سيأتي حتمًا، يركّز المهندس على خفض كلفة استيعابه لا على منعه — وهذا ما كان فقرتا العملية والتصميم في الدرس السابق تقولهما بالضبط.',
+    87→          en: 'Requirements also come from more than the obvious end user: a clinic app has end users (front-desk staff booking), secondary users (clinicians viewing schedules), sponsors who pay and care about cost and compliance, and regulators whose rules — privacy, accessibility — are non-negotiable constraints. And requirements change; that is normal, not failure: users learn from early versions, markets move, regulations update. Because change will come, the engineer focuses on reducing the cost of accommodating it, not preventing it — exactly what the process-level and design-level answers in this lesson say.',
+    88→        },
+    89→      ],
+    90→    },
+    91→    {
+    92→      kind: 'worked',
+    93→      title: { ar: 'ثلاثة أرقام تشرح التعريف', en: 'Three numbers that explain the definition' },
+    94→      code: "# 1) the team word: communication channels grow faster than the team\nfor n in [3, 5, 9]:\n    print('team: %d paths: %d' % (n, n * (n - 1) // 2))\n\n# 2) the scale word: cost of the same 2-line change, disciplined vs accreted\ndef change_cost(change_size, system_size, disciplined):\n    if disciplined:\n        return change_size      # proportional to the change\n    return system_size          # proportional to the system\n\nprint(change_cost(2, 100, True))\nprint(change_cost(2, 100, False))",
+    95→      explanation: {
+    96→        ar: 'نموذجان حسابيان صغار للكلمتين الأثقل. الأول: قنوات التواصل n*(n-1)/2 — فريق من 3 له 3 قنوات، ومن 5 له 10، ومن 9 له 36: العدد ينمو أسرع من الفريق، ولهذا التنسيق قلق هندسي أول. الثاني: التغيير نفسه — سطران — في نظام من مئة سطر: عند الشركة B تكلفته 2 لأن معمارية تمركز التغيير، وعند الشركة A تكلفته 100 لأن كل لمسة تمس كل شيء. والفرق بين الرقمين هو ثمن الانضباط المبكر بالضبط: كلفة صغيرة متوقعة تُدفع أولًا كي لا تدفع كلفة كبيرة غير متوقعة في النهاية. لاحظ أن النموذج حساب ثابت بلا عشوائية — القوة في الفكرة لا في حجم المحاكاة.',
+    97→        en: 'Two small arithmetic models for the two heaviest words. First: communication channels n*(n-1)/2 — a team of 3 has 3 channels, 5 has 10, 9 has 36: the count grows faster than the team, which is why coordination is a first-class concern. Second: the same two-line change in a 100-line system: at Company B it costs 2 because the architecture localizes change; at Company A it costs 100 because every touch reaches everything. The gap between the numbers is exactly the price of early discipline: a small predictable cost paid up front so you never pay a large unpredictable one at the end. Note the model is fixed arithmetic with no randomness — the power is in the idea, not in simulation size.',
+    98→      },
+    99→    },
+   100→    {
+   101→      kind: 'exercise',
+   102→      id: 'ex1.paths',
+   103→      exKind: 'write_code',
+   104→      required: true,
+   105→      prompt: {
+   106→        ar: 'ابنِ عدّاد قنوات التواصل بنفسك: دالة paths(n) تعيد n*(n-1)//2. اطبع جدولًا لأحجام [2، 3، 5، 9] كل سطر بالصيغة team: %d paths: %d بالترتيب نفسه، ثم أكّد بـ assert أن paths(2) تساوي 1 وpaths(9) تساوي 36، واختم بسطر growth 3->9: %d يطبع الفرق بين قنوات فريق 9 وفريق 3. المتوقع: growth 3->9: 33.',
+   107→        en: 'Build the communication-channel counter yourself: a function paths(n) returning n*(n-1)//2. Print a table for sizes [2, 3, 5, 9], one line per size in the same order formatted team: %d paths: %d, then assert paths(2) == 1 and paths(9) == 36, and finish with a line growth 3->9: %d printing the difference between a 9-person team and a 3-person team. Expected: growth 3->9: 33.',
+   108→      },
+   109→      starterCode: "def paths(n):\n    # TODO: return the number of pairs among n people\n    ...\n\nfor n in [2, 3, 5, 9]:\n    # TODO: print team: %d paths: %d\n    ...\n\n# TODO: assert the corners: paths(2) == 1 and paths(9) == 36\n\n# TODO: print growth 3->9: %d\n",
+   110→      solution: "def paths(n):\n    return n * (n - 1) // 2\n\nfor n in [2, 3, 5, 9]:\n    print('team: %d paths: %d' % (n, paths(n)))\n\nassert paths(2) == 1\nassert paths(9) == 36\n\nprint('growth 3->9: %d' % (paths(9) - paths(3)))",
+   111→      tests: [
+   112→        {
+   113→          id: 't1',
+   114→          name: { ar: 'الجدول يصل إلى فريق 9 بـ 36 قناة', en: 'The table reaches team 9 with 36 channels' },
+   115→          code: "assert 'team: 9 paths: 36' in __learner_output__, 'expected: team: 9 paths: 36 | actual: %r' % __learner_output__",
+   116→          expected: 'team: 9 paths: 36',
+   117→        },
+   118→        {
+   119→          id: 't2',
+   120→          name: { ar: 'سطر النمو صحيح', en: 'The growth line is correct' },
+   121→          code: "assert 'growth 3->9: 33' in __learner_output__, 'expected: growth 3->9: 33 | actual: %r' % __learner_output__",
+   122→          expected: 'growth 3->9: 33',
+   123→        },
+   124→        {
+   125→          id: 't3',
+   126→          name: { ar: 'الدالة تعمم على حجم لم يُطبع', en: 'The function generalizes to an unprinted size' },
+   127→          code: "assert paths(4) == 6 and paths(2) == 1, 'expected: 6 and 1 | actual: %r' % ((paths(4), paths(2)),)",
+   128→          expected: '6 and 1',
+   129→        },
+   130→      ],
+   131→      hints: [
+   132→        { ar: 'العدّاد هو عدد الأزواج الممكنة: كل شخص من n يتحدث مع n-1 آخرين، وكل زوج عُدَّ مرتين فاقسم على 2.', en: 'The counter is the number of possible pairs: each of n people talks to n-1 others, every pair was counted twice, so divide by 2.' },
+   133→        { ar: 'استعمل القسمة الصحيحة // لا العشرية: n * (n - 1) // 2 تعيد عددًا صحيحًا دائمًا.', en: 'Use integer division //, not decimal: n * (n - 1) // 2 always returns an integer.' },
+   134→        { ar: 'الهيكل:\ndef paths(n):\n    return n * (n - 1) // 2\n\nfor n in [2, 3, 5, 9]:\n    print(\'team: %d paths: %d\' % (n, paths(n)))\n\nassert paths(2) == 1\nassert paths(9) == 36\nprint(\'growth 3->9: %d\' % (paths(9) - paths(3)))', en: "The skeleton:\ndef paths(n):\n    return n * (n - 1) // 2\n\nfor n in [2, 3, 5, 9]:\n    print('team: %d paths: %d' % (n, paths(n)))\n\nassert paths(2) == 1\nassert paths(9) == 36\nprint('growth 3->9: %d' % (paths(9) - paths(3)))" },
+   135→        { ar: 'لو ظهر growth خاطئًا فراجع الاستدعاءين: paths(9) - paths(3) = 36 - 3 = 33 — وأول سطر في الجدول team: 2 paths: 1.', en: 'If the growth line is wrong, audit the two calls: paths(9) - paths(3) = 36 - 3 = 33 — and the first table line is team: 2 paths: 1.' },
+   136→      ],
+   137→    },
+   138→    {
+   139→      kind: 'exercise',
+   140→      id: 'ex2.trace-companies',
+   141→      exKind: 'trace_output',
+   142→      required: true,
+   143→      prompt: {
+   144→        ar: 'اقرأ الكود وتوقع خرجه سطرًا لكل طباعة دون تشغيله: سرعة الشركة A تنقص 2 كل شهر حتى الصفر (كل ميزة تخاطر بإحياء عيب قديم)، وسرعة B تزيد 1 كل شهر (التغييرات موضعية). ماذا تطبع الحلقة؟',
+   145→        en: 'Read the code and predict its output — one line per print — without running it: company A\u2019s velocity drops by 2 each month, floored at zero (every feature risks resurrecting an old bug), while B\u2019s grows by 1 each month (changes stay localized). What does the loop print?',
+   146→      },
+   147→      code: "def velocity(v, disciplined):\n    if disciplined:\n        return v + 1\n    return max(0, v - 2)\n\nva, vb = 4, 3\nfor month in [1, 2, 3, 4]:\n    va = velocity(va, False)\n    vb = velocity(vb, True)\n    print('m%d A=%d B=%d' % (month, va, vb))",
+   148→      solution: "m1 A=2 B=4\nm2 A=0 B=5\nm3 A=0 B=6\nm4 A=0 B=7",
+   149→      answer: "m1 A=2 B=4\nm2 A=0 B=5\nm3 A=0 B=6\nm4 A=0 B=7",
+   150→      hints: [
+   151→        { ar: 'A تبدأ من 4: 4-2=2 ثم 2-2=0 ثم يثبّتها max عند الصفر — فالسرعة لا تصير سالبة أبدًا.', en: 'A starts at 4: 4-2=2, then 2-2=0, and max pins it at zero — velocity never goes negative.' },
+   152→        { ar: 'B تبدأ من 3 وتزيد 1 كل شهر بلا سقف: 4 ثم 5 ثم 6 ثم 7.', en: 'B starts at 3 and gains 1 per month with no cap: 4, then 5, then 6, then 7.' },
+   153→        { ar: 'الطباعة تحدث بعد التحديثين في كل دورة — فأول سطر يعرض القيم الجديدة m1 A=2 B=4.', en: 'The print happens after both updates in each iteration — so the first line shows the new values m1 A=2 B=4.' },
+   154→        { ar: 'الخرج الكامل:\nm1 A=2 B=4\nm2 A=0 B=5\nm3 A=0 B=6\nm4 A=0 B=7', en: "The full output:\nm1 A=2 B=4\nm2 A=0 B=5\nm3 A=0 B=6\nm4 A=0 B=7" },
+   155→      ],
+   156→    },
+   157→    {
+   158→      kind: 'exercise',
+   159→      id: 'ex3.mcq-brooks',
+   160→      exKind: 'mcq',
+   161→      required: true,
+   162→      prompt: {
+   163→        ar: 'فريد بروكس يجعل جزءًا واحدًا هو الأصعب منفردًا في عمل البرمجيات. أيّ جزء، ولماذا؟',
+   164→        en: 'Fred Brooks names one part the hardest single part of software work. Which part — and why?',
+   165→      },
+   166→      options: [
+   167→        { id: 'a', text: { ar: 'كتابة الشيفرة سريعًا — لأن الأدوات واللغات تُبطئ الفريق', en: 'Writing code fast — tools and languages slow the team down' } },
+   168→        { id: 'b', text: { ar: 'تحديد بدقة ماذا سيُبنى — لأنه الجزء الوحيد الذي تشلّ أخطاؤه النتيجة أكثر ويعذّر إصلاحها لاحقًا أكثر', en: 'Deciding precisely what to build — the one part whose mistakes most cripple the result and are hardest to fix later' } },
+   169→        { id: 'c', text: { ar: 'اختيار لغة البرمجة — لأن التبديل لاحقًا مكلف', en: 'Choosing the programming language — switching later is expensive' } },
+   170→      ],
+   171→      answer: 'b',
+   172→      solution: 'b',
+   173→      hints: [
+   174→        { ar: 'بروكس مؤلف كتاب Mythical Man-Month — وجملته عن «أصعب جزء منفرد» تتحدث عن القرار لا عن التنفيذ.', en: 'Brooks wrote The Mythical Man-Month — his hardest-single-part sentence is about the decision, not the implementation.' },
+   175→        { ar: 'خطأ المواصفة ينتشر في كل ما بُني عليها: تصميم وشيفرة واختبارات وتوقعات مستخدمين — لذا إصلاحه لاحقًا أغلى ما يمكن.', en: 'A spec mistake propagates into everything built on it: design, code, tests, user expectations — so fixing it later is the most expensive there is.' },
+   176→        { ar: 'الخياران الآخران صعوبات حقيقية لكنهما تنفيذية: اللغة والسرعة قابلتان للتغيير والتدارك؛ ما لا يتدارك هو بناء الشيء الخطأ أصلًا.', en: 'The other two are real but implementation-level: language and speed can be changed and caught up; what cannot is building the wrong thing in the first place.' },
+   177→        { ar: 'الجواب: b — «أن تقرر بدقة ماذا ستبني».', en: 'Answer: b — deciding precisely what to build.' },
+   178→      ],
+   179→    },
+   180→    {
+   181→      kind: 'exercise',
+   182→      id: 'ex4.fill-solutions',
+   183→      exKind: 'fill_blank',
+   184→      required: true,
+   185→      prompt: {
+   186→        ar: "املأ الفرز بكلمة إنجليزية واحدة: المستخدمون يصفون عادةً ____ («أضف قائمة منسدلة هنا») بينما ما لديهم في الحقيقة مشكلة («لا أستطيع تمييز المواعيد غير المؤكدة») — وجزء من عمل المهندس الحفر وراءها إلى المشكلة الكامنة.",
+   187→        en: "Fill the blank with one English word: users usually describe ____ (add a dropdown here) when what they have is a problem (I cannot tell which appointments are unconfirmed) — and part of the engineer's job is digging past them to the underlying problem.",
+   188→      },
+   189→      answer: 'solutions',
+   190→      solution: 'solutions',
+   191→      hints: [
+   192→        { ar: 'ما يوصف ليس المشكلة بل صورة مقترحة لعلاجها — القائمة المنسدلة حلٌّ لا مشكلة.', en: 'What gets described is not the problem but a proposed picture of its cure — a dropdown is a solution, not a problem.' },
+   193→        { ar: 'جملة الدرس: «المستخدم يصف حلًا حين ما لديه مشكلة» — والكلمة المفقودة جمع.', en: 'The lesson sentence: users describe solutions when what they have is a problem — the missing word is plural.' },
+   194→        { ar: 'المشكلة الكامنة («لا أستطيع التمييز») قد تعالج بأدوات غير القائمة المنسدلة — لهذا نحفر وراء المقترح.', en: 'The underlying problem (cannot tell which) may be fixed by means other than the dropdown — that is why we dig past the proposal.' },
+   195→        { ar: 'الجواب: solutions', en: 'Answer: solutions' },
+   196→      ],
+   197→    },
+   198→    {
+   199→      kind: 'sandbox',
+   200→      starterCode: "def paths(n):\n    return n * (n - 1) // 2\n\nfor n in [3, 5, 9, 20]:\n    print('team: %d paths: %d' % (n, paths(n)))\n\ndef change_cost(change_size, system_size, disciplined):\n    if disciplined:\n        return change_size      # proportional to the change\n    return system_size          # proportional to the system\n\nprint('B:', change_cost(5, 500, True))\nprint('A:', change_cost(5, 500, False))\n\n# جرّب: كم قناة يضيفها موظف جديد لفريق من 20؟ احسب paths(21) - paths(20)\n# try: how many channels does one new hire add to a team of 20? compute paths(21) - paths(20)\n# جرّب: اجعل نظام الشركة A يكبر إلى 5000 سطر — كم تصير كلفة التغيير نفسه هناك؟\n# try: grow company A's system to 5000 lines — what does the same change cost there?\n",
+   201→      prompt: {
+   202→        ar: 'الملعب يضع الكلمتين الثقيلتين بين يديك: غيّر أحجام الفريق وشاهد القنوات تنمو أسرع من الأشخاص، وكبّر نظام الشركة A وشاهد كلفة التغيير تمشي مع حجم النظام لا حجم التغيير. لا اختبار هنا — فضولك فقط.',
+   203→        en: 'The sandbox puts the two heaviest words in your hands: change team sizes and watch channels outgrow people; grow company A\u2019s system and watch the change cost follow the system\u2019s size, not the change\u2019s. No tests here — just your curiosity.',
+   204→      },
+   205→    },
+   206→    {
+   207→      kind: 'quiz',
+   208→      id: 'quiz1',
+   209→      items: [
+   210→        {
+   211→          id: 'q1',
+   212→          question: {
+   213→            ar: 'ومن فصل الاختبارات: في حكاية الشركتين، أي ممارسة عند الشركة B تمسك الانحدار regression قبل أن يصل إلى مستخدم؟',
+   214→            en: 'From the testing chapter: in the tale of two companies, which Company B practice catches a regression before it reaches a user?',
+   215→          },
+   216→          options: [
+   217→            { id: 'a', text: { ar: 'التصفح اليدوي للشاشات بعد كل تعديل', en: 'Manually clicking through the screens after every edit' } },
+   218→            { id: 'b', text: { ar: 'حزمة اختبارات آلية — الاختبار الساقط يكشف الكسر مبكرًا', en: 'An automated test suite — the failing test exposes the breakage early' } },
+   219→            { id: 'c', text: { ar: 'عرض أسبوعي أمام العملاء', en: 'A weekly demo in front of customers' } },
+   220→          ],
+   221→          answer: 'b',
+   222→          explanation: {
+   223→            ar: 'هذا بالضبط ما بنيناه في الفصل العاشر: الاختبار يشغّل الشيفرة على مدخلات مختارة ويفحص المخارج آليًا، فيستفز الانحدار في بيئة آمنة قبل المستخدم. التصفح اليدوي ينسى زاوية ويتعب، والعرض الأسبوعي يتأخر عن اللحظة التي حدث فيها الكسر.',
+   224→            en: 'This is exactly what chapter ten built: tests run the code on chosen inputs and check outputs automatically, provoking the regression in a safe setting before users do. Manual browsing misses corners and tires; the weekly demo arrives long after the breakage happened.',
+   225→          },
+   226→        },
+   227→        {
+   228→          id: 'q2',
+   229→          question: {
+   230→            ar: 'ومن فصل git: أي ممارسة تمنح كل تغيير اسمًا وتاريخًا ومالكًا — الأساس الذي تُبنى عليه تخصصات لاحقة؟',
+   231→            en: 'From the git chapter: which practice gives every change a name, a history, and an owner — the substrate later disciplines build on?',
+   232→          },
+   233→          options: [
+   234→            { id: 'a', text: { ar: 'التحكم بالإصدارات (git)', en: 'Version control (git)' } },
+   235→            { id: 'b', text: { ar: 'قائمة الأعمال المتراكمة', en: 'The backlog' } },
+   236→            { id: 'c', text: { ar: 'السبرنتات القصيرة', en: 'Short sprints' } },
+   237→          ],
+   238→          answer: 'a',
+   239→          explanation: {
+   240→            ar: 'سجل الالتزامات في git هو ذاكرة المشروع: كل تغيير له رسالة ومؤلف وأجداد في التاريخ، ولهذا يُعد الأساس الذي تُبنى عليه المراجعة والاختبارات والنشر. القائمة والسبرنت أداتا تخطيط لا ذاكرة تنفيذية للتغييرات.',
+   241→            en: 'The git commit history is the project\u2019s memory: every change carries a message, an author and ancestors in history — which is why review, testing and delivery all build on it. Backlogs and sprints are planning tools, not an executable memory of changes.',
+   242→          },
+   243→        },
+   244→        {
+   245→          id: 'q3',
+   246→          question: {
+   247→            ar: 'بصيغة الدرس: ما الذي يميز الهندسة البرمجية عن مجرد برمجة؟',
+   248→            en: 'Per the lesson: what separates software engineering from mere programming?',
+   249→          },
+   250→          options: [
+   251→            { id: 'a', text: { ar: 'برنامج يعمل مرة على جهازك بمدخلات اخترتها أنت', en: 'A program that works once on your machine with inputs you chose' } },
+   252→            { id: 'b', text: { ar: 'برنامج يعتمد عليه آخرون: العام القادم، بعد تعديلات، بمدخلات غير متوقعة، وبمقياس لا يستوعبه عقل واحد', en: 'A program others depend on: next year, after edits, on unanticipated inputs, at a scale no single mind holds' } },
+   253→            { id: 'c', text: { ar: 'استعمال لغة أحدث أو إطار عمل أشهر', en: 'Using a newer language or a trendier framework' } },
+   254→          ],
+   255→          answer: 'b',
+   256→          explanation: {
+   257→            ar: 'البرمجة تنتهي عند «يعمل مرة عندي». الهندسة تبدأ عند الاعتماد: زمن، تغيير، مدخلات مجهولة، مقياس — وكل محتوى هذا الدرس مرتب لتلك الشروط: فريق، متطلبات متغيرة، معمارية، شبكات عيوب.',
+   258→            en: 'Programming ends at works once, for me. Engineering starts at dependence: time, change, unknown inputs, scale — and everything in this lesson is organized for exactly those conditions: team, changing requirements, architecture, defect nets.',
+   259→          },
+   260→        },
+   261→        {
+   262→          id: 'q4',
+   263→          question: {
+   264→            ar: 'في تطبيق جدولة العيادات: مَن صاحب «قيود غير قابلة للتفاوض» مثل الخصوصية وإتاحة الوصول؟',
+   265→            en: 'In the clinic scheduling app: who owns the non-negotiable constraints like privacy and accessibility?',
+   266→          },
+   267→          options: [
+   268→            { id: 'a', text: { ar: 'الرعاة — لأنهم يدفعون', en: 'The sponsors — they pay' } },
+   269→            { id: 'b', text: { ar: 'المنظمون — قواعدهم تُفرض لا تُساوم عليها', en: 'The regulators — their rules are imposed, not negotiated' } },
+   270→            { id: 'c', text: { ar: 'المستخدمون الثانويون — الأطباء', en: 'The secondary users — the clinicians' } },
+   271→          ],
+   272→          answer: 'b',
+   273→          explanation: {
+   274→            ar: 'أصحاب المصلحة أوسع من المستخدم النهائي: الموظفون يحجزون، والأطباء يعرضون، والرعاة يدفعون — لكن المنظمين يفرضون الخصوصية وإتاحة الوصول كقيود غير قابلة للتفاوض. تجاهل أي صنف منهم يعني متطلبًا غائبًا يظهر متأخرًا بأغلى ثمن.',
+   275→            en: 'Stakeholders reach beyond the end user: staff book, clinicians view, sponsors pay — but regulators impose privacy and accessibility as non-negotiable constraints. Ignoring any one class means a missing requirement that surfaces late at the highest price.',
+   276→          },
+   277→        },
+   278→      ],
+   279→    },
+   280→    {
+   281→      kind: 'pitfalls',
+   282→      items: [
+   283→        {
+   284→          wrong: 'الهندسة البرمجية اسم فخم للبرمجة — العمل نفسه بمصطلحات أثقل',
+   285→          right: 'البرمجة: برنامج يعمل مرة على جهازك بمدخلاتك. الهندسة: برنامج يعتمد عليه آخرون عبر الزمن والتغيير والمدخلات المجهولة والمقياس — ولكل شرط أدواته',
+   286→          note: {
+   287→            ar: 'الفرق ليس أسماء بل شروط نجاح جديدة: التنسيق والتواصل يصيران قلقًا هندسيًا أولًا، وحلٌّ مرتجل نجح معك وحده ينهار أول ما يعتمده غيرك. اسأل دائمًا: من يعتمد على هذا، ومتى يتغير، وبأي مقياس؟',
+   288→            en: 'The difference is not vocabulary but new success conditions: coordination becomes a first-class concern, and an improvised solution that worked for you alone collapses the moment others depend on it. Always ask: who depends on this, when will it change, at what scale?',
+   289→          },
+   290→        },
+   291→        {
+   292→          wrong: 'المتطلبات تُستلم من العميل ثم تُجمَّد — وأي تغيير عليها فشل في الانضباط',
+   293→          right: 'المتطلبات تُكتشف وتتغير طبيعيًا؛ هدفك خفض كلفة استيعاب التغيير: تكرارات قصيرة وتصميم يجعل التغيير المحتمل يمس وحدة واحدة لا عشرين',
+   294→          note: {
+   295→            ar: 'أساليب المواصفة المجمدة فشلت تاريخيًا لأن المستخدمين يتعلمون من النسخ المبكرة والأسواق تتحرك. المبدأ الحاكم: كلفة التغيير تتناسب مع حجم التغيير لا حجم النظام — وتحقيقه عمل العملية والمعمارية معًا.',
+   296→            en: 'Frozen-spec methods failed historically because users learn from early versions and markets move. The governing principle: change cost proportional to the change, not the system — achieved by process and architecture together.',
+   297→          },
+   298→        },
+   299→        {
+   300→          wrong: 'سرعة الشركة A في الشهور الثلاثة الأولى دليل على صحة قراراتها',
+   301→          right: 'السرعة المبكرة دين: كلفة مبكرة صغيرة متوقعة (متطلبات، معمارية، اختبارات، مراجعة) تقيك كلفة متأخرة كبيرة غير متوقعة',
+   302→          note: {
+   303→            ar: 'الشهر الثالث كشف الحقيقة: تنبيهات مكسورة أسبوعين بلا ملاحظة، وضم مهندس واحد استغرق شهرًا، وكل ميزة تخاطر بإحياء عيب. الفرق بين الفريقين ليس الذكاء بل اقتصاد الانضباط — والدفع المبكر أرخص فائضًا دائمًا.',
+   304→            en: 'Month three told the truth: reminders broken for two weeks unnoticed, one hire taking a month, every feature risking an old bug. The teams differ not in intelligence but in the economics of discipline — and paying early is always the cheaper trade.',
+   305→          },
+   306→        },
+   307→      ],
+   308→    },
+   309→    {
+   310→      kind: 'summary',
+   311→      bullets: [
+   312→        { ar: 'البرمجة: برنامج يعمل مرة على جهازك بمدخلاتك. الهندسة البرمجية: تطبيق منضبط للمبادئ والأساليب والأدوات لبناء أنظمة مفيدة وصحيحة بالقدر الكافي واقتصادية التغيير — بفريق، تحت متطلبات متغيرة، بمقياس يحطم الجهد المرتجل. الكلمات الثقيلة: فريق وتغيّر ومقياس.', en: 'Programming: a program that works once on your machine with your inputs. Software engineering: the disciplined application of principles, methods and tools to build systems that are useful, correct enough, and economical to change — by a team, under changing requirements, at a scale defeating ad-hoc effort. The loaded words: team, changing, scale.' },
+   313→        { ar: 'حكاية الشركتين: كلفة مبكرة صغيرة متوقعة (متطلبات، معمارية، اختبارات، مراجعة) تقيك كلفة متأخرة كبيرة غير متوقعة؛ والمبدأ الحاكم أن كلفة التغيير تتناسب مع حجم التغيير لا حجم النظام. والتخصص وُلد من أزمة حقيقية — ناتو 1968 — بنهج تجريبي: كرر، قِس، عدّل.', en: 'The two companies: a small early predictable cost (requirements, architecture, tests, review) guards against a large late unpredictable one; the governing principle is that change cost tracks the change, not the system. The discipline was born from a real crisis — NATO 1968 — with an empirical approach: iterate, measure, adjust.' },
+   314→        { ar: 'المتطلبات أصعب جزء منفرد (بروكس): المستخدم يصف حلًا وأنت تحفر إلى المشكلة، وأصحاب المصلحة أوسع من المستخدم النهائي (رعاة ومنظمون)، والتغيير طبيعي — فهدفك خفض كلفة استيعابه لا منعه.', en: 'Requirements are the hardest single part (Brooks): users describe solutions while you dig for the problem, stakeholders reach beyond the end user (sponsors, regulators), and change is normal — so your goal is cutting the cost of accommodating it, not preventing it.' },
+   315→      ],
+   316→      reflectPrompt: {
+   317→        ar: 'افتح الملعب وغيّر أحجام الفريق في الجدول. اسأل نفسك: في آخر شيء برمجته لنفسك فقط — ماذا كان سيتغير لو اعتمد عليه شخص آخر العام القادم؟',
+   318→        en: 'Open the sandbox and vary the team sizes in the table. Ask yourself: in the last thing you built only for yourself — what would have changed if someone else depended on it next year?',
+   319→      },
+   320→    },
+   321→    {
+   322→      kind: 'sources',
+   323→      items: [
+   324→        { book: 'SWE', section: 'swe.ch1.s1', pages: 'ص19-21 / pp.19-21' },
+   325→        { book: 'SWE', section: 'swe.ch1.s2', pages: 'ص21-22 / pp.21-22' },
+   326→      ],
+   327→    },
+   328→  ],
+   329→  sources: [
+   330→    { book: 'SWE', section: 'swe.ch1.s1', pages: 'ص19-21 / pp.19-21' },
+   331→    { book: 'SWE', section: 'swe.ch1.s2', pages: 'ص21-22 / pp.21-22' },
+   332→  ],
+   333→} satisfies Lesson;
+   334→
+   335→export default lesson;
+   336→

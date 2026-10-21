@@ -1,0 +1,214 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * d2l.ch3.l3 — "Concise Training, Generalization, and Weight Decay"
+ * التدريب المختصر والتعميم واضمحلال الأوزان
+ * Aligned with D2L ch3 s5 (Concise Implementation) + s6 (Generalization) +
+ * s7 (Weight Decay). All expression is original — a paraphrase of the source's
+ * ideas, never a verbatim translation. Runnable design: the book's
+ * high-dimensional overfitting experiment (d=200, 20 train rows) replayed in
+ * pure Python with and without an L2 penalty. Every printed literal verified
+ * under CPython 3. Deterministic only.
+ */
+const lesson = {
+  id: 'd2l.ch3.l3',
+  version: 1,
+  part: 'II',
+  track: 'A3',
+  book: 'D2L',
+  chapter: 3,
+  title: {
+    ar: 'التدريب المختصر والتعميم واضمحلال الأوزان',
+    en: 'Concise Training, Generalization, and Weight Decay',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['d2l.ch3.l2'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'نموذجنا يناسب التدريب تمامًا ويفشل على الجديد — لماذا؟ لأن ملاءمة التدريب وسطية، والمطلوب نمط يتعمم. في هذا الدرس ننتقل إلى التنفيذ المختصر بأدوات الأطر الجاهزة، ثم نفهم الفرق بين خطأ التدريب وخطأ التعميم، ونطبق أول تقنية تنظيم عملية: اضمحلال الأوزان، وسنعيد تجربة الكتاب عالية الأبعاد (200 خاصية و20 مثالًا فقط) ونشاهد العقوبة λ ترفع خطأ التدريب وتخفض خطأ التحقق.',
+        en: 'Our model fits the training set perfectly yet fails on new data — why? Because fitting the training set is a means, and what we want is a pattern that generalizes. In this lesson we move to concise implementations with framework tools, then unpack the gap between training and generalization error, and apply the first practical regularization technique: weight decay. We replay the book high-dimensional experiment (200 features, only 20 training rows) and watch the λ penalty raise training error while lowering validation error.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'من الأدوات الجاهزة إلى التعميم ثم عقوبة ℓ2', en: 'From framework tools to generalization, then the ℓ2 penalty' },
+      chunks: [
+        {
+          ar: 'التنفيذ المختصر يستبدل كل القطع اليدوية: الطبقة الكثيفة بـ `nn.Linear` أو `nn.LazyLinear` (الأخيرة تستنتج عدد المدخلات تلقائيًا)، الخسارة بـ `nn.MSELoss`، والمحسّن بـ `torch.optim.SGD(self.parameters(), lr)` — وحلقة التدريب نفسها تبقى كما بُنيت من الصفر. لكن التذكير مهم: هذه المكوّنات قابلة للبناء اليدوي، ومن يحتاج اختراع مكوّن جديد سيضطر لكتابته بنفسه.',
+          en: 'The concise implementation swaps every hand-rolled piece: the dense layer becomes `nn.Linear` or `nn.LazyLinear` (the latter infers the input size automatically), the loss becomes `nn.MSELoss`, and the optimizer becomes `torch.optim.SGD(self.parameters(), lr)` — while the training loop itself stays exactly the one we built from scratch. The reminder still matters: these components can be built by hand, and anyone inventing a new one will have to write it.',
+        },
+        {
+          ar: 'التعميم هو المشكلة المركزية: خطأ التدريب R_emp إحصاءة محسوبة على التدريب، وخطأ التعميم R توقع على توزيع مجهول لا نراه. نقيس R بمجموعة تحقق محجوزة. فرط التخصيص overfitting: خطأ تدريب أقل بكثير من خطأ التحقق؛ نقص التخصيص underfitting: كلاهما كبير والفجوة صغيرة — النموذج فقير جدًا. التعقيد يتحكم به درجة كثيرة الحدود وعدد المعاملات ومدى قيمها المسموح، وحجم البيانات يعاكس ذلك: بيانات أكثر تكاد لا تضر أبدًا. وعند شح البيانات نلجأ إلى تقاطع K أضعاف: K جولات، في كل جولة يُدرَّب على K−1 جزء ويُقيَّم على الجزء الباقي ثم يُتوسط.',
+          en: 'Generalization is the central problem: training error R_emp is a statistic computed on the training set, while generalization error R is an expectation over a distribution we never see; we estimate R with a held-out validation set. Overfitting: training error much lower than validation error. Underfitting: both large with a small gap — the model is too poor. Complexity is controlled by polynomial degree, parameter count, and the range of allowed values; dataset size cuts the other way: more data almost never hurts. With scarce data, K-fold cross-validation trains K times, each round on K−1 folds and validating on the held-out fold, then averages.',
+        },
+        {
+          ar: 'اضمحلال الأوزان (تنظيم ℓ2 أو ridge) يقيد قيم الأوزان لا عددها: نضيف إلى الخسارة λ/2·‖w‖² فتصبح المعادلة التفاضلية w ← (1 − ηλ)w − η·تدرج الخسارة — أي تقلص نحو الصفر مع كل خطوة، ومن هنا الاسم. λ=0 يعيد الخسارة الأصلية، وλ أكبر يشد القيد أكثر. تنقسم الآراء بين ℓ2 الذي يوزع الوزن على خصائص كثيرة ويعاقب المكوّنات الكبيرة بقوة، وℓ1 (lasso) الذي يصفّر أوزانًا فيفعمل انتقاء الخصائص. عادة لا ننظم الانحياز b. في الكتاب تُمرَّر العقوبة إلى المحسّن نفسه عبر معامل weight_decay.',
+          en: 'Weight decay (ℓ2 regularization, ridge) restricts weight values rather than count: add λ/2·‖w‖² to the loss and the update becomes w ← (1 − ηλ)w − η·(loss gradient) — weights shrink toward zero at every step, hence the name. λ = 0 recovers the original loss; larger λ tightens the constraint. ℓ2 spreads weight across many features and punishes large components hard, while ℓ1 (lasso) drives some weights exactly to zero, giving feature selection. The bias b is usually left unregularized. In the book the penalty is delegated to the optimizer itself via its weight_decay argument.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: {
+        ar: 'تجربة الأبعاد العالية: λ=0 مقابل λ=3',
+        en: 'The high-dimensional experiment: λ=0 vs λ=3',
+      },
+      code: "def lcg(seed):\n    state = seed\n    while True:\n        state = (1664525 * state + 1013904223) % 4294967296\n        yield state / 4294967296.0\n\ndef make_dataset(n_train, n_val, d, seed):\n    gen = lcg(seed)\n    def nxt():\n        return next(gen)\n    def rows(n):\n        return [[nxt() * 2 - 1 for _ in range(d)] for _ in range(n)]\n    Xtr, Xva = rows(n_train), rows(n_val)\n    ytr = [0.05 + 0.01 * sum(r) + (nxt() * 2 - 1) * 0.01 for r in Xtr]\n    yva = [0.05 + 0.01 * sum(r) + (nxt() * 2 - 1) * 0.01 for r in Xva]\n    return Xtr, ytr, Xva, yva\n\ndef fit(Xtr, ytr, Xva, yva, epochs, lr, lambd):\n    d = len(Xtr[0])\n    w, bias = [0.0] * d, 0.0\n    for _ in range(epochs):\n        errs = [sum(w[j] * Xtr[i][j] for j in range(d)) + bias - ytr[i] for i in range(len(Xtr))]\n        for j in range(d):\n            gw = sum(Xtr[i][j] * errs[i] for i in range(len(Xtr))) / len(Xtr)\n            w[j] = (1 - lr * lambd) * w[j] - lr * gw\n        bias -= lr * (sum(errs) / len(Xtr))\n    def mse(X, y):\n        es = [sum(w[j] * X[i][j] for j in range(d)) + bias - y[i] for i in range(len(X))]\n        return sum(e * e for e in es) / len(es)\n    l2 = sum(v * v for v in w) / 2\n    return mse(Xtr, ytr), mse(Xva, yva), l2\n\ndata = make_dataset(20, 100, 200, 11)   # 20 train rows, 200 features: overfit territory\ntr0, va0, l20 = fit(*data, 100, 0.05, 0.0)\ntr3, va3, l23 = fit(*data, 100, 0.05, 3.0)\nprint('lambd=0 | train mse=%.6f val mse=%.6f L2(w)=%.6f' % (tr0, va0, l20))\nprint('lambd=3 | train mse=%.6f val mse=%.6f L2(w)=%.6f' % (tr3, va3, l23))",
+      explanation: {
+        ar: 'بلا تنظيم: خطأ التدريب 0.000000 (نناسب 20 مثالًا بـ 200 معامل — الاستيفاء التام)، بينما خطأ التحقق 0.007860 — فرط تخصيص نموذجي. مع λ=3: خطأ التدريب ارتفع إلى 0.001632 وخطأ التحقق انخفض إلى 0.006376، ومعيار ℓ2 انكمش من 0.001613 إلى 0.000280. هذه هي لوحة اضمحلال الأوزان: نضحّي بقليل من الملاءمة مقابل توقعات أفضل على الجديد، تمامًا كما في تجربة الكتاب بـ 20/100 مثال و200 بعد.',
+        en: 'Without regularization: training MSE 0.000000 (we fit 20 examples with 200 parameters — full interpolation) while validation MSE sits at 0.007860 — textbook overfitting. With λ=3: training error rises to 0.001632, validation error drops to 0.006376, and the ℓ2 norm shrinks from 0.001613 to 0.000280. That is the weight-decay trade: a little fitting sacrificed for better promises on unseen data, exactly the book 20/100-row, 200-dimension setup.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.penalty-and-decay',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفّذ دالتين: l2_penalty(w) تعيد ½‖w‖² (مجموع المربعات مقسومًا على 2)؛ وdecay_step(w, grad, lr, lambd) تعيد المتجه المحدَّث وفق w ← (1 − lr·lambd)·w − lr·grad عنصرًا بعنصر.',
+        en: 'Implement two functions: l2_penalty(w) returns ½‖w‖² (sum of squares divided by 2); and decay_step(w, grad, lr, lambd) returns the updated vector elementwise as w ← (1 − lr·lambd)·w − lr·grad.',
+      },
+      starterCode: "def l2_penalty(w):\n    ...  # TODO: sum of squares / 2\n\ndef decay_step(w, grad, lr, lambd):\n    ...  # TODO: shrink toward zero, then step against the gradient\n",
+      solution: "def l2_penalty(w):\n    return sum(v * v for v in w) / 2\n\ndef decay_step(w, grad, lr, lambd):\n    return [(1 - lr * lambd) * w[j] - lr * grad[j] for j in range(len(w))]",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'عقوبة ℓ2 لمتجه بسيط', en: 'ℓ2 penalty of a simple vector' },
+          code: "p = l2_penalty([2.0, 1.0])\nassert abs(p - 2.5) < 1e-9, 'expected 2.5 | actual: %r' % p",
+          expected: '2.5',
+        },
+        {
+          id: 't2',
+          name: { ar: 'التقلص مع تدرج صفري', en: 'Pure shrinkage with a zero gradient' },
+          code: "w = decay_step([2.0, 1.0], [0.0, 0.0], 0.1, 3.0)\nassert abs(w[0] - 1.4) < 1e-9 and abs(w[1] - 0.7) < 1e-9, 'expected ~[1.4, 0.7] | actual: %r' % (w,)",
+          expected: '[1.4, 0.7]',
+        },
+        {
+          id: 't3',
+          name: { ar: 'تقلص وخطوة معًا', en: 'Shrink and step together' },
+          code: "w = decay_step([2.0, 1.0], [1.0, 0.0], 0.1, 1.0)\nassert abs(w[0] - 1.7) < 1e-9 and abs(w[1] - 0.9) < 1e-9, 'expected ~[1.7, 0.9] | actual: %r' % (w,)",
+          expected: '[1.7, 0.9]',
+        },
+      ],
+      hints: [
+        { ar: 'l2_penalty قائمة واحدة: sum(v * v for v in w) / 2 — القسمة على 2 عرف ليجعل التفريق نظيفًا.', en: 'l2_penalty is one line: sum(v * v for v in w) / 2 — the 2 is convention so the derivative comes out clean.' },
+        { ar: 'معامل التقلص (1 − lr·lambd) يضرب القيمة القديمة قبل طرح خطوة التدرج.', en: 'The shrink factor (1 − lr·lambd) multiplies the old value before the gradient step is subtracted.' },
+        { ar: 'قيم تحقق: [2,1] مع تدرج صفري وlr=0.1 وλ=3 تعطي [1.4, 0.7] لأن 2×0.7 = 1.4.', en: 'Sanity: [2,1] with zero gradient, lr=0.1, λ=3 gives [1.4, 0.7] since 2×0.7 = 1.4.' },
+        { ar: 'استخدم فهرسة بالفهرس j لا zip إذا أردت، المهم تطبيق المعادلة على كل عنصر.', en: 'Index by j or zip — what matters is applying the update elementwise.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.numeric-l2',
+      exKind: 'numeric',
+      required: true,
+      prompt: {
+        ar: 'احسب يدويًا عقوبة ℓ2 للوزن w = [0.5, −0.25, 1.5] وفق التعريف ½‖w‖² = ½·Σ wᵢ². كم قيمة العقوبة؟',
+        en: 'Compute by hand the ℓ2 penalty of the weight vector w = [0.5, −0.25, 1.5] using ½‖w‖² = ½·Σ wᵢ². What is the penalty value?',
+      },
+      answer: '1.28125',
+      tolerance: 1e-9,
+      solution: '1.28125',
+      hints: [
+        { ar: 'تربّع كل عنصر: 0.25 و0.0625 و2.25.', en: 'Square each entry: 0.25, 0.0625 and 2.25.' },
+        { ar: 'المجموع 2.5625.', en: 'The sum is 2.5625.' },
+        { ar: 'اقسم على 2 وفق عرف ½‖w‖².', en: 'Divide by 2 per the ½‖w‖² convention.' },
+        { ar: 'تحقق بالكود: l2_penalty([0.5, -0.25, 1.5]) من التمرين الأول.', en: 'Verify in code with l2_penalty([0.5, -0.25, 1.5]) from the first exercise.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "def lcg(seed):\n    state = seed\n    while True:\n        state = (1664525 * state + 1013904223) % 4294967296\n        yield state / 4294967296.0\n\ndef make_dataset(n_train, n_val, d, seed):\n    gen = lcg(seed)\n    def rows(n):\n        return [[next(gen) * 2 - 1 for _ in range(d)] for _ in range(n)]\n    Xtr, Xva = rows(n_train), rows(n_val)\n    ytr = [0.05 + 0.01 * sum(r) + next(gen) * 0.02 - 0.01 for r in Xtr]\n    yva = [0.05 + 0.01 * sum(r) + next(gen) * 0.02 - 0.01 for r in Xva]\n    return Xtr, ytr, Xva, yva\n\ndef fit(data, epochs, lr, lambd):\n    Xtr, ytr, Xva, yva = data\n    d = len(Xtr[0])\n    w, bias = [0.0] * d, 0.0\n    for _ in range(epochs):\n        errs = [sum(w[j] * Xtr[i][j] for j in range(d)) + bias - ytr[i] for i in range(len(Xtr))]\n        for j in range(d):\n            gw = sum(Xtr[i][j] * errs[i] for i in range(len(Xtr))) / len(Xtr)\n            w[j] = (1 - lr * lambd) * w[j] - lr * gw\n        bias -= lr * (sum(errs) / len(Xtr))\n    es = [sum(w[j] * Xva[i][j] for j in range(d)) + bias - yva[i] for i in range(len(Xva))]\n    return sum(e * e for e in es) / len(es)\n\ndata = make_dataset(20, 100, 200, 11)\nfor lambd in (0.0, 0.3, 1.0, 3.0, 10.0):\n    print('lambd=%5.1f | val mse=%.6f' % (lambd, fit(data, 100, 0.05, lambd)))\n\n# جرّب: زيّد λ أكثر وراقب متى يبدأ خطأ التحقق في الارتفاع من جديد (تنظيم زائد).\n# try: push λ higher and watch when validation error starts rising again (over-regularization).\n# جرّب: كبّر مجموعة التدريب إلى 100 صف وأعد الشوط — هل ما زلنا نحتاج λ كبيرة؟\n# try: grow the training set to 100 rows and rerun — is a large λ still needed?\n",
+      prompt: {
+        ar: 'الملعب يمسح λ من 0 إلى 10 على التجربة نفسها ويكشف منحنى خطأ التحقق على شكل حرف U: هبوط ثم صعود عند التنظيم الزائد.',
+        en: 'The sandbox sweeps λ from 0 to 10 on the same experiment and reveals the U-shaped validation curve: improvement first, then degradation from over-regularization.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'أي وصف يدل على فرط تخصيص overfitting؟',
+            en: 'Which observation signals overfitting?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'خطأ تدريب وخطأ تحقق كلاهما مرتفع والفجوة صغيرة', en: 'Both training and validation error are high with a small gap' } },
+            { id: 'b', text: { ar: 'خطأ تدريب أقل بكثير من خطأ التحقق', en: 'Training error is far lower than validation error' } },
+            { id: 'c', text: { ar: 'خطأ التدريب يتزايد مع العصور', en: 'Training error keeps growing with epochs' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'فرط التخصيص هو لصق التدريب بخصوصياته: خطأ تدريب منخفض جدًا مع فجوة واسعة عن التحقق. النقص في التخصيص هو الحالة (a) — نموذج فقير لا يلتقط النمط أصلًا.',
+            en: 'Overfitting means memorizing training specifics: very low training error with a wide validation gap. Underfitting is case (a) — a model too poor to capture the pattern at all.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ماذا يحدث لمعادلة اضمحلال الأوزان عندما λ = 0؟',
+            en: 'What happens to the weight-decay update when λ = 0?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'يعود إلى SGD العادي — (1 − η·0) = 1 فلا تقلص', en: 'It reverts to plain SGD — (1 − η·0) = 1, no shrinkage' } },
+            { id: 'b', text: { ar: 'تصبح الأوزان صفرًا فورًا', en: 'Weights become zero immediately' } },
+            { id: 'c', text: { ar: 'يتضاعف معدل التعلم', en: 'The learning rate doubles' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'مع λ=0 يزول حد العقوبة ومعامل التقلص يصير 1، فنعود إلى تحديث الخسارة الأصلية فقط. حجم λ هو مقبض مستمر لضبط التعقيد لا مفتاح تشغيل/إيقاف.',
+            en: 'With λ=0 the penalty vanishes and the shrink factor becomes 1, restoring the plain loss update. λ is a continuous complexity dial, not an on/off switch.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'ما الفرق العملي بين عقوبة ℓ1 (lasso) وعقوبة ℓ2 (ridge)؟',
+            en: 'What is the practical difference between an ℓ1 (lasso) and an ℓ2 (ridge) penalty?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'ℓ2 يصفّر الأوزان وℓ1 لا يفعل', en: 'ℓ2 zeroes weights while ℓ1 does not' } },
+            { id: 'b', text: { ar: 'لا فرق — كلاهما يضرب الخسارة في 2', en: 'No difference — both multiply the loss by 2' } },
+            { id: 'c', text: { ar: 'ℓ1 يدفع بعض الأوزان إلى الصفر تمامًا فينتقي الخصائص، وℓ2 يوزع الوزن ويعاقب المكونات الكبيرة بقوة', en: 'ℓ1 pushes some weights exactly to zero (feature selection) while ℓ2 spreads weight and punishes large components hard' } },
+          ],
+          answer: 'c',
+          explanation: {
+            ar: 'ℓ1 عاقبته الخطية |w| تجعل الأمثل يصفر الأوزان غير المهمة — انتقاء خصائص مفيد للجمع والتخزين. ℓ2 يقلص الجميع مع عقوبة تربيعية قاسية على الكبيرة، فيوزع التأثير على خصائص متعددة ويقاوم ضجيج خاصية واحدة.',
+            en: 'The linear ℓ1 penalty lets optimization zero out unimportant weights — feature selection that saves collection and storage. ℓ2 shrinks everything with a harsh quadratic punishment on large entries, spreading influence across features and resisting single-feature noise.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'التنفيذ المختصر يستبدل الطبقة والخسارة والمحسّن بأدوات الإطار (`nn.Linear`، `nn.MSELoss`، `torch.optim.SGD`) مع بقاء حلقة التدريب ذاتها (الهدف من s5 التنفيذ المختصر).', en: 'The concise implementation swaps the layer, loss and optimizer for framework tools (`nn.Linear`, `nn.MSELoss`, `torch.optim.SGD`) while the training loop stays the same (goal of s5 Concise Implementation).' },
+        { ar: 'التعميم يقاس على بيانات محجوزة: فرط التخصيص فجوة واسعة بين خطأ التدريب والتحقق، ونقصه فقر النموذج؛ والتعقيد وحجم البيانات وتقاطع K أضعاف أدواتنا للموازنة (الهدف من s6 التعميم).', en: 'Generalization is measured on held-out data: overfitting is a wide train-validation gap, underfitting is a too-poor model; complexity, dataset size and K-fold cross-validation are the balancing tools (goal of s6 Generalization).' },
+        { ar: 'اضمحلال الأوزان يضيف λ/2·‖w‖² فتصبح المعادلة w ← (1 − ηλ)w − η·تدرج: تقلص مستمر نحو الصفر؛ λ=0 يعيد الأصل، وℓ1 (lasso) ينتقي الخصائص بالتصفير (الهدف من s7 اضمحلال الأوزان).', en: 'Weight decay adds λ/2·‖w‖² turning the update into w ← (1 − ηλ)w − η·grad: continuous shrinkage toward zero; λ=0 recovers the original, and ℓ1 (lasso) selects features by zeroing (goal of s7 Weight Decay).' },
+      ],
+      reflectPrompt: {
+        ar: 'في تجربتنا كل الخطأ التدريبي صار صفرًا مع 200 معامل و20 مثالًا. ماذا يعني أن نموذجًا قادرًا على تفسير أي تسميات لا يثبت شيئًا — وبأي مقياس بديل نقيس علمه؟',
+        en: 'In our experiment training error hit exactly zero with 200 parameters and 20 examples. What does it mean that a model able to explain any labels proves nothing — and which alternative measure certifies what it actually learned?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'D2L', section: 'd2l.ch3.s5' },
+        { book: 'D2L', section: 'd2l.ch3.s6' },
+        { book: 'D2L', section: 'd2l.ch3.s7' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'D2L', section: 'd2l.ch3.s5' },
+    { book: 'D2L', section: 'd2l.ch3.s6' },
+    { book: 'D2L', section: 'd2l.ch3.s7' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

@@ -1,0 +1,281 @@
+examples/websocket/frontend.tsx(4,20): error TS2307: Cannot find module 'socket.io-client' or its corresponding type declarations.
+examples/websocket/server.ts(2,24): error TS2307: Cannot find module 'socket.io' or its corresponding type declarations.
+skills/image-edit/scripts/image-edit.ts(10,4): error TS2561: Object literal may only specify known properties, but 'images' does not exist in type 'CreateImageEditBody'. Did you mean to write 'image'?
+skills/stock-analysis-skill/src/analyzer.ts(253,11): error TS2322: Type '({ type: string; image: { type: "base64"; data: string; mediaType: "image/png"; url?: undefined; } | { type: "url"; url: string; data?: undefined; mediaType?: undefined; }; } | { type: string; text: string; })[]' is not assignable to type 'string'.
+src/components/lab/ExerciseCard.tsx(198,19): error TS2367: This comparison appears to be unintentional because the types '"timeout" | "stopped" | "loadError"' and '"error"' have no overlap.
+src/components/lab/ExerciseCard.tsx(198,54): error TS2339: Property 'error' does not exist on type 'never'.
+src/components/lab/ExerciseCard.tsx(225,30): error TS2345: Argument of type '"write_code" | "mcq" | "fill_blank" | "trace_output" | "numeric" | "parsons"' is not assignable to parameter of type '"mcq" | "fill_blank" | "trace_output" | "numeric" | "parsons"'.
+  Type '"write_code"' is not assignable to type '"mcq" | "fill_blank" | "trace_output" | "numeric" | "parsons"'.
+src/lib/content/grading.ts(57,69): error TS1501: This regular expression flag is only available when targeting 'es2018' or later.
+src/lib/i18n/en.ts(9,5): error TS2322: Type '"Python to Mastery"' is not assignable to type '"بايثون إلى الاحتراف"'.
+src/lib/i18n/en.ts(10,5): error TS2322: Type '"Dashboard"' is not assignable to type '"لوحتي"'.
+src/lib/i18n/en.ts(11,5): error TS2322: Type '"Learning Path"' is not assignable to type '"مسار التعلّم"'.
+src/lib/i18n/en.ts(12,5): error TS2322: Type '"Coverage"' is not assignable to type '"التغطية"'.
+src/lib/i18n/en.ts(13,5): error TS2322: Type '"Sources"' is not assignable to type '"المصادر"'.
+src/lib/i18n/en.ts(14,5): error TS2322: Type '"Settings"' is not assignable to type '"الإعدادات"'.
+src/lib/i18n/en.ts(15,5): error TS2322: Type '"العربية"' is not assignable to type '"English"'.
+src/lib/i18n/en.ts(16,5): error TS2322: Type '"ع"' is not assignable to type '"EN"'.
+src/lib/i18n/en.ts(17,5): error TS2322: Type '"Calm mode is on"' is not assignable to type '"الوضع الهادئ مُفعّل"'.
+src/lib/i18n/en.ts(20,5): error TS2322: Type '"Run"' is not assignable to type '"تشغيل"'.
+src/lib/i18n/en.ts(21,5): error TS2322: Type '"Stop"' is not assignable to type '"إيقاف"'.
+src/lib/i18n/en.ts(22,5): error TS2322: Type '"Check"' is not assignable to type '"تحقّق"'.
+src/lib/i18n/en.ts(23,5): error TS2322: Type '"Next"' is not assignable to type '"التالي"'.
+src/lib/i18n/en.ts(24,5): error TS2322: Type '"Back"' is not assignable to type '"رجوع"'.
+src/lib/i18n/en.ts(25,5): error TS2322: Type '"Done"' is not assignable to type '"تم"'.
+src/lib/i18n/en.ts(26,5): error TS2322: Type '"Close"' is not assignable to type '"إغلاق"'.
+src/lib/i18n/en.ts(27,5): error TS2322: Type '"Cancel"' is not assignable to type '"إلغاء"'.
+src/lib/i18n/en.ts(28,5): error TS2322: Type '"Confirm"' is not assignable to type '"تأكيد"'.
+src/lib/i18n/en.ts(29,5): error TS2322: Type '"One moment…"' is not assignable to type '"لحظة من فضلك…"'.
+src/lib/i18n/en.ts(30,5): error TS2322: Type '"Try again"' is not assignable to type '"حاول مرة أخرى"'.
+src/lib/i18n/en.ts(31,5): error TS2322: Type '"Show"' is not assignable to type '"إظهار"'.
+src/lib/i18n/en.ts(32,5): error TS2322: Type '"Hide"' is not assignable to type '"إخفاء"'.
+src/lib/i18n/en.ts(33,5): error TS2322: Type '"Copy"' is not assignable to type '"نسخ"'.
+src/lib/i18n/en.ts(34,5): error TS2322: Type '"Copied"' is not assignable to type '"تم النسخ"'.
+src/lib/i18n/en.ts(35,5): error TS2322: Type '"of"' is not assignable to type '"من"'.
+src/lib/i18n/en.ts(36,5): error TS2322: Type '"optional"' is not assignable to type '"اختياري"'.
+src/lib/i18n/en.ts(37,5): error TS2322: Type '"required"' is not assignable to type '"مطلوب"'.
+src/lib/i18n/en.ts(38,5): error TS2322: Type '"Locked"' is not assignable to type '"مُغلق"'.
+src/lib/i18n/en.ts(39,5): error TS2322: Type '"Completed"' is not assignable to type '"مُكتمل"'.
+src/lib/i18n/en.ts(40,5): error TS2322: Type '"In progress"' is not assignable to type '"قيد التقدّم"'.
+src/lib/i18n/en.ts(41,5): error TS2322: Type '"Start"' is not assignable to type '"ابدأ"'.
+src/lib/i18n/en.ts(42,5): error TS2322: Type '"Review"' is not assignable to type '"مراجعة"'.
+src/lib/i18n/en.ts(43,5): error TS2322: Type '"min"' is not assignable to type '"دقيقة"'.
+src/lib/i18n/en.ts(44,5): error TS2322: Type '"Level"' is not assignable to type '"المستوى"'.
+src/lib/i18n/en.ts(45,5): error TS2322: Type '"XP"' is not assignable to type '"نقاط الخبرة"'.
+src/lib/i18n/en.ts(46,5): error TS2322: Type '"attempt"' is not assignable to type '"محاولة"'.
+src/lib/i18n/en.ts(47,5): error TS2322: Type '"attempts"' is not assignable to type '"محاولات"'.
+src/lib/i18n/en.ts(48,5): error TS2322: Type '"Hint"' is not assignable to type '"تلميح"'.
+src/lib/i18n/en.ts(49,5): error TS2322: Type '"Hints"' is not assignable to type '"تلميحات"'.
+src/lib/i18n/en.ts(50,5): error TS2322: Type '"Solution"' is not assignable to type '"الحل"'.
+src/lib/i18n/en.ts(51,5): error TS2322: Type '"Reveal"' is not assignable to type '"اكشف"'.
+src/lib/i18n/en.ts(52,5): error TS2322: Type '"Reset"' is not assignable to type '"إعادة ضبط"'.
+src/lib/i18n/en.ts(53,5): error TS2322: Type '"Step"' is not assignable to type '"خطوة"'.
+src/lib/i18n/en.ts(54,5): error TS2322: Type '"Play"' is not assignable to type '"تشغيل تدريجي"'.
+src/lib/i18n/en.ts(55,5): error TS2322: Type '"Pause"' is not assignable to type '"إيقاف مؤقت"'.
+src/lib/i18n/en.ts(56,5): error TS2322: Type '"Speed"' is not assignable to type '"السرعة"'.
+src/lib/i18n/en.ts(59,5): error TS2322: Type '"Welcome back"' is not assignable to type '"أهلًا بك من جديد"'.
+src/lib/i18n/en.ts(60,5): error TS2322: Type '"Good morning — welcome back"' is not assignable to type '"صباح الخير، أهلًا بك من جديد"'.
+src/lib/i18n/en.ts(61,5): error TS2322: Type '"Good afternoon — welcome back"' is not assignable to type '"طاب يومك، أهلًا بك من جديد"'.
+src/lib/i18n/en.ts(62,5): error TS2322: Type '"Good evening — welcome back"' is not assignable to type '"مساء الخير، أهلًا بك من جديد"'.
+src/lib/i18n/en.ts(63,5): error TS2322: Type '"Continue where you left off"' is not assignable to type '"أكمل من حيث توقفت"'.
+src/lib/i18n/en.ts(64,5): error TS2322: Type '"Your next lesson is ready — one small step a day adds up."' is not assignable to type '"درسك القادم جاهز أمامك — خطوة صغيرة كل يوم تصنع فرقًا كبيرًا."'.
+src/lib/i18n/en.ts(65,5): error TS2322: Type '"Continue lesson"' is not assignable to type '"أكمل الدرس"'.
+src/lib/i18n/en.ts(66,5): error TS2322: Type '"Start here"' is not assignable to type '"ابدأ من هنا"'.
+src/lib/i18n/en.ts(67,5): error TS2322: Type '"Experience points"' is not assignable to type '"نقاط الخبرة"'.
+src/lib/i18n/en.ts(68,5): error TS2322: Type '"Level"' is not assignable to type '"المستوى"'.
+src/lib/i18n/en.ts(69,5): error TS2322: Type '"Part I — Python"' is not assignable to type '"الجزء الأول: بايثون"'.
+src/lib/i18n/en.ts(70,5): error TS2322: Type '"Part II — AI"' is not assignable to type '"الجزء الثاني: الذكاء الاصطناعي"'.
+src/lib/i18n/en.ts(71,5): error TS2322: Type '"Opens after you finish Part I"' is not assignable to type '"يُفتح بعد إكمال الجزء الأول"'.
+src/lib/i18n/en.ts(72,5): error TS2322: Type '"Machine learning and neural nets, one calm step at a time."' is not assignable to type '"تعلّم الآلة والشبكات العصبية بخطوات هادئة ومفهومة."'.
+src/lib/i18n/en.ts(73,5): error TS2322: Type '"Today's plan"' is not assignable to type '"خطة اليوم"'.
+src/lib/i18n/en.ts(74,5): error TS2322: Type '"Our suggestion: two lessons a day. No rush — understanding first."' is not assignable to type '"اقتراحنا لك: درسان في اليوم. لا تستعجل — الفهم أولًا."'.
+src/lib/i18n/en.ts(75,5): error TS2322: Type '"Your path progress"' is not assignable to type '"تقدّمك في المسار"'.
+src/lib/i18n/en.ts(76,5): error TS2322: Type '"lessons done"' is not assignable to type '"درس مُكتمل"'.
+src/lib/i18n/en.ts(79,5): error TS2322: Type '"Learning Path"' is not assignable to type '"مسار التعلّم"'.
+src/lib/i18n/en.ts(80,5): error TS2322: Type '"Small, carefully ordered lessons. You set the pace."' is not assignable to type '"خطتك مفصّلة على دروس صغيرة مُرتّبة بعناية. أنت تتحكّم في وتيرتك."'.
+src/lib/i18n/en.ts(81,5): error TS2322: Type '"Part I — Python"' is not assignable to type '"الجزء الأول — بايثون"'.
+src/lib/i18n/en.ts(82,5): error TS2322: Type '"From your first line of code to decisions and try/except, with “Python for Everybody”."' is not assignable to type '"من أول سطر برمجي إلى قرارات وشرط وtry/except، مع كتاب «بايثون للجميع»."'.
+src/lib/i18n/en.ts(83,5): error TS2322: Type '"Part II — AI"' is not assignable to type '"الجزء الثاني — الذكاء الاصطناعي"'.
+src/lib/i18n/en.ts(84,5): error TS2322: Type '"A locked world is waiting. It opens once you finish all of Part I — a solid Python foundation is a gift to yourself."' is not assignable to type '"عالم مُغلق ينتظرك. يُفتح بعد إكمال الجزء الأول كاملًا — أساس بايثون المتين هو هديتك لنفسك."'.
+src/lib/i18n/en.ts(85,5): error TS2322: Type '"Opens after {count} remaining Part I lessons"' is not assignable to type '"سيُفتح بعد إنهاء {count} درسًا متبقيًا من الجزء الأول"'.
+src/lib/i18n/en.ts(86,5): error TS2322: Type '"Chapter"' is not assignable to type '"الفصل"'.
+src/lib/i18n/en.ts(87,5): error TS2322: Type '"lessons"' is not assignable to type '"درسًا"'.
+src/lib/i18n/en.ts(88,5): error TS2322: Type '"This lesson is locked for now"' is not assignable to type '"هذا الدرس مُغلق حاليًا"'.
+src/lib/i18n/en.ts(89,5): error TS2322: Type '"Finish this lesson first, then come back:"' is not assignable to type '"أكمل هذا الدرس أولًا ثم عُد هنا:"'.
+src/lib/i18n/en.ts(90,5): error TS2322: Type '"Open lesson"' is not assignable to type '"افتح الدرس"'.
+src/lib/i18n/en.ts(91,5): error TS2322: Type '"Continue lesson"' is not assignable to type '"أكمل الدرس"'.
+src/lib/i18n/en.ts(92,5): error TS2322: Type '"Review lesson"' is not assignable to type '"راجع الدرس"'.
+src/lib/i18n/en.ts(95,5): error TS2322: Type '"Back to path"' is not assignable to type '"رجوع إلى المسار"'.
+src/lib/i18n/en.ts(96,5): error TS2322: Type '"You completed this lesson"' is not assignable to type '"أنت أتممت هذا الدرس"'.
+src/lib/i18n/en.ts(97,5): error TS2322: Type '"Complete lesson"' is not assignable to type '"أكمل الدرس"'.
+src/lib/i18n/en.ts(98,5): error TS2322: Type '"All required exercises passed — nice work!"' is not assignable to type '"أنجزت كل التمارين المطلوبة — أحسنت!"'.
+src/lib/i18n/en.ts(99,5): error TS2322: Type '"Next lesson"' is not assignable to type '"الدرس التالي"'.
+src/lib/i18n/en.ts(100,5): error TS2322: Type '"Estimated time"' is not assignable to type '"الوقت التقديري"'.
+src/lib/i18n/en.ts(101,5): error TS2322: Type '"minutes"' is not assignable to type '"دقائق"'.
+src/lib/i18n/en.ts(102,5): error TS2322: Type '"Your reflection was saved on this device."' is not assignable to type '"حُفظ تأمّلك على جهازك."'.
+src/lib/i18n/en.ts(103,5): error TS2322: Type '"Write your thoughts here… What clicked? What is still fuzzy?"' is not assignable to type '"اكتب هنا أفكارك… ما الذي فهمته؟ ما الذي ما زال غامضًا؟"'.
+src/lib/i18n/en.ts(105,7): error TS2322: Type '"Why this matters"' is not assignable to type '"لماذا هذا مهم؟"'.
+src/lib/i18n/en.ts(106,7): error TS2322: Type '"Predict first"' is not assignable to type '"توقّع أولًا"'.
+src/lib/i18n/en.ts(107,7): error TS2322: Type '"What does this code print?"' is not assignable to type '"ماذا سيطبع هذا الكود؟"'.
+src/lib/i18n/en.ts(108,7): error TS2322: Type '"Reveal answer"' is not assignable to type '"اكشف الإجابة"'.
+src/lib/i18n/en.ts(109,7): error TS2322: Type '"The idea"' is not assignable to type '"الفكرة"'.
+src/lib/i18n/en.ts(110,7): error TS2322: Type '"Worked example"' is not assignable to type '"مثال محلول"'.
+src/lib/i18n/en.ts(111,7): error TS2322: Type '"Run the example"' is not assignable to type '"شغّل المثال"'.
+src/lib/i18n/en.ts(112,7): error TS2322: Type '"Exercise"' is not assignable to type '"تمرين"'.
+src/lib/i18n/en.ts(113,7): error TS2322: Type '"Debug challenge"' is not assignable to type '"تحدّي إصلاح خطأ"'.
+src/lib/i18n/en.ts(114,7): error TS2322: Type '"This code has a deliberate bug. Your job: find it and fix it."' is not assignable to type '"هذا الكود فيه خطأ مقصود. مهمتك: تجده وتصلحه."'.
+src/lib/i18n/en.ts(115,7): error TS2322: Type '"Playground"' is not assignable to type '"ملعب حرّ"'.
+src/lib/i18n/en.ts(116,7): error TS2322: Type '"Try things — no tests, no pressure. Break something and learn."' is not assignable to type '"جرّب بنفسك — لا اختبار، لا ضغط. اكسر شيئًا وتعلّم."'.
+src/lib/i18n/en.ts(117,7): error TS2322: Type '"Check your understanding"' is not assignable to type '"اختبر فهمك"'.
+src/lib/i18n/en.ts(118,7): error TS2322: Type '"Quick questions that stick the learning — some from earlier lessons."' is not assignable to type '"أسئلة سريعة تُثبّت ما تعلّمته — بعضها من دروس سابقة."'.
+src/lib/i18n/en.ts(119,7): error TS2322: Type '"Check my answers"' is not assignable to type '"صحّح إجاباتي"'.
+src/lib/i18n/en.ts(120,7): error TS2322: Type '"You answered {score} of {total} correctly"' is not assignable to type '"أجبت بشكل صحيح عن {score} من {total}"'.
+src/lib/i18n/en.ts(121,7): error TS2322: Type '"Common pitfalls"' is not assignable to type '"فخاخ شائعة"'.
+src/lib/i18n/en.ts(122,7): error TS2322: Type '"Common but wrong"' is not assignable to type '"شائع لكنه خاطئ"'.
+src/lib/i18n/en.ts(123,7): error TS2322: Type '"Correct"' is not assignable to type '"الصحيح"'.
+src/lib/i18n/en.ts(124,7): error TS2322: Type '"Why?"' is not assignable to type '"لماذا؟"'.
+src/lib/i18n/en.ts(125,7): error TS2322: Type '"Lesson summary"' is not assignable to type '"خلاصة الدرس"'.
+src/lib/i18n/en.ts(126,7): error TS2322: Type '"Reflect"' is not assignable to type '"تأمّل"'.
+src/lib/i18n/en.ts(127,7): error TS2322: Type '"Your note stays on this device only."' is not assignable to type '"تُحفظ ملاحظتك على جهازك فقط."'.
+src/lib/i18n/en.ts(128,7): error TS2322: Type '"Lesson sources"' is not assignable to type '"مصادر الدرس"'.
+src/lib/i18n/en.ts(129,7): error TS2322: Type '"Pages"' is not assignable to type '"الصفحات"'.
+src/lib/i18n/en.ts(130,7): error TS2322: Type '"from the book"' is not assignable to type '"من كتاب"'.
+src/lib/i18n/en.ts(133,7): error TS2322: Type '"Lab"' is not assignable to type '"المختبر"'.
+src/lib/i18n/en.ts(134,7): error TS2322: Type '"Editor"' is not assignable to type '"المحرّر"'.
+src/lib/i18n/en.ts(135,7): error TS2322: Type '"Output"' is not assignable to type '"الخرْج"'.
+src/lib/i18n/en.ts(136,7): error TS2322: Type '"Steps"' is not assignable to type '"الخطوات"'.
+src/lib/i18n/en.ts(137,7): error TS2322: Type '"Shortcut: R to run"' is not assignable to type '"اختصار: R للتشغيل"'.
+src/lib/i18n/en.ts(138,7): error TS2322: Type '"Step visualizer"' is not assignable to type '"مُصوِّر الخطوات"'.
+src/lib/i18n/en.ts(139,7): error TS2322: Type '"Run the code step by step and watch variables grow."' is not assignable to type '"شغّل الكود خطوة بخطوة وشاهد المتغيّرات وهي تنمو."'.
+src/lib/i18n/en.ts(140,7): error TS2322: Type '"Trace execution"' is not assignable to type '"تتبّع التنفيذ"'.
+src/lib/i18n/en.ts(141,7): error TS2322: Type '"The program is long, so we show only the first {n} steps."' is not assignable to type '"البرنامج طويل، لذا عرضنا أول {n} خطوة فقط."'.
+src/lib/i18n/en.ts(142,7): error TS2322: Type '"No steps yet — run the trace to generate them."' is not assignable to type '"لا خطوات بعد — شغّل التتبّع لتوليدها."'.
+src/lib/i18n/en.ts(143,7): error TS2322: Type '"Could not trace (code error) — fix it and try again."' is not assignable to type '"تعذّر التتبّع (خطأ في الكود) — أصلح الخطأ ثم جرّب."'.
+src/lib/i18n/en.ts(144,7): error TS2322: Type '"Variables"' is not assignable to type '"المتغيّرات"'.
+src/lib/i18n/en.ts(145,7): error TS2322: Type '"Name"' is not assignable to type '"الاسم"'.
+src/lib/i18n/en.ts(146,7): error TS2322: Type '"Type"' is not assignable to type '"النوع"'.
+src/lib/i18n/en.ts(147,7): error TS2322: Type '"Value"' is not assignable to type '"القيمة"'.
+src/lib/i18n/en.ts(148,7): error TS2322: Type '"Line"' is not assignable to type '"السطر"'.
+src/lib/i18n/en.ts(149,7): error TS2322: Type '"Lab focused (B to unfocus)"' is not assignable to type '"المختبر مُركّز الآن (B لإلغاء التركيز)"'.
+src/lib/i18n/en.ts(154,7): error TS2322: Type '"Write code"' is not assignable to type '"اكتب كودًا"'.
+src/lib/i18n/en.ts(155,7): error TS2322: Type '"Multiple choice"' is not assignable to type '"اختيار من متعدد"'.
+src/lib/i18n/en.ts(156,7): error TS2322: Type '"Fill in the blank"' is not assignable to type '"أكمل الفراغ"'.
+src/lib/i18n/en.ts(157,7): error TS2322: Type '"Predict output"' is not assignable to type '"توقّع الخرْج"'.
+src/lib/i18n/en.ts(158,7): error TS2322: Type '"Numeric answer"' is not assignable to type '"إجابة رقمية"'.
+src/lib/i18n/en.ts(159,7): error TS2322: Type '"Order the lines"' is not assignable to type '"رتّب الأسطر"'.
+src/lib/i18n/en.ts(160,7): error TS2322: Type '"Fix the bug"' is not assignable to type '"أصلح الخطأ"'.
+src/lib/i18n/en.ts(162,5): error TS2322: Type '"Your answer"' is not assignable to type '"إجابتك"'.
+src/lib/i18n/en.ts(163,5): error TS2322: Type '"Choose an answer…"' is not assignable to type '"اختر إجابة…"'.
+src/lib/i18n/en.ts(164,5): error TS2322: Type '"Type here…"' is not assignable to type '"اكتب هنا…"'.
+src/lib/i18n/en.ts(165,5): error TS2322: Type '"Type the expected output exactly as Python would print it…"' is not assignable to type '"اكتب الخرْج المتوقّع كما سيطبعته بايثون…"'.
+src/lib/i18n/en.ts(166,5): error TS2322: Type '"Type a number…"' is not assignable to type '"اكتب رقمًا…"'.
+src/lib/i18n/en.ts(167,5): error TS2322: Type '"Drag the lines into the right order to build a working program:"' is not assignable to type '"رتّب الأسطر بالترتيب الصحيح لتكوين برنامج صحيح:"'.
+src/lib/i18n/en.ts(168,5): error TS2322: Type '"Reset order"' is not assignable to type '"أعِد الترتيب"'.
+src/lib/i18n/en.ts(169,5): error TS2322: Type '"Nicely done! All tests passed."' is not assignable to type '"أحسنت! نجحت كل الاختبارات."'.
+src/lib/i18n/en.ts(170,5): error TS2322: Type '"So close — {failed} of {total} tests not passing yet."' is not assignable to type '"قريب جدًا — {failed} من {total} اختبارات لم تنجح بعد."'.
+src/lib/i18n/en.ts(171,5): error TS2322: Type '"Press “Check” and we will test your code together."' is not assignable to type '"اضغط «تحقّق» لنفحص كودك معًا."'.
+src/lib/i18n/en.ts(172,5): error TS2322: Type '"This exercise needs the in-browser Python interpreter. If the CDN is blocked, retry later or use the offline-friendly kinds below."' is not assignable to type '"هذا التمرين يحتاج مفسّر بايثون داخل المتصفح (تحقّقنا أن CDN متاح؟ أعد المحاولة أو استخدم الوضع الأوفلاين أدناه)."'.
+src/lib/i18n/en.ts(173,5): error TS2322: Type '"The interpreter is unavailable right now — that is okay. We logged your attempt; come back later."' is not assignable to type '"المفسّر غير متاح الآن — لا بأس. سجّلنا أنك حاولت، وعُد لاحقًا."'.
+src/lib/i18n/en.ts(174,5): error TS2322: Type '"Tests"' is not assignable to type '"الاختبارات"'.
+src/lib/i18n/en.ts(175,5): error TS2322: Type '"Expected"' is not assignable to type '"المتوقّع"'.
+src/lib/i18n/en.ts(176,5): error TS2322: Type '"Actual"' is not assignable to type '"الفعلي"'.
+src/lib/i18n/en.ts(177,5): error TS2322: Type '"Hint ladder"' is not assignable to type '"سلّم التلميحات"'.
+src/lib/i18n/en.ts(179,7): error TS2322: Type '"Small nudge"' is not assignable to type '"دَفعة صغيرة"'.
+src/lib/i18n/en.ts(180,7): error TS2322: Type '"The concept"' is not assignable to type '"الفكرة"'.
+src/lib/i18n/en.ts(181,7): error TS2322: Type '"Skeleton"' is not assignable to type '"الهيكل"'.
+src/lib/i18n/en.ts(182,7): error TS2322: Type '"Full solution"' is not assignable to type '"الحل الكامل"'.
+src/lib/i18n/en.ts(184,5): error TS2322: Type '"Reveal the previous hint first"' is not assignable to type '"اكشف التلميح السابق أولًا"'.
+src/lib/i18n/en.ts(185,5): error TS2322: Type '"Reveal"' is not assignable to type '"اكشف"'.
+src/lib/i18n/en.ts(186,5): error TS2322: Type '"Solution unlocks after {n} attempts"' is not assignable to type '"الحل يُفتح بعد {n} محاولات"'.
+src/lib/i18n/en.ts(187,5): error TS2322: Type '"Each hint costs a few XP — but never blocks you."' is not assignable to type '"كل تلميح يُنقص نقاطك قليلًا — لكنه لا يمنعك أبدًا."'.
+src/lib/i18n/en.ts(188,5): error TS2322: Type '"Here is the solution — compare it kindly with yours."' is not assignable to type '"هذا هو الحل — قارنه بطريقتك بلا حساسية."'.
+src/lib/i18n/en.ts(189,5): error TS2322: Type '"Full technical traceback"' is not assignable to type '"التفاصيل التقنية الكاملة"'.
+src/lib/i18n/en.ts(190,5): error TS2322: Type '"What happened?"' is not assignable to type '"ماذا حدث؟"'.
+src/lib/i18n/en.ts(191,5): error TS2322: Type '"Why?"' is not assignable to type '"لماذا؟"'.
+src/lib/i18n/en.ts(192,5): error TS2322: Type '"How to fix it?"' is not assignable to type '"كيف تُصلحه؟"'.
+src/lib/i18n/en.ts(195,5): error TS2322: Type '"Correct! (direct grading, no interpreter needed)"' is not assignable to type '"صحيح! (تقييم مباشر دون تشغيل المفسّر)"'.
+src/lib/i18n/en.ts(196,5): error TS2322: Type '"Not the expected answer — try again."' is not assignable to type '"ليست الإجابة المقصودة — أعد المحاولة."'.
+src/lib/i18n/en.ts(197,5): error TS2322: Type '"All tests passed."' is not assignable to type '"كل الاختبارات ناجحة."'.
+src/lib/i18n/en.ts(198,5): error TS2322: Type '"Requires running Python"' is not assignable to type '"يتطلب تشغيل بايثون"'.
+src/lib/i18n/en.ts(201,5): error TS2322: Type '"The error, in plain words"' is not assignable to type '"ترجمة الخطأ بلغة بشرية"'.
+src/lib/i18n/en.ts(202,5): error TS2322: Type '"Original traceback"' is not assignable to type '"الأثر الأصلي للخطأ"'.
+src/lib/i18n/en.ts(204,7): error TS2322: Type '"An error we do not recognize yet occurred."' is not assignable to type '"حدث خطأ لم نتعرف عليه بعد."'.
+src/lib/i18n/en.ts(205,7): error TS2322: Type '"The original message below may say more."' is not assignable to type '"رسالة الخطأ الأصلية أدناه قد توضّح أكثر."'.
+src/lib/i18n/en.ts(206,7): error TS2322: Type '"Read the last line of the traceback, try one small fix, then run again."' is not assignable to type '"اقرأ آخر سطر في الأثر التقني، وجرّب إصلاحًا صغيرًا واحدًا ثم شغّل من جديد."'.
+src/lib/i18n/en.ts(209,7): error TS2322: Type '"Python could not understand the shape of a line — often a missing symbol."' is not assignable to type '"بايثون لم يفهم شكل السطر — غالبًا رمز ناقص."'.
+src/lib/i18n/en.ts(210,7): error TS2322: Type '"Python reads code symbol by symbol; a missing bracket or quote stops it."' is not assignable to type '"بايثون يقرأ الكود حرفًا حرفًا، وأي قوس أو نقطتين مفقودة تُوقفه."'.
+src/lib/i18n/en.ts(211,7): error TS2322: Type '"Look at the line number in the traceback: check parentheses (), quotes \"\", and the colon : at the end."' is not assignable to type '"انظر إلى رقم السطر في الأثر: افحص الأقواس () وعلامتي التنصيص \"\" والنقطتين : في نهاية السطر."'.
+src/lib/i18n/en.ts(214,7): error TS2322: Type '"You used a name that has not been defined yet."' is not assignable to type '"استخدمت اسمًا لم يُعرَّف بعد."'.
+src/lib/i18n/en.ts(215,7): error TS2322: Type '"Python does not know this name — maybe a typo, or it is used before it is defined."' is not assignable to type '"بايثون لا يعرف هذا الاسم — ربما أخطأت في تهجئته أو عرّفته لاحقًا واستخدمته قبل تعريفه."'.
+src/lib/i18n/en.ts(216,7): error TS2322: Type '"Check the spelling matches exactly, and make sure the definition line (like x = 5) comes before the use."' is not assignable to type '"تأكد من كتابة الاسم كما هو تمامًا، وأن سطر التعريف (مثل x = 5) يسبق سطر الاستخدام."'.
+src/lib/i18n/en.ts(219,7): error TS2322: Type '"Two types were mixed that do not combine — like text and a number."' is not assignable to type '"خلطت بين نوعين لا يجتمعان — مثل نص ورقم."'.
+src/lib/i18n/en.ts(220,7): error TS2322: Type '"You cannot add the text \"5\" to the number 5 directly; each type has its own rules."' is not assignable to type '"لا يمكن مثلًا جمع النص \"5\" مع الرقم 5 مباشرة؛ لكل نوع قواعده."'.
+src/lib/i18n/en.ts(221,7): error TS2322: Type '"Convert first: int(\"5\") + 5, or str(5) to join text."' is not assignable to type '"حوّل النوع أولًا: int(\"5\") + 5، أو str(5) للدمج مع نصوص."'.
+src/lib/i18n/en.ts(224,7): error TS2322: Type '"The type is right but the value is invalid."' is not assignable to type '"النوع صحيح لكن القيمة غير صالحة."'.
+src/lib/i18n/en.ts(225,7): error TS2322: Type '"Like int(\"hello\") — the text exists but is not a valid number."' is not assignable to type '"مثل int(\"مرحبا\") — النص موجود لكنه لا يصلح رقمًا."'.
+src/lib/i18n/en.ts(226,7): error TS2322: Type '"Make sure the value converts: int(\"42\") works, int(\"abc\") does not."' is not assignable to type '"تأكد أن القيمة تصلح للتحويل: int(\"42\") تعمل، int(\"abc\") لا تعمل."'.
+src/lib/i18n/en.ts(229,7): error TS2322: Type '"The spaces at the start of a line are unexpected."' is not assignable to type '"المسافات في بداية السطر غير متوقعة."'.
+src/lib/i18n/en.ts(230,7): error TS2322: Type '"Python uses indentation to know what belongs to what — like the body of an if."' is not assignable to type '"بايثون يعتمد على المسافات ليفهم ما يتبع ما — مثل جسد if داخل الشرط."'.
+src/lib/i18n/en.ts(231,7): error TS2322: Type '"Indent lines inside an if/function by exactly 4 spaces, and remove extra indentation where it is not needed."' is not assignable to type '"اجعل الأسطر التابعة لشرط أو دالة مزاحة بمقدار 4 مسافات ثابتة، وأزل الإزاحة الزائدة عن الحاجة."'.
+src/lib/i18n/en.ts(234,7): error TS2322: Type '"You divided by zero — not allowed in math."' is not assignable to type '"قسمت على صفر — وهذا غير مسموح رياضيًا."'.
+src/lib/i18n/en.ts(235,7): error TS2322: Type '"Division by zero has no defined result, so Python stops."' is not assignable to type '"القسمة على صفر ليس لها نتيجة معرّفة، فيتوقف بايثون."'.
+src/lib/i18n/en.ts(236,7): error TS2322: Type '"Check the divisor first: if it is 0, take another path (if b != 0:)."' is not assignable to type '"افحص المقام قبل القسمة: إذا كان 0 فاتخذ قرارًا بديلًا (if b != 0:)."'.
+src/lib/i18n/en.ts(240,5): error TS2322: Type '"Preparing Python inside your browser… first time only"' is not assignable to type '"جارٍ تحضير بايثون داخل المتصفح… لأول مرة فقط"'.
+src/lib/i18n/en.ts(241,5): error TS2322: Type '"We download the interpreter (Pyodide) once, then it is cached locally — after that it runs almost offline."' is not assignable to type '"نُنزّل مفسّر بايثون (Pyodide) مرة واحدة ثم يُحفظ محليًا — بعد ذلك يعمل بلا إنترنت تقريبًا."'.
+src/lib/i18n/en.ts(242,5): error TS2322: Type '"Downloading the interpreter…"' is not assignable to type '"تنزيل المفسّر…"'.
+src/lib/i18n/en.ts(243,5): error TS2322: Type '"Booting Python…"' is not assignable to type '"إقلاع بايثون…"'.
+src/lib/i18n/en.ts(244,5): error TS2322: Type '"Python is ready."' is not assignable to type '"بايثون جاهز."'.
+src/lib/i18n/en.ts(245,5): error TS2322: Type '"Running…"' is not assignable to type '"يعمل الآن…"'.
+src/lib/i18n/en.ts(246,5): error TS2322: Type '"The program stopped after the time limit ({s}s)."' is not assignable to type '"توقف البرنامج بعد المهلة ({s} ثانية)."'.
+src/lib/i18n/en.ts(247,5): error TS2322: Type '"Probably an infinite loop — look for the stopping condition in your while."' is not assignable to type '"غالبًا هناك حلقة لا تتوقف — ابحث عن شرط الإنهاء في while."'.
+src/lib/i18n/en.ts(248,5): error TS2322: Type '"You stopped the run."' is not assignable to type '"أوقفتَ التنفيذ."'.
+src/lib/i18n/en.ts(249,5): error TS2322: Type '"Could not load Python — the network may be blocked."' is not assignable to type '"تعذّر تحميل بايثون — قد تكون الشبكة محجوبة."'.
+src/lib/i18n/en.ts(250,5): error TS2322: Type '"No worries: MCQ, fill-in, and output-prediction grading works without the interpreter, and code exercises wait for a wider network."' is not assignable to type '"لا تقلق: تقييم الاختيارات والأكمل والخرْج يعمل مباشرة دون مفسّر، وتمارين الكود تنتظر شبكة أوسع."'.
+src/lib/i18n/en.ts(251,5): error TS2322: Type '"Output"' is not assignable to type '"الخرْج"'.
+src/lib/i18n/en.ts(252,5): error TS2322: Type '"No output yet — press “Run”."' is not assignable to type '"لا خرْج بعد — اضغط «تشغيل»."'.
+src/lib/i18n/en.ts(253,5): error TS2322: Type '"Output console"' is not assignable to type '"لوحة الخرْج"'.
+src/lib/i18n/en.ts(256,5): error TS2322: Type '"Settings"' is not assignable to type '"الإعدادات"'.
+src/lib/i18n/en.ts(257,5): error TS2322: Type '"Tune the experience — everything is saved on your device only."' is not assignable to type '"اضبط التجربة كما تحب — كل شيء يُحفظ على جهازك فقط."'.
+src/lib/i18n/en.ts(258,5): error TS2322: Type '"Language"' is not assignable to type '"اللغة"'.
+src/lib/i18n/en.ts(259,5): error TS2322: Type '"العربية (right-to-left)"' is not assignable to type '"العربية (من اليمين لليسار)"'.
+src/lib/i18n/en.ts(260,5): error TS2322: Type '"English (left-to-right)"' is not assignable to type '"English (from left to right)"'.
+src/lib/i18n/en.ts(261,5): error TS2322: Type '"Theme"' is not assignable to type '"المظهر"'.
+src/lib/i18n/en.ts(262,5): error TS2322: Type '"Light"' is not assignable to type '"فاتح"'.
+src/lib/i18n/en.ts(263,5): error TS2322: Type '"Warm dark"' is not assignable to type '"داكن دافئ"'.
+src/lib/i18n/en.ts(264,5): error TS2322: Type '"Sepia paper"' is not assignable to type '"ورقي (سيبيا)"'.
+src/lib/i18n/en.ts(265,5): error TS2322: Type '"Follow system"' is not assignable to type '"حسب النظام"'.
+src/lib/i18n/en.ts(266,5): error TS2322: Type '"Font size"' is not assignable to type '"حجم الخط"'.
+src/lib/i18n/en.ts(267,5): error TS2322: Type '"{v}%"' is not assignable to type '"{v}٪"'.
+src/lib/i18n/en.ts(268,5): error TS2322: Type '"Calm mode"' is not assignable to type '"الوضع الهادئ"'.
+src/lib/i18n/en.ts(269,5): error TS2322: Type '"Hides XP, badges and celebrations — pure learning, no lures."' is not assignable to type '"يخفي نقاط الخبرة والأوسمة والاحتفالات — تعلّم صافٍ بلا إغراءات."'.
+src/lib/i18n/en.ts(270,5): error TS2322: Type '"Reduce motion"' is not assignable to type '"تقليل الحركة"'.
+src/lib/i18n/en.ts(271,5): error TS2322: Type '"Stops animations and transitions."' is not assignable to type '"يوقف الأنيميشن والانتقالات."'.
+src/lib/i18n/en.ts(272,5): error TS2322: Type '"Your data"' is not assignable to type '"بياناتك"'.
+src/lib/i18n/en.ts(273,5): error TS2322: Type '"Your progress and notes live on your device. Export a backup or move it to another machine."' is not assignable to type '"تقدّمك وملاحظاتك تعيش على جهازك. صدّرها نسخة احتياطية أو انقلها لجهاز آخر."'.
+src/lib/i18n/en.ts(274,5): error TS2322: Type '"Export my progress (JSON file)"' is not assignable to type '"تصدير تقدّمي (ملف JSON)"'.
+src/lib/i18n/en.ts(275,5): error TS2322: Type '"Import a progress file"' is not assignable to type '"استيراد ملف تقدّم"'.
+src/lib/i18n/en.ts(276,5): error TS2322: Type '"Your progress was imported successfully."' is not assignable to type '"استوردنا تقدّمك بنجاح."'.
+src/lib/i18n/en.ts(277,5): error TS2322: Type '"Invalid file — make sure it is a PyPath export."' is not assignable to type '"الملف غير صالح — تأكد أنه ملف تصدير من PyPath."'.
+src/lib/i18n/en.ts(278,5): error TS2322: Type '"Delete all my data"' is not assignable to type '"حذف كل بياناتي"'.
+src/lib/i18n/en.ts(279,5): error TS2322: Type '"Your progress, notes and XP will be erased from this device. This cannot be undone."' is not assignable to type '"سيُمحى تقدّمك وملاحظاتك ونقاطك نهائيًا من هذا الجهاز. لا يمكن التراجع."'.
+src/lib/i18n/en.ts(280,5): error TS2322: Type '"Yes, delete everything"' is not assignable to type '"نعم، امحُ كل شيء"'.
+src/lib/i18n/en.ts(281,5): error TS2322: Type '"Everything deleted — a fresh start."' is not assignable to type '"مُحي كل شيء — بداية جديدة."'.
+src/lib/i18n/en.ts(282,5): error TS2322: Type '"Keyboard shortcuts (inside a lesson)"' is not assignable to type '"اختصارات لوحة المفاتيح (داخل الدرس)"'.
+src/lib/i18n/en.ts(283,5): error TS2322: Type '"B — focus / unfocus the lab"' is not assignable to type '"B — تركيز/إلغاء تركيز المختبر"'.
+src/lib/i18n/en.ts(284,5): error TS2322: Type '"R — run the code"' is not assignable to type '"R — تشغيل الكود"'.
+src/lib/i18n/en.ts(285,5): error TS2322: Type '"N — next lesson (after completion)"' is not assignable to type '"N — الدرس التالي (بعد الإكمال)"'.
+src/lib/i18n/en.ts(286,5): error TS2322: Type '"Shortcuts are disabled while typing in the editor or an input."' is not assignable to type '"لا تعمل الاختصارات وأنت تكتب داخل المحرّر أو حقل إدخال."'.
+src/lib/i18n/en.ts(289,5): error TS2322: Type '"Coverage vs. sources"' is not assignable to type '"التغطية مقابل المصادر"'.
+src/lib/i18n/en.ts(290,5): error TS2322: Type '"Honest numbers: what is published against the four books — updated after every release."' is not assignable to type '"أرقام صادقة: ما نُشر منهاجيًا مقابل محتوى الكتب الأربعة — نحدّثها بعد كل إصدار."'.
+src/lib/i18n/en.ts(291,5): error TS2322: Type '"Book"' is not assignable to type '"الكتاب"'.
+src/lib/i18n/en.ts(292,5): error TS2322: Type '"Chapters"' is not assignable to type '"الفصول"'.
+src/lib/i18n/en.ts(293,5): error TS2322: Type '"Sections"' is not assignable to type '"الأقسام"'.
+src/lib/i18n/en.ts(294,5): error TS2322: Type '"Published"' is not assignable to type '"منشور"'.
+src/lib/i18n/en.ts(295,5): error TS2322: Type '"Percent"' is not assignable to type '"النسبة"'.
+src/lib/i18n/en.ts(296,5): error TS2322: Type '"Published"' is not assignable to type '"منشور"'.
+src/lib/i18n/en.ts(297,5): error TS2322: Type '"Planned"' is not assignable to type '"مخطّط"'.
+src/lib/i18n/en.ts(298,5): error TS2322: Type '"sections"' is not assignable to type '"قسمًا"'.
+src/lib/i18n/en.ts(299,5): error TS2322: Type '"“Published” means the lessons mapped to that section are written and validated against the content schema. Numbers are generated from coverage.json — no decoration."' is not assignable to type '"«منشور» يعني أن الدروس المرتبطة بالقسم مكتوبة ومُتحقَّق منها بمخطط المحتوى. الأرقام تُولَّد آليًا من coverage.json — بلا تزيين."'.
+src/lib/i18n/en.ts(300,5): error TS2322: Type '"Crunching numbers…"' is not assignable to type '"نحسب الأرقام…"'.
+src/lib/i18n/en.ts(301,5): error TS2322: Type '"Could not load the coverage file."' is not assignable to type '"تعذّر تحميل ملف التغطية."'.
+src/lib/i18n/en.ts(302,5): error TS2322: Type '"Overall"' is not assignable to type '"الإجمالي"'.
+src/lib/i18n/en.ts(305,5): error TS2322: Type '"Sources & credits"' is not assignable to type '"المصادر والحقوق"'.
+src/lib/i18n/en.ts(306,5): error TS2322: Type '"We build on wonderful books and respect their authors and licenses, word for word."' is not assignable to type '"نبني الدروس على كتب رائعة، ونحترم مؤلفيها وتراخيصهم حرفيًا."'.
+src/lib/i18n/en.ts(307,5): error TS2322: Type '"All lesson text, exercises and visuals in PyPath are original work, aligned syllabus-wise with the books above without verbatim copying — apart from short attributed quotes when needed."' is not assignable to type '"كل نصوص الدروس والتمارين والرسوم في PyPath عمل أصلي مستقل، يتوافق منهجيًا مع فصول الكتب أعلاه دون نسخ حرفي — باستثناء اقتباسات قصيرة منسوبة عند الحاجة."'.
+src/lib/i18n/en.ts(308,5): error TS2322: Type '"License"' is not assignable to type '"الترخيص"'.
+src/lib/i18n/en.ts(309,5): error TS2322: Type '"Role"' is not assignable to type '"الدور"'.
+src/lib/i18n/en.ts(310,5): error TS2322: Type '"Link"' is not assignable to type '"الرابط"'.
+src/lib/i18n/en.ts(311,5): error TS2322: Type '"Book"' is not assignable to type '"الكتاب"'.
+src/lib/i18n/en.ts(312,5): error TS2322: Type '"PyPath itself: code under MIT, lesson content under CC BY-SA 4.0."' is not assignable to type '"منصة PyPath نفسها: الكود برخصة MIT، ومحتوى الدروس CC BY-SA 4.0."'.
+src/lib/i18n/en.ts(313,5): error TS2322: Type '"Note: the Arabic edition of PY4E is non-commercial (BY-NC-SA), so this platform stays fully non-commercial."' is not assignable to type '"ملاحظة: ترخيص النسخة العربية من PY4E غير تجاري (BY-NC-SA)، لذا تبقى المنصة غير تجارية بالكامل."'.
+src/lib/i18n/en.ts(316,5): error TS2322: Type '"+{amount} XP"' is not assignable to type '"+{amount} نقطة خبرة"'.
+src/lib/i18n/en.ts(318,7): error TS2322: Type '"Exercise passed first try"' is not assignable to type '"تمرين من المحاولة الأولى"'.
+src/lib/i18n/en.ts(319,7): error TS2322: Type '"Exercise passed after retries"' is not assignable to type '"تمرين بعد محاولات"'.
+src/lib/i18n/en.ts(320,7): error TS2322: Type '"Bug fixed"' is not assignable to type '"إصلاح خطأ"'.
+src/lib/i18n/en.ts(321,7): error TS2322: Type '"Understanding check"' is not assignable to type '"سؤال فهم"'.
+src/lib/i18n/en.ts(322,7): error TS2322: Type '"Lesson completed"' is not assignable to type '"إكمال درس"'.
+src/lib/i18n/en.ts(324,5): error TS2322: Type '"Lesson complete 🌿"' is not assignable to type '"درس مُكتمل 🌿"'.
+src/lib/i18n/en.ts(325,5): error TS2322: Type '"{xp} XP added to your balance. Take a breath — then next."' is not assignable to type '"أُضيفت {xp} نقطة إلى رصيدك. خُذ نفسًا — ثم التالي."'.
+src/lib/i18n/en.ts(326,5): error TS2322: Type '"Import successful"' is not assignable to type '"استيراد ناجح"'.
+src/lib/runtime/runner.ts(155,5): error TS2531: Object is possibly 'null'.
+src/lib/runtime/runner.ts(241,63): error TS2353: Object literal may only specify known properties, and 'tests' does not exist in type 'Omit<WorkerRequest, "id">'.

@@ -1,0 +1,260 @@
+[
+ {
+  "lesson": "swe.ch14.l1",
+  "id": "ex1.pipeline-runner",
+  "solution": "stages = ['build', 'static', 'test', 'package']\n\ncommits = {\n    'c1': {'build': 'ok', 'static': 'ok', 'test': 'ok', 'package': 'ok'},\n    'c2': {'build': 'ok', 'static': 'FAIL'},\n    'c3': {'build': 'ok', 'static': 'ok', 'test': 'ok', 'package': 'ok'},\n}\n\ndef run_pipeline(cid):\n    commit = commits[cid]\n    for stage in stages:\n        status = commit[stage]\n        print('%s: %s' % (stage, status))\n        if status == 'FAIL':\n            print('pipeline: red')\n            return 'red'\n    print('pipeline: green')\n    return 'green'\n\nfor cid in ['c1', 'c2', 'c3']:\n    run_pipeline(cid)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "سجل التشغيل يُظهر الفشل والتحمر",
+     "en": "The run log shows the failure and the red verdict"
+    },
+    "code": "assert 'build: ok' in __learner_output__ and 'static: FAIL' in __learner_output__ and 'pipeline: red' in __learner_output__, 'expected: build: ok, static: FAIL, pipeline: red | actual: %r' % __learner_output__",
+    "expected": "build: ok, static: FAIL, pipeline: red"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "التزامان صحيحان يحصلان على green",
+     "en": "Healthy commits get green"
+    },
+    "code": "assert 'pipeline: green' in __learner_output__, 'expected: pipeline: green | actual: %r' % __learner_output__",
+    "expected": "pipeline: green"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "fail-fast: لا مراحل بعد التحمر",
+     "en": "fail-fast: nothing runs after red"
+    },
+    "code": "assert 'pipeline: red\\nbuild: ok' in __learner_output__, 'expected: the line after pipeline: red is the next commit build: ok (no skipped stages) | actual: %r' % __learner_output__",
+    "expected": "the line after pipeline: red is the next commit build: ok (no skipped stages)"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الدالة تعيد الحكم",
+     "en": "The function returns the verdict"
+    },
+    "code": "assert run_pipeline('c2') == 'red' and run_pipeline('c3') == 'green', 'expected: c2 -> red and c3 -> green | actual: %r' % ((run_pipeline('c2'), run_pipeline('c3')),)",
+    "expected": "c2 -> red and c3 -> green"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch14.l2",
+  "id": "ex1.canary-decision",
+  "solution": "def canary_decision(samples, threshold):\n    mean = sum(samples) / len(samples)\n    promoted = mean <= threshold\n    print('mean: %.1f' % mean)\n    print('promoted: %s' % promoted)\n    return promoted\n\ncanary_decision([1, 2, 1, 2, 1], 3.0)\ncanary_decision([4, 6, 5], 4.0)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الشريحة الصحية تُرقَّى",
+     "en": "The healthy slice is promoted"
+    },
+    "code": "assert 'promoted: True' in __learner_output__, 'expected: promoted: True | actual: %r' % __learner_output__",
+    "expected": "promoted: True"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الشريحة المريضة تُرفض بصدق",
+     "en": "The sick slice is honestly rejected"
+    },
+    "code": "assert 'promoted: False' in __learner_output__, 'expected: promoted: False | actual: %r' % __learner_output__",
+    "expected": "promoted: False"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الوسط المطبوع بالتنسيق المطلوب",
+     "en": "Means printed in the required format"
+    },
+    "code": "assert 'mean: 1.4' in __learner_output__ and 'mean: 5.0' in __learner_output__, 'expected: mean: 1.4 and mean: 5.0 | actual: %r' % __learner_output__",
+    "expected": "mean: 1.4 and mean: 5.0"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الحد يساوي العتبة يرقى",
+     "en": "A mean exactly at the threshold promotes"
+    },
+    "code": "assert canary_decision([2, 2], 2.0) is True and canary_decision([3, 4], 3.0) is False, 'expected: ([2,2],2.0) -> True and ([3,4],3.0) -> False | actual: %r' % ((canary_decision([2, 2], 2.0), canary_decision([3, 4], 3.0)),)",
+    "expected": "([2,2],2.0) -> True and ([3,4],3.0) -> False"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch14.l3",
+  "id": "ex1.dns-resolver",
+  "solution": "from datetime import datetime, timedelta\n\ndns = {\n    'clinic.example.com': {'value': '203.0.113.143', 'ttl': 300},\n    'www.example.com': {'value': 'clinic.example.com', 'ttl': 600},\n}\ncache = {}\n\ndef resolve(name, now):\n    if name in cache and now < cache[name][1]:\n        return (cache[name][0], 'hit')\n    rec = dns[name]\n    cache[name] = (rec['value'], now + timedelta(seconds=rec['ttl']))\n    return (rec['value'], 'miss')\n\nt0 = datetime(2025, 1, 1, 9, 0, 0)\nprint(resolve('clinic.example.com', t0))\nprint(resolve('clinic.example.com', t0 + timedelta(seconds=100)))\nprint(resolve('clinic.example.com', t0 + timedelta(seconds=500)))\nprint(resolve('www.example.com', t0))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "أول استعلام miss ويطبع الثنائي",
+     "en": "The first lookup is a miss, printed as the pair"
+    },
+    "code": "assert \"('203.0.113.143', 'miss')\" in __learner_output__, 'expected: (\\'203.0.113.143\\', \\'miss\\') | actual: %r' % __learner_output__",
+    "expected": "('203.0.113.143', 'miss')"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "ضمن TTL الجواب من الذاكرة",
+     "en": "Within the TTL the answer comes from cache"
+    },
+    "code": "assert \"('203.0.113.143', 'hit')\" in __learner_output__, 'expected: (\\'203.0.113.143\\', \\'hit\\') | actual: %r' % __learner_output__",
+    "expected": "('203.0.113.143', 'hit')"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "ثلاث misses وhit واحدة بالضبط",
+     "en": "Exactly three misses and one hit"
+    },
+    "code": "assert __learner_output__.count('miss') == 3 and __learner_output__.count('hit') == 1, 'expected: 3 misses and 1 hit | actual: %r' % __learner_output__",
+    "expected": "3 misses and 1 hit"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الذاكرة تخدم الاسم نفسه بعد الاستدعاءات",
+     "en": "The cache still serves the name afterwards"
+    },
+    "code": "assert resolve('clinic.example.com', t0 + timedelta(seconds=100))[1] == 'hit', 'expected: hit | actual: %r' % (resolve('clinic.example.com', t0 + timedelta(seconds=100))[1],)",
+    "expected": "hit"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch14.l4",
+  "id": "ex1.dora-calculators",
+  "solution": "from datetime import datetime\n\nchanges = [\n    {'commit': datetime(2025, 3, 3, 9, 0), 'deploy': datetime(2025, 3, 5, 21, 0), 'failed': False},\n    {'commit': datetime(2025, 3, 4, 9, 0), 'deploy': datetime(2025, 3, 6, 21, 0), 'failed': False},\n    {'commit': datetime(2025, 3, 5, 9, 0), 'deploy': datetime(2025, 3, 7, 21, 0), 'failed': False},\n    {'commit': datetime(2025, 3, 6, 9, 0), 'deploy': datetime(2025, 3, 9, 9, 0), 'failed': True},\n    {'commit': datetime(2025, 3, 7, 9, 0), 'deploy': datetime(2025, 3, 9, 9, 0), 'failed': False},\n]\n\ndef compute_dora(changes):\n    leads = []\n    for c in changes:\n        hours = (c['deploy'] - c['commit']).total_seconds() / 3600\n        leads.append(hours / 24)\n    failed = 0\n    for c in changes:\n        if c['failed']:\n            failed += 1\n    cfr = failed / len(changes)\n    print('lead time: %.1f days' % (sum(leads) / len(leads)))\n    print('deploys: %d failed: %d' % (len(changes), failed))\n    print('CFR: %.1f' % cfr)\n    return (sum(leads) / len(leads), cfr)\n\ncompute_dora(changes)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "زمن القيادة 2.5 يومًا",
+     "en": "Lead time is 2.5 days"
+    },
+    "code": "assert 'lead time: 2.5 days' in __learner_output__, 'expected: lead time: 2.5 days | actual: %r' % __learner_output__",
+    "expected": "lead time: 2.5 days"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "معدل فشل التغيير 0.2",
+     "en": "Change fail rate is 0.2"
+    },
+    "code": "assert 'CFR: 0.2' in __learner_output__, 'expected: CFR: 0.2 | actual: %r' % __learner_output__",
+    "expected": "CFR: 0.2"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سطر العدّ مطبوع",
+     "en": "The deploy/failed count line is printed"
+    },
+    "code": "assert 'deploys: 5 failed: 1' in __learner_output__, 'expected: deploys: 5 failed: 1 | actual: %r' % __learner_output__",
+    "expected": "deploys: 5 failed: 1"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الثنائي المُعاد صحيح رقميًّا",
+     "en": "The returned pair is numerically correct"
+    },
+    "code": "r = compute_dora(changes)\nassert abs(r[0] - 2.5) < 1e-9 and abs(r[1] - 0.2) < 1e-9, 'expected: (2.5, 0.2) | actual: %r' % (r,)",
+    "expected": "(2.5, 0.2)"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch14.l5",
+  "id": "ex1.mini-pipeline",
+  "solution": "from datetime import datetime\n\nstages = ['build', 'test', 'canary']\n\nruns = {\n    'r1': {'build': 'ok', 'test': 'ok'},\n    'r2': {'build': 'ok', 'test': 'FAIL'},\n    'r3': {'build': 'ok', 'test': 'ok'},\n}\n\ncanary_errors = {'r1': [1, 2, 1, 2, 1], 'r2': [4, 6, 5], 'r3': [4, 6, 5]}\nERROR_THRESHOLD = 4.0\n\nhistory = [\n    {'commit': datetime(2025, 3, 10, 9, 0), 'deploy': datetime(2025, 3, 10, 21, 0), 'failed': False},\n    {'commit': datetime(2025, 3, 11, 9, 0), 'deploy': datetime(2025, 3, 13, 9, 0), 'failed': True},\n    {'commit': datetime(2025, 3, 12, 9, 0), 'deploy': datetime(2025, 3, 12, 21, 0), 'failed': False},\n]\n\ndef deliver(run_id):\n    run = runs[run_id]\n    passed = 0\n    for stage in stages:\n        if stage == 'canary':\n            samples = canary_errors[run_id]\n            mean = sum(samples) / len(samples)\n            status = 'ok' if mean <= ERROR_THRESHOLD else 'FAIL'\n        else:\n            status = run.get(stage, 'skipped')\n        print('%s: %s' % (stage, status))\n        if status != 'ok':\n            print('stopped: %s' % stage)\n            break\n        passed += 1\n    decision = 'promote' if passed == len(stages) else 'rollback'\n    print('stages passed: %d / decision: %s' % (passed, decision))\n    return (passed, decision)\n\ndef dora_summary(history):\n    leads = []\n    for c in history:\n        leads.append((c['deploy'] - c['commit']).total_seconds() / 3600 / 24)\n    failed = 0\n    for c in history:\n        if c['failed']:\n            failed += 1\n    print('lead time: %.1f days' % (sum(leads) / len(leads)))\n    print('deploys: %d failed: %d' % (len(history), failed))\n    print('CFR: %.1f' % (failed / len(history)))\n\nfor run_id in ['r1', 'r2', 'r3']:\n    deliver(run_id)\n\ndora_summary(history)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الكناري المريض يعطي سطر الحكم المطلوب",
+     "en": "The sick canary yields the required verdict line"
+    },
+    "code": "assert 'stages passed: 2 / decision: rollback' in __learner_output__, 'expected: stages passed: 2 / decision: rollback | actual: %r' % __learner_output__",
+    "expected": "stages passed: 2 / decision: rollback"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الترقية الكاملة وسبب التوقف معًا",
+     "en": "The full promotion and the stop reason together"
+    },
+    "code": "assert 'stages passed: 3 / decision: promote' in __learner_output__ and 'stopped: test' in __learner_output__, 'expected: stages passed: 3 / decision: promote and stopped: test | actual: %r' % __learner_output__",
+    "expected": "stages passed: 3 / decision: promote and stopped: test"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "فشل سريع: التوقف يلي الفشل مباشرة",
+     "en": "fail-fast: the stop immediately follows the failure"
+    },
+    "code": "assert 'test: FAIL\\nstopped: test' in __learner_output__, 'expected: stopped: test directly after test: FAIL (no later stage ran) | actual: %r' % __learner_output__",
+    "expected": "stopped: test directly after test: FAIL (no later stage ran)"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "خلاصة DORA والثنائي المُعاد",
+     "en": "The DORA summary and the returned pair"
+    },
+    "code": "assert 'lead time: 1.0 days' in __learner_output__ and 'deploys: 3 failed: 1' in __learner_output__ and 'CFR: 0.3' in __learner_output__ and deliver('r2') == (1, 'rollback'), 'expected: lead time: 1.0 days, deploys: 3 failed: 1, CFR: 0.3, deliver(r2) == (1, rollback) | actual: %r' % ((deliver('r2'),),)",
+    "expected": "lead time: 1.0 days, deploys: 3 failed: 1, CFR: 0.3, deliver(r2) == (1, rollback)"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch14.l5",
+  "id": "ex5.debug-gateless",
+  "solution": "stages = ['build', 'test', 'canary']\nruns = {\n    'r1': {'build': 'ok', 'test': 'ok'},\n    'r2': {'build': 'ok', 'test': 'FAIL'},\n}\ncanary_errors = {'r1': [1, 2, 1, 2, 1], 'r2': [1, 1, 1]}\nERROR_THRESHOLD = 4.0\n\ndef deliver(run_id):\n    run = runs[run_id]\n    passed = 0\n    for stage in stages:\n        if stage == 'canary':\n            samples = canary_errors[run_id]\n            status = 'ok' if sum(samples) / len(samples) <= ERROR_THRESHOLD else 'FAIL'\n        else:\n            status = run.get(stage, 'skipped')\n        print('%s: %s' % (stage, status))\n        if status != 'ok':\n            print('stopped: %s' % stage)\n            break\n        passed = passed + 1\n    decision = 'promote' if passed == len(stages) else 'rollback'\n    print('stages passed: %d / decision: %s' % (passed, decision))\n\ndeliver('r1')\ndeliver('r2')",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "حكم r2 صادق بعد الإصلاح",
+     "en": "r2’s verdict is honest after the fix"
+    },
+    "code": "assert 'stages passed: 1 / decision: rollback' in __learner_output__, 'expected: stages passed: 1 / decision: rollback | actual: %r' % __learner_output__",
+    "expected": "stages passed: 1 / decision: rollback"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "سبب التوقف مكتوب",
+     "en": "The stop reason is written"
+    },
+    "code": "assert 'stopped: test' in __learner_output__, 'expected: stopped: test | actual: %r' % __learner_output__",
+    "expected": "stopped: test"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "التوقف يلي الفشل مباشرة بلا مراحل لاحقة",
+     "en": "The stop directly follows the failure, no later stages"
+    },
+    "code": "assert 'test: FAIL\\nstopped: test' in __learner_output__, 'expected: stopped: test immediately after test: FAIL (no canary line ran after the failure) | actual: %r' % __learner_output__",
+    "expected": "stopped: test immediately after test: FAIL (no canary line ran after the failure)"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "ترقية واحدة صادقة لا اثنتان",
+     "en": "One honest promotion, not two"
+    },
+    "code": "assert __learner_output__.count('decision: promote') == 1, 'expected: exactly one decision: promote (r1 only) | actual: %r' % __learner_output__",
+    "expected": "exactly one decision: promote (r1 only)"
+   }
+  ]
+ }
+]

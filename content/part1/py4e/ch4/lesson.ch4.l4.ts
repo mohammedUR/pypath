@@ -1,0 +1,340 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * py4e.ch4.l4 — "Defining New Functions: def and Flow of Execution /
+ * تعريف توابع جديدة: def وتسلسل التنفيذ"
+ * Aligned with PY4E ch4 s6 (إضافة توابع جديدة), s7 (التعاريف واستخداماتها),
+ * s8 (تسلسل التنفيذ).
+ * All expression is original.
+ */
+const lesson = {
+  id: 'py4e.ch4.l4',
+  version: 1,
+  part: 'I',
+  track: 'P1',
+  book: 'PY4E',
+  chapter: 4,
+  title: { ar: 'تعريف توابع جديدة: def وتسلسل التنفيذ', en: 'Defining New Functions: def and Flow of Execution' },
+  estimatedMinutes: 25,
+  prerequisites: ['py4e.ch4.l3'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'حتى اليوم كنت مستهلكًا: توابع بايثون الجاهزة تُنفّذ وأنت تستدعي. اليوم تفتح مصنعك الخاص: الكلمة def تصنع توابعًا باسمك أنت تختاره، بتعليمات أنت تكتبها. ومعها ستفهم أخيرًا كيف يقرأ بايثون برنامجك سطرًا سطرًا — ومتى يقفز.',
+        en: 'Until today you were a consumer: Python’s built-ins ran while you called. Today you open your own factory: the keyword def manufactures functions with a name you choose and statements you write. With it, you will finally understand how Python reads your program line by line — and when it jumps.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "def shout():\n    print('مرحبا!')\n\nprint('قبل')\nshout()",
+      question: {
+        ar: 'بالترتيب — ماذا يطبع هذا البرنامج؟ وهل يُطبع شيء عند سطر def نفسه؟',
+        en: 'In order — what does this program print? And does anything print at the def line itself?',
+      },
+      reveal: {
+        ar: "يطبع قبل ثم مرحبا!. تعريف def وحده لا ينفّذ الجسم ولا يُخرج شيئًا: الجسم ينتظر الاستدعاء بصمت. التنفيذ نزل إلى print('قبل') فطبع، ثم وصل shout() فوقّز إلى جسم التابع، طبع مرحبا!، وعاد. ثلاث حركات: تعريف، مرور، قفزة.",
+        en: "It prints قبل then مرحبا!. The def alone executes nothing and outputs nothing: the body waits silently for the call. Execution walked down to print('قبل'), printed it, then reached shout(), jumped into the function’s body, printed مرحبا!, and returned. Three moves: define, pass by, jump.",
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'تشريح def: ترويسة وجسم', en: 'Anatomy of def: header and body' },
+      chunks: [
+        {
+          ar: 'تعريف التابع يحدد اسم تابع جديد وسلسلة التعليمات التي تُنفّذ عند استدعائه. الشكل: def اسم_التابع(): ثم سطور مزاحة. الكلمة def هي المفتاح، والقوسان الفارغان تعنيان أن التابع لا يأخذ وسائط (سننشئ قريبًا توابعًا تقبل وسائط)، ويجب أن تنتهي الترويسة بنقطتين.',
+          en: 'A function definition specifies a new function’s name and the sequence of statements that runs when it is called. The shape: def function_name(): then indented lines. The keyword def is the key, the empty parentheses mean the function takes no arguments (we will create argument-taking ones soon), and the header must end with a colon.',
+        },
+        {
+          ar: 'يُسمّى السطر الأول الترويسة، والباقي جسم التابع، ويجب أن يكون مزاحًا — الاتفاق 4 فراغات دائمًا، ويمكن للجسم أن يحتوي أي عدد من التعليمات. واسم التابع يخضع لقواعد أسماء المتغيّرات: حروف وأرقام وشرطة سفلية، لا رقم في البداية ولا فراغات ولا كلمة مفتاحية — وتجنّب أن يتشابه اسم التابع واسم متغيّر.',
+          en: 'The first line is called the header and the rest is the function’s body, which must be indented — the convention is always 4 spaces — and the body may hold any number of statements. The function name follows the variable-naming rules: letters, digits and underscore, no leading digit, no spaces, no keyword — and avoid giving a function and a variable the same name.',
+        },
+        {
+          ar: "وبعد التعريف يصبح الاسم قيمة حقيقية: print(print_lyrics) يطبع <function print_lyrics at 0x…> وtype(print_lyrics) يعطي <class 'function'>. تعريف تابع ينشئ متغيّرًا يحمل كائن تابع — وطريقة استدعائه مشابهة تمامًا لاستدعاء الجاهزات: الاسم مع القوسين.",
+          en: "After definition the name becomes a real value: print(print_lyrics) prints <function print_lyrics at 0x…> and type(print_lyrics) gives <class 'function'>. Defining a function creates a variable holding a function object — and calling it looks exactly like calling a built-in: name plus parentheses.",
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'التعريف ينفَّذ، والجسم ينتظر', en: 'The definition runs, the body waits' },
+      chunks: [
+        {
+          ar: 'تُنفَّذ تعريفات التوابع مثل غيرها من التعليمات، وهي تنشئ كائنات التابع. لكن العبارات داخل الجسم لا تُنفَّذ حتى يُستدعى التابع، وتعريف التابع وحده لا يولّد خرْجًا. لذلك البرنامج الذي يحوي defs فقط يطبع لا شيء — والاستدعاء هو شرارة التشغيل.',
+          en: 'Function definitions execute like any other statement, and their effect is creating function objects. But the statements inside the body do not run until the function is called, and a definition by itself produces no output. So a program containing only defs prints nothing — the call is the spark.',
+        },
+        {
+          ar: 'وبالطبع عليك إنشاء التابع قبل أن تنفّذ محتواه: يجب أن يأتي التعريف قبل أول استدعاء. تجربة الكتاب: انقل سطر الاستدعاء repeat_lyrics() إلى أعلى البرنامج فوق التعريفات — يعطي NameError: بايثون تنفّذ من الأعلى للأسفل، فحين يأتي الاستدعاء لم يُنشأ الاسم بعد.',
+          en: 'And of course you must create a function before running its contents: the definition must come before the first call. The book’s experiment: move the call repeat_lyrics() to the top of the program, above the definitions — you get NameError: Python executes top to bottom, so when the call arrives the name does not exist yet.',
+        },
+        {
+          ar: 'أما التجربة الثانية فأذكى: انقل تعريف print_lyrics ليصبح بعد تعريف repeat_lyrics، مع بقاء الاستدعاء في الأسفل — يعمل البرنامج بلا خطأ! لأن التعريفات كلها نُفِّذت قبل الاستدعاء، وترتيب التعريفات فيما بينها لا يهم. المهم: التعريف قبل الاستدعاء، لا قبل التعريفات الأخرى.',
+          en: 'The second experiment is subtler: move print_lyrics’s definition below repeat_lyrics’s definition, keeping the call at the bottom — the program runs without error! Because by the time the call executes, both definitions have already run; the order of definitions among themselves does not matter. What matters: definition before call, not before other definitions.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'تسلسل التنفيذ: البرنامج يقفز', en: 'Flow of execution: the program jumps' },
+      chunks: [
+        {
+          ar: 'لضمان أن التابع عُرّف قبل استخدامه، عليك معرفة تسلسل التنفيذ: الترتيب الذي تُنفَّذ به التعليمات. يبدأ التنفيذ دائمًا من التعليمة الأولى في البرنامج، وتُنفَّذ التعليمات واحدة تلو الأخرى من الأعلى للأسفل. التعريفات لا تغيّر التسلسل — تُنشئ الكائنات ويمرّ التنفيذ — لكن جسمها ينتظر حتى الاستدعاء.',
+          en: 'To guarantee a function is defined before use, you need to know the flow of execution: the order in which statements run. Execution always starts at the first statement of the program and runs one statement at a time, top to bottom. Definitions do not alter the flow — they create the objects and execution passes by — but their bodies wait for the call.',
+        },
+        {
+          ar: 'الاستدعاء انعطاف في التسلسل: بدلًا من الذهاب إلى التعليمة التالية، يقفز التنفيذ إلى جسم التابع وينفّذ تعليماته كلها، ثم يعود ليستأنف من حيث توقف. والمغزى الأعمق: التابع نفسه قد يستدعي تابعًا آخر، وفي منتصف ذاك قد يستدعي غيره — ولحسن الحظ بايثون جيدة في حفظ مسارها: كلما اكتمل تابع استأنف المُستدعي عمله، وحين يُبلغ البرنامج نهايته تنتهي العملية.',
+          en: 'A call is a detour in the flow: instead of moving to the next statement, execution jumps into the function’s body, runs its statements, then comes back and resumes where it stopped. The deeper twist: a function may itself call another function, which mid-way may call yet another — and luckily Python is good at keeping its track: whenever a function completes, its caller resumes, and when the program reaches its end the process finishes.',
+        },
+        {
+          ar: 'والدرس العملي: قراءة برنامجًا ليست دائمًا من الأعلى للأسفل. أحيانًا يكون تتبّع تسلسل التنفيذ — متابعة القفزات من استدعاء إلى تعريف — أوضح وأكثر منطقية، خصوصًا في البرامج متعددة التوابع.',
+          en: 'And the practical lesson: reading a program is not always top to bottom. Sometimes following the flow of execution — chasing the jumps from call to definition — is clearer and more logical, especially in programs with several functions.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'تتبّع القفزات سطرًا سطرًا', en: 'Tracing the jumps line by line' },
+      code: "def cheer():\n    print('أهلًا بك!')\n\ndef do_twice():\n    cheer()\n    cheer()\n\ndo_twice()\nprint('انتهى البرنامج')",
+      explanation: {
+        ar: 'تتبّع معنا: التعريفان نُفّذا أولًا فأنشآ كائنين — بلا خرْج. ثم do_twice() قفزت إلى جسمها الذي استدعى cheer() فقفزت إلى جسمها وطعت أهلًا بك! وعادت؛ وكررت المسرح مرة ثانية. ثم عاد التنفيذ إلى السطر الأخير فطبع انتهى البرنامج. تابعٌ يستدعي تابعًا — وبايثون لم تفقد المكان قط.',
+        en: "Trace with us: the two definitions ran first and created two objects — no output. Then do_twice() jumped into its body, which called cheer(), which jumped into its body, printed أهلًا بك!, and returned; the scene repeated once more. Then execution returned to the last line and printed انتهى البرنامج. A function calling a function — and Python never lost its place.",
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.define-greet',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: "عرّف تابعًا اسمه greet بلا معاملات يطبع أهلًا بكم، ثم استدعه مرة واحدة.",
+        en: "Define a function named greet with no parameters that prints أهلًا بكم, then call it once.",
+      },
+      starterCode: '# عرّف التابع ثم استدعه / define the function, then call it\n',
+      solution: "def greet():\n    print('أهلًا بكم')\n\ngreet()",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'greet كائن تابع قابل للاستدعاء', en: 'greet is a callable function object' },
+          code: "assert callable(greet), 'expected: function | actual: %r' % type(greet).__name__",
+          expected: 'function',
+        },
+        {
+          id: 't2',
+          name: { ar: 'تُطبع رسالة الترحيب', en: 'The greeting is printed' },
+          code: "assert 'أهلًا بكم' in __learner_output__, ('expected: أهلًا بكم | actual: %r' % __learner_output__)",
+          expected: 'أهلًا بكم',
+        },
+        {
+          id: 't3',
+          name: { ar: 'الاستدعاء مرة واحدة فقط', en: 'Called exactly once' },
+          code: "assert __learner_output__.count('أهلًا بكم') == 1, ('expected: once | actual: %r' % __learner_output__)",
+          expected: 'أهلًا بكم',
+        },
+      ],
+      hints: [
+        { ar: 'الترويسة: def greet(): — بالنقطتين وبلا وسائط.', en: 'The header: def greet(): — with the colon and no arguments.' },
+        { ar: 'جسم السطر الواحد مزاح 4 فراغات تحت الترويسة.', en: 'The one-line body is indented 4 spaces under the header.' },
+        { ar: 'وفي سطر مستقل (بلا إزاحة) الاستدعاء: greet()', en: 'And on its own line (no indentation), the call: greet()' },
+        { ar: "def greet():\n    print('أهلًا بكم')\n\ngreet()", en: "def greet():\n    print('أهلًا بكم')\n\ngreet()" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-flow',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'تتبّع تسلسل التنفيذ بالضبط — التعريفات لا تطبع، والاستدعاءات تقفز — وتوقّع الخرْج سطرًا سطرًا.',
+        en: 'Trace the flow of execution exactly — definitions print nothing, calls jump — and predict the output line by line.',
+      },
+      code: "def a():\n    print('واحد')\n\ndef b():\n    a()\n    a()\n\nprint('بداية')\nb()\nprint('نهاية')",
+      solution: 'بداية\nواحد\nواحد\nنهاية',
+      answer: 'بداية\nواحد\nواحد\nنهاية',
+      hints: [
+        { ar: 'التعريفان a وb لا ينتجان خرْجًا.', en: 'The definitions a and b produce no output.' },
+        { ar: "أول خرْج من print('بداية') ثم القفزة إلى b.", en: "The first output is from print('بداية'), then the jump into b." },
+        { ar: 'داخل b استدعاءان لـ a — كل استدعاء يطبع سطرًا ويعود.', en: 'Inside b there are two calls to a — each call prints one line and returns.' },
+        { ar: 'الخرْج:\nبداية\nواحد\nواحد\nنهاية', en: 'The output:\nبداية\nواحد\nواحد\nنهاية' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-call-first',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'في برنامج كلمات الأغنية بالكتاب: ماذا يحدث لو نقلنا سطر الاستدعاء repeat_lyrics() إلى أعلى البرنامج قبل التعريفات؟',
+        en: 'In the book’s lyrics program: what happens if we move the call repeat_lyrics() to the top of the program, above the definitions?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'NameError — التنفيذ من الأعلى للأسفل، والاسم لم يُنشأ بعد', en: 'NameError — execution is top-down and the name does not exist yet' } },
+        { id: 'b', text: { ar: 'يعمل طبيعيًا — بايثون تفحص الملف كله قبل التشغيل', en: 'It works fine — Python scans the whole file before running' } },
+        { id: 'c', text: { ar: 'SyntaxError — الاستدعاء يجب أن يأتي آخرًا قواعديًا', en: 'SyntaxError — a call must grammatically come last' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'السؤال عن تسلسل التنفيذ لا عن القواعد.', en: 'This is a question about the flow of execution, not grammar.' },
+        { ar: 'التعريف تعليمة تُنفَّذ في دورها — لا قبل دورها.', en: 'A definition is a statement executed in its turn — not before its turn.' },
+        { ar: 'عند بلوغ الاستدعاء يكون الاسم مجهولًا — فماذا يقول المفسّر؟', en: 'When the call is reached, the name is unknown — what does the interpreter say?' },
+        { ar: 'الجواب: NameError — يجب تعريف التابع قبل أول استدعاء.', en: 'Answer: NameError — a function must be defined before its first call.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-def',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'أكمل: السطر الأول من تعريف التابع يبدأ بالكلمة المفتاحية ______.',
+        en: 'Fill in: the first line of a function definition starts with the keyword ______.',
+      },
+      answer: 'def',
+      solution: 'def',
+      hints: [
+        { ar: 'ثلاثة حروف تراها أعلى كل تابع عرّفته اليوم.', en: 'Three letters, seen at the top of every function you defined today.' },
+        { ar: 'هي اختصار كلمة define — عرِّف.', en: 'It is short for define.' },
+        { ar: 'def greet(): — أول ثلاثة حروف.', en: 'def greet(): — the first three letters.' },
+        { ar: 'الجواب: def', en: 'Answer: def' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "def print_lyrics():\n    print(\"أنا خشّاب، وأنا بخير.\")\n    print('أنام الليل كله وأعمل النهار كله')\n\nprint(print_lyrics)\nprint(type(print_lyrics))\nprint_lyrics()",
+      prompt: {
+        ar: 'جرّب بنفسك: اطبع كائن التابع ونوعه قبل أن تستدعيه — التابع قيمة قابلة للحمل. ثم عرّف repeat_lyrics() تستدعي print_lyrics مرتين واستدعِ repeat_lyrics. وأخيرًا انقل سطر الاستدعاء فوق التعريف وشاهد NameError بعينيك. لا اختبار هنا — فضولك فقط.',
+        en: "Try it yourself: print the function object and its type before calling it — a function is a value you can carry around. Then define repeat_lyrics() that calls print_lyrics twice, and call repeat_lyrics. Finally move the call line above the definition and watch NameError with your own eyes. No tests here — just your curiosity.",
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'هل يُنتج سطر التعريف def وحده — بلا استدعاء — أي خرْج؟',
+            en: 'Does a def line by itself — with no call — produce any output?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لا — ينشئ كائن التابع، والجسم ينتظر الاستدعاء', en: 'No — it creates the function object; the body waits for the call' } },
+            { id: 'b', text: { ar: 'نعم — يُنفّذ الجسم مرة واحدة عند التعريف', en: 'Yes — the body runs once at definition time' } },
+            { id: 'c', text: { ar: 'نعم — يطبع اسم التابع', en: 'Yes — it prints the function’s name' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'التعريف تعليمة تُنفَّذ لكن أثرها إنشاء الكائن فقط: الجسم لا يُنفَّذ حتى يُستدعى التابع، والتعريف لا يولّد خرْجًا.',
+            en: 'A definition executes, but its only effect is creating the object: the body does not run until the function is called, and the definition produces no output.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'أي الأسماء التالية صالح لتابع؟',
+            en: 'Which of the following names is valid for a function?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'print_lyrics', en: 'print_lyrics' } },
+            { id: 'b', text: { ar: '2fast', en: '2fast' } },
+            { id: 'c', text: { ar: 'my func', en: 'my func' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'قواعد أسماء المتغيّرات نفسها: حروف وأرقام وشرطة سفلية، ولا رقم أولًا ولا فراغات. 2fast يبدأ برقم، وmy func فيه فراغ.',
+            en: 'The same rules as variable names: letters, digits and underscore; no leading digit, no spaces. 2fast starts with a digit and my func contains a space.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'ومن الفصل الثالث: ترويسة if كانت تنتهي بنقطتين وتفتح كتلة مزاحة — هل def نفس الشيء؟',
+            en: 'And from chapter 3: an if header ends with a colon and opens an indented block — is def the same?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'نعم — def عبارة مركّبة: نقطتان وكتلة مزاحة 4 فراغات', en: 'Yes — def is a compound statement: a colon and a 4-space indented block' } },
+            { id: 'b', text: { ar: 'لا — جسم def يُكتب في السطر نفسه دائمًا', en: 'No — a def body is always written on the same line' } },
+            { id: 'c', text: { ar: 'لا — def تحتاج أقواسًا معقوفة', en: 'No — def needs curly braces' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'نفس قواعد الفصل الثالث: العبارة المركّبة سطر أساسي ينتهي بالنقطتين، وجسم مزاح يربطها به. def وif أخوان في القواعد.',
+            en: 'The same chapter 3 rules: a compound statement is a header line ending in a colon with an indented body attached. def and if are grammar siblings.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: "في الكود: def f(): تطبع مرحبا، وdef g(): تستدعي f مرتين — ثم g(). كم مرة يُطبع مرحبا؟",
+            en: "In the code: def f(): prints مرحبا, and def g(): calls f twice — then g() runs. How many times does مرحبا print?",
+          },
+          options: [
+            { id: 'a', text: { ar: 'مرتين', en: 'Twice' } },
+            { id: 'b', text: { ar: 'مرة واحدة', en: 'Once' } },
+            { id: 'c', text: { ar: 'ثلاث مرات', en: 'Three times' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'استدعاء g قفزة إلى جسمها الذي يحوي استدعاءين لf — وكل استدعاء قفزة جديدة تطبع مرة وتعود. قفزة داخل قفزة.',
+            en: 'Calling g jumps into its body holding two calls to f — and each call is a fresh jump that prints once and returns. A jump inside a jump.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: "def cheer():\nprint('ياهلا')",
+          right: "def cheer():\n    print('ياهلا')",
+          note: {
+            ar: 'جسم التابع يجب أن يكون مزاحًا: بلا إزاحة يرمي المفسّر IndentationError: expected an indented block. قواعد الكتل من الفصل الثالث سارية حرفيًا.',
+            en: 'The function body must be indented: without indentation the interpreter throws IndentationError: expected an indented block. Chapter 3’s block grammar applies verbatim.',
+          },
+        },
+        {
+          wrong: 'greet',
+          right: 'greet()',
+          note: {
+            ar: 'الاسم وحده يحمل كائن التابع ولا ينفّذ شيئًا — لا خرْج ولا خطأ، صمت خادع. الاستدعاء يحتاج القوسين حتى لو كان التابع بلا وسائط.',
+            en: 'The name alone carries the function object and executes nothing — no output, no error, a deceitful silence. A call needs the parentheses even for a function with no arguments.',
+          },
+        },
+        {
+          wrong: "shout()\n\ndef shout():\n    print('مرحبا')",
+          right: "def shout():\n    print('مرحبا')\n\nshout()",
+          note: {
+            ar: 'الاستدعاء قبل التعريف يرمي NameError: name shout is not defined — التعريفات تُنفَّذ بالترتيب من الأعلى للأسفل، فاجعل التعريف قبل أول استدعاء.',
+            en: 'Calling before defining throws NameError: name shout is not defined — definitions execute in order, top to bottom, so put the definition before the first call.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'def الاسم(): ترويسة بالنقطتين وجسم مزاح 4 فراغات — وينشئ كائن تابع من صنف function يُستدعى بالاسم والقوسين.', en: 'def name(): is a colon-terminated header with a 4-space indented body — it creates a function object of class function, called by name with parentheses.' },
+        { ar: 'التعريفات تُنفَّذ من الأعلى للأسفل كأي تعليمة وتنشئ الكائنات، لكن أجسادها لا تعمل إلا عند الاستدعاء — والتعريف يجب أن يسبق أول استدعاء.', en: 'Definitions run top to bottom like any statement and create the objects, but their bodies only run when called — and a definition must precede its first call.' },
+        { ar: 'الاستدعاء انعطاف في تسلسل التنفيذ: قفزة إلى الجسم ثم عودة إلى مكان التوقف — والتوابع تستدعي توابع، وبايثون تحفظ المسار.', en: 'A call is a detour in the flow of execution: a jump into the body then a return to where it stopped — functions call functions, and Python keeps the track.' },
+      ],
+      reflectPrompt: {
+        ar: 'فكّر في روتين يومي من ثلاث خطوات (تحضير قهوة مثلًا). ما اسم التابع الذي ستحمله؟ ما تعليمات جسمه؟ ومتى تستدعيه في يومك — وقفزة واحدة أم قفزات متكررة؟',
+        en: 'Think of a daily three-step routine (making coffee, say). What would the function be named? What statements go in its body? When in your day do you call it — one jump or repeated jumps?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'PY4E', section: 'py4e.ch4.s6', pages: 'ص61-63 / pp.61-63' },
+        { book: 'PY4E', section: 'py4e.ch4.s7', pages: 'ص63 / pp.63' },
+        { book: 'PY4E', section: 'py4e.ch4.s8', pages: 'ص64 / pp.64' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'PY4E', section: 'py4e.ch4.s6', pages: 'ص61-63 / pp.61-63' },
+    { book: 'PY4E', section: 'py4e.ch4.s7', pages: 'ص63 / pp.63' },
+    { book: 'PY4E', section: 'py4e.ch4.s8', pages: 'ص64 / pp.64' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

@@ -1,0 +1,159 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch1.l1",
+   "id": "ex2.trace-companies",
+   "code": "def velocity(v, disciplined):\n    if disciplined:\n        return v + 1\n    return max(0, v - 2)\n\nva, vb = 4, 3\nfor month in [1, 2, 3, 4]:\n    va = velocity(va, False)\n    vb = velocity(vb, True)\n    print('m%d A=%d B=%d' % (month, va, vb))",
+   "answer": "m1 A=2 B=4\nm2 A=0 B=5\nm3 A=0 B=6\nm4 A=0 B=7"
+  },
+  {
+   "lesson": "swe.ch1.l2",
+   "id": "ex2.trace-offbyone",
+   "code": "def total(items):\n    s = 0\n    for i in range(1, len(items)):\n        s = s + items[i]\n    return s\n\nprint(total([5, 10, 20]))\nprint(total([]))",
+   "answer": "30\n0"
+  },
+  {
+   "lesson": "swe.ch1.l3",
+   "id": "ex2.trace-crunch",
+   "code": "debt = 0\nvelocity = 8\nfor sprint in [1, 2, 3, 4]:\n    velocity = max(0, velocity - 2)\n    debt = debt + 3\n    print('s%d velocity: %d debt: %d' % (sprint, velocity, debt))",
+   "answer": "s1 velocity: 6 debt: 3\ns2 velocity: 4 debt: 6\ns3 velocity: 2 debt: 9\ns4 velocity: 0 debt: 12"
+  },
+  {
+   "lesson": "swe.ch1.l4",
+   "id": "ex2.trace-checklist",
+   "code": "CHECK = {'public_interest': True, 'honest': True, 'safe': False, 'competent': True}\nflags = []\nfor name in sorted(CHECK):\n    if not CHECK[name]:\n        flags.append(name)\nprint('review:', ','.join(flags))\nprint('verdict:', 'refuse' if flags else 'ship')",
+   "answer": "review: safe\nverdict: refuse"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch1.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "def paths(n):\n    return n * (n - 1) // 2\n\nprint(paths(3))\nprint(paths(9))"
+  },
+  {
+   "lesson": "swe.ch1.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "# 1) the team word: communication channels grow faster than the team\nfor n in [3, 5, 9]:\n    print('team: %d paths: %d' % (n, n * (n - 1) // 2))\n\n# 2) the scale word: cost of the same 2-line change, disciplined vs accreted\ndef change_cost(change_size, system_size, disciplined):\n    if disciplined:\n        return change_size      # proportional to the change\n    return system_size          # proportional to the system\n\nprint(change_cost(2, 100, True))\nprint(change_cost(2, 100, False))"
+  },
+  {
+   "lesson": "swe.ch1.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "def paths(n):\n    return n * (n - 1) // 2\n\nfor n in [3, 5, 9, 20]:\n    print('team: %d paths: %d' % (n, paths(n)))\n\ndef change_cost(change_size, system_size, disciplined):\n    if disciplined:\n        return change_size      # proportional to the change\n    return system_size          # proportional to the system\n\nprint('B:', change_cost(5, 500, True))\nprint('A:', change_cost(5, 500, False))\n\n# جرّب: كم قناة يضيفها موظف جديد لفريق من 20؟ احسب paths(21) - paths(20)\n# try: how many channels does one new hire add to a team of 20? compute paths(21) - paths(20)\n# جرّب: اجعل نظام الشركة A يكبر إلى 5000 سطر — كم تصير كلفة التغيير نفسه هناك؟\n# try: grow company A's system to 5000 lines — what does the same change cost there?\n"
+  },
+  {
+   "lesson": "swe.ch1.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "def total(items):\n    s = 0\n    for i in range(1, len(items)):\n        s = s + items[i]\n    return s\n\nprint(total([5, 10, 20]))"
+  },
+  {
+   "lesson": "swe.ch1.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "STAGE_COST = {'requirements': 1, 'design': 5, 'code': 10, 'testing': 20, 'production': 100}\n\ndef net_for(stage):\n    return {'requirements': 'review of the spec',\n            'design': 'design walkthrough',\n            'code': 'static checking',\n            'testing': 'a provoking test',\n            'production': 'your users'}[stage]\n\nfor stage in ['requirements', 'code', 'testing', 'production']:\n    print('%s x%d via %s' % (stage, STAGE_COST[stage], net_for(stage)))"
+  },
+  {
+   "lesson": "swe.ch1.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "STAGE_COST = {'requirements': 1, 'design': 5, 'code': 10, 'testing': 20, 'production': 100}\n\ndef total(items):\n    s = 0\n    for i in range(1, len(items)):\n        s = s + items[i]\n    return s\n\nprint(total([5, 10, 20]))\nprint(total([]))\nprint(total([1, 2, 3, 4]))\n\nfor stage in sorted(STAGE_COST):\n    print('%s x%d' % (stage, STAGE_COST[stage]))\n\n# جرّب: أصلح الحلقة إلى range(0, len(items)) — أي مدخل من الثلاثة كان يمر صامتًا قبل الإصلاح؟\n# try: fix the loop to range(0, len(items)) — which of the three inputs passed silently before the fix?\n# جرّب: تخيل العيب نفسه يهرب إلى الإنتاج في نظام طبي: هل يكفي x100 وصفًا للكلفة الحقيقية؟\n# try: imagine the same fault escaping to production inside a medical system: does x100 still capture the real cost?\n"
+  },
+  {
+   "lesson": "swe.ch1.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "scope = 10      # features demanded\ntime = 4        # months\ncost = 2        # developers\ncapacity = time * cost\nprint('capacity: %d' % capacity)\nprint('shortfall: %d' % (scope - capacity))"
+  },
+  {
+   "lesson": "swe.ch1.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "def advisor(scope, time, cost, flex):\n    # exactly two corners are fixed; the named one must move\n    if flex == 'scope':\n        return 'max scope: %d' % (time * cost)\n    if flex == 'time':\n        return 'min time: %.1f months' % (scope / cost)\n    return 'min cost: %.1f devs' % (scope / time)\n\nprint(advisor(10, 4, 2, 'scope'))\nprint(advisor(10, 4, 2, 'time'))\nprint(advisor(10, 4, 2, 'cost'))"
+  },
+  {
+   "lesson": "swe.ch1.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "def advisor(scope, time, cost, flex):\n    if flex == 'scope':\n        return time * cost\n    if flex == 'time':\n        return scope / cost\n    if flex == 'cost':\n        return scope / time\n    raise ValueError('unknown flex')\n\nprint(advisor(10, 4, 2, 'scope'))\nprint(advisor(10, 4, 2, 'time'))\nprint(advisor(10, 4, 2, 'cost'))\n\nCHECK = {'public_interest': True, 'honest': True, 'safe': True}\nflags = [name for name in sorted(CHECK) if not CHECK[name]]\nprint('review:', ','.join(flags) if flags else 'clear')\n\n# جرّب: اجعل safe تساوي False — ماذا يصير سطر review؟ هذه بذرة بوابة المسؤولية في مشروع الدرس القادم.\n# try: flip safe to False — what does the review line become? that is the seed of next lesson's responsibility gate.\n# جرّب: احسب ماذا يصير الزمن لو زاد النطاق إلى 12 بثبات الكلفة.\n# try: compute what time becomes if scope grows to 12 at fixed cost.\n"
+  },
+  {
+   "lesson": "swe.ch1.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "def balance(scope, time, cost):\n    capacity = time * cost\n    if scope <= capacity:\n        return 'ship'\n    return 'cut %d' % (scope - capacity)\n\nprint(balance(8, 4, 2))\nprint(balance(11, 4, 2))\nprint(balance(11, 5, 3))"
+  },
+  {
+   "lesson": "swe.ch1.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "def balance(scope, time, cost, flex):\n    # the responsibility gate runs first: some demands are refused, not traded\n    if flex == 'crunch':\n        return 'refuse: crunch hides the trade-off'\n    capacity = time * cost\n    if scope <= capacity:\n        return 'ship as planned'\n    over = scope - capacity\n    if flex == 'scope':\n        return 'cut scope: %d' % over\n    if flex == 'time':\n        return 'move date: +%d months' % (-(-over // cost))\n    return 'hire: +%d devs' % (-(-over // time))\n\nprint(balance(8, 4, 2, 'crunch'))\nprint(balance(8, 4, 2, 'scope'))\nprint(balance(12, 4, 2, 'time'))\nprint(balance(12, 4, 2, 'cost'))\nover = 4\nprint('crunch debt: %d vs caught early: %d' % (over * 100, over * 1))"
+  },
+  {
+   "lesson": "swe.ch1.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "STAGE_COST = {'requirements': 1, 'design': 5, 'code': 10, 'testing': 20, 'production': 100}\n\ndef balance(scope, time, cost, flex):\n    if flex == 'crunch':\n        return 'refuse: crunch hides the trade-off'\n    capacity = time * cost\n    if scope <= capacity:\n        return 'ship as planned'\n    over = scope - capacity\n    if flex == 'scope':\n        return 'cut scope: %d' % over\n    if flex == 'time':\n        return 'move date: +%d months' % (-(-over // cost))\n    return 'hire: +%d devs' % (-(-over // time))\n\nfor flex in ['scope', 'time', 'cost', 'crunch']:\n    print(flex, '->', balance(12, 4, 2, flex))\n\n# جرّب: ضاعف الفريق (cost=4) — ماذا تصير توصيتا time وcost؟ وهل يبقى crunch مرفوضًا؟\n# try: double the team (cost=4) — what do the time and cost recommendations become? does crunch stay refused?\n# جرّب: أضف مرحلة إلى STAGE_COST بقيمة تقديرية منك واحسب كلفة هروب 3 عيوب من الاختبار إلى الإنتاج\n# try: add a stage to STAGE_COST with your own estimate and price 3 faults escaping testing to production\n"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch1.l1",
+   "id": "ex3.mcq-brooks",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch1.l2",
+   "id": "ex3.mcq-chain",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch1.l2",
+   "id": "ex4.numeric-production",
+   "answer": "100",
+   "solution": "100"
+  },
+  {
+   "lesson": "swe.ch1.l3",
+   "id": "ex3.mcq-vw",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch1.l4",
+   "id": "ex3.mcq-nets",
+   "answer": "c",
+   "solution": "c"
+  },
+  {
+   "lesson": "swe.ch1.l4",
+   "id": "ex4.numeric-over",
+   "answer": "3",
+   "solution": "3"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch1.l1",
+   "id": "ex4.fill-solutions",
+   "answer": "solutions"
+  },
+  {
+   "lesson": "swe.ch1.l3",
+   "id": "ex4.fill-depth",
+   "answer": "depth"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch1.l4",
+   "id": "ex5.debug-silent-crunch",
+   "brokenCode": "def balance(scope, time, cost, flex):\n    # BUG: the responsibility gate is missing — crunch is absorbed silently\n    capacity = time * cost\n    if scope <= capacity:\n        return 'ship as planned'\n    over = scope - capacity\n    if flex == 'scope':\n        return 'cut scope: %d' % over\n    if flex == 'time':\n        return 'move date: +%d months' % (-(-over // cost))\n    return 'hire: +%d devs' % (-(-over // time))\n\nprint('scope: 8 time: 4 cost: 2 flex: crunch')\nprint(balance(8, 4, 2, 'crunch'))\nprint('scope: 12 time: 4 cost: 2 flex: crunch')\nprint(balance(12, 4, 2, 'crunch'))"
+  }
+ ]
+}

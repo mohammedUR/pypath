@@ -1,0 +1,657 @@
+/**
+ * Lesson swe.ch5.l4 — مراجعة الفصل 5 ومشروع: محرك تدفقات الاستخدام
+ *   / Chapter 5 Review and Project: The Use-Case Flow Engine
+ * Book: SWE — Chapter 5 'Use Cases'
+ *   §5.5 Relationships between Use Cases (pp.135-136), §5.6 Conclusion (pp.136-137)
+ * Runnable design (PROJECT): a deterministic mini use-case flow engine over a
+ *   FIXED REGISTRY — use cases with main steps, 'Include X' splices (always run),
+ *   and 'point:P' hooks where extenders run only if their condition matches the
+ *   scenario; two fixed scenarios print exact ASCII traces plus a summary line.
+ * Deterministic only: no input(), no exit(), no random, no unittest.main.
+ */
+import type { Lesson } from '../../../../src/lib/content/schema';
+
+const lesson = {
+  id: 'swe.ch5.l4',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 5,
+  title: { ar: 'مراجعة الفصل 5 ومشروع: محرك تدفقات الاستخدام', en: 'Chapter 5 Review and Project: The Use-Case Flow Engine' },
+  estimatedMinutes: 35,
+  prerequisites: ['swe.ch5.l3'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'خمس حالات استخدام في نظام الصراف تبدأ كلها بخطوات الرمز السري نفسها. تغيّرت قاعدة الاحتجاز: ثلاث محاولات بدل خمس — عدّلت نسختين ونسيت الثالثة، والآن النظام يتصرف بطريقتين مختلفتين بحسب الطريق الذي دخل منه العميل. التكرار في المتطلبات يتصرف كالتكرار في الكود تمامًا: يتضخم وينحرف. العلاقة بين حالات الاستخدام — «include» و«extend» — هي طريقة مشاركة السلوك دون نسخه.',
+        en: 'Five use cases in the ATM system all begin with the same PIN ritual. The lockout rule changes: three tries instead of five — you edit two copies, forget the third, and now the system behaves differently depending on the path the customer took. Duplication in requirements behaves exactly like duplication in code: it grows and drifts. The relationships between use cases — include and extend — are how behavior is shared without being copied.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: `withdraw_auth = "validate PIN, 3 tries max"
+balance_auth = "validate PIN, 5 tries max"   # drifted copy!
+print("same rule?", withdraw_auth == balance_auth)
+print("cost of copies: they drift")`,
+      question: {
+        ar: 'نسختان من قاعدة التحقق نفسها في حالتين مختلفتين. خمّن خرج السطر الأول قبل التشغيل.',
+        en: 'Two copies of the same validation rule living in two different cases. Guess the first printed line before running.',
+      },
+      reveal: {
+        ar: 'False: النسختان انحرفتا — ثلاث محاولات هنا وخمس هناك. علاقة «include» تحفظ القاعدة في حالة مشتركة واحدة يناديها الجميع، فيجري التعديل مرة واحدة ويرثه كل المضمِّنين.',
+        en: 'False: the copies drifted — three tries here, five there. An include relationship keeps the rule in one shared case that everyone invokes: edit once, every includer inherits.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'Subflows و«include»: السلوك المشترك الإلزامي', en: 'Subflows and include: mandatory shared behavior' },
+      chunks: [
+        {
+          ar: 'داخل حالة واحدة، الـ subflow مقطع خطوات مسمّى يستدعيه التدفق باسمه — مثل دالة مساعدة محلية في الوثيقة نفسها ولا يخرج عنها. أما حين يصبح المقطع مطلوبًا في أكثر من حالة، فتُستخرج حالة استخدام مشتركة تُضم بعلاقة «include»: حين تضمّ A الحالة B فهي تنفّذ كل B ثم تكمل. سحب النقد واستعلام الرصيد يبدآن بتضمين Authenticate Cardholder: قواعد المحاولات والاحتجاز تعيش في مكان واحد، وتغييرها مرة واحدة يورّثه كل المضمِّنين.',
+          en: 'Within a single case, a subflow is a named chunk of steps the flow invokes by name — a local helper inside the same document, going nowhere else. When the chunk is wanted by several cases, extract it into a shared use case joined by «include»: when A includes B, A performs all of B, then continues. Withdraw Cash and Check Balance both include Authenticate Cardholder: retry and lockout rules live in one place — change them once and every includer inherits.',
+        },
+        {
+          ar: 'علامة الحاجة إلى include: تكرار تُضطر لصيانته بالتوازي. والقاعدة الحاسمة: التضمين ليس اختياريًا — الحالة المضمَّنة تعمل في كل مرة يصل فيها الأساسي إلى نقطة الاستدعاء. ومن ناحية الاعتماد: الأساسي هو من يسمّي المضمَّن، فالأساسي يعتمد على الجزء المشترك لا العكس.',
+          en: 'The tell-tale sign you need include: duplication you must maintain in parallel. And the hard rule: inclusion is not optional — the included case runs every time the base reaches that point. Dependency direction: the base names the included case; the base depends on the shared part, not the other way around.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: '«extend»: الإضافة الاختيارية واتجاه الاعتماد', en: 'Extend: the optional add-on and the direction of dependency' },
+      chunks: [
+        {
+          ar: 'علاقة «extend» صورة معكوسة: سلوك اختياري يُضاف على أساسٍ مكتمل بذاته، والأساسي لا يعلم بوجود الممتد أصلًا. حين تمتد E على A عند نقطة P: إذا تحقق شرط E لحظة وصول A إلى P نُفّذت خطواتها، وإلا مضى A كما هو. Assess Withdrawal Fee تمتد على Withdraw Cash عند نقطة AmountConfirmed بشرط out-of-network؛ ولو ألغى البنك الرسوم غدًا فستحذف الحالة الممتدة وحدها ولا تلمس السحب.',
+          en: 'An extend relationship is the mirror image: optional behavior added onto a base that is complete on its own — and the base does not know the extender exists. When E extends A at point P: if E\'s condition holds when A reaches P, its steps run; otherwise A proceeds unchanged. Assess Withdrawal Fee extends Withdraw Cash at the AmountConfirmed point for out-of-network cards; if the bank drops fees tomorrow, you delete the extending case and never touch Withdraw Cash.',
+        },
+        {
+          ar: 'اتجاه الاعتماد هو ما يقرر الاختيار: في include يسمّي الأساسي المضمَّن؛ وفي extend يسمّي الممتدُ الأساسيَّ ويبقى الأساسي غافلًا. والسؤال الحاسم: هل يكون الأساسي ناقصًا أو خاطئًا دون هذا السلوك؟ نعم — فهو جوهري: include. هل الأساسي مكتمل والسلوك إضافة اختيارية شرطية تريد إبقاءها منفصلة؟ — extend. والقاعدة العامة: لا علاقات إلا لزالة تكرار حقيقي أو عزل اختياري حقيقي؛ ثلاث علاقات مدروسة توضح النظام، وعشرون استكشافية تدفنه.',
+          en: 'Dependency direction decides the choice: with include, the base names the included; with extend, the extending case names the base and the base stays oblivious. The decisive question: would the base be incomplete or wrong without the behavior? Yes — it is essential: include. Is the base complete and the behavior an optional, conditional add-on you want separable? — extend. And in general: reach for a relationship only to remove real duplication or isolate real optionality; three considered ones clarify a system, twenty speculative ones bury it.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'خلاصة الفصل: من القصة إلى التصميم والاختبار', en: 'Chapter recap: from the story to design and tests' },
+      chunks: [
+        {
+          ar: 'حالة الاستخدام جسر بين ما يريده المستخدم وما يجب أن يفعله النظام: تأخذ نية القصة المضغوطة وتنكويها سردًا كاملًا — فاعلين وأهدافًا، مسارًا سعيدًا، ولواحق تسرد ما يمكن أن يفسد وما يَعِد النظام رغم ذلك. ثلاث أفكار تحملها معك: أنماط الفشل غالبًا أبلغ أجزاء المتطلبات؛ وكل خطوة تبقى عند حد النظام بلغة المجال؛ والبنية لا تُستخدم إلا لزالة التكرار.',
+          en: 'A use case is the bridge between what a user wants and what a system must do: it takes the compressed intention of a story and unfolds it into a full narrative — actors and goals, a happy path, and alternatives cataloging what can go wrong and what the system promises anyway. Three ideas to carry forward: failure modes are often the most revealing part of requirements; keep every step at the system boundary in domain language; and use structure only to remove duplication.',
+        },
+        {
+          ar: 'ولأن الحالة تسمّي فاعليها وبياناتها وكل فروعها، فهي تصب مباشرة في نموذج المجال والمعمارية (الفصل 6)، ولواحقها ومساراتها البديلة تصير سيناريوهات جاهزة للاختبارات (الفصل 10). مصنوع واحد يؤدي ثلاث وظائف: يصادق عليه أمين الصندوق، ويتفرع منه المعماري، ويعرف منه المختَر متى انتهى.',
+          en: 'Because the case names its actors, its data, and every branch, it feeds directly into the domain model and architecture (Chapter 6), and its alternatives and postconditions become ready-made scenarios for the tests (Chapter 10). One artifact pays three ways: the teller confirms it, the architect decomposes from it, and the tester knows when it is done.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'تتبّع تضمين: بنداء واحد بلا نسخ', en: 'Tracing an include: one call, zero copies' },
+      code: `REGISTRY = {
+    "Authenticate Cardholder": {"steps": ["Read card", "Validate PIN"]},
+    "Check Balance": {"steps": ["Include Authenticate Cardholder", "Show balance"]},
+}
+
+def trace(name, indent=""):
+    for s in REGISTRY[name]["steps"]:
+        if s.startswith("Include "):
+            print(indent + "-> include:", s[len("Include "):])
+            trace(s[len("Include "):], indent + "  ")
+        else:
+            print(indent + "-", s)
+
+trace("Check Balance")`,
+      explanation: {
+        ar: 'trace تمشي على خطوات الحالة؛ والسطر الذي يبدأ بـ Include يستدعي الحالة المشتركة فيطبع خطواتها بإزاحة، ثم يعود إلى السرد الأصلي. هذا هو include حرفيًا: عند هذه النقطة نفّذ كل المشترك ثم أكمل — بنداء واحد ولا نسخة من الخطوات في مكان آخر، فأي تعديل على قواعد التحقق يظهر في كل من يتضمنها.',
+        en: 'trace walks the case\'s steps; a line starting with Include invokes the shared case, prints its steps indented, then returns to the original narrative. That is include literally: at this point perform all of the shared case, then continue — one call, zero copies of the steps anywhere else, so any change to the rules shows up for every includer.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.flow-engine',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'المشروع: محرك تدفقات مصغّر. البيانات ثابتة في REGISTRY: حالات بخطوات رئيسية، وحالة مشتركة تُضمّ بسطر Include X (يعمل دائمًا)، وحالة ممتدة تحمل extends = (الأساسي، النقطة، الشرط). أكمل run() وفق الـ TODO: سطر include لكل تضمين ثم خطواته المزاحة ببادئة أعمق؛ وعند خطوة على شكل point:P تُنفّذ الحالة الممتدة فقط إذا تطابق شرطها مع conditions[P] وإلا سطر pass. ثم شغّل السيناريوهين S1 (بلا شروط — داخل الشبكة) وS2 (شرط out-of-network) واطبع سطر الملخص. يجب أن يحوي الخرج: U3 pass AmountConfirmed، وU3.2 Add a fee note، والسطر summary: S1 lines=7 extend=0 | S2 lines=9 extend=1',
+        en: 'The project: a mini use-case flow engine. Data is FIXED in REGISTRY: cases with main steps, a shared case spliced via an Include X line (always runs), and an extending case carrying extends = (base, point, condition). Complete run() per the TODOs: one include line per splice then its indented steps; at a point:P step run the extender only if its condition matches conditions[P], otherwise a pass line. Then run S1 (no conditions — in-network) and S2 (the out-of-network condition) and print the summary. Output must contain: U3 pass AmountConfirmed, U3.2 Add a fee note, and the line summary: S1 lines=7 extend=0 | S2 lines=9 extend=1',
+      },
+      starterCode: `REGISTRY = {
+    "Authenticate Cardholder": {
+        "steps": ["Read the card", "Prompt for PIN", "Validate PIN with bank"],
+    },
+    "Assess Withdrawal Fee": {
+        "steps": ["Check the network", "Add a fee note"],
+        "extends": ("Withdraw Cash", "AmountConfirmed", "out-of-network"),
+    },
+    "Withdraw Cash": {
+        "steps": ["Include Authenticate Cardholder", "Prompt for amount",
+                  "point:AmountConfirmed", "Dispense cash"],
+    },
+}
+
+def run(use_case, conditions=None):
+    conditions = dict(conditions or {})
+    out = []
+
+    def walk(name, prefix):
+        for i, s in enumerate(REGISTRY[name]["steps"], 1):
+            tag = f"{prefix}{i}"
+            # TODO 1: 'Include X' -> append f"{tag} include>{X}" then walk(X, tag + ".")
+            # TODO 2: 'point:P' -> run every REGISTRY entry whose 'extends' equals
+            #         (name, P, conditions.get(P)); on a match append
+            #         f"{tag} extend>{other}" then walk(other, tag + ".");
+            #         if nothing ran, append f"{tag} pass {P}"
+            # TODO 3: otherwise append f"{tag} {s}"
+            pass
+
+    walk(use_case, "U")
+    return out
+
+t1 = run("Withdraw Cash", {})
+t2 = run("Withdraw Cash", {"AmountConfirmed": "out-of-network"})
+print("== S1 ==")
+for line in t1:
+    print(line)
+print("== S2 ==")
+for line in t2:
+    print(line)
+print("summary:",
+      "S1 lines=%d extend=%d" % (len(t1), sum("extend>" in x for x in t1)),
+      "|",
+      "S2 lines=%d extend=%d" % (len(t2), sum("extend>" in x for x in t2)))`,
+      solution: `REGISTRY = {
+    "Authenticate Cardholder": {
+        "steps": ["Read the card", "Prompt for PIN", "Validate PIN with bank"],
+    },
+    "Assess Withdrawal Fee": {
+        "steps": ["Check the network", "Add a fee note"],
+        "extends": ("Withdraw Cash", "AmountConfirmed", "out-of-network"),
+    },
+    "Withdraw Cash": {
+        "steps": ["Include Authenticate Cardholder", "Prompt for amount",
+                  "point:AmountConfirmed", "Dispense cash"],
+    },
+}
+
+def run(use_case, conditions=None):
+    """Trace one use case. 'Include X' splices X (always runs). 'point:P'
+    runs extenders whose (base, point, condition) matches conditions[P]."""
+    conditions = dict(conditions or {})
+    out = []
+
+    def walk(name, prefix):
+        for i, s in enumerate(REGISTRY[name]["steps"], 1):
+            tag = f"{prefix}{i}"
+            if s.startswith("Include "):
+                sub = s[len("Include "):]
+                out.append(f"{tag} include>{sub}")
+                walk(sub, tag + ".")
+            elif s.startswith("point:"):
+                point = s[len("point:"):]
+                ran = False
+                for other in sorted(REGISTRY):
+                    ext = REGISTRY[other].get("extends")
+                    if (ext and ext[0] == name and ext[1] == point
+                            and ext[2] == conditions.get(point)):
+                        out.append(f"{tag} extend>{other}")
+                        walk(other, tag + ".")
+                        ran = True
+                if not ran:
+                    out.append(f"{tag} pass {point}")
+            else:
+                out.append(f"{tag} {s}")
+
+    walk(use_case, "U")
+    return out
+
+t1 = run("Withdraw Cash", {})
+t2 = run("Withdraw Cash", {"AmountConfirmed": "out-of-network"})
+print("== S1 ==")
+for line in t1:
+    print(line)
+print("== S2 ==")
+for line in t2:
+    print(line)
+print("summary:",
+      "S1 lines=%d extend=%d" % (len(t1), sum("extend>" in x for x in t1)),
+      "|",
+      "S2 lines=%d extend=%d" % (len(t2), sum("extend>" in x for x in t2)))`,
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'S1 يمرّ بنقطة الامتداد بلا امتداد', en: 'S1 passes the extension point with no extension' },
+          code: `assert 'U3 pass AmountConfirmed' in __learner_output__, 'expected: U3 pass AmountConfirmed | actual: %r' % __learner_output__`,
+        },
+        {
+          id: 't2',
+          name: { ar: 'S2 يريح خطوات الامتداد كاملة', en: 'S2 splices the extension steps in full' },
+          code: `assert ('U3 extend>Assess Withdrawal Fee' in __learner_output__
+        and 'U3.2 Add a fee note' in __learner_output__), 'expected: U3 extend>Assess Withdrawal Fee + U3.2 Add a fee note | actual: %r' % __learner_output__`,
+        },
+        {
+          id: 't3',
+          name: { ar: 'سطر الملخص مطابق حرفيًا', en: 'summary line matches exactly' },
+          code: `assert 'summary: S1 lines=7 extend=0 | S2 lines=9 extend=1' in __learner_output__, 'expected: summary: S1 lines=7 extend=0 | S2 lines=9 extend=1 | actual: %r' % __learner_output__`,
+        },
+      ],
+      hints: [
+        { ar: 'ابدأ بالفرع الثالث — الأسهل: أي خطوة أخرى تلحق كما هي: out.append(f"{tag} {s}").', en: 'Start with the third branch — the easiest: any other step is appended as-is: out.append(f"{tag} {s}").' },
+        { ar: 'فرع Include: sub = s[len("Include "):] ثم سطر التضمين ثم walk(sub, tag + ".") — الإزاحة تأتي من تمديد البادئة.', en: 'Include branch: sub = s[len("Include "):], then the include line, then walk(sub, tag + ".") — the indentation comes from extending the prefix.' },
+        { ar: 'فرع point: متغير ran = False؛ حلقة على sorted(REGISTRY)؛ إن تطابق ext[0] وext[1] اطبع extend وامشِ واجعل ran = True؛ بعد الحلقة إن بقيت False اطبع pass.', en: 'point branch: ran = False; loop over sorted(REGISTRY); if ext[0] and ext[1] match, print extend, walk, set ran = True; after the loop, if still False, print pass.' },
+        { ar: 'السطر الحاسم — الشرط كاملًا: if (ext and ext[0] == name and ext[1] == point and ext[2] == conditions.get(point)): — مقارنة ext[2] هي التي تمنع الامتداد من العمل دائمًا.', en: 'The decisive line — the full condition: if (ext and ext[0] == name and ext[1] == point and ext[2] == conditions.get(point)): — comparing ext[2] is what stops the extension from always running.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-relationships',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الأسطر الثلاثة ثم اكتب خرجها الحرفي: قاعدة العلاقتين واتجاه الاعتماد.',
+        en: 'Read the three lines and write their exact output: the rule for both relationships and the dependency direction.',
+      },
+      code: `base = "Withdraw Cash"
+shared = "Authenticate Cardholder"
+optional = "Assess Withdrawal Fee"
+print("include:", base, "always performs", shared)
+print("extend:", optional, "adds to", base, "only when out-of-network")
+print("dependency: base names included; extender names base")`,
+      answer: `include: Withdraw Cash always performs Authenticate Cardholder
+extend: Assess Withdrawal Fee adds to Withdraw Cash only when out-of-network
+dependency: base names included; extender names base`,
+      solution: `base = "Withdraw Cash"
+shared = "Authenticate Cardholder"
+optional = "Assess Withdrawal Fee"
+print("include:", base, "always performs", shared)
+print("extend:", optional, "adds to", base, "only when out-of-network")
+print("dependency: base names included; extender names base")`,
+      hints: [
+        { ar: 'كل سطر عبارات print مفصولة بمسافات واحدة — لا مسافات مضاعفة.', en: 'Each line is print arguments joined by single spaces — no doubled spaces.' },
+        { ar: 'السطر الأول: include: ثم اسم الأساس ثم always performs ثم اسم المشترك.', en: 'Line one: include:, the base name, always performs, the shared name.' },
+        { ar: 'السطر الثاني يذكر الشرط out-of-network حرفيًا.', en: 'Line two names the condition out-of-network verbatim.' },
+        { ar: 'السطر الثالث يلخص اتجاه الاعتماد: base names included; extender names base', en: 'Line three states the dependency direction: base names included; extender names base' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-include-extend',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'لديك تسجيل دخول مشترك تستخدمه خمس حالات استخدام، وخطوة خصم ولاء اختيارية تعمل لأعضاء المبيعات فقط أثناء التخفيضات. أي توزيع صحيح؟',
+        en: 'You have a shared login used by five use cases, and an optional loyalty-discount step that applies to members only during a sale. Which pairing is correct?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'كلاهما include', en: 'Both include' } },
+        { id: 'b', text: { ar: 'include للتسجيل المشترك، وextend لخصم الولاء', en: 'include for the shared login, extend for the loyalty discount' } },
+        { id: 'c', text: { ar: 'extend للتسجيل المشترك، وinclude للخصم', en: 'extend for the shared login, include for the discount' } },
+        { id: 'd', text: { ar: 'كلاهما extend', en: 'Both extend' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'اسأل عن كل سلوك: هل يكون الأساسي ناقصًا بدونه؟', en: 'Ask of each behavior: would the base be incomplete without it?' },
+        { ar: 'لا حالة استخدام من الخمس تعمل بلا دخول — فالسلوك جوهري وإلزامي.', en: 'None of the five cases works without login — the behavior is essential and unconditional.' },
+        { ar: 'الخصم يعمل في حالات معينة فقط ويبقى الأساسي سليمًا بدونه — إضافة اختيارية مشروطة.', en: 'The discount fires only sometimes and the base is fine without it — an optional conditional overlay.' },
+        { ar: 'الجوهري المشترك include؛ والاختياري الشرطي extend.', en: 'Essential shared behavior: include; optional conditional behavior: extend.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-include',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'أكمل المصطلح: العلاقة التي يعمل فيها الجزء المشترك في كل مرة يصل إليها الأساسي — إلزامية لا اختيارية — هي «______». (كلمة إنجليزية واحدة)',
+        en: 'Complete the term: the relationship whose shared part runs every time the base reaches it — mandatory, not optional — is «______». (one English word)',
+      },
+      answer: 'include',
+      solution: 'include',
+      hints: [
+        { ar: 'المقابل لها هو extend الذي يعمل بشروط.', en: 'Its counterpart is extend, which fires conditionally.' },
+        { ar: 'الأساسي هو من يسمّي الجزء المشترك فيها.', en: 'In it, the base names the shared part.' },
+        { ar: 'سطرها في النص: Include Authenticate Cardholder.', en: 'Its textual line: Include Authenticate Cardholder.' },
+        { ar: 'الكلمة: include.', en: 'The word: include.' },
+      ],
+    },
+    {
+      kind: 'debug',
+      id: 'ex5.debug-extend-always',
+      required: true,
+      brokenCode: `REGISTRY = {
+    "Authenticate Cardholder": {"steps": ["Read the card", "Prompt for PIN"]},
+    "Assess Withdrawal Fee": {
+        "steps": ["Check the network", "Add a fee note"],
+        "extends": ("Withdraw Cash", "AmountConfirmed", "out-of-network"),
+    },
+    "Withdraw Cash": {
+        "steps": ["Include Authenticate Cardholder",
+                  "point:AmountConfirmed", "Dispense cash"],
+    },
+}
+
+def run(use_case, conditions=None):
+    conditions = dict(conditions or {})
+    out = []
+
+    def walk(name, prefix):
+        for i, s in enumerate(REGISTRY[name]["steps"], 1):
+            tag = f"{prefix}{i}"
+            if s.startswith("Include "):
+                sub = s[len("Include "):]
+                out.append(f"{tag} include>{sub}")
+                walk(sub, tag + ".")
+            elif s.startswith("point:"):
+                point = s[len("point:"):]
+                for other in sorted(REGISTRY):
+                    ext = REGISTRY[other].get("extends")
+                    if ext and ext[0] == name and ext[1] == point:
+                        # BUG: ext[2] (the condition) is never compared,
+                        # so the extension ALWAYS runs.
+                        out.append(f"{tag} extend>{other}")
+                        walk(other, tag + ".")
+            else:
+                out.append(f"{tag} {s}")
+
+    walk(use_case, "U")
+    return out
+
+t1 = run("Withdraw Cash", {})
+t2 = run("Withdraw Cash", {"AmountConfirmed": "out-of-network"})
+print("== S1 ==")
+for line in t1:
+    print(line)
+print("== S2 ==")
+for line in t2:
+    print(line)
+print("summary:",
+      "S1 lines=%d extend=%d" % (len(t1), sum("extend>" in x for x in t1)),
+      "|",
+      "S2 lines=%d extend=%d" % (len(t2), sum("extend>" in x for x in t2)))`,
+      prompt: {
+        ar: 'شغّل الكود: سيناريو S1 داخل الشبكة بلا رسوم — ومع ذلك يظهر الامتداد في تتبعه! الكود يعمل لكنه خاطئ: نسي شرط الامتداد فصار extend يعمل دائمًا حتى بلا شرط. أصلح run() بحيث يُنفّذ الامتداد فقط عند تطابق ext[2] مع conditions.get(point)، وأضف فرع pass عند عدم التحقق، بحيث تصير الملخصات: S1 بلا امتداد وS2 به.',
+        en: 'Run the code: scenario S1 is in-network with no fees — yet its trace shows the extension! The code runs but is wrong: it forgot the extension condition, so extend ALWAYS fires. Fix run() so the extension runs only when ext[2] equals conditions.get(point), and add the pass branch when nothing runs, so the summaries become: S1 with no extension, S2 with one.',
+      },
+      solution: `REGISTRY = {
+    "Authenticate Cardholder": {"steps": ["Read the card", "Prompt for PIN"]},
+    "Assess Withdrawal Fee": {
+        "steps": ["Check the network", "Add a fee note"],
+        "extends": ("Withdraw Cash", "AmountConfirmed", "out-of-network"),
+    },
+    "Withdraw Cash": {
+        "steps": ["Include Authenticate Cardholder",
+                  "point:AmountConfirmed", "Dispense cash"],
+    },
+}
+
+def run(use_case, conditions=None):
+    conditions = dict(conditions or {})
+    out = []
+
+    def walk(name, prefix):
+        for i, s in enumerate(REGISTRY[name]["steps"], 1):
+            tag = f"{prefix}{i}"
+            if s.startswith("Include "):
+                sub = s[len("Include "):]
+                out.append(f"{tag} include>{sub}")
+                walk(sub, tag + ".")
+            elif s.startswith("point:"):
+                point = s[len("point:"):]
+                ran = False
+                for other in sorted(REGISTRY):
+                    ext = REGISTRY[other].get("extends")
+                    if (ext and ext[0] == name and ext[1] == point
+                            and ext[2] == conditions.get(point)):
+                        out.append(f"{tag} extend>{other}")
+                        walk(other, tag + ".")
+                        ran = True
+                if not ran:
+                    out.append(f"{tag} pass {point}")
+            else:
+                out.append(f"{tag} {s}")
+
+    walk(use_case, "U")
+    return out
+
+t1 = run("Withdraw Cash", {})
+t2 = run("Withdraw Cash", {"AmountConfirmed": "out-of-network"})
+print("== S1 ==")
+for line in t1:
+    print(line)
+print("== S2 ==")
+for line in t2:
+    print(line)
+print("summary:",
+      "S1 lines=%d extend=%d" % (len(t1), sum("extend>" in x for x in t1)),
+      "|",
+      "S2 lines=%d extend=%d" % (len(t2), sum("extend>" in x for x in t2)))`,
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'S1 يتجاوز النقطة بلا امتداد', en: 'S1 passes the point with no extension' },
+          code: `assert 'S1 lines=5 extend=0' in __learner_output__, 'expected: S1 lines=5 extend=0 | actual: %r' % __learner_output__`,
+        },
+        {
+          id: 't2',
+          name: { ar: 'S2 يظل يوسّع بشرطه الصحيح', en: 'S2 still extends under its correct condition' },
+          code: `assert 'S2 lines=7 extend=1' in __learner_output__, 'expected: S2 lines=7 extend=1 | actual: %r' % __learner_output__`,
+        },
+      ],
+      hints: [
+        { ar: 'قارن خرج S1 وS2 الحالي: لا فرق بينهما! المسار الشرطي الوحيد في run هو فرع point: — انظر إلى if داخله.', en: 'Compare the current S1 and S2 outputs: no difference! The only conditional path in run is the point: branch — look at its if.' },
+        { ar: 'متغير ext يحمل ثلاثية (الأساسي، النقطة، الشرط): العنصران الأولان يُفحصان، والثالث ext[2] لا يُقارن بأي شيء.', en: 'The ext variable holds the triple (base, point, condition): the first two elements are checked, but ext[2] is never compared to anything.' },
+        { ar: 'الشرط الصحيح يقارن شرط الممتد بقيمة السيناريو: ext[2] == conditions.get(point).', en: 'The correct check compares the extender condition to the scenario value: ext[2] == conditions.get(point).' },
+        { ar: 'قريب من الحل: if (ext and ext[0] == name and ext[1] == point and ext[2] == conditions.get(point)): ثم أضف ran = True داخل الفرع، وبعد الحلقة if not ran: out.append(f"{tag} pass {point}") — فيظهر U2 pass AmountConfirmed في S1.', en: 'Near-solution: if (ext and ext[0] == name and ext[1] == point and ext[2] == conditions.get(point)): then set ran = True inside, and after the loop if not ran: out.append(f"{tag} pass {point}") — so S1 shows U2 pass AmountConfirmed.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: `REGISTRY = {
+    "Authenticate Cardholder": {"steps": ["Read card", "Validate PIN"]},
+    "Withdraw Cash": {"steps": ["Include Authenticate Cardholder",
+                                "Dispense cash"]},
+    "Reload Cash Cassettes": {"steps": ["Open the bay", "Refill", "Log refill"]},
+}
+
+def trace(name, indent=""):
+    for s in REGISTRY[name]["steps"]:
+        if s.startswith("Include "):
+            print(indent + "-> include:", s[len("Include "):])
+            trace(s[len("Include "):], indent + "  ")
+        else:
+            print(indent + "-", s)
+
+trace("Withdraw Cash")
+trace("Reload Cash Cassettes")
+# Try: add a 'Retrieve Captured Cards' case, or a second case that also
+# includes Authenticate Cardholder, then re-run.`,
+      prompt: {
+        ar: 'وسّع السجل: أضف حالة جديدة تضمّ Authenticate Cardholder، أو حالة مستقلة تمامًا — وأعد التشغيل ولاحظ كيف يُحسب التضمين كل مرة.',
+        en: 'Extend the registry: add a new case that includes Authenticate Cardholder, or a fully standalone one — re-run and watch the include resolve every time.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz',
+      items: [
+        {
+          id: 'q1-shared-login',
+          question: {
+            ar: 'قاعدة دخول واحدة تُستخدم في خمس حالات استخدام. أي علاقة تختار؟',
+            en: 'One login rule is used by five use cases. Which relationship do you choose?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'include — تُستخرج حالة مشتركة يناديها الجميع في كل مرة', en: 'include — extract a shared case everyone invokes every time' } },
+            { id: 'b', text: { ar: 'extend — لأنه الأحدث في المواصفة', en: 'extend — because it is the newer notation' } },
+            { id: 'c', text: { ar: 'subflow — لأنه أسرع في الكتابة', en: 'subflow — because it is quicker to write' } },
+            { id: 'd', text: { ar: 'لا شيء — انسخ الخطوات في الخمس', en: 'None — copy the steps into all five' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'تكرار تُضطر لصيانته بالتوازي هو علامة include؛ والتضمين إلزامي في كل وصول. أما subflow فمحلي لوثيقة واحدة.',
+            en: 'Duplication you must maintain in parallel is the include tell-tale; inclusion is mandatory at every reach. A subflow stays local to one document.',
+          },
+        },
+        {
+          id: 'q2-extend-direction',
+          question: {
+            ar: 'في علاقة «extend»، من يسمّي من؟',
+            en: 'In an «extend» relationship, who names whom?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الأساسي يسمّي الممتد', en: 'The base names the extender' } },
+            { id: 'b', text: { ar: 'الحالة الممتدة هي من تسمّي الأساسية، والأساسية تبقى غافلة', en: 'The extending case names the base, which stays oblivious' } },
+            { id: 'c', text: { ar: 'الاثنان يسمّيان بعضهما', en: 'They name each other' } },
+            { id: 'd', text: { ar: 'لا أحد — تُربط بقاعدة البيانات', en: 'Neither — they are wired by the database' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'اتجاه الاعتماد معاكس للـ include: الممتد يعتمد على الأساسي ويظهر عنده عند النقطة، والأساسي مكتمل بذاته.',
+            en: 'The dependency runs opposite to include: the extender depends on the base and appears at the point; the base is complete on its own.',
+          },
+        },
+        {
+          id: 'q3-revisit-ch3',
+          question: {
+            ar: 'أي عبارات تلخّص علاقة حالة الاستخدام بقصة المستخدم من الفصل 3؟',
+            en: 'Which statement captures the use case\'s relationship to the Chapter 3 user story?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'القصة سطر مضغوط، والحالة تُفكّ ضغطه إلى سرد كامل بمسارات الفشل', en: 'The story is one compressed line; the case un-compresses it into a full narrative with failure paths' } },
+            { id: 'b', text: { ar: 'الحالة نسخة من القصة بالطول نفسه', en: 'The case is a copy of the story at the same length' } },
+            { id: 'c', text: { ar: 'القصة هي التي تفصّل الحالة', en: 'The story details the case' } },
+            { id: 'd', text: { ar: 'لا علاقة بينهما', en: 'They are unrelated' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الضغط ميزة للترتيب وعيب للبناء؛ الحالة تنكوّيه إلى فاعلين وتدفق ولواحق قابلة للتصديق والاختبار.',
+            en: 'Compression helps ordering and hurts building; the case un-compresses it into actors, a flow, and alternatives a stakeholder can confirm.',
+          },
+        },
+        {
+          id: 'q4-revisit-ch4',
+          question: {
+            ar: 'قبل أن تُفصَّل حالة الاستخدام، ماذا فعل بها الفصل 4؟',
+            en: 'Before a use case gets detailed, what did Chapter 4 do with it?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'قدّرها ورتّبها في خطة وقائمة أعمال متراكمة مرتبة لتحديد ما يستحق التفصيل أولًا', en: 'Sized and prioritized it into a plan and ordered backlog, deciding what gets detailed first' } },
+            { id: 'b', text: { ar: 'رمّجها ونشرها', en: 'Implemented and deployed it' } },
+            { id: 'c', text: { ar: 'حوّلها إلى اختبارات وحدة', en: 'Turned it into unit tests' } },
+            { id: 'd', text: { ar: 'رسمها كمخطط طبقات', en: 'Drew it as a layer diagram' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الفصل 3 جمعها قصصًا، والفصل 4 قدّرها ورتّبها؛ والفصل 5 يفصّل ما صعد إلى المقدمة.',
+            en: 'Chapter 3 gathered stories, Chapter 4 sized and ordered them; Chapter 5 details whatever climbed to the top.',
+          },
+        },
+        {
+          id: 'q5-order-lives-in-text',
+          question: {
+            ar: 'أين يسكن ترتيب الخطوات وشروطها في هذه المنهجية؟',
+            en: 'Where do step order and conditions live in this methodology?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'في المخطط بأسهم مسماة', en: 'In the diagram as labeled arrows' } },
+            { id: 'b', text: { ar: 'في التدفقات المرقّمة واللواحق في النص؛ والمخطط فهرس', en: 'In the numbered flows and alternatives in the text; the diagram is an index' } },
+            { id: 'c', text: { ar: 'في الكود المصدري', en: 'In the source code' } },
+            { id: 'd', text: { ar: 'في عقول الفريق لا مكان آخر', en: 'In the team\'s heads, nowhere else' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'المخطط الذي يحمل الترتيب يصير مخطط تدفق مشوهًا؛ الترتيب في الترقيم والشروط في اللواحق.',
+            en: 'A diagram carrying order becomes a distorted flowchart; order lives in numbering, conditions in alternatives.',
+          },
+        },
+        {
+          id: 'q6-feeds-forward',
+          question: {
+            ar: 'إلى أين تصب حالة الاستخدام بعد اعتمادها؟',
+            en: 'What does an approved use case feed forward into?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'نموذج المجال والمعمارية، وسيناريوهات جاهزة للاختبارات', en: 'The domain model and architecture, plus ready-made test scenarios' } },
+            { id: 'b', text: { ar: 'قاعدة البيانات مباشرة', en: 'The database directly' } },
+            { id: 'c', text: { ar: 'واجهة المستخدم فقط', en: 'The UI only' } },
+            { id: 'd', text: { ar: 'تقرير الإدارة ثم يتوقف الأمر', en: 'A management report, and that is the end' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الحالة تسمّي الفاعلين والبيانات والفروع فتصب في معمارية الفصل 6، ولواحقها تصير اختبارات الفصل 10.',
+            en: 'The case names actors, data, and branches — feeding Chapter 6 architecture; its alternatives become Chapter 10 tests.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'استخدام include لسلوك اختياري / using include for optional behavior',
+          right: 'include إلزامي في كل مرة؛ والاختياري الشرطي extend عند نقطة / include is mandatory every time; optional conditional behavior is extend at a point',
+          note: {
+            ar: 'التضمين الإجباري لسلوك اختياري يربط الأساس بشيء قد لا يلزم أبدًا ويضخّم كل تشغيل.',
+            en: 'Mandating optional behavior bloats every run and couples the base to something that may never be needed.',
+          },
+        },
+        {
+          wrong: 'عشرون علاقة استكشافية تزين الوثيقة / twenty speculative relationships decorating the document',
+          right: 'علاقة فقط لزالة تكرار حقيقي — وإلا اجمع الخطوات في مكانها / a relationship only to remove real duplication — otherwise inline the steps',
+          note: {
+            ar: 'ثلاث علاقات مدروسة توضح النظام؛ والعشرون العشوائية تدفنه وتشتت القارئ.',
+            en: 'Three considered relationships clarify a system; twenty random ones bury it and scatter the reader.',
+          },
+        },
+        {
+          wrong: 'الأساسي يذكر امتداداته ويستدعيها / the base references and calls its extenders',
+          right: 'الممتد هو من يسمّي الأساسي؛ والأساسي يعلن نقطة ولا يعلم بشيء / the extender names the base; the base declares a point and knows nothing',
+          note: {
+            ar: 'لو عرف الأساسي بامتداداته لانكسر الفصل: حذف الرسوم سيعدّل تدفق السحب نفسه.',
+            en: 'If the base knew its extenders, separation breaks: dropping fees would edit Withdraw Cash itself.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        {
+          ar: 'include: جزء مشترك إلزامي — الأساسي يسمّيه، والتعديل يُجرى مرة ويرثه الجميع.',
+          en: 'include: mandatory shared behavior — the base names it; edit once, every includer inherits.',
+        },
+        {
+          ar: 'extend: إضافة اختيارية شرطية عند نقطة امتداد — الممتد يسمّي الأساسي والأساسي غافل.',
+          en: 'extend: optional conditional behavior at an extension point — the extender names the base; the base is oblivious.',
+        },
+        {
+          ar: 'البنية لزالة التكرار فقط؛ والمخطط فهرس؛ والترتيب والشروط في النص المرقّم.',
+          en: 'Structure only to remove duplication; the diagram is an index; order and conditions live in numbered text.',
+        },
+        {
+          ar: 'الحالة الاستخدامية تُغذّي المعمارية والاختبارات: مصنوع واحد يدفع إيجار ثلاثة فصول.',
+          en: 'The use case feeds architecture and tests: one artifact paying rent across three chapters.',
+        },
+      ],
+      reflectPrompt: {
+        ar: 'راجع مشروعك: أين تكررت خطوات بين حالتين تستحقان include؟ وأين سلوك اختياري يستحق extend؟ اكتب القرارين وسببًا في سطر لكل منهما.',
+        en: 'Review your project: where do steps repeat across two cases, deserving include? Where is optional behavior deserving extend? Write both decisions with a one-line reason each.',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch5.s5', pages: 'ص135-136 / pp.135-136' },
+        { book: 'SWE', section: 'swe.ch5.s6', pages: 'ص136-137 / pp.136-137' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch5.s5', pages: 'ص135-136 / pp.135-136' },
+    { book: 'SWE', section: 'swe.ch5.s6', pages: 'ص136-137 / pp.136-137' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

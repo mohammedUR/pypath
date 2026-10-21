@@ -1,0 +1,233 @@
+[
+ {
+  "lesson": "swe.ch2.l1",
+  "id": "ex2.sprint-ledger",
+  "solution": "def sprint_ledger(points, done):\n    total = sum(points.values())\n    remaining = total\n    summary = []\n    for sprint in sorted(done):\n        velocity = sum(points[item] for item in done[sprint])\n        remaining = remaining - velocity\n        summary.append((velocity, remaining))\n        print('sprint %d velocity: %d remaining: %d' % (sprint, velocity, remaining))\n    return summary\n\nBACKLOG = {'login': 5, 'search': 8, 'export': 3, 'alerts': 2, 'reports': 13}\nDONE = {1: ['login', 'export'], 2: ['search', 'alerts'], 3: ['reports']}\nresult = sprint_ledger(BACKLOG, DONE)\nprint('sprints: %d' % len(result))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "سطور الدفتر بأرقام صحيحة",
+     "en": "Ledger lines with the right numbers"
+    },
+    "code": "assert 'sprint 1 velocity: 8 remaining: 23' in __learner_output__ and 'sprint 2 velocity: 10 remaining: 13' in __learner_output__ and 'sprint 3 velocity: 13 remaining: 0' in __learner_output__, 'expected: sprint lines 8/23 10/13 13/0 | actual: %r' % __learner_output__",
+    "expected": "sprint lines 8/23 10/13 13/0"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "القائمة المُعادة أزواج صحيحة",
+     "en": "The returned list has correct pairs"
+    },
+    "code": "assert result == [(8, 23), (10, 13), (13, 0)], 'expected: [(8, 23), (10, 13), (13, 0)] | actual: %r' % (result,)",
+    "expected": "[(8, 23), (10, 13), (13, 0)]"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "تعمل مع أي سجل آخر",
+     "en": "Works with any other ledger"
+    },
+    "code": "other = sprint_ledger({'a': 4, 'b': 6}, {1: ['a']})\nassert other == [(4, 6)], 'expected: [(4, 6)] | actual: %r' % (other,)",
+    "expected": "[(4, 6)] and sprint 1 velocity: 4 remaining: 6"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "المتبقي يبدأ من الإجمالي وينزف إلى صفر",
+     "en": "Remaining starts at the total and drains to zero"
+    },
+    "code": "assert sum(BACKLOG.values()) == 31 and result[-1][1] == 0, 'expected: total 31 draining to 0 | actual: %r' % (sum(BACKLOG.values()),)",
+    "expected": "total 31 draining to 0"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch2.l2",
+  "id": "ex2.ci-counter",
+  "solution": "def ci_ledger(merges):\n    greens = 0\n    broken = 0\n    streak = 0\n    best = 0\n    for name, ok in merges:\n        if ok:\n            greens = greens + 1\n            streak = streak + 1\n            best = max(best, streak)\n            print('%s: green' % name)\n        else:\n            broken = broken + 1\n            streak = 0\n            print('%s: broken' % name)\n    print('merges: %d green: %d broken: %d streak: %d' % (len(merges), greens, broken, best))\n    return (greens, broken, best)\n\nMERGES = [('m1', True), ('m2', True), ('m3', False), ('m4', True), ('m5', True), ('m6', True)]\nresult = ci_ledger(MERGES)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الدمج الكاسر مرئي بالاسم",
+     "en": "The breaking merge is visible by name"
+    },
+    "code": "assert 'm3: broken' in __learner_output__, 'expected: m3: broken | actual: %r' % __learner_output__",
+    "expected": "m3: broken"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "سطر الحصيلة بالأرقام الصحيحة",
+     "en": "The summary line with correct numbers"
+    },
+    "code": "assert 'merges: 6 green: 5 broken: 1 streak: 3' in __learner_output__, 'expected: merges: 6 green: 5 broken: 1 streak: 3 | actual: %r' % __learner_output__",
+    "expected": "merges: 6 green: 5 broken: 1 streak: 3"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الثلاثية المُعادة صحيحة",
+     "en": "The returned triple is correct"
+    },
+    "code": "assert result == (5, 1, 3), 'expected: (5, 1, 3) | actual: %r' % (result,)",
+    "expected": "(5, 1, 3)"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "السلسلة تُصفَّر عند الكسر",
+     "en": "The streak resets on a break"
+    },
+    "code": "other = ci_ledger([('x1', True), ('x2', False), ('x3', True)])\nassert other == (2, 1, 1), 'expected: (2, 1, 1) after a reset | actual: %r' % (other,)",
+    "expected": "(2, 1, 1) after a reset"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch2.l3",
+  "id": "ex2.cost-curve",
+  "solution": "MULT = {'requirements': 1, 'design': 5, 'implementation': 20, 'testing': 50, 'production': 100}\n\ndef late_cost(base_hours):\n    costs = {}\n    for phase in MULT:\n        costs[phase] = base_hours * MULT[phase]\n        print('caught in %s cost: %dh' % (phase, costs[phase]))\n    ratio = costs['production'] // costs['requirements']\n    print('production vs requirements: %dx' % ratio)\n    return costs\n\nresult = late_cost(2)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "آخر سلم في الإنتاج: 200 ساعة",
+     "en": "The last ladder rung in production: 200h"
+    },
+    "code": "assert 'caught in production cost: 200h' in __learner_output__, 'expected: caught in production cost: 200h | actual: %r' % __learner_output__",
+    "expected": "caught in production cost: 200h"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "القاموس المُعيد بقيمه الصحيحة",
+     "en": "The returned dict has the right values"
+    },
+    "code": "assert result == {'requirements': 2, 'design': 10, 'implementation': 40, 'testing': 100, 'production': 200}, 'expected: 2/10/40/100/200 | actual: %r' % (result,)",
+    "expected": "2/10/40/100/200"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "النسبة مئة ضعف",
+     "en": "The ratio is a hundred-fold"
+    },
+    "code": "assert 'production vs requirements: 100x' in __learner_output__, 'expected: production vs requirements: 100x | actual: %r' % __learner_output__",
+    "expected": "production vs requirements: 100x"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "السلم يتصاعد بترتيب المراحل",
+     "en": "The ladder ascends in phase order"
+    },
+    "code": "assert 'caught in requirements cost: 2h' in __learner_output__ and 'caught in testing cost: 100h' in __learner_output__, 'expected: 2h early and 100h at testing | actual: %r' % __learner_output__",
+    "expected": "2h early and 100h at testing"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch2.l4",
+  "id": "ex2.spiral-stepper",
+  "solution": "THRESHOLD = 6\n\ndef spiral_loops(risks):\n    pending = sorted(risks, key=lambda r: r[2] * r[3], reverse=True)\n    resolved = []\n    loop_no = 0\n    while pending:\n        exp = pending[0][2] * pending[0][3]\n        if exp < THRESHOLD:\n            print('no-go: top remaining exposure %d below %d' % (exp, THRESHOLD))\n            break\n        loop_no += 1\n        rid, cat, p, imp = pending.pop(0)\n        resolved.append(rid)\n        print('loop %d: attack %s (%s) exposure %d -> prototype' % (loop_no, rid, cat, exp))\n    if not pending:\n        print('all risks resolved')\n    return resolved\n\nRISKS = [\n    ('R1', 'technical', 4, 5),\n    ('R2', 'requirements', 3, 4),\n    ('R3', 'external', 1, 5),\n    ('R4', 'schedule', 2, 2),\n]\nresult = spiral_loops(RISKS)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الحلقة الأولى تهاجم أخطر خطر",
+     "en": "Loop one attacks the top risk"
+    },
+    "code": "assert 'loop 1: attack R1 (technical) exposure 20 -> prototype' in __learner_output__, 'expected: loop 1 attacks R1 at exposure 20 | actual: %r' % __learner_output__",
+    "expected": "loop 1 attacks R1 at exposure 20"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "المحلولة اثنان بالترتيب",
+     "en": "Two risks resolved in order"
+    },
+    "code": "assert result == ['R1', 'R2'], 'expected: R1 then R2 | actual: %r' % (result,)",
+    "expected": "['R1', 'R2']"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "قرار التوقف صريح عند العتبة",
+     "en": "The go/no-go stop is explicit at the threshold"
+    },
+    "code": "assert 'no-go: top remaining exposure 5 below 6' in __learner_output__, 'expected: no-go at exposure 5 below 6 | actual: %r' % __learner_output__",
+    "expected": "no-go at exposure 5 below 6"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "سجل آخر ينضب تمامًا",
+     "en": "Another register drains completely"
+    },
+    "code": "other = spiral_loops([('X', 'people', 3, 3)])\nassert other == ['X'], 'expected: X resolved | actual: %r' % (other,)",
+    "expected": "X resolved then all risks resolved"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch2.l5",
+  "id": "ex1.process-sim",
+  "solution": "WORK = [\n    ('F1', 3, 0),\n    ('F2', 2, 1),\n    ('F3', 4, 0),\n    ('F4', 2, 1),\n    ('F5', 3, 1),\n    ('F6', 2, 0),\n]\nWINDOW = 7\nLATE_FIX = 9\nEARLY_FIX = 4\nESCAPED_COST = 12\nTOTAL = sum(f[1] for f in WORK)\nN_DEFECTS = sum(f[2] for f in WORK)\n\ndef simulate_waterfall(work):\n    found = escaped = 0\n    cost = 0\n    done = 0\n    for fid, pts, defect in work:\n        cost += pts\n        done += pts\n        if defect:\n            if done >= TOTAL - WINDOW:\n                found += 1\n                cost += LATE_FIX\n                print('waterfall: fix %s late for %d' % (fid, LATE_FIX))\n            else:\n                escaped += 1\n                cost += ESCAPED_COST\n                print('waterfall: %s cold at test time -> escaped' % fid)\n    print('waterfall: found %d/%d defects cost %d' % (found, N_DEFECTS, cost))\n    return {'found': found, 'escaped': escaped, 'cost': cost}\n\ndef simulate_agile(work, per_iter=2):\n    found = escaped = 0\n    cost = 0\n    for i in range(0, len(work), per_iter):\n        batch = work[i:i + per_iter]\n        built = 0\n        for fid, pts, defect in batch:\n            cost += pts\n            built += pts\n        for fid, pts, defect in batch:\n            if defect:\n                if built <= WINDOW:\n                    found += 1\n                    cost += EARLY_FIX\n                    print('agile: fix %s inside iteration for %d' % (fid, EARLY_FIX))\n                else:\n                    escaped += 1\n                    cost += ESCAPED_COST\n    print('agile: found %d/%d defects cost %d' % (found, N_DEFECTS, cost))\n    return {'found': found, 'escaped': escaped, 'cost': cost}\n\nwf = simulate_waterfall(WORK)\nag = simulate_agile(WORK)\nprint('result: same %d points, cost %d vs %d, escaped %d vs %d' % (TOTAL, wf['cost'], ag['cost'], wf['escaped'], ag['escaped']))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الشلال: عيبان من ثلاثة وفاتورة 46",
+     "en": "Waterfall: two of three defects and a bill of 46"
+    },
+    "code": "assert 'waterfall: found 2/3 defects cost 46' in __learner_output__, 'expected: waterfall: found 2/3 defects cost 46 | actual: %r' % __learner_output__",
+    "expected": "waterfall: found 2/3 defects cost 46"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الرشيق: العيوب الثلاثة وفاتورة 28",
+     "en": "Agile: all three defects and a bill of 28"
+    },
+    "code": "assert 'agile: found 3/3 defects cost 28' in __learner_output__, 'expected: agile: found 3/3 defects cost 28 | actual: %r' % __learner_output__",
+    "expected": "agile: found 3/3 defects cost 28"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سطر الختام يقارن الفاتورتين والهارب",
+     "en": "The closing line compares both bills and the escaped defect"
+    },
+    "code": "assert 'result: same 16 points, cost 46 vs 28, escaped 1 vs 0' in __learner_output__, 'expected: result: same 16 points, cost 46 vs 28, escaped 1 vs 0 | actual: %r' % __learner_output__",
+    "expected": "result: same 16 points, cost 46 vs 28, escaped 1 vs 0"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch2.l5",
+  "id": "ex5.debug-blind-waterfall",
+  "solution": "WORK = [\n    ('F1', 3, 0),\n    ('F2', 2, 1),\n    ('F3', 4, 0),\n    ('F4', 2, 1),\n    ('F5', 3, 1),\n    ('F6', 2, 0),\n]\nWINDOW = 7\nLATE_FIX = 9\nESCAPED_COST = 12\nTOTAL = sum(f[1] for f in WORK)\nN_DEFECTS = sum(f[2] for f in WORK)\n\nfound = 0\nescaped = 0\ncost = 0\ndone = 0\nfor fid, pts, defect in WORK:\n    cost += pts\n    done += pts\n    if defect:\n        if done >= TOTAL - WINDOW:\n            found += 1\n            cost += LATE_FIX\n            print('waterfall: fix %s late for %d' % (fid, LATE_FIX))\n        else:\n            escaped += 1\n            cost += ESCAPED_COST\n            print('waterfall: %s cold at test time -> escaped' % fid)\nprint('waterfall: found %d/%d defects cost %d' % (found, N_DEFECTS, cost))\nprint('escape check: escaped %d' % escaped)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الفاتورة تشمل فاتورة الهروب",
+     "en": "The bill includes the escape bill"
+    },
+    "code": "assert 'waterfall: found 2/3 defects cost 46' in __learner_output__, 'expected: waterfall: found 2/3 defects cost 46 (books the escape bill) | actual: %r' % __learner_output__",
+    "expected": "waterfall: found 2/3 defects cost 46"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "فحص الهروب يطبع الرقم لا الأمل",
+     "en": "The escape check prints the number, not blind hope"
+    },
+    "code": "assert 'escape check: escaped 1' in __learner_output__, 'expected: escape check: escaped 1 | actual: %r' % __learner_output__",
+    "expected": "escape check: escaped 1"
+   }
+  ]
+ }
+]

@@ -1,0 +1,6523 @@
+{
+ "$schema": "./manifest.schema.md",
+ "version": 1,
+ "generatedBy": "hand-authored (M1) + scripts/gen_coverage.py",
+ "lessons": [
+  {
+   "id": "py4e.ch1.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 1,
+   "order": 1,
+   "title": {
+    "ar": "لماذا نتعلّم البرمجة؟",
+    "en": "Why Program?"
+   },
+   "prerequisites": [],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s1"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s3"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s12"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch1.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 1,
+   "order": 2,
+   "title": {
+    "ar": "بنية الحاسوب",
+    "en": "Computer Architecture"
+   },
+   "prerequisites": [
+    "py4e.ch1.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch1.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 1,
+   "order": 3,
+   "title": {
+    "ar": "بايثون والمفسِّر",
+    "en": "Python and the Interpreter"
+   },
+   "prerequisites": [
+    "py4e.ch1.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s4"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s5"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s6"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch1.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 1,
+   "order": 4,
+   "title": {
+    "ar": "أول برنامج لك",
+    "en": "Your First Program"
+   },
+   "prerequisites": [
+    "py4e.ch1.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s7"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s8"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch1.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 1,
+   "order": 5,
+   "title": {
+    "ar": "مكوّنات البرامج والأخطاء",
+    "en": "Program Building Blocks and Errors"
+   },
+   "prerequisites": [
+    "py4e.ch1.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s9"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s10"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch1.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 1,
+   "order": 6,
+   "title": {
+    "ar": "مراجعة الفصل 1 ومشروع مصغّر",
+    "en": "Chapter 1 Review and Mini-Project"
+   },
+   "prerequisites": [
+    "py4e.ch1.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s11"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s13"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch1.s14"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch2.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 2,
+   "order": 7,
+   "title": {
+    "ar": "القيم والأنواع",
+    "en": "Values and Types"
+   },
+   "prerequisites": [
+    "py4e.ch1.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s1"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch2.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 2,
+   "order": 8,
+   "title": {
+    "ar": "المتغيّرات وأسماؤها",
+    "en": "Variables and Naming"
+   },
+   "prerequisites": [
+    "py4e.ch2.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s2"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s3"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s12"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch2.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 2,
+   "order": 9,
+   "title": {
+    "ar": "التعليمات والتعابير وترتيب العمليات",
+    "en": "Statements, Expressions, and Order of Operations"
+   },
+   "prerequisites": [
+    "py4e.ch2.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s4"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s6"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s7"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch2.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 2,
+   "order": 10,
+   "title": {
+    "ar": "العوامل الحسابية وباقي القسمة",
+    "en": "Arithmetic Operators and Modulo"
+   },
+   "prerequisites": [
+    "py4e.ch2.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s5"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s8"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s9"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch2.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 2,
+   "order": 11,
+   "title": {
+    "ar": "إدخال المستخدم والتعليقات",
+    "en": "User Input and Comments"
+   },
+   "prerequisites": [
+    "py4e.ch2.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s10"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s11"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch2.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 2,
+   "order": 12,
+   "title": {
+    "ar": "مراجعة الفصل 2 ومشروع: مُحوِّل درجات الحرارة",
+    "en": "Chapter 2 Review and Project: Temperature Converter"
+   },
+   "prerequisites": [
+    "py4e.ch2.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s13"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s14"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch2.s15"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch3.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 3,
+   "order": 13,
+   "title": {
+    "ar": "التعابير المنطقية",
+    "en": "Boolean Expressions"
+   },
+   "prerequisites": [
+    "py4e.ch2.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch3.s1"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch3.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch3.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 3,
+   "order": 14,
+   "title": {
+    "ar": "الشرط if والتنفيذ البديل",
+    "en": "if and Alternative Execution"
+   },
+   "prerequisites": [
+    "py4e.ch3.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch3.s3"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch3.s4"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch3.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 3,
+   "order": 15,
+   "title": {
+    "ar": "السلاسل الشرطية والشرط المتداخل",
+    "en": "Chained and Nested Conditionals"
+   },
+   "prerequisites": [
+    "py4e.ch3.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch3.s5"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch3.s6"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch3.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 3,
+   "order": 16,
+   "title": {
+    "ar": "معالجة الأخطاء بـ try و except",
+    "en": "Handling Errors with try and except"
+   },
+   "prerequisites": [
+    "py4e.ch3.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch3.s7"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch3.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 3,
+   "order": 17,
+   "title": {
+    "ar": "التقييم قصير الدارة (Short-Circuit)",
+    "en": "Short-Circuit Evaluation"
+   },
+   "prerequisites": [
+    "py4e.ch3.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch3.s8"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch3.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 3,
+   "order": 18,
+   "title": {
+    "ar": "مراجعة الفصل 3 ومشروع: الآلة الحاسبة الآمنة",
+    "en": "Chapter 3 Review and Project: The Safe Calculator"
+   },
+   "prerequisites": [
+    "py4e.ch3.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch3.s9"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch3.s10"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch3.s11"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch4.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 4,
+   "order": 19,
+   "title": {
+    "ar": "استدعاء التوابع والتوابع الجاهزة",
+    "en": "Calling Functions and Built-ins"
+   },
+   "prerequisites": [
+    "py4e.ch3.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s1"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch4.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 4,
+   "order": 20,
+   "title": {
+    "ar": "توابع تحويل النوع والتوابع الرياضية",
+    "en": "Type Conversion and Math Functions"
+   },
+   "prerequisites": [
+    "py4e.ch4.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s3"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s4"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch4.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 4,
+   "order": 21,
+   "title": {
+    "ar": "الأعداد العشوائية",
+    "en": "Random Numbers"
+   },
+   "prerequisites": [
+    "py4e.ch4.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s5"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch4.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 4,
+   "order": 22,
+   "title": {
+    "ar": "تعريف توابع جديدة: def وتسلسل التنفيذ",
+    "en": "Defining New Functions: def and Flow of Execution"
+   },
+   "prerequisites": [
+    "py4e.ch4.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s6"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s7"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s8"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch4.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 4,
+   "order": 23,
+   "title": {
+    "ar": "المعاملات والوسائط والتوابع المُنتجة",
+    "en": "Parameters, Arguments, and Fruitful Functions"
+   },
+   "prerequisites": [
+    "py4e.ch4.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s9"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s10"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s11"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch4.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 4,
+   "order": 24,
+   "title": {
+    "ar": "مراجعة الفصل 4 ومشروع: مولّد كلمات المرور",
+    "en": "Chapter 4 Review and Project: Password Generator"
+   },
+   "prerequisites": [
+    "py4e.ch4.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s12"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s13"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch4.s14"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch5.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 5,
+   "order": 25,
+   "title": {
+    "ar": "تحديث المتغيرات وحلقة while",
+    "en": "Updating Variables and the while Loop"
+   },
+   "prerequisites": [
+    "py4e.ch4.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch5.s1"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch5.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch5.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 5,
+   "order": 26,
+   "title": {
+    "ar": "الحلقات اللانهائية وcontinue",
+    "en": "Infinite Loops and continue"
+   },
+   "prerequisites": [
+    "py4e.ch5.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch5.s3"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch5.s4"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch5.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 5,
+   "order": 27,
+   "title": {
+    "ar": "حلقة for",
+    "en": "The for Loop"
+   },
+   "prerequisites": [
+    "py4e.ch5.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch5.s5"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch5.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 5,
+   "order": 28,
+   "title": {
+    "ar": "أنماط الحلقات: العدّ والمجموع",
+    "en": "Loop Patterns: Counting and Summing"
+   },
+   "prerequisites": [
+    "py4e.ch5.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch5.s6"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch5.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 5,
+   "order": 29,
+   "title": {
+    "ar": "أنماط الحلقات: التصفية والأكبر والأصغر",
+    "en": "Loop Patterns: Filtering, Max, and Min"
+   },
+   "prerequisites": [
+    "py4e.ch5.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch5.s6"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch5.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 5,
+   "order": 30,
+   "title": {
+    "ar": "مراجعة الفصل 5 ومشروع: تقرير الدرجات",
+    "en": "Chapter 5 Review and Project: Grade Report"
+   },
+   "prerequisites": [
+    "py4e.ch5.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch5.s7"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch5.s8"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch5.s9"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch6.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 6,
+   "order": 31,
+   "title": {
+    "ar": "المحارف وفهرسة السلاسل",
+    "en": "Characters and String Indexing"
+   },
+   "prerequisites": [
+    "py4e.ch5.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s1"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch6.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 6,
+   "order": 32,
+   "title": {
+    "ar": "المرور على السلاسل والعدّ",
+    "en": "Traversing Strings and Counting"
+   },
+   "prerequisites": [
+    "py4e.ch6.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s3"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s6"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch6.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 6,
+   "order": 33,
+   "title": {
+    "ar": "تجزئة السلاسل وثباتها",
+    "en": "Slicing and Immutability"
+   },
+   "prerequisites": [
+    "py4e.ch6.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s4"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s5"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch6.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 6,
+   "order": 34,
+   "title": {
+    "ar": "العامل in ومقارنة السلاسل",
+    "en": "The in Operator and String Comparison"
+   },
+   "prerequisites": [
+    "py4e.ch6.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s7"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s8"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch6.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 6,
+   "order": 35,
+   "title": {
+    "ar": "توابع السلاسل وتحليلها",
+    "en": "String Methods and Parsing"
+   },
+   "prerequisites": [
+    "py4e.ch6.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s9"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s10"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch6.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 6,
+   "order": 36,
+   "title": {
+    "ar": "عامل التنسيق ومراجعة الفصل 6 ومشروع: محلّل البريد",
+    "en": "The Format Operator, Chapter 6 Review, and Project: Email Analyzer"
+   },
+   "prerequisites": [
+    "py4e.ch6.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s11"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s12"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s13"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch6.s14"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch7.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 7,
+   "order": 37,
+   "title": {
+    "ar": "فتح الملفات",
+    "en": "Opening Files"
+   },
+   "prerequisites": [
+    "py4e.ch6.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch7.s1"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch7.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch7.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 7,
+   "order": 38,
+   "title": {
+    "ar": "قراءة الملفات",
+    "en": "Reading Files"
+   },
+   "prerequisites": [
+    "py4e.ch7.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch7.s3"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch7.s4"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch7.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 7,
+   "order": 39,
+   "title": {
+    "ar": "البحث خلال ملف",
+    "en": "Searching Through a File"
+   },
+   "prerequisites": [
+    "py4e.ch7.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch7.s5"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch7.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 7,
+   "order": 40,
+   "title": {
+    "ar": "اختيار الملف ومعالجة الأخطاء",
+    "en": "Choosing a File and Error Handling"
+   },
+   "prerequisites": [
+    "py4e.ch7.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch7.s6"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch7.s7"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch7.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 7,
+   "order": 41,
+   "title": {
+    "ar": "كتابة الملفات",
+    "en": "Writing Files"
+   },
+   "prerequisites": [
+    "py4e.ch7.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch7.s8"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch7.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 7,
+   "order": 42,
+   "title": {
+    "ar": "مراجعة الفصل 7 ومشروع: دفتر الملفات",
+    "en": "Chapter 7 Review and Project: File Notebook"
+   },
+   "prerequisites": [
+    "py4e.ch7.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch7.s9"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch7.s10"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch7.s11"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch8.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 8,
+   "order": 43,
+   "title": {
+    "ar": "القائمة سلسلة من العناصر",
+    "en": "Lists: A Sequence of Elements"
+   },
+   "prerequisites": [
+    "py4e.ch7.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s1"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch8.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 8,
+   "order": 44,
+   "title": {
+    "ar": "المرور على القوائم والعمليات والتجزئة",
+    "en": "Traversing Lists, Operations, and Slicing"
+   },
+   "prerequisites": [
+    "py4e.ch8.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s3"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s4"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s5"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch8.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 8,
+   "order": 45,
+   "title": {
+    "ar": "توابع القوائم وحذف العناصر",
+    "en": "List Methods and Deleting Elements"
+   },
+   "prerequisites": [
+    "py4e.ch8.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s6"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s7"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch8.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 8,
+   "order": 46,
+   "title": {
+    "ar": "القوائم مع التوابع والسلاسل",
+    "en": "Lists with Functions and Strings"
+   },
+   "prerequisites": [
+    "py4e.ch8.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s8"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s9"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch8.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 8,
+   "order": 47,
+   "title": {
+    "ar": "الأسطر والملفات والكائنات والإحالات",
+    "en": "Lines, Files, Objects, and References"
+   },
+   "prerequisites": [
+    "py4e.ch8.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s10"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s11"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s12"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s13"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch8.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 8,
+   "order": 48,
+   "title": {
+    "ar": "مراجعة الفصل 8 ومشروع: منظّم الكلمات",
+    "en": "Chapter 8 Review and Project: Word Organizer"
+   },
+   "prerequisites": [
+    "py4e.ch8.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s14"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s15"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch8.s16"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch9.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 9,
+   "order": 49,
+   "title": {
+    "ar": "القاموس: المفاتيح والقيم",
+    "en": "Dictionaries: Keys and Values"
+   },
+   "prerequisites": [
+    "py4e.ch8.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch9.s1"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch9.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 9,
+   "order": 50,
+   "title": {
+    "ar": "العدّ بالقواميس",
+    "en": "Counting with Dictionaries"
+   },
+   "prerequisites": [
+    "py4e.ch9.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch9.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch9.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 9,
+   "order": 51,
+   "title": {
+    "ar": "القواميس والملفات: عدّ الكلمات",
+    "en": "Dictionaries and Files: Counting Words"
+   },
+   "prerequisites": [
+    "py4e.ch9.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch9.s3"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch9.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 9,
+   "order": 52,
+   "title": {
+    "ar": "الحلقات على القواميس",
+    "en": "Looping Over Dictionaries"
+   },
+   "prerequisites": [
+    "py4e.ch9.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch9.s4"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch9.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 9,
+   "order": 53,
+   "title": {
+    "ar": "معالجة النصوص: الحروف الصغيرة وعلامات الترقيم",
+    "en": "Text Processing: Lowercase and Punctuation"
+   },
+   "prerequisites": [
+    "py4e.ch9.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch9.s5"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch9.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 9,
+   "order": 54,
+   "title": {
+    "ar": "مراجعة الفصل 9 ومشروع: عدّاد الكلمات",
+    "en": "Chapter 9 Review and Project: Word Counter"
+   },
+   "prerequisites": [
+    "py4e.ch9.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch9.s6"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch9.s7"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch9.s8"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch10.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 10,
+   "order": 55,
+   "title": {
+    "ar": "الصفوف غير قابلة للتعديل",
+    "en": "Tuples Are Immutable"
+   },
+   "prerequisites": [
+    "py4e.ch9.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch10.s1"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch10.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 10,
+   "order": 56,
+   "title": {
+    "ar": "مقارنة الصفوف وترتيبها",
+    "en": "Comparing and Sorting Tuples"
+   },
+   "prerequisites": [
+    "py4e.ch10.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch10.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch10.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 10,
+   "order": 57,
+   "title": {
+    "ar": "إسناد الصفوف",
+    "en": "Tuple Assignment"
+   },
+   "prerequisites": [
+    "py4e.ch10.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch10.s3"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch10.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 10,
+   "order": 58,
+   "title": {
+    "ar": "القواميس والصفوف",
+    "en": "Dictionaries and Tuples"
+   },
+   "prerequisites": [
+    "py4e.ch10.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch10.s4"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch10.s5"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch10.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 10,
+   "order": 59,
+   "title": {
+    "ar": "الكلمات الأكثر تكرارًا",
+    "en": "The Most Common Words"
+   },
+   "prerequisites": [
+    "py4e.ch10.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch10.s6"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch10.s7"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch10.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 10,
+   "order": 60,
+   "title": {
+    "ar": "مراجعة الفصل 10 ومشروع: لوحة صدارة الكلمات",
+    "en": "Chapter 10 Review and Project: Word Leaderboard"
+   },
+   "prerequisites": [
+    "py4e.ch10.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch10.s8"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch10.s9"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch10.s10"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch10.s11"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch11.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 11,
+   "order": 61,
+   "title": {
+    "ar": "مطابقة المحارف بالتعبيرات النمطية",
+    "en": "Matching Characters with Regular Expressions"
+   },
+   "prerequisites": [
+    "py4e.ch10.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch11.s1"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch11.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 11,
+   "order": 62,
+   "title": {
+    "ar": "استخراج البيانات بالتعبيرات النمطية",
+    "en": "Extracting Data with Regular Expressions"
+   },
+   "prerequisites": [
+    "py4e.ch11.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch11.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch11.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 11,
+   "order": 63,
+   "title": {
+    "ar": "البحث والاستخراج معًا",
+    "en": "Search and Extract Together"
+   },
+   "prerequisites": [
+    "py4e.ch11.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch11.s3"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch11.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 11,
+   "order": 64,
+   "title": {
+    "ar": "فئات المحارف والتكرار",
+    "en": "Character Classes and Repetition"
+   },
+   "prerequisites": [
+    "py4e.ch11.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch11.s1"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch11.s3"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch11.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 11,
+   "order": 65,
+   "title": {
+    "ar": "محرف الهروب والأنماط العملية",
+    "en": "Escaping and Practical Patterns"
+   },
+   "prerequisites": [
+    "py4e.ch11.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch11.s4"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch11.s6"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch11.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 11,
+   "order": 66,
+   "title": {
+    "ar": "مراجعة الفصل 11 ومشروع: محلل السجلات",
+    "en": "Chapter 11 Review and Project: Log Analyzer"
+   },
+   "prerequisites": [
+    "py4e.ch11.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch11.s5"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch11.s7"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch11.s8"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch11.s9"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch12.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 12,
+   "order": 67,
+   "title": {
+    "ar": "بروتوكول HTTP: كيف تتحدث الشبكة",
+    "en": "The HTTP Protocol: How the Web Talks"
+   },
+   "prerequisites": [
+    "py4e.ch11.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch12.s1"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch12.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 12,
+   "order": 68,
+   "title": {
+    "ar": "أبسط متصفح ويب في العالم",
+    "en": "The Simplest Web Browser"
+   },
+   "prerequisites": [
+    "py4e.ch12.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch12.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch12.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 12,
+   "order": 69,
+   "title": {
+    "ar": "الصور والبيانات الثنائية عبر HTTP",
+    "en": "Images and Binary Data over HTTP"
+   },
+   "prerequisites": [
+    "py4e.ch12.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch12.s3"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch12.s5"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch12.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 12,
+   "order": 70,
+   "title": {
+    "ar": "مكتبة urllib وتحليل الروابط",
+    "en": "The urllib Library and URL Parsing"
+   },
+   "prerequisites": [
+    "py4e.ch12.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch12.s4"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch12.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 12,
+   "order": 71,
+   "title": {
+    "ar": "تحليل صفحات HTML",
+    "en": "Parsing HTML Pages"
+   },
+   "prerequisites": [
+    "py4e.ch12.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch12.s6"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch12.s7"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch12.s8"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch12.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 12,
+   "order": 72,
+   "title": {
+    "ar": "مراجعة الفصل 12 ومشروع: متصفح مصغّر",
+    "en": "Chapter 12 Review and Project: Mini Browser"
+   },
+   "prerequisites": [
+    "py4e.ch12.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch12.s9"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch12.s10"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch12.s11"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch13.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 13,
+   "order": 73,
+   "title": {
+    "ar": "لغة التوصيف الموسعة XML",
+    "en": "eXtensible Markup Language (XML)"
+   },
+   "prerequisites": [
+    "py4e.ch12.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch13.s1"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch13.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 13,
+   "order": 74,
+   "title": {
+    "ar": "تحليل نصوص XML",
+    "en": "Parsing XML"
+   },
+   "prerequisites": [
+    "py4e.ch13.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch13.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch13.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 13,
+   "order": 75,
+   "title": {
+    "ar": "المرور على عقد XML",
+    "en": "Looping Over XML Nodes"
+   },
+   "prerequisites": [
+    "py4e.ch13.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch13.s3"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch13.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 13,
+   "order": 76,
+   "title": {
+    "ar": "صيغة JSON",
+    "en": "The JSON Format"
+   },
+   "prerequisites": [
+    "py4e.ch13.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch13.s4"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch13.s5"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch13.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 13,
+   "order": 77,
+   "title": {
+    "ar": "واجهات برمجة التطبيقات والأمان",
+    "en": "APIs and Security"
+   },
+   "prerequisites": [
+    "py4e.ch13.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch13.s6"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch13.s7"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch13.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 13,
+   "order": 78,
+   "title": {
+    "ar": "مراجعة الفصل 13 ومشروع: قارئ الخدمة الجغرافية",
+    "en": "Chapter 13 Review and Project: Geo Service Reader"
+   },
+   "prerequisites": [
+    "py4e.ch13.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch13.s8"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch13.s9"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch13.s10"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch14.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 14,
+   "order": 79,
+   "title": {
+    "ar": "لماذا نحتاج الكائنات؟",
+    "en": "Why Objects?"
+   },
+   "prerequisites": [
+    "py4e.ch13.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch14.s1"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch14.s2"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch14.s3"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch14.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 14,
+   "order": 80,
+   "title": {
+    "ar": "أول صنف لك",
+    "en": "Your First Class"
+   },
+   "prerequisites": [
+    "py4e.ch14.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch14.s4"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch14.s5"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch14.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 14,
+   "order": 81,
+   "title": {
+    "ar": "بناء الكائنات والمُنشئ",
+    "en": "Building Objects and the Constructor"
+   },
+   "prerequisites": [
+    "py4e.ch14.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch14.s6"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch14.s7"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch14.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 14,
+   "order": 82,
+   "title": {
+    "ar": "دورة حياة الكائن وتعدد الكائنات",
+    "en": "Object Lifecycle and Multiple Objects"
+   },
+   "prerequisites": [
+    "py4e.ch14.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch14.s8"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch14.s9"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch14.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 14,
+   "order": 83,
+   "title": {
+    "ar": "الوراثة",
+    "en": "Inheritance"
+   },
+   "prerequisites": [
+    "py4e.ch14.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch14.s10"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch14.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 14,
+   "order": 84,
+   "title": {
+    "ar": "مراجعة الفصل 14 ومشروع: فريق الكائنات",
+    "en": "Chapter 14 Review and Project: The Objects Team"
+   },
+   "prerequisites": [
+    "py4e.ch14.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch14.s11"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch14.s12"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch15.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 15,
+   "order": 85,
+   "title": {
+    "ar": "ما هي قاعدة البيانات؟",
+    "en": "What Is a Database?"
+   },
+   "prerequisites": [
+    "py4e.ch14.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch15.s1"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch15.s2"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch15.s3"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch15.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 15,
+   "order": 86,
+   "title": {
+    "ar": "أول جداولك بـ SQL",
+    "en": "Your First Tables with SQL"
+   },
+   "prerequisites": [
+    "py4e.ch15.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch15.s4"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch15.s5"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch15.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 15,
+   "order": 87,
+   "title": {
+    "ar": "الاستعلامات والتجميع",
+    "en": "Querying and Aggregating"
+   },
+   "prerequisites": [
+    "py4e.ch15.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch15.s6"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch15.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 15,
+   "order": 88,
+   "title": {
+    "ar": "نمذجة البيانات والجداول المتعددة",
+    "en": "Data Modeling and Multiple Tables"
+   },
+   "prerequisites": [
+    "py4e.ch15.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch15.s7"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch15.s8"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch15.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 15,
+   "order": 89,
+   "title": {
+    "ar": "المفاتيح الثلاثة و JOIN",
+    "en": "The Three Kinds of Keys and JOIN"
+   },
+   "prerequisites": [
+    "py4e.ch15.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch15.s9"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch15.s10"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch15.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 15,
+   "order": 90,
+   "title": {
+    "ar": "مراجعة الفصل 15 ومشروع: قاعدة بيانات المكتبة الموسيقية",
+    "en": "Chapter 15 Review and Project: The Music Library Database"
+   },
+   "prerequisites": [
+    "py4e.ch15.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch15.s11"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch15.s12"
+    },
+    {
+     "book": "PY4E",
+     "section": "py4e.ch15.s13"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch16.l1",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 16,
+   "order": 91,
+   "title": {
+    "ar": "بيانات غوغل الجغرافية",
+    "en": "Google Geodata"
+   },
+   "prerequisites": [
+    "py4e.ch15.l6"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch16.s1"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch16.l2",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 16,
+   "order": 92,
+   "title": {
+    "ar": "توليد ملفات الخرائط",
+    "en": "Generating Map Data Files"
+   },
+   "prerequisites": [
+    "py4e.ch16.l1"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch16.s1"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch16.l3",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 16,
+   "order": 93,
+   "title": {
+    "ar": "شبكات الروابط والعقد",
+    "en": "Link and Node Networks"
+   },
+   "prerequisites": [
+    "py4e.ch16.l2"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch16.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch16.l4",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 16,
+   "order": 94,
+   "title": {
+    "ar": "الرسم النصي للبيانات",
+    "en": "Text-Based Data Visualization"
+   },
+   "prerequisites": [
+    "py4e.ch16.l3"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch16.s2"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch16.l5",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 16,
+   "order": 95,
+   "title": {
+    "ar": "البيانات البريدية عبر الزمن",
+    "en": "Mail Data Over Time"
+   },
+   "prerequisites": [
+    "py4e.ch16.l4"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch16.s3"
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch16.l6",
+   "track": "P1",
+   "part": "I",
+   "book": "PY4E",
+   "chapter": 16,
+   "order": 96,
+   "title": {
+    "ar": "مراجعة الفصل 16 ومشروع: لوحة البيانات البريدية",
+    "en": "Chapter 16 Review and Project: The Mail Data Dashboard"
+   },
+   "prerequisites": [
+    "py4e.ch16.l5"
+   ],
+   "sources": [
+    {
+     "book": "PY4E",
+     "section": "py4e.ch16.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch8.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 8,
+   "order": 97,
+   "title": {
+    "ar": "لماذا التحكم بالإصدارات؟",
+    "en": "Why Version Control?"
+   },
+   "prerequisites": [
+    "py4e.ch16.l6"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch8.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 8,
+   "order": 98,
+   "title": {
+    "ar": "التفرّع والدمج",
+    "en": "Branching and Merging"
+   },
+   "prerequisites": [
+    "swe.ch8.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch8.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 8,
+   "order": 99,
+   "title": {
+    "ar": "العمل مع الآخرين وتعارضات الدمج",
+    "en": "Working with Others and Merge Conflicts"
+   },
+   "prerequisites": [
+    "swe.ch8.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch8.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 8,
+   "order": 100,
+   "title": {
+    "ar": "عادات Git الجماعية والتوثيق",
+    "en": "Team Habits and Documentation"
+   },
+   "prerequisites": [
+    "swe.ch8.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch8.l5",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 8,
+   "order": 101,
+   "title": {
+    "ar": "مراجعة الفصل 8 ومشروع: نموذج Git المصغّر",
+    "en": "Chapter 8 Review and Project: The Mini-Git Model"
+   },
+   "prerequisites": [
+    "swe.ch8.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s8"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch9.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 9,
+   "order": 102,
+   "title": {
+    "ar": "مراجعات المعمارية والفحوص",
+    "en": "Architecture Reviews and Inspections"
+   },
+   "prerequisites": [
+    "swe.ch8.l5"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch9.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch9.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch9.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 9,
+   "order": 103,
+   "title": {
+    "ar": "مراجعات الكود: النية والثقة",
+    "en": "Code Reviews: Intent and Trust"
+   },
+   "prerequisites": [
+    "swe.ch9.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch9.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch9.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 9,
+   "order": 104,
+   "title": {
+    "ar": "التحليل الثابت الآلي",
+    "en": "Automated Static Analysis"
+   },
+   "prerequisites": [
+    "swe.ch9.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch9.s4"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch9.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 9,
+   "order": 105,
+   "title": {
+    "ar": "مراجعة الفصل 9 ومشروع: المنقّح المصغّر",
+    "en": "Chapter 9 Review and Project: The Mini Linter"
+   },
+   "prerequisites": [
+    "swe.ch9.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch9.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch10.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 10,
+   "order": 106,
+   "title": {
+    "ar": "لماذا نختبر؟ ومستويات الاختبار",
+    "en": "Why Test? Levels of Testing"
+   },
+   "prerequisites": [
+    "swe.ch9.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch10.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 10,
+   "order": 107,
+   "title": {
+    "ar": "تغطية الكود: الاختبار بالصندوق الأبيض",
+    "en": "Code Coverage: White-Box Testing"
+   },
+   "prerequisites": [
+    "swe.ch10.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch10.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 10,
+   "order": 108,
+   "title": {
+    "ar": "تغطية المدخلات: الاختبار بالصندوق الأسود",
+    "en": "Input Coverage: Black-Box Testing"
+   },
+   "prerequisites": [
+    "swe.ch10.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s4"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch10.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 10,
+   "order": 109,
+   "title": {
+    "ar": "MC/DC والاختبار التوافقي",
+    "en": "MC/DC and Combinatorial Testing"
+   },
+   "prerequisites": [
+    "swe.ch10.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s6"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch10.l5",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 10,
+   "order": 110,
+   "title": {
+    "ar": "مراجعة الفصل 10 ومشروع: حزمة الاختبارات",
+    "en": "Chapter 10 Review and Project: The Test Suite"
+   },
+   "prerequisites": [
+    "swe.ch10.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch11.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 11,
+   "order": 111,
+   "title": {
+    "ar": "الأمن صفة عبر دورة الحياة وقائمة OWASP العشرة",
+    "en": "Security as a Lifecycle Property and the OWASP Top 10"
+   },
+   "prerequisites": [
+    "swe.ch10.l5"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch11.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch11.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch11.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 11,
+   "order": 112,
+   "title": {
+    "ar": "البحث عن الثغرات: من الفحص اليدوي إلى المستقل",
+    "en": "Finding Vulnerabilities: from Manual Review to Autonomous Agents"
+   },
+   "prerequisites": [
+    "swe.ch11.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch11.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch11.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 11,
+   "order": 113,
+   "title": {
+    "ar": "سلسلة توريد البرمجيات وبناء الأمن داخليًا",
+    "en": "The Software Supply Chain and Building Security In"
+   },
+   "prerequisites": [
+    "swe.ch11.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch11.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch11.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch11.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 11,
+   "order": 114,
+   "title": {
+    "ar": "مراجعة الفصل 11 ومشروع: مدقّق كلمات المرور والسياسات",
+    "en": "Chapter 11 Review and Project: Password and Policy Auditor"
+   },
+   "prerequisites": [
+    "swe.ch11.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch11.s6"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch12.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 12,
+   "order": 115,
+   "title": {
+    "ar": "مقاييس ذات معنى وجودة البرمجيات",
+    "en": "Meaningful Metrics and Software Quality"
+   },
+   "prerequisites": [
+    "swe.ch11.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch12.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 12,
+   "order": 116,
+   "title": {
+    "ar": "عرض البيانات بيانيًا",
+    "en": "Graphical Displays of Data Sets"
+   },
+   "prerequisites": [
+    "swe.ch12.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch12.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 12,
+   "order": 117,
+   "title": {
+    "ar": "قياس العيوب وتحسين جودة العمليات: دراسة حالة",
+    "en": "Measuring Defects and an Ops Quality Case Study"
+   },
+   "prerequisites": [
+    "swe.ch12.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch12.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 12,
+   "order": 118,
+   "title": {
+    "ar": "تشتت البيانات: الصناديق والمدرجات والإحصاء",
+    "en": "Data Dispersion: Boxplots, Histograms, and Statistics"
+   },
+   "prerequisites": [
+    "swe.ch12.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch12.l5",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 12,
+   "order": 119,
+   "title": {
+    "ar": "فترات الثقة والانحدار الخطي البسيط",
+    "en": "Confidence Intervals and Simple Linear Regression"
+   },
+   "prerequisites": [
+    "swe.ch12.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s8"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s9"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch12.l6",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 12,
+   "order": 120,
+   "title": {
+    "ar": "مراجعة الفصل 12 ومشروع: لوحة مقاييس الجودة",
+    "en": "Chapter 12 Review and Project: Quality Metrics Dashboard"
+   },
+   "prerequisites": [
+    "swe.ch12.l5"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s10"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch14.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 14,
+   "order": 121,
+   "title": {
+    "ar": "الخدمات السحابية وخطوط التكامل المستمر",
+    "en": "SaaS and the Cloud and Continuous Integration Pipelines"
+   },
+   "prerequisites": [
+    "swe.ch12.l6"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch14.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 14,
+   "order": 122,
+   "title": {
+    "ar": "النشر المستمر: الإصدارات الكنارية والتراجع",
+    "en": "Continuous Deployment: Canaries and Rollbacks"
+   },
+   "prerequisites": [
+    "swe.ch14.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch14.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 14,
+   "order": 123,
+   "title": {
+    "ar": "حزم الخدمات وتشغيلها، والوصول إلى المستخدمين",
+    "en": "Packaging a Service, and Reaching Users"
+   },
+   "prerequisites": [
+    "swe.ch14.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch14.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 14,
+   "order": 124,
+   "title": {
+    "ar": "خطوط الأمن المستمر ومقاييس DORA للتسليم",
+    "en": "Continuous Security Pipelines and DORA Delivery Metrics"
+   },
+   "prerequisites": [
+    "swe.ch14.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch14.l5",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 14,
+   "order": 125,
+   "title": {
+    "ar": "مراجعة الفصل 14 ومشروع: خط تسليم مصغّر",
+    "en": "Chapter 14 Review and Project: a Mini Delivery Pipeline"
+   },
+   "prerequisites": [
+    "swe.ch14.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s8"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch15.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 15,
+   "order": 126,
+   "title": {
+    "ar": "الشيفرة العتيقة واختبارات التوصيف",
+    "en": "What Makes Code Legacy and Characterization Tests"
+   },
+   "prerequisites": [
+    "swe.ch14.l5"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch15.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 15,
+   "order": 127,
+   "title": {
+    "ar": "إعادة الهيكلة تحت اختبارات خضراء وحوكمة المستودع",
+    "en": "Refactoring Under Green Tests and Repository Stewardship"
+   },
+   "prerequisites": [
+    "swe.ch15.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s3"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s4"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch15.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 15,
+   "order": 128,
+   "title": {
+    "ar": "الدين التقني: شجرة الخنزير مقابل إعادة الكتابة الكاملة",
+    "en": "Technical Debt and Strangler Fig versus Big-Bang Rewrite"
+   },
+   "prerequisites": [
+    "swe.ch15.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s6"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch15.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 15,
+   "order": 129,
+   "title": {
+    "ar": "مراجعة الفصل 15 ومشروع: ورشة إحياء شيفرة عتيقة",
+    "en": "Chapter 15 Review and Project: Legacy Revival Workshop"
+   },
+   "prerequisites": [
+    "swe.ch15.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch1.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 1,
+   "order": 130,
+   "title": {
+    "ar": "ما الهندسة البرمجية؟ ولماذا هي صعبة",
+    "en": "What Is Software Engineering and Why Is It Hard"
+   },
+   "prerequisites": [
+    "swe.ch15.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s2"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch1.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 1,
+   "order": 131,
+   "title": {
+    "ar": "التعقيد الذاتي وحتمية العيوب",
+    "en": "Intrinsic Complexity and Inevitable Defects"
+   },
+   "prerequisites": [
+    "swe.ch1.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s3"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s3"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s4"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch1.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 1,
+   "order": 132,
+   "title": {
+    "ar": "مثلث القيود والمسؤولية الاجتماعية",
+    "en": "The Iron Triangle and Social Responsibility"
+   },
+   "prerequisites": [
+    "swe.ch1.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s6"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch1.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 1,
+   "order": 133,
+   "title": {
+    "ar": "مراجعة الفصل 1 ومشروع: ميزان المهندس",
+    "en": "Chapter 1 Review and Project: The Engineer’s Balance"
+   },
+   "prerequisites": [
+    "swe.ch1.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s7"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch1.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch2.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 2,
+   "order": 134,
+   "title": {
+    "ar": "القيم والعمليات: من البيان إلى سكرم",
+    "en": "Processes and Values: From Manifesto to Scrum"
+   },
+   "prerequisites": [
+    "swe.ch1.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s2"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch2.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 2,
+   "order": 135,
+   "title": {
+    "ar": "التطوير الرشيق: البرمجة الفائقة",
+    "en": "Agile Development: Extreme Programming"
+   },
+   "prerequisites": [
+    "swe.ch2.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s3"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch2.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 2,
+   "order": 136,
+   "title": {
+    "ar": "حدود الشلال وعروض V",
+    "en": "Waterfall Limits and V Processes"
+   },
+   "prerequisites": [
+    "swe.ch2.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch2.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 2,
+   "order": 137,
+   "title": {
+    "ar": "مخاطر المشروع وإطار الحلزون",
+    "en": "Project Risks and the Spiral Framework"
+   },
+   "prerequisites": [
+    "swe.ch2.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s7"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch2.l5",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 2,
+   "order": 138,
+   "title": {
+    "ar": "مراجعة الفصل 2 ومشروع: مُحاكي العمليات",
+    "en": "Chapter 2 Review and Project: The Process Simulator"
+   },
+   "prerequisites": [
+    "swe.ch2.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s8"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s9"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s8"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch2.s9"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch3.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 3,
+   "order": 139,
+   "title": {
+    "ar": "ما المتطلب؟ وكيف تنضج المتطلبات",
+    "en": "What Is a Requirement and How Requirements Mature"
+   },
+   "prerequisites": [
+    "swe.ch2.l5"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s2"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch3.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 3,
+   "order": 140,
+   "title": {
+    "ar": "استنباط احتياجات المستخدمين",
+    "en": "Eliciting User Needs"
+   },
+   "prerequisites": [
+    "swe.ch3.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s3"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch3.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 3,
+   "order": 141,
+   "title": {
+    "ar": "القصص والميزات وسيناريوهات التجربة",
+    "en": "Stories, Features, and Experience Scenarios"
+   },
+   "prerequisites": [
+    "swe.ch3.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch3.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 3,
+   "order": 142,
+   "title": {
+    "ar": "توضيح الأهداف وهجمات الأمان",
+    "en": "Clarifying Goals and Security Attacks"
+   },
+   "prerequisites": [
+    "swe.ch3.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s7"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch3.l5",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 3,
+   "order": 143,
+   "title": {
+    "ar": "مراجعة الفصل 3 ومشروع: حزمة المتطلبات",
+    "en": "Chapter 3 Review and Project: The Requirements Pack"
+   },
+   "prerequisites": [
+    "swe.ch3.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s8"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch3.s8"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch4.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 4,
+   "order": 144,
+   "title": {
+    "ar": "قوائم الفحص والتقدير النسبي",
+    "en": "Checklists and Relative Estimation"
+   },
+   "prerequisites": [
+    "swe.ch3.l5"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch4.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch4.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch4.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 4,
+   "order": 145,
+   "title": {
+    "ar": "توافق الفريق وموازنة الأولويات",
+    "en": "Group Consensus and Balancing Priorities"
+   },
+   "prerequisites": [
+    "swe.ch4.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch4.s3"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch4.s4"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch4.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 4,
+   "order": 146,
+   "title": {
+    "ar": "المُرضيات ونماذج التقدير المخطَّطة",
+    "en": "Satisfiers and Plan-Driven Estimation"
+   },
+   "prerequisites": [
+    "swe.ch4.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch4.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch4.s6"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch4.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 4,
+   "order": 147,
+   "title": {
+    "ar": "مراجعة الفصل 4 ومشروع: لوحة تخطيط التكرار",
+    "en": "Chapter 4 Review and Project: The Iteration Planning Board"
+   },
+   "prerequisites": [
+    "swe.ch4.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch4.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch5.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 5,
+   "order": 148,
+   "title": {
+    "ar": "عناصر حالة الاستخدام",
+    "en": "Elements of a Use Case"
+   },
+   "prerequisites": [
+    "swe.ch4.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch5.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch5.s1"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch5.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 5,
+   "order": 149,
+   "title": {
+    "ar": "التدفقات البديلة: السلوك الشرطي",
+    "en": "Alternative Flows: Conditional Behavior"
+   },
+   "prerequisites": [
+    "swe.ch5.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch5.s2"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch5.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch5.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 5,
+   "order": 150,
+   "title": {
+    "ar": "كتابة حالات الاستخدام ورسمها",
+    "en": "Writing Use Cases and Diagramming Them"
+   },
+   "prerequisites": [
+    "swe.ch5.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch5.s3"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch5.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch5.s3"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch5.s4"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch5.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 5,
+   "order": 151,
+   "title": {
+    "ar": "مراجعة الفصل 5 ومشروع: محرك تدفقات الاستخدام",
+    "en": "Chapter 5 Review and Project: The Use-Case Flow Engine"
+   },
+   "prerequisites": [
+    "swe.ch5.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch5.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch5.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch5.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch5.s6"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch6.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 6,
+   "order": 152,
+   "title": {
+    "ar": "دور المعمارية وتصميم الأنظمة المعيارية",
+    "en": "The Role of Architecture and Modular Design"
+   },
+   "prerequisites": [
+    "swe.ch5.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch6.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch6.s2"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch6.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch6.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch6.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 6,
+   "order": 153,
+   "title": {
+    "ar": "مخططات الأصناف",
+    "en": "Class Diagrams"
+   },
+   "prerequisites": [
+    "swe.ch6.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch6.s3"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch6.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch6.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 6,
+   "order": 154,
+   "title": {
+    "ar": "مناظر المعمارية ووصفها",
+    "en": "Architectural Views and Describing Architecture"
+   },
+   "prerequisites": [
+    "swe.ch6.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch6.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch6.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch6.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch6.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch6.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 6,
+   "order": 155,
+   "title": {
+    "ar": "مراجعة الفصل 6 ومشروع: محلل التبعيات",
+    "en": "Chapter 6 Review and Project: The Dependency Analyzer"
+   },
+   "prerequisites": [
+    "swe.ch6.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch6.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch6.s6"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch7.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 7,
+   "order": 156,
+   "title": {
+    "ar": "الطبقات واللبنات الثلاث",
+    "en": "Layering and the Three Building Blocks"
+   },
+   "prerequisites": [
+    "swe.ch6.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s2"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch7.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 7,
+   "order": 157,
+   "title": {
+    "ar": "واجهات المستخدم: النموذج-المنظر-المتحكم",
+    "en": "User Interfaces: Model-View-Controller"
+   },
+   "prerequisites": [
+    "swe.ch7.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s3"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch7.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 7,
+   "order": 158,
+   "title": {
+    "ar": "تدفقات البيانات وربط العملاء بالخوادم",
+    "en": "Dataflow and Client-Server Patterns"
+   },
+   "prerequisites": [
+    "swe.ch7.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch7.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 7,
+   "order": 159,
+   "title": {
+    "ar": "مراجعة الفصل 7 ومشروع: دليل الأنماط",
+    "en": "Chapter 7 Review and Project: The Pattern Catalog"
+   },
+   "prerequisites": [
+    "swe.ch7.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s7"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch7.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.appa.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 16,
+   "order": 160,
+   "title": {
+    "ar": "مشروع الفريق: النظرة العامة والمقترح",
+    "en": "The Team Project: Overview and the Proposal"
+   },
+   "prerequisites": [
+    "swe.ch7.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.A.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.A.s2"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.A.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.A.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.appa.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 16,
+   "order": 161,
+   "title": {
+    "ar": "من الهيكل العظمي إلى النظام القابل للحياة",
+    "en": "From Skeletal to Viable System"
+   },
+   "prerequisites": [
+    "swe.appa.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.A.s3"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.A.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.A.s3"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.A.s4"
+    }
+   ]
+  },
+  {
+   "id": "swe.appa.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 16,
+   "order": 162,
+   "title": {
+    "ar": "التقرير النهائي وتقييم مستودعك",
+    "en": "The Final Report and Grading Your Repository"
+   },
+   "prerequisites": [
+    "swe.appa.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.A.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.A.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.A.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.A.s6"
+    }
+   ]
+  },
+  {
+   "id": "swe.appa.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 16,
+   "order": 163,
+   "title": {
+    "ar": "الكابستون: خارطة تسليم مشروعك",
+    "en": "Capstone: Your Project Delivery Map"
+   },
+   "prerequisites": [
+    "swe.appa.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.A.s7"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.A.s7"
+    }
+   ]
+  },
+  {
+   "id": "mls.appendix.l1",
+   "track": "A0",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 8,
+   "order": 164,
+   "title": {
+    "ar": "المشتقات والنزول التدريجي",
+    "en": "Derivatives and Gradient Descent"
+   },
+   "prerequisites": [
+    "swe.appa.l4"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.A.s1"
+    }
+   ]
+  },
+  {
+   "id": "mls.appendix.l2",
+   "track": "A0",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 8,
+   "order": 165,
+   "title": {
+    "ar": "التحقق المتقاطع",
+    "en": "Cross Validation"
+   },
+   "prerequisites": [
+    "mls.appendix.l1"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.A.s2"
+    }
+   ]
+  },
+  {
+   "id": "mls.appendix.l3",
+   "track": "A0",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 8,
+   "order": 166,
+   "title": {
+    "ar": "مجموعات بيانات الكتاب",
+    "en": "The Book\\u2019s Datasets"
+   },
+   "prerequisites": [
+    "mls.appendix.l2"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.A.s3"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch2.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 2,
+   "order": 167,
+   "title": {
+    "ar": "المتوترات كقوائم متداخلة: معالجة البيانات وتنظيفها",
+    "en": "Tensors as Nested Lists: Data Manipulation and Preprocessing"
+   },
+   "prerequisites": [
+    "mls.appendix.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch2.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch2.s2"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch2.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 2,
+   "order": 168,
+   "title": {
+    "ar": "الجبر الخطي والتفاضل ببايثون صرفة",
+    "en": "Linear Algebra and Calculus in Plain Python"
+   },
+   "prerequisites": [
+    "d2l.ch2.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch2.s3"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch2.s4"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch2.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 2,
+   "order": 169,
+   "title": {
+    "ar": "التفاضل التلقائي والاحتمالات وعادة قراءة التوثيق",
+    "en": "Autograd, Probability, and Reading the Docs"
+   },
+   "prerequisites": [
+    "d2l.ch2.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch2.s5"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch2.s6"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch2.s7"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch1.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 1,
+   "order": 170,
+   "title": {
+    "ar": "التعلم من البيانات: مكونات تعلم الآلة وأنواعه",
+    "en": "Learning from Data: Components and Kinds of Machine Learning"
+   },
+   "prerequisites": [
+    "d2l.ch2.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch1.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch1.s2"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch1.s3"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch1.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 1,
+   "order": 171,
+   "title": {
+    "ar": "من المربعات الصغرى إلى عصر المعالجات الرسومية",
+    "en": "From Least Squares to the GPU Era"
+   },
+   "prerequisites": [
+    "d2l.ch1.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch1.s4"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch1.s5"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch1.s6"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch1.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 1,
+   "order": 172,
+   "title": {
+    "ar": "جوهر التعلم العميق وخارطة الطريق",
+    "en": "The Essence of Deep Learning and the Road Ahead"
+   },
+   "prerequisites": [
+    "d2l.ch1.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch1.s7"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch1.s8"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch1.s9"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch1.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 1,
+   "order": 173,
+   "title": {
+    "ar": "منظور تقليل الخسارة",
+    "en": "The Loss-Minimization Perspective"
+   },
+   "prerequisites": [
+    "d2l.ch1.l3"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch1.s1"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch1.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 1,
+   "order": 174,
+   "title": {
+    "ar": "منظور تعظيم الأرجحية",
+    "en": "The Likelihood-Maximization Perspective"
+   },
+   "prerequisites": [
+    "mls.ch1.l1"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch1.s2"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch1.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 1,
+   "order": 175,
+   "title": {
+    "ar": "بناء الانحدار الخطي من الصفر",
+    "en": "Constructing Linear Regression from Scratch"
+   },
+   "prerequisites": [
+    "mls.ch1.l2"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch1.s3"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch1.l4",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 1,
+   "order": 176,
+   "title": {
+    "ar": "التنفيذ: ثلاث طرق لملاءمة خط واحد",
+    "en": "Implementation: Three Ways to Fit One Line"
+   },
+   "prerequisites": [
+    "mls.ch1.l3"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch1.s4"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch2.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 2,
+   "order": 177,
+   "title": {
+    "ar": "الانحدار المنتظم: Ridge وLasso",
+    "en": "Regularized Regression: Ridge and Lasso"
+   },
+   "prerequisites": [
+    "mls.ch1.l4"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch2.s1"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch2.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 2,
+   "order": 178,
+   "title": {
+    "ar": "الانحدار البايزي",
+    "en": "Bayesian Regression"
+   },
+   "prerequisites": [
+    "mls.ch2.l1"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch2.s2"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch2.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 2,
+   "order": 179,
+   "title": {
+    "ar": "النماذج الخطية المعممة: انحدار بواسون",
+    "en": "Generalized Linear Models: Poisson Regression"
+   },
+   "prerequisites": [
+    "mls.ch2.l2"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch2.s3"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch2.l4",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 2,
+   "order": 180,
+   "title": {
+    "ar": "بناء امتدادات الانحدار من الصفر",
+    "en": "Constructing the Extensions from Scratch"
+   },
+   "prerequisites": [
+    "mls.ch2.l3"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch2.s4"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch2.l5",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 2,
+   "order": 181,
+   "title": {
+    "ar": "تنفيذ الامتدادات: OLS مقابل Ridge عمليًا",
+    "en": "Implementing the Extensions: OLS vs Ridge in Practice"
+   },
+   "prerequisites": [
+    "mls.ch2.l4"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch2.s5"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch3.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 3,
+   "order": 182,
+   "title": {
+    "ar": "الانحدار اللوجستي",
+    "en": "Logistic Regression"
+   },
+   "prerequisites": [
+    "mls.ch2.l5"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch3.s1"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch3.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 3,
+   "order": 183,
+   "title": {
+    "ar": "خوارزمية البيرسبترون",
+    "en": "The Perceptron Algorithm"
+   },
+   "prerequisites": [
+    "mls.ch3.l1"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch3.s2"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch3.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 3,
+   "order": 184,
+   "title": {
+    "ar": "مميّز فيشر الخطي",
+    "en": "Fisher's Linear Discriminant"
+   },
+   "prerequisites": [
+    "mls.ch3.l2"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch3.s3"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch3.l4",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 3,
+   "order": 185,
+   "title": {
+    "ar": "بناء المصنفات التمييزية",
+    "en": "Constructing the Discriminative Classifiers"
+   },
+   "prerequisites": [
+    "mls.ch3.l3"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch3.s4"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch3.l5",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 3,
+   "order": 186,
+   "title": {
+    "ar": "تنفيذ المصنفات التمييزية ومقارنتها",
+    "en": "Implementing and Comparing the Discriminative Classifiers"
+   },
+   "prerequisites": [
+    "mls.ch3.l4"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch3.s5"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch4.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 4,
+   "order": 187,
+   "title": {
+    "ar": "التحليل التمييزي الخطي والتربيعي",
+    "en": "Linear and Quadratic Discriminant Analysis"
+   },
+   "prerequisites": [
+    "mls.ch3.l5"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch4.s1"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch4.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 4,
+   "order": 188,
+   "title": {
+    "ar": "بايز الساذج",
+    "en": "Naive Bayes"
+   },
+   "prerequisites": [
+    "mls.ch4.l1"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch4.s2"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch4.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 4,
+   "order": 189,
+   "title": {
+    "ar": "بناء المصنفات التوليدية",
+    "en": "Constructing the Generative Classifiers"
+   },
+   "prerequisites": [
+    "mls.ch4.l2"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch4.s3"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch4.l4",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 4,
+   "order": 190,
+   "title": {
+    "ar": "المباراة على بيانات واحدة: LDA ضد QDA ضد بايز الساذج",
+    "en": "The Same-Data Showdown: LDA vs QDA vs Naive Bayes"
+   },
+   "prerequisites": [
+    "mls.ch4.l3"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch4.s1"
+    },
+    {
+     "book": "MLS",
+     "section": "mls.ch4.s4"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch5.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 5,
+   "order": 191,
+   "title": {
+    "ar": "أشجار الانحدار: أول سؤال وأفضل سؤال",
+    "en": "Regression Trees: The First, Best Question"
+   },
+   "prerequisites": [
+    "mls.ch4.l4"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch5.s1"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch5.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 5,
+   "order": 192,
+   "title": {
+    "ar": "أشجار التصنيف: نقاء معامل جيني",
+    "en": "Classification Trees: Gini Purity"
+   },
+   "prerequisites": [
+    "mls.ch5.l1"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch5.s2"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch5.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 5,
+   "order": 193,
+   "title": {
+    "ar": "ابنِ شجرة الانحدار من الصفر",
+    "en": "Build a Regression Tree from Scratch"
+   },
+   "prerequisites": [
+    "mls.ch5.l2"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch5.s3"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch5.l4",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 5,
+   "order": 194,
+   "title": {
+    "ar": "Implementation: شجرة واحدة مقابل الأساسيات",
+    "en": "Implementation: one tree against the baselines"
+   },
+   "prerequisites": [
+    "mls.ch5.l3"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch5.s4"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch6.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 6,
+   "order": 195,
+   "title": {
+    "ar": "التجميع: قوة العينات المعاد سحبها",
+    "en": "Bagging: the power of resampled copies"
+   },
+   "prerequisites": [
+    "mls.ch5.l4"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch6.s1"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch6.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 6,
+   "order": 196,
+   "title": {
+    "ar": "الغابة العشوائية: تنويع الزوايا",
+    "en": "Random forests: diversifying the angles"
+   },
+   "prerequisites": [
+    "mls.ch6.l1"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch6.s2"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch6.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 6,
+   "order": 197,
+   "title": {
+    "ar": "التعزيز: أوزان تحمل الذكرى",
+    "en": "Boosting: weights that carry memory"
+   },
+   "prerequisites": [
+    "mls.ch6.l2"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch6.s3"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch6.l4",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 6,
+   "order": 198,
+   "title": {
+    "ar": "بناء المجمعات الثلاثة من الصفر",
+    "en": "Building the three ensembles from scratch"
+   },
+   "prerequisites": [
+    "mls.ch6.l3"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch6.s4"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch6.l5",
+   "track": "A2",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 6,
+   "order": 199,
+   "title": {
+    "ar": "لوحة النتائج الصادقة",
+    "en": "The honest scoreboard"
+   },
+   "prerequisites": [
+    "mls.ch6.l4"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch6.s5"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch7.l1",
+   "track": "A3",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 7,
+   "order": 200,
+   "title": {
+    "ar": "الشبكات العصبية: العصبونات والطبقات والتمرير الأمامي",
+    "en": "Neural Networks: Neurons, Layers, and the Forward Pass"
+   },
+   "prerequisites": [
+    "mls.ch6.l5"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch7.s1"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch7.l2",
+   "track": "A3",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 7,
+   "order": 201,
+   "title": {
+    "ar": "بناء الشبكة من الصفر: الحلقات ثم minigrad",
+    "en": "Building the Network from Scratch: Loops, then minigrad"
+   },
+   "prerequisites": [
+    "mls.ch7.l1"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch7.s2"
+    }
+   ]
+  },
+  {
+   "id": "mls.ch7.l3",
+   "track": "A3",
+   "part": "II",
+   "book": "MLS",
+   "chapter": 7,
+   "order": 202,
+   "title": {
+    "ar": "تدريب الشبكة: من الحلقات إلى keras",
+    "en": "Training the Network: From Loops to keras"
+   },
+   "prerequisites": [
+    "mls.ch7.l2"
+   ],
+   "sources": [
+    {
+     "book": "MLS",
+     "section": "mls.ch7.s3"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch3.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 3,
+   "order": 203,
+   "title": {
+    "ar": "الانحدار الخطي وتصميم Model-Data-Trainer",
+    "en": "Linear Regression and the Model-Data-Trainer Design"
+   },
+   "prerequisites": [
+    "mls.ch7.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch3.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch3.s2"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch3.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 3,
+   "order": 204,
+   "title": {
+    "ar": "بيانات اصطناعية وانحدار خطي من الصفر",
+    "en": "Synthetic Data and Linear Regression from Scratch"
+   },
+   "prerequisites": [
+    "d2l.ch3.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch3.s3"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch3.s4"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch3.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 3,
+   "order": 205,
+   "title": {
+    "ar": "التدريب المختصر والتعميم واضمحلال الأوزان",
+    "en": "Concise Training, Generalization, and Weight Decay"
+   },
+   "prerequisites": [
+    "d2l.ch3.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch3.s5"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch3.s6"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch3.s7"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch4.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 4,
+   "order": 206,
+   "title": {
+    "ar": "انحدار softmax ومجموعة الصور",
+    "en": "Softmax Regression and the Image Dataset"
+   },
+   "prerequisites": [
+    "d2l.ch3.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch4.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch4.s2"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch4.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 4,
+   "order": 207,
+   "title": {
+    "ar": "الصنف الأساس للتصنيف وsoftmax من الصفر",
+    "en": "A Base Classifier and Softmax from Scratch"
+   },
+   "prerequisites": [
+    "d2l.ch4.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch4.s3"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch4.s4"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch4.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 4,
+   "order": 208,
+   "title": {
+    "ar": "softmax المختصر ومجموعات الاختبار وانزياح التوزيع",
+    "en": "Concise Softmax, Test Sets, and Distribution Shift"
+   },
+   "prerequisites": [
+    "d2l.ch4.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch4.s5"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch4.s6"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch4.s7"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch5.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 5,
+   "order": 209,
+   "title": {
+    "ar": "البيرسبترون متعدد الطبقات",
+    "en": "Multilayer Perceptrons"
+   },
+   "prerequisites": [
+    "d2l.ch4.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch5.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch5.s2"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch5.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 5,
+   "order": 210,
+   "title": {
+    "ar": "الانتشار الأمامي والخلفي وتهيئة المعاملات",
+    "en": "Forward/Backward Propagation and Initialization"
+   },
+   "prerequisites": [
+    "d2l.ch5.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch5.s3"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch5.s4"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch5.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 5,
+   "order": 211,
+   "title": {
+    "ar": "التعميم والتسريب والتنبؤ بأسعار المنازل",
+    "en": "Generalization, Dropout, and Kaggle Houses"
+   },
+   "prerequisites": [
+    "d2l.ch5.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch5.s5"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch5.s6"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch5.s7"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch6.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 6,
+   "order": 212,
+   "title": {
+    "ar": "الوحدات وإدارة المعاملات: صندوق أدوات البنّاء",
+    "en": "Modules and Parameter Management: The Builders\\u2019 Toolbox"
+   },
+   "prerequisites": [
+    "d2l.ch5.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch6.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch6.s2"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch6.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 6,
+   "order": 213,
+   "title": {
+    "ar": "تهيئة المعاملات والتهيئة الكسولة",
+    "en": "Parameter Initialization and Lazy Initialization"
+   },
+   "prerequisites": [
+    "d2l.ch6.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch6.s3"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch6.s4"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch6.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 6,
+   "order": 214,
+   "title": {
+    "ar": "الطبقات المخصصة وحفظ النماذج ومعالجات الرسوميات",
+    "en": "Custom Layers, File I/O, and GPUs"
+   },
+   "prerequisites": [
+    "d2l.ch6.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch6.s5"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch6.s6"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch6.s7"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch7.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 7,
+   "order": 215,
+   "title": {
+    "ar": "من الطبقات المتصلة بالكامل إلى الالتفافات",
+    "en": "From Fully Connected to Convolutions"
+   },
+   "prerequisites": [
+    "d2l.ch6.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch7.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch7.s2"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch7.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 7,
+   "order": 216,
+   "title": {
+    "ar": "الحشو والخطوة والقنوات",
+    "en": "Padding, Stride, and Channels"
+   },
+   "prerequisites": [
+    "d2l.ch7.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch7.s3"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch7.s4"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch7.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 7,
+   "order": 217,
+   "title": {
+    "ar": "التجميع وشبكة LeNet",
+    "en": "Pooling and LeNet"
+   },
+   "prerequisites": [
+    "d2l.ch7.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch7.s5"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch7.s6"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch8.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 8,
+   "order": 218,
+   "title": {
+    "ar": "من AlexNet إلى NiN",
+    "en": "From AlexNet to NiN"
+   },
+   "prerequisites": [
+    "d2l.ch7.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch8.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch8.s2"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch8.s3"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch8.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 8,
+   "order": 219,
+   "title": {
+    "ar": "GoogLeNet وتطبيع الدفعات",
+    "en": "GoogLeNet and Batch Normalization"
+   },
+   "prerequisites": [
+    "d2l.ch8.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch8.s4"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch8.s5"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch8.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 8,
+   "order": 220,
+   "title": {
+    "ar": "ResNet وDenseNet وتصميم البنى",
+    "en": "ResNet, DenseNet, and Designing Architectures"
+   },
+   "prerequisites": [
+    "d2l.ch8.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch8.s6"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch8.s7"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch8.s8"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch14.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 14,
+   "order": 221,
+   "title": {
+    "ar": "زيادة الصور والضبط الدقيق: تعميم أفضل من بيانات أقل",
+    "en": "Image Augmentation and Fine-Tuning: Better Generalization with Less Data"
+   },
+   "prerequisites": [
+    "d2l.ch8.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s2"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch14.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 14,
+   "order": 222,
+   "title": {
+    "ar": "كشف الأجسام: الصناديق المحيطة والمراسي وتعدد المقاييس",
+    "en": "Object Detection: Bounding Boxes, Anchor Boxes, Multiscale"
+   },
+   "prerequisites": [
+    "d2l.ch14.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s3"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s4"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s5"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch14.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 14,
+   "order": 223,
+   "title": {
+    "ar": "من مجموعة بيانات الكشف إلى SSD وR-CNN",
+    "en": "From Detection Datasets to SSD and R-CNNs"
+   },
+   "prerequisites": [
+    "d2l.ch14.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s6"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s7"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s8"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch14.l4",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 14,
+   "order": 224,
+   "title": {
+    "ar": "التجزئة الدلالية: من تسميات البكسل إلى الشبكات التلافيفية الكاملة",
+    "en": "Semantic Segmentation: Per-Pixel Labels to Fully Convolutional Networks"
+   },
+   "prerequisites": [
+    "d2l.ch14.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s10"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s11"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s9"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch14.l5",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 14,
+   "order": 225,
+   "title": {
+    "ar": "نقل الأسلوب العصبي ومنافستا Kaggle",
+    "en": "Neural Style Transfer and the Two Kaggle Competitions"
+   },
+   "prerequisites": [
+    "d2l.ch14.l4"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s12"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s13"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch14.s14"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch9.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 9,
+   "order": 226,
+   "title": {
+    "ar": "التعامل مع المتتاليات: من الإحصاء إلى النص",
+    "en": "Working with Sequences: From Statistics to Text"
+   },
+   "prerequisites": [
+    "d2l.ch14.l5"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch9.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch9.s2"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch9.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 9,
+   "order": 227,
+   "title": {
+    "ar": "نماذج اللغة والشبكات المتكررة",
+    "en": "Language Models and Recurrent Networks"
+   },
+   "prerequisites": [
+    "d2l.ch9.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch9.s3"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch9.s4"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch9.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 9,
+   "order": 228,
+   "title": {
+    "ar": "RNN من الصفر، وباختصار، والانتشار الخلفي عبر الزمن",
+    "en": "RNN From Scratch, the Concise Way, and Backprop Through Time"
+   },
+   "prerequisites": [
+    "d2l.ch9.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch9.s5"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch9.s6"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch9.s7"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch10.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 10,
+   "order": 229,
+   "title": {
+    "ar": "ذاكرة مُبوَّبة: LSTM وGRU",
+    "en": "Gated Memory: LSTM and GRU"
+   },
+   "prerequisites": [
+    "d2l.ch9.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch10.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch10.s2"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch10.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 10,
+   "order": 230,
+   "title": {
+    "ar": "الشبكات المتكررة العميقة والثنائية الاتجاه",
+    "en": "Deep RNNs and Bidirectional RNNs"
+   },
+   "prerequisites": [
+    "d2l.ch10.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch10.s3"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch10.s4"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch10.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 10,
+   "order": 231,
+   "title": {
+    "ar": "بيانات الترجمة الآلية ومعمارية المرمِّز-المفكِّك",
+    "en": "Machine Translation Data and the Encoder–Decoder"
+   },
+   "prerequisites": [
+    "d2l.ch10.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch10.s5"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch10.s6"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch10.l4",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 10,
+   "order": 232,
+   "title": {
+    "ar": "تدريب المفكِّك و BLEU والبحث الحزمي",
+    "en": "Decoder Training, BLEU, and Beam Search"
+   },
+   "prerequisites": [
+    "d2l.ch10.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch10.s7"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch10.s8"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch15.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 15,
+   "order": 233,
+   "title": {
+    "ar": "من one-hot إلى skip-gram",
+    "en": "From One-Hot to Skip-Gram"
+   },
+   "prerequisites": [
+    "d2l.ch10.l4"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch15.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch15.s2"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch15.s3"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch15.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 15,
+   "order": 234,
+   "title": {
+    "ar": "تدريب word2vec مسبقا: GloVe والكلمات الفرعية",
+    "en": "Pretraining word2vec: GloVe and Subwords"
+   },
+   "prerequisites": [
+    "d2l.ch15.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch15.s4"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch15.s5"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch15.s6"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch15.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 15,
+   "order": 235,
+   "title": {
+    "ar": "تشابه الكلمات والتناظر وميلاد BERT",
+    "en": "Word Similarity, Analogy, and the Birth of BERT"
+   },
+   "prerequisites": [
+    "d2l.ch15.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch15.s7"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch15.s8"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch15.l4",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 15,
+   "order": 236,
+   "title": {
+    "ar": "بيانات التدريب المسبق لـ BERT والخسارتان",
+    "en": "BERT Pretraining Data and the Two Losses"
+   },
+   "prerequisites": [
+    "d2l.ch15.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch15.s10"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch15.s9"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch16.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 16,
+   "order": 237,
+   "title": {
+    "ar": "تحليل المشاعر: المجموعة وطرقا RNN وCNN",
+    "en": "Sentiment Analysis: Dataset, RNN and CNN Routes"
+   },
+   "prerequisites": [
+    "d2l.ch15.l4"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch16.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch16.s2"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch16.s3"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch16.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 16,
+   "order": 238,
+   "title": {
+    "ar": "الاستدلال اللغوي الطبيعي بالانتباه",
+    "en": "Natural Language Inference with Attention"
+   },
+   "prerequisites": [
+    "d2l.ch16.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch16.s4"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch16.s5"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch16.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 16,
+   "order": 239,
+   "title": {
+    "ar": "الضبط الدقيق لـ BERT للمهام اللاحقة",
+    "en": "Fine-Tuning BERT for Downstream Tasks"
+   },
+   "prerequisites": [
+    "d2l.ch16.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch16.s6"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch16.s7"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch11.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 11,
+   "order": 240,
+   "title": {
+    "ar": "الاستعلامات والمفاتيح والقيم: كيف يجمّع الانتباه البيانات",
+    "en": "Queries, Keys, and Values: How Attention Pools Data"
+   },
+   "prerequisites": [
+    "d2l.ch16.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch11.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch11.s2"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch11.s3"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch11.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 11,
+   "order": 241,
+   "title": {
+    "ar": "من بهداناو إلى الرؤوس المتعددة والانتباه الذاتي",
+    "en": "From Bahdanau to Multi-Head Self-Attention"
+   },
+   "prerequisites": [
+    "d2l.ch11.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch11.s4"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch11.s5"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch11.s6"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch11.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 11,
+   "order": 242,
+   "title": {
+    "ar": "المحوّل و ViT والتدريب المسبق واسع النطاق",
+    "en": "The Transformer, ViT, and Pretraining at Scale"
+   },
+   "prerequisites": [
+    "d2l.ch11.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch11.s7"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch11.s8"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch11.s9"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch12.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 12,
+   "order": 243,
+   "title": {
+    "ar": "لماذا التحسين صعب: التحدب والنزول التدريجي",
+    "en": "Why Optimization Is Hard: Convexity and Gradient Descent"
+   },
+   "prerequisites": [
+    "d2l.ch11.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch12.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch12.s2"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch12.s3"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch12.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 12,
+   "order": 244,
+   "title": {
+    "ar": "الضجيج والدفعات والسرعة: SGD وminibatch وmomentum",
+    "en": "Noise, Batches, and Velocity: SGD, Minibatches, Momentum"
+   },
+   "prerequisites": [
+    "d2l.ch12.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch12.s4"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch12.s5"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch12.s6"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch12.l3",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 12,
+   "order": 245,
+   "title": {
+    "ar": "معدلات تعلم لكل إحداثية: Adagrad وRMSProp وAdadelta",
+    "en": "Per-Coordinate Learning Rates: Adagrad, RMSProp, Adadelta"
+   },
+   "prerequisites": [
+    "d2l.ch12.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch12.s7"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch12.s8"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch12.s9"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch12.l4",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 12,
+   "order": 246,
+   "title": {
+    "ar": "Adam وساعة معدل التعلم",
+    "en": "Adam and the Learning Rate Clock"
+   },
+   "prerequisites": [
+    "d2l.ch12.l3"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch12.s10"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch12.s11"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch13.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 13,
+   "order": 247,
+   "title": {
+    "ar": "إلى أين تذهب الدورات: المترجمات واللازامن والتوازي والعتاد",
+    "en": "Where the Cycles Go: Compilers, Async, Parallelism, Hardware"
+   },
+   "prerequisites": [
+    "d2l.ch12.l4"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch13.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch13.s2"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch13.s3"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch13.s4"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch13.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 13,
+   "order": 248,
+   "title": {
+    "ar": "معالجات كثيرة ونموذج واحد: توازي البيانات وخوادم المعاملات",
+    "en": "Many GPUs, One Model: Data Parallelism and Parameter Servers"
+   },
+   "prerequisites": [
+    "d2l.ch13.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch13.s5"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch13.s6"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch13.s7"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch19.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 19,
+   "order": 249,
+   "title": {
+    "ar": "ضبط فرط المعاملات: الهدف، الواجهة، والبحث",
+    "en": "Hyperparameter Optimization: Objective, API, and Search"
+   },
+   "prerequisites": [
+    "d2l.ch13.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch19.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch19.s2"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch19.s3"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch19.l2",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 19,
+   "order": 250,
+   "title": {
+    "ar": "ضبط فرط المعاملات متعدد الدقة والتقسيم المتتالي",
+    "en": "Multi-Fidelity HPO and Successive Halving"
+   },
+   "prerequisites": [
+    "d2l.ch19.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch19.s4"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch19.s5"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch17.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 17,
+   "order": 251,
+   "title": {
+    "ar": "التعلم المعزز: عمليات ماركوف للقرار، تكرار القيمة، وتعلم Q",
+    "en": "Reinforcement Learning: MDPs, Value Iteration, and Q-Learning"
+   },
+   "prerequisites": [
+    "d2l.ch19.l2"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch17.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch17.s2"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch17.s3"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch18.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 18,
+   "order": 252,
+   "title": {
+    "ar": "العمليات الغاوسية: توزيعات على الدوال",
+    "en": "Gaussian Processes: Distributions over Functions"
+   },
+   "prerequisites": [
+    "d2l.ch17.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch18.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch18.s2"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch18.s3"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch20.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 20,
+   "order": 253,
+   "title": {
+    "ar": "الشبكات التوليدية التضادية: لعبة التقابل الأدنى-الأعلى و DCGAN",
+    "en": "Generative Adversarial Networks: the Minimax Game and DCGAN"
+   },
+   "prerequisites": [
+    "d2l.ch18.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch20.s1"
+    },
+    {
+     "book": "D2L",
+     "section": "d2l.ch20.s2"
+    }
+   ]
+  },
+  {
+   "id": "d2l.ch21.l1",
+   "track": "A2",
+   "part": "II",
+   "book": "D2L",
+   "chapter": 21,
+   "order": 254,
+   "title": {
+    "ar": "أنظمة التوصية: الترشيح التعاوني بتحليل المصفوفات",
+    "en": "Recommender Systems: Collaborative Filtering by Matrix Factorization"
+   },
+   "prerequisites": [
+    "d2l.ch20.l1"
+   ],
+   "sources": [
+    {
+     "book": "D2L",
+     "section": "d2l.ch21.s1"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch13.l1",
+   "track": "A9",
+   "part": "II",
+   "book": "SWE",
+   "chapter": 13,
+   "order": 255,
+   "title": {
+    "ar": "عندما يكتب الذكاء الاصطناعي الشيفرة: ما يتغيّر وما لا يتغيّر",
+    "en": "When AI Writes the Code: What Changes and What Does Not"
+   },
+   "prerequisites": [
+    "swe.appa.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch13.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch13.s2"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch13.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch13.l2",
+   "track": "A9",
+   "part": "II",
+   "book": "SWE",
+   "chapter": 13,
+   "order": 256,
+   "title": {
+    "ar": "هندسة النتائج (o16g) والتطوير الموجَّه بالموصفات",
+    "en": "Outcome Engineering (o16g) and Spec-Driven Development"
+   },
+   "prerequisites": [
+    "swe.ch13.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch13.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch13.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch13.l3",
+   "track": "A9",
+   "part": "II",
+   "book": "SWE",
+   "chapter": 13,
+   "order": 257,
+   "title": {
+    "ar": "السياق بنية تحتية وهندسة الحلقة",
+    "en": "Context as Infrastructure and Loop Engineering"
+   },
+   "prerequisites": [
+    "swe.ch13.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch13.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch13.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch13.l4",
+   "track": "A9",
+   "part": "II",
+   "book": "SWE",
+   "chapter": 13,
+   "order": 258,
+   "title": {
+    "ar": "مبادئ المهندس المُعزَّز بالذكاء الاصطناعي",
+    "en": "Principles for the AI-Augmented Engineer"
+   },
+   "prerequisites": [
+    "swe.ch13.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch13.s8"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch13.s9"
+    }
+   ]
+  }
+ ]
+}

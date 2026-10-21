@@ -1,0 +1,952 @@
+     1→
+     2→===== صفحة الكتاب 122 =====
+     3→3
+     4→Linear Neural Networks for Regression
+     5→Before we worry about making our neural networks deep, it will be helpful to implement
+     6→some shallow ones, for which the inputs connect directly to the outputs. This will prove im-
+     7→portant for a few reasons. First, rather than getting distracted by complicated architectures,
+     8→we can focus on the basics of neural network training, including parametrizing the output
+     9→layer, handling data, specifying a loss function, and training the model. Second, this class
+    10→of shallow networks happens to comprise the set of linear models, which subsumes many
+    11→classical methods of statistical prediction, including linear and softmax regression. Un-
+    12→derstanding these classical tools is pivotal because they are widely used in many contexts
+    13→and we will often need to use them as baselines when justifying the use of fancier archi-
+    14→tectures. This chapter will focus narrowly on linear regression and the next one will extend
+    15→our modeling repertoire by developing linear neural networks for classification.
+    16→3.1 Linear Regression
+    17→Regression problems pop up whenever we want to predict a numerical value. Common ex-
+    18→amples include predicting prices (of homes, stocks, etc.), predicting the length of stay (for
+    19→patients in the hospital), forecasting demand (for retail sales), among numerous others. Not
+    20→every prediction problem is one of classical regression. Later on, we will introduce classifi-
+    21→cation problems, where the goal is to predict membership among a set of categories.
+    22→As a running example, suppose that we wish to estimate the prices of houses (in dollars)
+    23→based on their area (in square feet) and age (in years). To develop a model for predicting
+    24→house prices, we need to get our hands on data, including the sales price, area, and age for
+    25→each home. In the terminology of machine learning, the dataset is called a training dataset
+    26→or training set, and each row (containing the data corresponding to one sale) is called an
+    27→example (or data point, instance, sample). The thing we are trying to predict (price) is
+    28→called a label (or target). The variables (age and area) upon which the predictions are
+    29→based are called features (or covariates).
+    30→%matplotlib inline
+    31→import math
+    32→import time
+    33→import numpy as np
+    34→(continues on next page)
+    35→82
+    36→
+    37→===== صفحة الكتاب 123 =====
+    38→83
+    39→Linear Regression
+    40→(continued from previous page)
+    41→import torch
+    42→from d2l import torch as d2l
+    43→3.1.1 Basics
+    44→Linear regression is both the simplest and most popular among the standard tools for tack-
+    45→ling regression problems. Dating back to the dawn of the 19th century (Gauss, 1809, Leg-
+    46→endre, 1805), linear regression flows from a few simple assumptions. First, we assume that
+    47→the relationship between features x and target 𝑦is approximately linear, i.e., that the con-
+    48→ditional mean 𝐸[𝑌| 𝑋= x] can be expressed as a weighted sum of the features x. This
+    49→setup allows that the target value may still deviate from its expected value on account of
+    50→observation noise. Next, we can impose the assumption that any such noise is well behaved,
+    51→following a Gaussian distribution. Typically, we will use 𝑛to denote the number of exam-
+    52→ples in our dataset. We use superscripts to enumerate samples and targets, and subscripts
+    53→to index coordinates. More concretely, x(𝑖) denotes the 𝑖th sample and 𝑥(𝑖)
+    54→𝑗
+    55→denotes its 𝑗th
+    56→coordinate.
+    57→Model
+    58→At the heart of every solution is a model that describes how features can be transformed
+    59→into an estimate of the target. The assumption of linearity means that the expected value of
+    60→the target (price) can be expressed as a weighted sum of the features (area and age):
+    61→price = 𝑤area · area + 𝑤age · age + 𝑏.
+    62→(3.1.1)
+    63→Here 𝑤area and 𝑤age are called weights, and 𝑏is called a bias (or offset or intercept). The
+    64→weights determine the influence of each feature on our prediction. The bias determines the
+    65→value of the estimate when all features are zero. Even though we will never see any newly-
+    66→built homes with precisely zero area, we still need the bias because it allows us to express
+    67→all linear functions of our features (rather than restricting us to lines that pass through the
+    68→origin). Strictly speaking, (3.1.1) is an aﬀine transformation of input features, which is
+    69→characterized by a linear transformation of features via a weighted sum, combined with a
+    70→translation via the added bias. Given a dataset, our goal is to choose the weights w and
+    71→the bias 𝑏that, on average, make our model’s predictions fit the true prices observed in the
+    72→data as closely as possible.
+    73→In disciplines where it is common to focus on datasets with just a few features, explicitly
+    74→expressing models long-form, as in (3.1.1), is common. In machine learning, we usually
+    75→work with high-dimensional datasets, where it is more convenient to employ compact lin-
+    76→ear algebra notation. When our inputs consist of 𝑑features, we can assign each an index
+    77→(between 1 and 𝑑) and express our prediction ˆ𝑦(in general the “hat” symbol denotes an
+    78→estimate) as
+    79→ˆ𝑦= 𝑤1𝑥1 + · · · + 𝑤𝑑𝑥𝑑+ 𝑏.
+    80→(3.1.2)
+    81→
+    82→===== صفحة الكتاب 124 =====
+    83→84
+    84→Linear Neural Networks for Regression
+    85→Collecting all features into a vector x ∈R𝑑and all weights into a vector w ∈R𝑑, we can
+    86→express our model compactly via the dot product between w and x:
+    87→ˆ𝑦= w⊤x + 𝑏.
+    88→(3.1.3)
+    89→In (3.1.3), the vector x corresponds to the features of a single example. We will often
+    90→find it convenient to refer to features of our entire dataset of 𝑛examples via the design
+    91→matrix X ∈R𝑛×𝑑. Here, X contains one row for every example and one column for every
+    92→feature. For a collection of features X, the predictions ˆy ∈R𝑛can be expressed via the
+    93→matrix–vector product:
+    94→ˆy = Xw + 𝑏,
+    95→(3.1.4)
+    96→where broadcasting (Section 2.1.4) is applied during the summation. Given features of a
+    97→training dataset X and corresponding (known) labels y, the goal of linear regression is to
+    98→find the weight vector w and the bias term 𝑏such that, given features of a new data example
+    99→sampled from the same distribution as X, the new example’s label will (in expectation) be
+   100→predicted with the smallest error.
+   101→Even if we believe that the best model for predicting 𝑦given x is linear, we would not
+   102→expect to find a real-world dataset of 𝑛examples where 𝑦(𝑖) exactly equals w⊤x(𝑖) + 𝑏
+   103→for all 1 ≤𝑖≤𝑛. For example, whatever instruments we use to observe the features X
+   104→and labels y, there might be a small amount of measurement error. Thus, even when we
+   105→are confident that the underlying relationship is linear, we will incorporate a noise term to
+   106→account for such errors.
+   107→Before we can go about searching for the best parameters (or model parameters) w and 𝑏,
+   108→we will need two more things: (i) a measure of the quality of some given model; and (ii) a
+   109→procedure for updating the model to improve its quality.
+   110→Loss Function
+   111→Naturally, fitting our model to the data requires that we agree on some measure of fitness
+   112→(or, equivalently, of unfitness). Loss functions quantify the distance between the real and
+   113→predicted values of the target. The loss will usually be a nonnegative number where smaller
+   114→values are better and perfect predictions incur a loss of 0. For regression problems, the most
+   115→common loss function is the squared error. When our prediction for an example 𝑖is ˆ𝑦(𝑖)
+   116→and the corresponding true label is 𝑦(𝑖), the squared error is given by:
+   117→𝑙(𝑖) (w, 𝑏) = 1
+   118→2
+   119→
+   120→ˆ𝑦(𝑖) −𝑦(𝑖)2
+   121→.
+   122→(3.1.5)
+   123→The constant 1
+   124→2 makes no real difference but proves to be notationally convenient, since it
+   125→cancels out when we take the derivative of the loss. Because the training dataset is given
+   126→to us, and thus is out of our control, the empirical error is only a function of the model
+   127→parameters. In Fig. 3.1.1, we visualize the fit of a linear regression model in a problem
+   128→with one-dimensional inputs.
+   129→Note that large differences between estimates ˆ𝑦(𝑖) and targets 𝑦(𝑖) lead to even larger contri-
+   130→butions to the loss, due to its quadratic form (this quadraticity can be a double-edge sword;
+   131→
+   132→===== صفحة الكتاب 125 =====
+   133→85
+   134→Linear Regression
+   135→t
+   136→Fig. 3.1.1
+   137→Fitting a linear regression model to one-dimensional data.
+   138→while it encourages the model to avoid large errors it can also lead to excessive sensitivity
+   139→to anomalous data). To measure the quality of a model on the entire dataset of 𝑛examples,
+   140→we simply average (or equivalently, sum) the losses on the training set:
+   141→𝐿(w, 𝑏) = 1
+   142→𝑛
+   143→𝑛
+   144→Õ
+   145→𝑖=1
+   146→𝑙(𝑖) (w, 𝑏) = 1
+   147→𝑛
+   148→𝑛
+   149→Õ
+   150→𝑖=1
+   151→1
+   152→2
+   153→
+   154→w⊤x(𝑖) + 𝑏−𝑦(𝑖)2
+   155→.
+   156→(3.1.6)
+   157→When training the model, we seek parameters (w∗, 𝑏∗) that minimize the total loss across
+   158→all training examples:
+   159→w∗, 𝑏∗= argmin
+   160→w,𝑏
+   161→𝐿(w, 𝑏).
+   162→(3.1.7)
+   163→Analytic Solution
+   164→Unlike most of the models that we will cover, linear regression presents us with a surpris-
+   165→ingly easy optimization problem. In particular, we can find the optimal parameters (as
+   166→assessed on the training data) analytically by applying a simple formula as follows. First,
+   167→we can subsume the bias 𝑏into the parameter w by appending a column to the design ma-
+   168→trix consisting of all 1s. Then our prediction problem is to minimize ∥y −Xw∥2. As long
+   169→as the design matrix X has full rank (no feature is linearly dependent on the others), then
+   170→there will be just one critical point on the loss surface and it corresponds to the minimum
+   171→of the loss over the entire domain. Taking the derivative of the loss with respect to w and
+   172→setting it equal to zero yields:
+   173→𝜕w∥y −Xw∥2 = 2X⊤(Xw −y) = 0 and hence X⊤y = X⊤Xw.
+   174→(3.1.8)
+   175→Solving for w provides us with the optimal solution for the optimization problem. Note
+   176→that this solution
+   177→w∗= (X⊤X)−1X⊤y
+   178→(3.1.9)
+   179→will only be unique when the matrix X⊤X is invertible, i.e., when the columns of the design
+   180→matrix are linearly independent (Golub and Van Loan, 1996).
+   181→While simple problems like linear regression may admit analytic solutions, you should
+   182→not get used to such good fortune. Although analytic solutions allow for nice mathematical
+   183→analysis, the requirement of an analytic solution is so restrictive that it would exclude almost
+   184→all exciting aspects of deep learning.
+   185→
+   186→===== صفحة الكتاب 126 =====
+   187→86
+   188→Linear Neural Networks for Regression
+   189→Minibatch Stochastic Gradient Descent
+   190→Fortunately, even in cases where we cannot solve the models analytically, we can still of-
+   191→ten train models effectively in practice. Moreover, for many tasks, those hard-to-optimize
+   192→models turn out to be so much better that figuring out how to train them ends up being well
+   193→worth the trouble.
+   194→The key technique for optimizing nearly every deep learning model, and which we will
+   195→call upon throughout this book, consists of iteratively reducing the error by updating the
+   196→parameters in the direction that incrementally lowers the loss function. This algorithm is
+   197→called gradient descent.
+   198→The most naive application of gradient descent consists of taking the derivative of the loss
+   199→function, which is an average of the losses computed on every single example in the dataset.
+   200→In practice, this can be extremely slow: we must pass over the entire dataset before making
+   201→a single update, even if the update steps might be very powerful (Liu and Nocedal, 1989).
+   202→Even worse, if there is a lot of redundancy in the training data, the benefit of a full update
+   203→is limited.
+   204→The other extreme is to consider only a single example at a time and to take update steps
+   205→based on one observation at a time. The resulting algorithm, stochastic gradient descent
+   206→(SGD) can be an effective strategy (Bottou, 2010), even for large datasets. Unfortunately,
+   207→SGD has drawbacks, both computational and statistical. One problem arises from the fact
+   208→that processors are a lot faster multiplying and adding numbers than they are at moving data
+   209→from main memory to processor cache. It is up to an order of magnitude more efficient
+   210→to perform a matrix–vector multiplication than a corresponding number of vector–vector
+   211→operations. This means that it can take a lot longer to process one sample at a time compared
+   212→to a full batch. A second problem is that some of the layers, such as batch normalization
+   213→(to be described in Section 8.5), only work well when we have access to more than one
+   214→observation at a time.
+   215→The solution to both problems is to pick an intermediate strategy: rather than taking a full
+   216→batch or only a single sample at a time, we take a minibatch of observations (Li et al., 2014).
+   217→The specific choice of the size of the said minibatch depends on many factors, such as the
+   218→amount of memory, the number of accelerators, the choice of layers, and the total dataset
+   219→size. Despite all that, a number between 32 and 256, preferably a multiple of a large power
+   220→of 2, is a good start. This leads us to minibatch stochastic gradient descent.
+   221→In its most basic form, in each iteration 𝑡, we first randomly sample a minibatch B𝑡consist-
+   222→ing of a fixed number |B| of training examples. We then compute the derivative (gradient)
+   223→of the average loss on the minibatch with respect to the model parameters. Finally, we mul-
+   224→tiply the gradient by a predetermined small positive value 𝜂, called the learning rate, and
+   225→subtract the resulting term from the current parameter values. We can express the update
+   226→as follows:
+   227→(w, 𝑏) ←(w, 𝑏) −𝜂
+   228→|B|
+   229→Õ
+   230→𝑖∈B𝑡
+   231→𝜕(w,𝑏)𝑙(𝑖) (w, 𝑏).
+   232→(3.1.10)
+   233→In summary, minibatch SGD proceeds as follows: (i) initialize the values of the model
+   234→
+   235→===== صفحة الكتاب 127 =====
+   236→87
+   237→Linear Regression
+   238→parameters, typically at random; (ii) iteratively sample random minibatches from the data,
+   239→updating the parameters in the direction of the negative gradient. For quadratic losses and
+   240→affine transformations, this has a closed-form expansion:
+   241→w ←w −𝜂
+   242→|B|
+   243→Õ
+   244→𝑖∈B𝑡
+   245→𝜕w𝑙(𝑖) (w, 𝑏)
+   246→= w −𝜂
+   247→|B|
+   248→Õ
+   249→𝑖∈B𝑡
+   250→x(𝑖) 
+   251→w⊤x(𝑖) + 𝑏−𝑦(𝑖)
+   252→𝑏←𝑏−𝜂
+   253→|B|
+   254→Õ
+   255→𝑖∈B𝑡
+   256→𝜕𝑏𝑙(𝑖) (w, 𝑏)
+   257→= 𝑏−𝜂
+   258→|B|
+   259→Õ
+   260→𝑖∈B𝑡
+   261→
+   262→w⊤x(𝑖) + 𝑏−𝑦(𝑖)
+   263→.
+   264→(3.1.11)
+   265→Since we pick a minibatch B we need to normalize by its size |B|. Frequently minibatch
+   266→size and learning rate are user-defined. Such tunable parameters that are not updated in the
+   267→training loop are called hyperparameters. They can be tuned automatically by a number
+   268→of techniques, such as Bayesian optimization (Frazier, 2018). In the end, the quality of the
+   269→solution is typically assessed on a separate validation dataset (or validation set).
+   270→After training for some predetermined number of iterations (or until some other stopping
+   271→criterion is met), we record the estimated model parameters, denoted ˆw, ˆ𝑏. Note that even if
+   272→our function is truly linear and noiseless, these parameters will not be the exact minimizers
+   273→of the loss, nor even deterministic. Although the algorithm converges slowly towards the
+   274→minimizers it typically will not find them exactly in a finite number of steps. Moreover,
+   275→the minibatches B used for updating the parameters are chosen at random. This breaks
+   276→determinism.
+   277→Linear regression happens to be a learning problem with a global minimum (whenever X
+   278→is full rank, or equivalently, whenever X⊤X is invertible). However, the loss surfaces for
+   279→deep networks contain many saddle points and minima. Fortunately, we typically do not
+   280→care about finding an exact set of parameters but merely any set of parameters that leads
+   281→to accurate predictions (and thus low loss). In practice, deep learning practitioners seldom
+   282→struggle to find parameters that minimize the loss on training sets (Frankle and Carbin,
+   283→2018, Izmailov et al., 2018). The more formidable task is to find parameters that lead
+   284→to accurate predictions on previously unseen data, a challenge called generalization. We
+   285→return to these topics throughout the book.
+   286→Predictions
+   287→Given the model ˆw⊤x + ˆ𝑏, we can now make predictions for a new example, e.g., pre-
+   288→dicting the sales price of a previously unseen house given its area 𝑥1 and age 𝑥2. Deep
+   289→learning practitioners have taken to calling the prediction phase inference but this is a bit of
+   290→a misnomer—inference refers broadly to any conclusion reached on the basis of evidence,
+   291→including both the values of the parameters and the likely label for an unseen instance. If
+   292→anything, in the statistics literature inference more often denotes parameter inference and
+   293→this overloading of terminology creates unnecessary confusion when deep learning prac-
+   294→titioners talk to statisticians. In the following we will stick to prediction whenever possi-
+   295→ble.
+   296→3.1.2 Vectorization for Speed
+   297→
+   298→===== صفحة الكتاب 128 =====
+   299→88
+   300→Linear Neural Networks for Regression
+   301→When training our models, we typically want to process whole minibatches of examples si-
+   302→multaneously. Doing this efficiently requires that we vectorize the calculations and leverage
+   303→fast linear algebra libraries rather than writing costly for-loops in Python.
+   304→To see why this matters so much, let’s consider two methods for adding vectors. To start, we
+   305→instantiate two 10,000-dimensional vectors containing all 1s. In the first method, we loop
+   306→over the vectors with a Python for-loop. In the second, we rely on a single call to +.
+   307→n = 10000
+   308→a = torch.ones(n)
+   309→b = torch.ones(n)
+   310→Now we can benchmark the workloads. First, we add them, one coordinate at a time, using
+   311→a for-loop.
+   312→c = torch.zeros(n)
+   313→t = time.time()
+   314→for i in range(n):
+   315→c[i] = a[i] + b[i]
+   316→f'{time.time() - t:.5f} sec'
+   317→'0.17802 sec'
+   318→Alternatively, we rely on the reloaded + operator to compute the elementwise sum.
+   319→t = time.time()
+   320→d = a + b
+   321→f'{time.time() - t:.5f} sec'
+   322→'0.00036 sec'
+   323→The second method is dramatically faster than the first. Vectorizing code often yields order-
+   324→of-magnitude speedups. Moreover, we push more of the mathematics to the library so we
+   325→do not have to write as many calculations ourselves, reducing the potential for errors and
+   326→increasing portability of the code.
+   327→3.1.3 The Normal Distribution and Squared Loss
+   328→So far we have given a fairly functional motivation of the squared loss objective: the optimal
+   329→parameters return the conditional expectation 𝐸[𝑌| 𝑋] whenever the underlying pattern
+   330→is truly linear, and the loss assigns large penalties for outliers. We can also provide a more
+   331→formal motivation for the squared loss objective by making probabilistic assumptions about
+   332→the distribution of noise.
+   333→Linear regression was invented at the turn of the 19th century. While it has long been
+   334→debated whether Gauss or Legendre first thought up the idea, it was Gauss who also dis-
+   335→covered the normal distribution (also called the Gaussian). It turns out that the normal
+   336→
+   337→===== صفحة الكتاب 129 =====
+   338→89
+   339→Linear Regression
+   340→distribution and linear regression with squared loss share a deeper connection than com-
+   341→mon parentage.
+   342→To begin, recall that a normal distribution with mean 𝜇and variance 𝜎2 (standard deviation
+   343→𝜎) is given as
+   344→𝑝(𝑥) =
+   345→1
+   346→√
+   347→2𝜋𝜎2 exp
+   348→
+   349→−1
+   350→2𝜎2 (𝑥−𝜇)2
+   351→
+   352→.
+   353→(3.1.12)
+   354→Below we define a function to compute the normal distribution.
+   355→def normal(x, mu, sigma):
+   356→p = 1 / math.sqrt(2 * math.pi * sigma**2)
+   357→return p * np.exp(-0.5 * (x - mu)**2 / sigma**2)
+   358→We can now visualize the normal distributions.
+   359→# Use NumPy again for visualization
+   360→x = np.arange(-7, 7, 0.01)
+   361→# Mean and standard deviation pairs
+   362→params = [(0, 1), (0, 2), (3, 1)]
+   363→d2l.plot(x, [normal(x, mu, sigma) for mu, sigma in params], xlabel='x',
+   364→ylabel='p(x)', figsize=(4.5, 2.5),
+   365→legend=[f'mean {mu}, std {sigma}' for mu, sigma in params])
+   366→Note that changing the mean corresponds to a shift along the 𝑥-axis, and increasing the
+   367→variance spreads the distribution out, lowering its peak.
+   368→One way to motivate linear regression with squared loss is to assume that observations arise
+   369→from noisy measurements, where the noise 𝜖follows the normal distribution N (0, 𝜎2):
+   370→𝑦= w⊤x + 𝑏+ 𝜖where 𝜖∼N (0, 𝜎2).
+   371→(3.1.13)
+   372→Thus, we can now write out the likelihood of seeing a particular 𝑦for a given x via
+   373→𝑃(𝑦| x) =
+   374→1
+   375→√
+   376→2𝜋𝜎2 exp
+   377→
+   378→−1
+   379→2𝜎2 (𝑦−w⊤x −𝑏)2
+   380→
+   381→.
+   382→(3.1.14)
+   383→As such, the likelihood factorizes. According to the principle of maximum likelihood, the
+   384→
+   385→===== صفحة الكتاب 130 =====
+   386→90
+   387→Linear Neural Networks for Regression
+   388→best values of parameters w and 𝑏are those that maximize the likelihood of the entire
+   389→dataset:
+   390→𝑃(y | X) =
+   391→𝑛
+   392→Ö
+   393→𝑖=1
+   394→𝑝(𝑦(𝑖) | x(𝑖)).
+   395→(3.1.15)
+   396→The equality follows since all pairs (x(𝑖), 𝑦(𝑖)) were drawn independently of each other. Es-
+   397→timators chosen according to the principle of maximum likelihood are called maximum like-
+   398→lihood estimators. While, maximizing the product of many exponential functions, might
+   399→look difficult, we can simplify things significantly, without changing the objective, by max-
+   400→imizing the logarithm of the likelihood instead. For historical reasons, optimizations are
+   401→more often expressed as minimization rather than maximization. So, without changing any-
+   402→thing, we can minimize the negative log-likelihood, which we can express as follows:
+   403→−log 𝑃(y | X) =
+   404→𝑛
+   405→Õ
+   406→𝑖=1
+   407→1
+   408→2 log(2𝜋𝜎2) +
+   409→1
+   410→2𝜎2
+   411→
+   412→𝑦(𝑖) −w⊤x(𝑖) −𝑏
+   413→2
+   414→.
+   415→(3.1.16)
+   416→If we assume that 𝜎is fixed, we can ignore the first term, because it does not depend on w
+   417→or 𝑏. The second term is identical to the squared error loss introduced earlier, except for
+   418→the multiplicative constant
+   419→1
+   420→𝜎2 . Fortunately, the solution does not depend on 𝜎either. It
+   421→follows that minimizing the mean squared error is equivalent to the maximum likelihood
+   422→estimation of a linear model under the assumption of additive Gaussian noise.
+   423→3.1.4 Linear Regression as a Neural Network
+   424→While linear models are not sufficiently rich to express the many complicated networks
+   425→that we will introduce in this book, (artificial) neural networks are rich enough to subsume
+   426→linear models as networks in which every feature is represented by an input neuron, all of
+   427→which are connected directly to the output.
+   428→Fig. 3.1.2 depicts linear regression as a neural network. The diagram highlights the con-
+   429→nectivity pattern, such as how each input is connected to the output, but not the specific
+   430→values taken by the weights or biases.
+   431→t
+   432→Fig. 3.1.2
+   433→Linear regression is a single-layer neural network.
+   434→The inputs are 𝑥1, . . . , 𝑥𝑑. We refer to 𝑑as the number of inputs or the feature dimensional-
+   435→ity in the input layer. The output of the network is 𝑜1. Because we are just trying to predict
+   436→a single numerical value, we have only one output neuron. Note that the input values are all
+   437→given. There is just a single computed neuron. In summary, we can think of linear regres-
+   438→sion as a single-layer fully connected neural network. We will encounter networks with far
+   439→more layers in later chapters.
+   440→
+   441→===== صفحة الكتاب 131 =====
+   442→91
+   443→Linear Regression
+   444→Biology
+   445→Because linear regression predates computational neuroscience, it might seem anachro-
+   446→nistic to describe linear regression in terms of neural networks. Nonetheless, they were a
+   447→natural place to start when the cyberneticists and neurophysiologists Warren McCulloch
+   448→and Walter Pitts began to develop models of artificial neurons. Consider the cartoonish
+   449→picture of a biological neuron in Fig. 3.1.3, consisting of dendrites (input terminals), the
+   450→nucleus (CPU), the axon (output wire), and the axon terminals (output terminals), enabling
+   451→connections to other neurons via synapses.
+   452→Dendrite
+   453→Cell body
+   454→Node of
+   455→Ranvier
+   456→Axon Terminal
+   457→Schwann cell
+   458→Myelin sheath
+   459→Axon
+   460→Nucleus
+   461→t
+   462→Fig. 3.1.3
+   463→The real neuron (source: “Anatomy and Physiology” by the US National Cancer
+   464→Institute’s Surveillance, Epidemiology and End Results (SEER) Program).
+   465→Information 𝑥𝑖arriving from other neurons (or environmental sensors) is received in the
+   466→dendrites. In particular, that information is weighted by synaptic weights 𝑤𝑖, determining
+   467→the effect of the inputs, e.g., activation or inhibition via the product 𝑥𝑖𝑤𝑖. The weighted
+   468→inputs arriving from multiple sources are aggregated in the nucleus as a weighted sum 𝑦=
+   469→Í
+   470→𝑖𝑥𝑖𝑤𝑖+ 𝑏, possibly subject to some nonlinear postprocessing via a function 𝜎(𝑦). This
+   471→information is then sent via the axon to the axon terminals, where it reaches its destination
+   472→(e.g., an actuator such as a muscle) or it is fed into another neuron via its dendrites.
+   473→Certainly, the high-level idea that many such units could be combined, provided they have
+   474→the correct connectivity and learning algorithm, to produce far more interesting and com-
+   475→plex behavior than any one neuron alone could express arises from our study of real bi-
+   476→ological neural systems. At the same time, most research in deep learning today draws
+   477→inspiration from a much wider source. We invoke Russell and Norvig (2016) who pointed
+   478→out that although airplanes might have been inspired by birds, ornithology has not been
+   479→the primary driver of aeronautics innovation for some centuries. Likewise, inspiration in
+   480→deep learning these days comes in equal or greater measure from mathematics, linguistics,
+   481→psychology, statistics, computer science, and many other fields.
+   482→3.1.5 Summary
+   483→In this section, we introduced traditional linear regression, where the parameters of a linear
+   484→function are chosen to minimize squared loss on the training set. We also motivated this
+   485→choice of objective both via some practical considerations and through an interpretation
+   486→of linear regression as maximimum likelihood estimation under an assumption of linearity
+   487→and Gaussian noise. After discussing both computational considerations and connections to
+   488→
+   489→===== صفحة الكتاب 132 =====
+   490→92
+   491→Linear Neural Networks for Regression
+   492→statistics, we showed how such linear models could be expressed as simple neural networks
+   493→where the inputs are directly wired to the output(s). While we will soon move past linear
+   494→models altogether, they are sufficient to introduce most of the components that all of our
+   495→models require: parametric forms, differentiable objectives, optimization via minibatch
+   496→stochastic gradient descent, and ultimately, evaluation on previously unseen data.
+   497→3.1.6 Exercises
+   498→1. Assume that we have some data 𝑥1, . . . , 𝑥𝑛∈R. Our goal is to find a constant 𝑏such
+   499→that Í
+   500→𝑖(𝑥𝑖−𝑏)2 is minimized.
+   501→1. Find an analytic solution for the optimal value of 𝑏.
+   502→2. How does this problem and its solution relate to the normal distribution?
+   503→3. What if we change the loss from Í
+   504→𝑖(𝑥𝑖−𝑏)2 to Í
+   505→𝑖|𝑥𝑖−𝑏|? Can you find the optimal
+   506→solution for 𝑏?
+   507→2. Prove that the affine functions that can be expressed by x⊤w + 𝑏are equivalent to linear
+   508→functions on (x, 1).
+   509→3. Assume that you want to find quadratic functions of x, i.e., 𝑓(x) = 𝑏+ Í
+   510→𝑖𝑤𝑖𝑥𝑖+
+   511→Í
+   512→𝑗≤𝑖𝑤𝑖𝑗𝑥𝑖𝑥𝑗. How would you formulate this in a deep network?
+   513→4. Recall that one of the conditions for the linear regression problem to be solvable was
+   514→that the design matrix X⊤X has full rank.
+   515→1. What happens if this is not the case?
+   516→2. How could you fix it? What happens if you add a small amount of coordinate-wise
+   517→independent Gaussian noise to all entries of X?
+   518→3. What is the expected value of the design matrix X⊤X in this case?
+   519→4. What happens with stochastic gradient descent when X⊤X does not have full rank?
+   520→5. Assume that the noise model governing the additive noise 𝜖is the exponential distribu-
+   521→tion. That is, 𝑝(𝜖) = 1
+   522→2 exp(−|𝜖|).
+   523→1. Write out the negative log-likelihood of the data under the model −log 𝑃(y | X).
+   524→2. Can you find a closed form solution?
+   525→3. Suggest a minibatch stochastic gradient descent algorithm to solve this problem.
+   526→What could possibly go wrong (hint: what happens near the stationary point as we
+   527→keep on updating the parameters)? Can you fix this?
+   528→6. Assume that we want to design a neural network with two layers by composing two
+   529→linear layers. That is, the output of the first layer becomes the input of the second layer.
+   530→Why would such a naive composition not work?
+   531→7. What happens if you want to use regression for realistic price estimation of houses or
+   532→stock prices?
+   533→
+   534→===== صفحة الكتاب 133 =====
+   535→93
+   536→Object-Oriented Design for Implementation
+   537→68
+   538→69
+   539→70
+   540→1. Show that the additive Gaussian noise assumption is not appropriate. Hint: can we
+   541→have negative prices? What about fluctuations?
+   542→2. Why would regression to the logarithm of the price be much better, i.e., 𝑦= log price?
+   543→3. What do you need to worry about when dealing with pennystock, i.e., stock with very
+   544→low prices? Hint: can you trade at all possible prices? Why is this a bigger problem
+   545→for cheap stock? For more information review the celebrated Black–Scholes model
+   546→for option pricing (Black and Scholes, 1973).
+   547→8. Suppose we want to use regression to estimate the number of apples sold in a grocery
+   548→store.
+   549→1. What are the problems with a Gaussian additive noise model? Hint: you are selling
+   550→apples, not oil.
+   551→2. The Poisson distribution 68 captures distributions over counts. It is given by 𝑝(𝑘|
+   552→𝜆) = 𝜆𝑘𝑒−𝜆/𝑘!. Here 𝜆is the rate function and 𝑘is the number of events you see.
+   553→Prove that 𝜆is the expected value of counts 𝑘.
+   554→3. Design a loss function associated with the Poisson distribution.
+   555→4. Design a loss function for estimating log 𝜆instead.
+   556→Discussions69.
+   557→3.2 Object-Oriented Design for Implementation
+   558→In our introduction to linear regression, we walked through various components including
+   559→the data, the model, the loss function, and the optimization algorithm. Indeed, linear re-
+   560→gression is one of the simplest machine learning models. Training it, however, uses many of
+   561→the same components that other models in this book require. Therefore, before diving into
+   562→the implementation details it is worth designing some of the APIs that we use throughout.
+   563→Treating components in deep learning as objects, we can start by defining classes for these
+   564→objects and their interactions. This object-oriented design for implementation will greatly
+   565→streamline the presentation and you might even want to use it in your projects.
+   566→Inspired by open-source libraries such as PyTorch Lightning 70 , at a high level we wish
+   567→to have three classes: (i) Module contains models, losses, and optimization methods; (ii)
+   568→DataModule provides data loaders for training and validation; (iii) both classes are com-
+   569→bined using the Trainer class, which allows us to train models on a variety of hardware
+   570→platforms. Most code in this book adapts Module and DataModule. We will touch upon
+   571→the Trainer class only when we discuss GPUs, CPUs, parallel training, and optimization
+   572→algorithms.
+   573→
+   574→===== صفحة الكتاب 134 =====
+   575→94
+   576→Linear Neural Networks for Regression
+   577→import time
+   578→import numpy as np
+   579→import torch
+   580→from torch import nn
+   581→from d2l import torch as d2l
+   582→3.2.1 Utilities
+   583→We need a few utilities to simplify object-oriented programming in Jupyter notebooks. One
+   584→of the challenges is that class definitions tend to be fairly long blocks of code. Notebook
+   585→readability demands short code fragments, interspersed with explanations, a requirement
+   586→incompatible with the style of programming common for Python libraries. The first utility
+   587→function allows us to register functions as methods in a class after the class has been created.
+   588→In fact, we can do so even after we have created instances of the class! It allows us to split
+   589→the implementation of a class into multiple code blocks.
+   590→def add_to_class(Class):
+   591→#@save
+   592→"""Register functions as methods in created class."""
+   593→def wrapper(obj):
+   594→setattr(Class, obj.__name__, obj)
+   595→return wrapper
+   596→Let’s have a quick look at how to use it. We plan to implement a class A with a method do.
+   597→Instead of having code for both A and do in the same code block, we can first declare the
+   598→class A and create an instance a.
+   599→class A:
+   600→def __init__(self):
+   601→self.b = 1
+   602→a = A()
+   603→Next we define the method do as we normally would, but not in class A’s scope. Instead,
+   604→we decorate this method by add_to_class with class A as its argument. In doing so, the
+   605→method is able to access the member variables of A just as we would expect had it been
+   606→included as part of A’s definition. Let’s see what happens when we invoke it for the instance
+   607→a.
+   608→@add_to_class(A)
+   609→def do(self):
+   610→print('Class attribute "b" is', self.b)
+   611→a.do()
+   612→Class attribute "b" is 1
+   613→The second one is a utility class that saves all arguments in a class’s __init__ method
+   614→
+   615→===== صفحة الكتاب 135 =====
+   616→95
+   617→Object-Oriented Design for Implementation
+   618→71
+   619→as class attributes. This allows us to extend constructor call signatures implicitly without
+   620→additional code.
+   621→class HyperParameters:
+   622→#@save
+   623→"""The base class of hyperparameters."""
+   624→def save_hyperparameters(self, ignore=[]):
+   625→raise NotImplemented
+   626→We defer its implementation into Section B.7. To use it, we define our class that inherits
+   627→from HyperParameters and calls save_hyperparameters in the __init__ method.
+   628→# Call the fully implemented HyperParameters class saved in d2l
+   629→class B(d2l.HyperParameters):
+   630→def __init__(self, a, b, c):
+   631→self.save_hyperparameters(ignore=['c'])
+   632→print('self.a =', self.a, 'self.b =', self.b)
+   633→print('There is no self.c =', not hasattr(self, 'c'))
+   634→b = B(a=1, b=2, c=3)
+   635→self.a = 1 self.b = 2
+   636→There is no self.c = True
+   637→The final utility allows us to plot experiment progress interactively while it is going on.
+   638→In deference to the much more powerful (and complex) TensorBoard 71 we name it Pro-
+   639→gressBoard. The implementation is deferred to Section B.7. For now, let’s simply see it
+   640→in action.
+   641→The draw method plots a point (x, y) in the figure, with label specified in the legend.
+   642→The optional every_n smooths the line by only showing 1/𝑛points in the figure. Their
+   643→values are averaged from the 𝑛neighbor points in the original figure.
+   644→class ProgressBoard(d2l.HyperParameters):
+   645→#@save
+   646→"""The board that plots data points in animation."""
+   647→def __init__(self, xlabel=None, ylabel=None, xlim=None,
+   648→ylim=None, xscale='linear', yscale='linear',
+   649→ls=['-', '--', '-.', ':'], colors=['C0', 'C1', 'C2', 'C3'],
+   650→fig=None, axes=None, figsize=(3.5, 2.5), display=True):
+   651→self.save_hyperparameters()
+   652→def draw(self, x, y, label, every_n=1):
+   653→raise NotImplemented
+   654→In the following example, we draw sin and cos with a different smoothness. If you run this
+   655→code block, you will see the lines grow in animation.
+   656→board = d2l.ProgressBoard('x')
+   657→for x in np.arange(0, 10, 0.1):
+   658→board.draw(x, np.sin(x), 'sin', every_n=2)
+   659→board.draw(x, np.cos(x), 'cos', every_n=10)
+   660→
+   661→===== صفحة الكتاب 136 =====
+   662→96
+   663→Linear Neural Networks for Regression
+   664→3.2.2 Models
+   665→The Module class is the base class of all models we will implement. At the very least
+   666→we need three methods. The first, __init__, stores the learnable parameters, the train-
+   667→ing_step method accepts a data batch to return the loss value, and finally, configure_optimizers
+   668→returns the optimization method, or a list of them, that is used to update the learnable pa-
+   669→rameters. Optionally we can define validation_step to report the evaluation measures.
+   670→Sometimes we put the code for computing the output into a separate forward method to
+   671→make it more reusable.
+   672→class Module(nn.Module, d2l.HyperParameters):
+   673→#@save
+   674→"""The base class of models."""
+   675→def __init__(self, plot_train_per_epoch=2, plot_valid_per_epoch=1):
+   676→super().__init__()
+   677→self.save_hyperparameters()
+   678→self.board = ProgressBoard()
+   679→def loss(self, y_hat, y):
+   680→raise NotImplementedError
+   681→def forward(self, X):
+   682→assert hasattr(self, 'net'), 'Neural network is defined'
+   683→return self.net(X)
+   684→def plot(self, key, value, train):
+   685→"""Plot a point in animation."""
+   686→assert hasattr(self, 'trainer'), 'Trainer is not inited'
+   687→self.board.xlabel = 'epoch'
+   688→if train:
+   689→x = self.trainer.train_batch_idx / \
+   690→self.trainer.num_train_batches
+   691→n = self.trainer.num_train_batches / \
+   692→self.plot_train_per_epoch
+   693→else:
+   694→x = self.trainer.epoch + 1
+   695→n = self.trainer.num_val_batches / \
+   696→self.plot_valid_per_epoch
+   697→self.board.draw(x, value.to(d2l.cpu()).detach().numpy(),
+   698→('train_' if train else 'val_') + key,
+   699→every_n=int(n))
+   700→(continues on next page)
+   701→
+   702→===== صفحة الكتاب 137 =====
+   703→97
+   704→Object-Oriented Design for Implementation
+   705→(continued from previous page)
+   706→def training_step(self, batch):
+   707→l = self.loss(self(*batch[:-1]), batch[-1])
+   708→self.plot('loss', l, train=True)
+   709→return l
+   710→def validation_step(self, batch):
+   711→l = self.loss(self(*batch[:-1]), batch[-1])
+   712→self.plot('loss', l, train=False)
+   713→def configure_optimizers(self):
+   714→raise NotImplementedError
+   715→You may notice that Module is a subclass of nn.Module, the base class of neural networks
+   716→in PyTorch. It provides convenient features for handling neural networks. For example, if
+   717→we define a forward method, such as forward(self, X), then for an instance a we can
+   718→invoke this method by a(X). This works since it calls the forward method in the built-in
+   719→__call__ method. You can find more details and examples about nn.Module in Section
+   720→6.1.
+   721→3.2.3 Data
+   722→The DataModule class is the base class for data. Quite frequently the __init__ method is
+   723→used to prepare the data. This includes downloading and preprocessing if needed. The
+   724→train_dataloader returns the data loader for the training dataset. A data loader is a
+   725→(Python) generator that yields a data batch each time it is used. This batch is then fed
+   726→into the training_step method of Module to compute the loss. There is an optional
+   727→val_dataloader to return the validation dataset loader. It behaves in the same manner,
+   728→except that it yields data batches for the validation_step method in Module.
+   729→class DataModule(d2l.HyperParameters):
+   730→#@save
+   731→"""The base class of data."""
+   732→def __init__(self, root='../data', num_workers=4):
+   733→self.save_hyperparameters()
+   734→def get_dataloader(self, train):
+   735→raise NotImplementedError
+   736→def train_dataloader(self):
+   737→return self.get_dataloader(train=True)
+   738→def val_dataloader(self):
+   739→return self.get_dataloader(train=False)
+   740→3.2.4 Training
+   741→The Trainer class trains the learnable parameters in the Module class with data specified
+   742→in DataModule. The key method is fit, which accepts two arguments: model, an instance
+   743→of Module, and data, an instance of DataModule. It then iterates over the entire dataset
+   744→
+   745→===== صفحة الكتاب 138 =====
+   746→98
+   747→Linear Neural Networks for Regression
+   748→72
+   749→73
+   750→max_epochs times to train the model. As before, we will defer the implementation of this
+   751→method to later chapters.
+   752→class Trainer(d2l.HyperParameters):
+   753→#@save
+   754→"""The base class for training models with data."""
+   755→def __init__(self, max_epochs, num_gpus=0, gradient_clip_val=0):
+   756→self.save_hyperparameters()
+   757→assert num_gpus == 0, 'No GPU support yet'
+   758→def prepare_data(self, data):
+   759→self.train_dataloader = data.train_dataloader()
+   760→self.val_dataloader = data.val_dataloader()
+   761→self.num_train_batches = len(self.train_dataloader)
+   762→self.num_val_batches = (len(self.val_dataloader)
+   763→if self.val_dataloader is not None else 0)
+   764→def prepare_model(self, model):
+   765→model.trainer = self
+   766→model.board.xlim = [0, self.max_epochs]
+   767→self.model = model
+   768→def fit(self, model, data):
+   769→self.prepare_data(data)
+   770→self.prepare_model(model)
+   771→self.optim = model.configure_optimizers()
+   772→self.epoch = 0
+   773→self.train_batch_idx = 0
+   774→self.val_batch_idx = 0
+   775→for self.epoch in range(self.max_epochs):
+   776→self.fit_epoch()
+   777→def fit_epoch(self):
+   778→raise NotImplementedError
+   779→3.2.5 Summary
+   780→To highlight the object-oriented design for our future deep learning implementation, the
+   781→above classes simply show how their objects store data and interact with each other. We
+   782→will keep enriching implementations of these classes, such as via @add_to_class, in the
+   783→rest of the book. Moreover, these fully implemented classes are saved in the D2L library72
+   784→, a lightweight toolkit that makes structured modeling for deep learning easy. In particular,
+   785→it facilitates reusing many components between projects without changing much at all. For
+   786→instance, we can replace just the optimizer, just the model, just the dataset, etc.; this degree
+   787→of modularity pays dividends throughout the book in terms of conciseness and simplicity
+   788→(this is why we added it) and it can do the same for your own projects.
+   789→3.2.6 Exercises
+   790→1. Locate full implementations of the above classes that are saved in the D2L library 73
+   791→. We strongly recommend that you look at the implementation in detail once you have
+   792→gained some more familiarity with deep learning modeling.
+   793→
+   794→===== صفحة الكتاب 139 =====
+   795→99
+   796→Synthetic Regression Data
+   797→74
+   798→2. Remove the save_hyperparameters statement in the B class. Can you still print self.a
+   799→and self.b? Optional: if you have dived into the full implementation of the HyperPa-
+   800→rameters class, can you explain why?
+   801→Discussions74.
+   802→3.3 Synthetic Regression Data
+   803→Machine learning is all about extracting information from data. So you might wonder,
+   804→what could we possibly learn from synthetic data? While we might not care intrinsically
+   805→about the patterns that we ourselves baked into an artificial data generating model, such
+   806→datasets are nevertheless useful for didactic purposes, helping us to evaluate the properties
+   807→of our learning algorithms and to confirm that our implementations work as expected. For
+   808→example, if we create data for which the correct parameters are known a priori, then we
+   809→can check that our model can in fact recover them.
+   810→%matplotlib inline
+   811→import random
+   812→import torch
+   813→from d2l import torch as d2l
+   814→3.3.1 Generating the Dataset
+   815→For this example, we will work in low dimension for succinctness. The following code
+   816→snippet generates 1000 examples with 2-dimensional features drawn from a standard nor-
+   817→mal distribution. The resulting design matrix X belongs to R1000×2. We generate each label
+   818→by applying a ground truth linear function, corrupting them via additive noise 𝝐, drawn in-
+   819→dependently and identically for each example:
+   820→y = Xw + 𝑏+ 𝝐.
+   821→(3.3.1)
+   822→For convenience we assume that 𝝐is drawn from a normal distribution with mean 𝜇= 0
+   823→and standard deviation 𝜎= 0.01. Note that for object-oriented design we add the code to
+   824→the __init__ method of a subclass of d2l.DataModule (introduced in Section 3.2.3). It is
+   825→good practice to allow the setting of any additional hyperparameters. We accomplish this
+   826→with save_hyperparameters(). The batch_size will be determined later.
+   827→class SyntheticRegressionData(d2l.DataModule):
+   828→#@save
+   829→"""Synthetic data for linear regression."""
+   830→def __init__(self, w, b, noise=0.01, num_train=1000, num_val=1000,
+   831→batch_size=32):
+   832→super().__init__()
+   833→self.save_hyperparameters()
+   834→n = num_train + num_val
+   835→(continues on next page)
+   836→
+   837→===== صفحة الكتاب 140 =====
+   838→100
+   839→Linear Neural Networks for Regression
+   840→(continued from previous page)
+   841→self.X = torch.randn(n, len(w))
+   842→noise = torch.randn(n, 1) * noise
+   843→self.y = torch.matmul(self.X, w.reshape((-1, 1))) + b + noise
+   844→Below, we set the true parameters to w = [2, −3.4]⊤and 𝑏= 4.2. Later, we can check our
+   845→estimated parameters against these ground truth values.
+   846→data = SyntheticRegressionData(w=torch.tensor([2, -3.4]), b=4.2)
+   847→Each row in features consists of a vector in R2 and each row in labels is a scalar. Let’s
+   848→have a look at the first entry.
+   849→print('features:', data.X[0],'\nlabel:', data.y[0])
+   850→features: tensor([0.9026, 1.0264])
+   851→label: tensor([2.5148])
+   852→3.3.2 Reading the Dataset
+   853→Training machine learning models often requires multiple passes over a dataset, grabbing
+   854→one minibatch of examples at a time. This data is then used to update the model. To
+   855→illustrate how this works, we implement the get_dataloader method, registering it in
+   856→the SyntheticRegressionData class via add_to_class (introduced in Section 3.2.1). It
+   857→takes a batch size, a matrix of features, and a vector of labels, and generates minibatches of
+   858→size batch_size. As such, each minibatch consists of a tuple of features and labels. Note
+   859→that we need to be mindful of whether we’re in training or validation mode: in the former,
+   860→we will want to read the data in random order, whereas for the latter, being able to read data
+   861→in a pre-defined order may be important for debugging purposes.
+   862→@d2l.add_to_class(SyntheticRegressionData)
+   863→def get_dataloader(self, train):
+   864→if train:
+   865→indices = list(range(0, self.num_train))
+   866→# The examples are read in random order
+   867→random.shuffle(indices)
+   868→else:
+   869→indices = list(range(self.num_train, self.num_train+self.num_val))
+   870→for i in range(0, len(indices), self.batch_size):
+   871→batch_indices = torch.tensor(indices[i: i+self.batch_size])
+   872→yield self.X[batch_indices], self.y[batch_indices]
+   873→To build some intuition, let’s inspect the first minibatch of data. Each minibatch of fea-
+   874→tures provides us with both its size and the dimensionality of input features. Likewise, our
+   875→minibatch of labels will have a matching shape given by batch_size.
+   876→
+   877→===== صفحة الكتاب 141 =====
+   878→101
+   879→Synthetic Regression Data
+   880→X, y = next(iter(data.train_dataloader()))
+   881→print('X shape:', X.shape, '\ny shape:', y.shape)
+   882→X shape: torch.Size([32, 2])
+   883→y shape: torch.Size([32, 1])
+   884→While seemingly innocuous, the invocation of iter(data.train_dataloader()) illus-
+   885→trates the power of Python’s object-oriented design. Note that we added a method to the
+   886→SyntheticRegressionData class after creating the data object. Nonetheless, the object
+   887→benefits from the ex post facto addition of functionality to the class.
+   888→Throughout the iteration we obtain distinct minibatches until the entire dataset has been
+   889→exhausted (try this). While the iteration implemented above is good for didactic purposes,
+   890→it is inefficient in ways that might get us into trouble with real problems. For example, it
+   891→requires that we load all the data in memory and that we perform lots of random memory
+   892→access. The built-in iterators implemented in a deep learning framework are considerably
+   893→more efficient and they can deal with sources such as data stored in files, data received via
+   894→a stream, and data generated or processed on the fly. Next let’s try to implement the same
+   895→method using built-in iterators.
+   896→3.3.3 Concise Implementation of the Data Loader
+   897→Rather than writing our own iterator, we can call the existing API in a framework to load
+   898→data. As before, we need a dataset with features X and labels y. Beyond that, we set
+   899→batch_size in the built-in data loader and let it take care of shuffling examples effi-
+   900→ciently.
+   901→@d2l.add_to_class(d2l.DataModule)
+   902→#@save
+   903→def get_tensorloader(self, tensors, train, indices=slice(0, None)):
+   904→tensors = tuple(a[indices] for a in tensors)
+   905→dataset = torch.utils.data.TensorDataset(*tensors)
+   906→return torch.utils.data.DataLoader(dataset, self.batch_size,
+   907→shuffle=train)
+   908→@d2l.add_to_class(SyntheticRegressionData)
+   909→#@save
+   910→def get_dataloader(self, train):
+   911→i = slice(0, self.num_train) if train else slice(self.num_train, None)
+   912→return self.get_tensorloader((self.X, self.y), train, i)
+   913→The new data loader behaves just like the previous one, except that it is more efficient and
+   914→has some added functionality.
+   915→X, y = next(iter(data.train_dataloader()))
+   916→print('X shape:', X.shape, '\ny shape:', y.shape)
+   917→
+   918→===== صفحة الكتاب 142 =====
+   919→102
+   920→Linear Neural Networks for Regression
+   921→75
+   922→76
+   923→X shape: torch.Size([32, 2])
+   924→y shape: torch.Size([32, 1])
+   925→For instance, the data loader provided by the framework API supports the built-in __len__
+   926→method, so we can query its length, i.e., the number of batches.
+   927→len(data.train_dataloader())
+   928→32
+   929→3.3.4 Summary
+   930→Data loaders are a convenient way of abstracting out the process of loading and manipu-
+   931→lating data. This way the same machine learning algorithm is capable of processing many
+   932→different types and sources of data without the need for modification. One of the nice things
+   933→about data loaders is that they can be composed. For instance, we might be loading images
+   934→and then have a postprocessing filter that crops them or modifies them in other ways. As
+   935→such, data loaders can be used to describe an entire data processing pipeline.
+   936→As for the model itself, the two-dimensional linear model is about the simplest we might
+   937→encounter. It lets us test out the accuracy of regression models without worrying about
+   938→having insufficient amounts of data or an underdetermined system of equations. We will
+   939→put this to good use in the next section.
+   940→3.3.5 Exercises
+   941→1. What will happen if the number of examples cannot be divided by the batch size. How
+   942→would you change this behavior by specifying a different argument by using the frame-
+   943→work’s API?
+   944→2. Suppose that we want to generate a huge dataset, where both the size of the parameter
+   945→vector w and the number of examples num_examples are large.
+   946→1. What happens if we cannot hold all data in memory?
+   947→2. How would you shuffle the data if it is held on disk? Your task is to design an eﬀicient
+   948→algorithm that does not require too many random reads or writes. Hint: pseudoran-
+   949→dom permutation generators 75 allow you to design a reshuffle without the need to
+   950→store the permutation table explicitly (Naor and Reingold, 1999).
+
+[showing lines 1-950 of 1894; use offset=951 with limit to continue reading]

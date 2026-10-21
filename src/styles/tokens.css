@@ -1,0 +1,270 @@
+/*
+ * PyPath design tokens — calm, warm, minimal.
+ *
+ * FONT NOTE (documented decision): self-hosted font files are NOT available in this
+ * sandbox, so we rely on system font stacks only. If 'Noto Sans Arabic' / 'Inter' /
+ * 'JetBrains Mono' happen to be installed locally they are used; otherwise the stack
+ * falls through to high-quality system equivalents. No network font fetch.
+ *
+ * Logical properties only: the app is bilingual RTL/LTR, so physical direction
+ * utilities (ml/mr/pl/pr/left/right) are forbidden outside LTR code blocks.
+ */
+
+:root {
+  /* ---------- Font stacks (system only, see note above) ---------- */
+  --font-app:
+    'Inter', 'Noto Sans Arabic', 'Segoe UI', 'Helvetica Neue', system-ui,
+    -apple-system, sans-serif;
+  --font-app-ar:
+    'Noto Sans Arabic', 'Inter', 'Segoe UI', 'Geeza Pro', 'Tahoma', system-ui,
+    sans-serif;
+  --font-code:
+    'JetBrains Mono', 'Cascadia Code', 'SF Mono', 'Fira Code', 'Consolas',
+    ui-monospace, monospace;
+
+  /* ---------- Motion (150–400ms, soft ease-out) ---------- */
+  --motion-fast: 150ms;
+  --motion-base: 250ms;
+  --motion-slow: 400ms;
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ---------- Radius / elevation ---------- */
+  --radius-card: 1rem;
+  --shadow-card: 0 1px 2px oklch(0.25 0.02 50 / 0.05), 0 4px 16px oklch(0.25 0.02 50 / 0.04);
+  --shadow-pop: 0 8px 30px oklch(0.25 0.02 50 / 0.12);
+
+  /* ---------- Part accents ---------- */
+  --accent-python: oklch(0.58 0.128 40);      /* terracotta-600 (Part I) */
+  --accent-python-strong: oklch(0.52 0.13 38); /* terracotta-700 */
+  --accent-python-soft: oklch(0.94 0.035 55);  /* warm blush surface */
+  --accent-ai: oklch(0.51 0.105 190);          /* teal-600 (Part II) — AA on white & soft */
+  --accent-ai-soft: oklch(0.95 0.03 190);
+
+  /* ---------- Semantic status ---------- */
+  --color-success: oklch(0.58 0.115 155);
+  --color-success-soft: oklch(0.95 0.045 155);
+  --color-warn: oklch(0.68 0.13 70);
+  --color-warn-soft: oklch(0.96 0.05 85);
+  --color-danger: oklch(0.55 0.185 25);
+  --color-danger-soft: oklch(0.96 0.03 25);
+  --color-stdout: oklch(0.45 0.09 155);
+  --color-stderr: oklch(0.52 0.17 25);
+
+  /* ---------- Warm neutral surfaces (light) ---------- */
+  --background: oklch(0.982 0.006 80);
+  --foreground: oklch(0.26 0.018 50);
+  --card: oklch(0.995 0.004 85);
+  --card-foreground: oklch(0.26 0.018 50);
+  --popover: oklch(0.995 0.004 85);
+  --popover-foreground: oklch(0.26 0.018 50);
+  --primary: var(--accent-python);
+  --primary-foreground: oklch(0.99 0.005 80);
+  --secondary: oklch(0.955 0.01 75);
+  --secondary-foreground: oklch(0.3 0.02 50);
+  --muted: oklch(0.955 0.01 75);
+  --muted-foreground: oklch(0.5 0.018 55);
+  --accent: oklch(0.94 0.025 60);
+  --accent-foreground: oklch(0.3 0.02 50);
+  --destructive: var(--color-danger);
+  --border: oklch(0.905 0.012 70);
+  --input: oklch(0.905 0.012 70);
+  --ring: oklch(0.58 0.128 40);
+  --sidebar: oklch(0.97 0.008 78);
+  --sidebar-foreground: oklch(0.26 0.018 50);
+  --chart-1: oklch(0.58 0.128 40);
+  --chart-2: oklch(0.6 0.105 190);
+  --chart-3: oklch(0.68 0.13 70);
+  --chart-4: oklch(0.58 0.115 155);
+  --chart-5: oklch(0.55 0.185 25);
+}
+
+/* ---------- Dark (warm charcoal, not blue) ---------- */
+[data-theme='dark'] {
+  --background: oklch(0.2 0.012 55);
+  --foreground: oklch(0.93 0.008 80);
+  --card: oklch(0.24 0.014 55);
+  --card-foreground: oklch(0.93 0.008 80);
+  --popover: oklch(0.24 0.014 55);
+  --popover-foreground: oklch(0.93 0.008 80);
+  --primary: oklch(0.7 0.115 45);
+  --primary-foreground: oklch(0.18 0.015 50);
+  --secondary: oklch(0.28 0.015 55);
+  --secondary-foreground: oklch(0.9 0.01 80);
+  --muted: oklch(0.28 0.015 55);
+  --muted-foreground: oklch(0.68 0.015 70);
+  --accent: oklch(0.3 0.02 55);
+  --accent-foreground: oklch(0.93 0.01 80);
+  --destructive: oklch(0.65 0.16 25);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.7 0.115 45);
+  --sidebar: oklch(0.24 0.014 55);
+  --sidebar-foreground: oklch(0.93 0.008 80);
+  --accent-python: oklch(0.7 0.115 45);
+  --accent-python-strong: oklch(0.76 0.11 50);
+  --accent-python-soft: oklch(0.3 0.03 45);
+  --accent-ai: oklch(0.7 0.095 190);
+  --accent-ai-soft: oklch(0.3 0.03 190);
+  --color-success: oklch(0.7 0.11 155);
+  --color-success-soft: oklch(0.3 0.04 155);
+  --color-warn: oklch(0.76 0.12 75);
+  --color-warn-soft: oklch(0.3 0.04 80);
+  --color-danger: oklch(0.66 0.16 25);
+  --color-danger-soft: oklch(0.3 0.04 25);
+  --color-stdout: oklch(0.72 0.1 155);
+  --color-stderr: oklch(0.68 0.15 25);
+  --shadow-card: 0 1px 2px oklch(0 0 0 / 0.3), 0 4px 16px oklch(0 0 0 / 0.25);
+  --shadow-pop: 0 8px 30px oklch(0 0 0 / 0.45);
+}
+
+/* ---------- Sepia (paper reading mode) ---------- */
+[data-theme='sepia'] {
+  --background: oklch(0.94 0.022 84);
+  --foreground: oklch(0.3 0.03 55);
+  --card: oklch(0.965 0.018 85);
+  --card-foreground: oklch(0.3 0.03 55);
+  --popover: oklch(0.965 0.018 85);
+  --popover-foreground: oklch(0.3 0.03 55);
+  --primary: oklch(0.54 0.115 42);
+  --primary-foreground: oklch(0.98 0.01 85);
+  --secondary: oklch(0.91 0.025 80);
+  --secondary-foreground: oklch(0.32 0.03 55);
+  --muted: oklch(0.91 0.025 80);
+  --muted-foreground: oklch(0.48 0.03 55);
+  --accent: oklch(0.9 0.035 75);
+  --accent-foreground: oklch(0.32 0.03 55);
+  --destructive: oklch(0.52 0.17 28);
+  --border: oklch(0.85 0.03 75);
+  --input: oklch(0.85 0.03 75);
+  --ring: oklch(0.54 0.115 42);
+  --sidebar: oklch(0.93 0.024 82);
+  --sidebar-foreground: oklch(0.3 0.03 55);
+}
+
+/* Keep legacy `.dark` selector in sync (radix portals & next-themes compat) */
+.dark {
+  --background: oklch(0.2 0.012 55);
+  --foreground: oklch(0.93 0.008 80);
+  --card: oklch(0.24 0.014 55);
+  --card-foreground: oklch(0.93 0.008 80);
+  --popover: oklch(0.24 0.014 55);
+  --popover-foreground: oklch(0.93 0.008 80);
+  --primary: oklch(0.7 0.115 45);
+  --primary-foreground: oklch(0.18 0.015 50);
+  --secondary: oklch(0.28 0.015 55);
+  --secondary-foreground: oklch(0.9 0.01 80);
+  --muted: oklch(0.28 0.015 55);
+  --muted-foreground: oklch(0.68 0.015 70);
+  --accent: oklch(0.3 0.02 55);
+  --accent-foreground: oklch(0.93 0.01 80);
+  --destructive: oklch(0.65 0.16 25);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.7 0.115 45);
+}
+
+/* ---------- Base element defaults ---------- */
+html {
+  font-family: var(--font-app);
+  /* font-size is overridden at runtime by the font-scale setting (100–200%) */
+}
+
+html[lang='ar'] body,
+[dir='rtl'] body {
+  font-family: var(--font-app-ar);
+}
+
+code, pre, kbd, .font-code {
+  font-family: var(--font-code);
+  font-variant-ligatures: none; /* ligatures off in code */
+}
+
+/* CodeMirror islands: always LTR, mono, ligatures off, calm chrome */
+.cm-editor,
+.cm-content,
+.cm-gutters {
+  font-family: var(--font-code) !important;
+  font-variant-ligatures: none !important;
+}
+.cm-editor {
+  font-size: 0.875rem;
+}
+.cm-editor.cm-focused {
+  outline: none !important;
+}
+
+/* Always-LTR islands (editors, consoles) */
+.code-island {
+  font-family: var(--font-code);
+  font-variant-ligatures: none;
+  direction: ltr;
+}
+
+/* ---------- Reduced motion: media query + in-app toggle ---------- */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+[data-reduce-motion='true'] *,
+[data-reduce-motion='true'] *::before,
+[data-reduce-motion='true'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}
+
+/* ---------- Focus visibility (keyboard a11y) ---------- */
+:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* ---------- Custom scrollbar (calm) ---------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--muted-foreground) 35%, transparent);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ---------- Completion ring ceremony (soft fill, no confetti) ---------- */
+@keyframes ring-fill {
+  from { stroke-dashoffset: var(--ring-dash-start, 999); }
+  to { stroke-dashoffset: var(--ring-dash-end, 0); }
+}
+.ring-fill-anim {
+  animation: ring-fill var(--motion-slow) var(--ease-soft) both;
+}
+
+@keyframes gentle-rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.gentle-rise {
+  animation: gentle-rise var(--motion-base) var(--ease-soft) both;
+}
+
+/* ---------- Utility surfaces ---------- */
+.py-card {
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: var(--shadow-card);
+}

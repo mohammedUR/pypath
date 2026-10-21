@@ -1,0 +1,281 @@
+[
+ {
+  "lesson": "py4e.ch5.l1",
+  "id": "ex1.update-increment",
+  "solution": "x = 0\nx = x + 1\nx = x + 1\nx = x + 1\nprint(x)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "x يساوي 3 بعد التحديثات",
+     "en": "x equals 3 after the updates"
+    },
+    "code": "assert x == 3, 'expected: 3 | actual: %r' % x",
+    "expected": "3"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع 3",
+     "en": "3 is printed"
+    },
+    "code": "assert '3' in __learner_output__, ('expected: 3 | actual: %r' % __learner_output__)",
+    "expected": "3"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch5.l1",
+  "id": "ex4.write-countdown",
+  "solution": "n = 3\nwhile n > 0:\n    print(n)\n    n = n - 1\nprint('Blastoff!')",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "تُطبع الأعداد 3 2 1 كلٌّ في سطر",
+     "en": "The numbers 3 2 1 print on separate lines"
+    },
+    "code": "assert '3\\n2\\n1' in __learner_output__, ('expected: 3/2/1 lines | actual: %r' % __learner_output__)",
+    "expected": "3\n2\n1"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "تُطبع عبارة Blastoff!",
+     "en": "The phrase Blastoff! is printed"
+    },
+    "code": "assert 'Blastoff!' in __learner_output__, ('expected: Blastoff! | actual: %r' % __learner_output__)",
+    "expected": "Blastoff!"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الحلقة أنقصت n حتى الصفر",
+     "en": "The loop decremented n to zero"
+    },
+    "code": "assert n == 0, 'expected: 0 | actual: %r' % n",
+    "expected": "0"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch5.l2",
+  "id": "ex1.write-break",
+  "solution": "n = 10\nwhile n > 0:\n    print(n)\n    if n == 6:\n        break\n    n = n - 1",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "تُطبع الأعداد من 10 إلى 6 في أسطر",
+     "en": "The numbers 10 down to 6 print on lines"
+    },
+    "code": "assert '10\\n9\\n8\\n7\\n6' in __learner_output__, ('expected: 10..6 lines | actual: %r' % __learner_output__)",
+    "expected": "10\n9\n8\n7\n6"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "العدد 5 غائب — break أوقف الحلقة مبكرًا",
+     "en": "The number 5 is absent — break stopped the loop early"
+    },
+    "code": "assert '5' not in __learner_output__, ('expected: no 5 | actual: %r' % __learner_output__)",
+    "expected": "10\n9\n8\n7\n6"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "n متوقفة عند 6 بعد الخروج",
+     "en": "n is 6 after the exit"
+    },
+    "code": "assert n == 6, 'expected: 6 | actual: %r' % n",
+    "expected": "6"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch5.l3",
+  "id": "ex1.write-friends",
+  "solution": "friends = ['Joseph', 'Glenn', 'Sally']\nfor friend in friends:\n    print('Happy New Year:', friend)\nprint('Done!')",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "تُطبع التهنئة لثلاثة أصدقاء",
+     "en": "The greeting prints for all three friends"
+    },
+    "code": "assert 'Happy New Year: Joseph\\nHappy New Year: Glenn\\nHappy New Year: Sally' in __learner_output__, ('expected: 3 greetings | actual: %r' % __learner_output__)",
+    "expected": "Happy New Year: Joseph / Glenn / Sally"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع Done! بعد الحلقة",
+     "en": "Done! prints after the loop"
+    },
+    "code": "assert 'Done!' in __learner_output__, ('expected: Done! | actual: %r' % __learner_output__)",
+    "expected": "Done!"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch5.l4",
+  "id": "ex1.write-count-sum",
+  "solution": "numbers = [4, 8, 15, 16, 23, 42]\ncount = 0\ntotal = 0\nfor n in numbers:\n    count = count + 1\n    total = total + n\nprint(count)\nprint(total)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "count يساوي 6",
+     "en": "count equals 6"
+    },
+    "code": "assert count == 6, 'expected: 6 | actual: %r' % count",
+    "expected": "6"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "total يساوي 108",
+     "en": "total equals 108"
+    },
+    "code": "assert total == 108, 'expected: 108 | actual: %r' % total",
+    "expected": "108"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "يُطبع 6 ثم 108",
+     "en": "6 then 108 are printed"
+    },
+    "code": "assert '108' in __learner_output__, ('expected: 108 in output | actual: %r' % __learner_output__)",
+    "expected": "6\n108"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch5.l5",
+  "id": "ex1.write-filter-count",
+  "solution": "scores = [82, 95, 67, 91, 88]\ncount = 0\nfor s in scores:\n    if s >= 90:\n        count = count + 1\nprint(count)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "count يساوي 2",
+     "en": "count equals 2"
+    },
+    "code": "assert count == 2, 'expected: 2 | actual: %r' % count",
+    "expected": "2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع 2",
+     "en": "2 is printed"
+    },
+    "code": "assert '2' in __learner_output__, ('expected: 2 in output | actual: %r' % __learner_output__)",
+    "expected": "2"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch5.l5",
+  "id": "ex2.write-max-idiom",
+  "solution": "numbers = [12, 7, 25, 3]\nlargest = None\nfor itervar in numbers:\n    if largest is None or itervar > largest:\n        largest = itervar\nprint(largest)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "largest يساوي 25",
+     "en": "largest equals 25"
+    },
+    "code": "assert largest == 25, 'expected: 25 | actual: %r' % largest",
+    "expected": "25"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع 25",
+     "en": "25 is printed"
+    },
+    "code": "assert '25' in __learner_output__, ('expected: 25 in output | actual: %r' % __learner_output__)",
+    "expected": "25"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch5.l6",
+  "id": "ex2.grade-report",
+  "solution": "scores = [82, 95, 67, 74, 91]\ncount = 0\ntotal = 0\nlargest = None\nsmallest = None\nfor s in scores:\n    count = count + 1\n    total = total + s\n    if largest is None or s > largest:\n        largest = s\n    if smallest is None or s < smallest:\n        smallest = s\nprint('العدد:', count)\nprint('المجموع:', total)\naverage = round(total / count, 1)\nprint('المعدل:', average)\nprint('الأعلى:', largest)\nprint('الأدنى:', smallest)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "count يساوي 5",
+     "en": "count equals 5"
+    },
+    "code": "assert count == 5, 'expected: 5 | actual: %r' % count",
+    "expected": "5"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "total يساوي 409",
+     "en": "total equals 409"
+    },
+    "code": "assert total == 409, 'expected: 409 | actual: %r' % total",
+    "expected": "409"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "largest يساوي 95 وsmallest يساوي 67",
+     "en": "largest equals 95 and smallest equals 67"
+    },
+    "code": "assert largest == 95 and smallest == 67, 'expected: 95/67 | actual: %r/%r' % (largest, smallest)",
+    "expected": "95 / 67"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "يُطبع المجموع 409 والمعدل 81.8",
+     "en": "The sum 409 and average 81.8 are printed"
+    },
+    "code": "assert '409' in __learner_output__ and '81.8' in __learner_output__, ('expected: 409, 81.8 | actual: %r' % __learner_output__)",
+    "expected": "409 / 81.8"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "التقرير موقّع بخمسة أسطر بالترتيب",
+     "en": "The report carries five labeled lines in order"
+    },
+    "code": "lines = [l.strip() for l in __learner_output__.splitlines() if l.strip()]\nlabels = ['العدد', 'المجموع', 'المعدل', 'الأعلى', 'الأدنى']\nfound = [l for l in lines if any(l.startswith(x) for x in labels)]\nassert len(found) == 5 and all(found[i].startswith(labels[i]) for i in range(5)), ('expected: 5 labeled lines | actual: %r' % __learner_output__)",
+    "expected": "العدد/المجموع/المعدل/الأعلى/الأدنى"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch5.l6",
+  "id": "ex5.debug-reinit",
+  "solution": "scores = [82, 95, 67, 74, 91]\ntotal = 0\nfor s in scores:\n    total = total + s\nprint('المجموع:', total)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "total يساوي 409 بعد الإصلاح",
+     "en": "total equals 409 after the fix"
+    },
+    "code": "assert total == 409, 'expected: 409 | actual: %r' % total",
+    "expected": "409"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع المجموع: 409",
+     "en": "The sum 409 is printed"
+    },
+    "code": "assert '409' in __learner_output__, ('expected: 409 in output | actual: %r' % __learner_output__)",
+    "expected": "المجموع: 409"
+   }
+  ]
+ }
+]

@@ -1,0 +1,1127 @@
+
+===== صفحة الكتاب 375 =====
+Chapter 14 — Delivery: CI/CD, DevOps, and Operations
+Where we are. Chapter 13 asked how AI changes the practice of software engineering; this chapter asks a
+question the earlier chapters quietly deferred. Chapters 1–12 taught you how to build software — process,
+requirements, design, patterns — and how to verify it with reviews, tests, security scanning, and metrics. But
+a verified commit sitting in a repository helps no one. This chapter covers the stretch of engineering between
+“the code is written” and “users are running it”; Chapter 15 covers the longer stretch after that — what
+happens to code once it has been in production for years. Delivery is where every earlier discipline either
+becomes real or stays theoretical.
+Delivery used to be an afterthought — a thing operations people did after engineering was “done.” Two shifts
+ended that. First, software moved to the cloud, where releasing stopped being a rare, ceremonial event and became
+something a team might do dozens of times a day. Second, a body of research (§14.7) showed that how a team
+delivers predicts its performance better than almost anything else it does. The umbrella term for the resulting
+culture is DevOps: the idea that developing software and operating it are one discipline, practiced by one team,
+with shared tools and shared accountability. This chapter walks the pipeline from commit to production, studies
+two of the most instructive deployment disasters on the public record, shows concretely how a service is packaged
+and put online — containers, a database, a domain, a certificate, and the edge — and closes with the research on
+why delivery performance predicts so much else. The fate that awaits all successful code — becoming legacy —
+is Chapter 15.
+Principle. Undeployed code is inventory, not value. Every practice in this chapter exists to shrink the time
+and the risk between writing a change and learning what it does in the hands of real users — the same short-
+feedback bet Chapter 2 made about process, now applied to the machinery of release itself.
+14.1 SaaS and the Cloud
+14.1.1 From Shipped Artifact to Running Service
+For most of software history, delivering software meant producing an artifact — a binary on tape, a shrink-
+wrapped CD, an installer download — that customers took away and ran on their machines. The vendor’s job
+ended at the factory gate. Under that model, releases are naturally rare and heavy: every artifact that leaves the
+building is effectively unpatchable for months, so it must be as close to perfect as testing can make it, and
+mistakes are answered with recalls, patch disks, and support calls.
+
+===== صفحة الكتاب 376 =====
+Software as a service (SaaS) inverts the arrangement: the software runs on machines the vendor controls, and
+users reach it over the network, usually through a browser or a thin client. In its pure form, nothing ships. That
+single change rearranges almost everything downstream. The provider controls what runs in production —
+canaries, staged rollouts, and feature flags may briefly mix versions, but there is no museum of old customer
+installs to support. The vendor can observe actual usage through logs, errors, and performance data, reducing its
+dependence on support reports. And because the vendor owns the machines, an update is an internal operation
+rather than a request to thousands of customers: it can happen at any time, invisibly, many times a day.
+Customers also benefit from the move toward SaaS: their data lives on the service, so a stolen laptop or a dead
+phone loses a device, not the work; several people can collaborate on the same data at once instead of emailing
+copies back and forth; and datasets that are large or constantly changing can live in one central, managed place
+rather than being squeezed onto whatever machine each user happens to own. For a whole class of applications —
+shared documents, shared calendars, anything with one truth that many people touch — the service model is both
+cheaper to operate and a better product.
+On the user’s side of the wire, the near-universal thin client is the browser: a program every device already has,
+speaking a front-end stack of HTML for the document’s structure, CSS for its presentation, and JavaScript for
+behavior that runs on the client — while the server side can be written in whatever language the team prefers,
+because the browser never sees it. Native mobile apps are the sibling front end, trading the browser’s universality
+for tighter platform integration; either way, the architecture is the same service behind a thin client.
+14.1.2 Multi-Tenancy and Horizontal Scaling
+Running the software yourself raises a design question: does each customer get their own copy? In a multi-tenant
+design, one running instance of the system serves many customers — tenants — whose data is kept logically
+separate inside shared infrastructure. Multi-tenancy is what makes SaaS economical: one fleet, one deployment,
+one upgrade for everyone, with the cost of operations amortized across all tenants. The price is that isolation
+becomes a software problem. A bug that leaks one tenant’s data to another, or one tenant’s heavy load that starves
+the rest (the “noisy neighbor”), are failure modes a shipped artifact simply could not have.
+Serving many tenants also means serving unpredictable load, and the cloud’s answer is horizontal scaling:
+instead of buying a bigger machine (vertical scaling), you run more copies of the same service behind a load
+balancer and add or remove copies as demand moves. Horizontal scaling only works cleanly if any copy can serve
+any request — which is exactly why the statelessness convention of RESTful design matters (§7.5.4). A service
+that keeps per-client session state on one server has silently welded each user to that server; a stateless one lets the
+platform treat servers as interchangeable, replaceable cattle. Architecture decisions from Chapter 7 are, it turns
+out, delivery decisions too.
+
+===== صفحة الكتاب 377 =====
+14.1.3 What the Cloud Does to the Iron Triangle
+Recall the iron triangle of Chapter 1 (§1.5): scope, schedule, and cost constrain each other, and the classic pressure
+point was the release date — a single, high-stakes deadline toward which scope was cut and quality was crunched.
+SaaS dissolves that pressure point. When deploying is cheap and continuous, release stops being an event and
+becomes a decision — a small, revocable, per-feature decision made many times a week. You no longer ask
+“what can we finish by the ship date?” but “is this one change ready to meet users now?” Schedule pressure does
+not vanish; it decomposes into many tiny pressures, each too small to justify heroics.
+That is the economic root of the deploy-early culture. Teams that deploy each small change as it is finished get
+feedback while the change is still fresh in their heads, keep the gap between “works on my machine” and “works
+in production” permanently small, and never build up a terrifying pile of unreleased work whose first contact with
+reality is a big bang — the same pathology, at the release level, that §2.4.1 diagnosed at the integration level. The
+practices in the remainder of this chapter reduce the risk of early deployment.
+14.1.4 The Cloud Landscape: Providers, Components, and Responsibility
+The vendor-controlled machines of §14.1.1 have to live somewhere, and today they mostly live in a public cloud:
+vast provider-owned datacenters whose capacity is rented out over the network, by the hour or by the request. As
+of 2025, the market is led by Amazon Web Services (AWS), Google Cloud, and Microsoft Azure, with a long tail
+of smaller providers — DigitalOcean, Linode, Hetzner — that trade breadth of catalog for simplicity and price.1
+Hold the names loosely: provider names and product lists date quickly, but the concepts beneath them do not.
+Every cloud, whatever its branding, sells the same four component families. Compute is processing capacity —
+virtual machines, containers, or functions that run your code. Storage is durable data — disks, object stores,
+managed databases. Network is the plumbing — private networks, load balancers, DNS — that lets those pieces
+reach each other and the world. And security and identity is the control plane over the other three: who, and
+which programs, may do what to which resources.
+The cloud’s economic promise is threefold. You pay only for what you use, turning a large up-front hardware
+purchase into a metered utility bill. You can place your system in regions around the world, near your users,
+without signing a lease on another continent. And the hardware is someone else’s problem — provisioning, failed
+disks, power, cooling, and physical security are all handled below the waterline of the service you rent.
+What the provider explicitly does not handle is captured by the shared responsibility model: the provider secures
+the cloud — the facilities, the hardware, the hypervisor — while you secure what is in it — your operating-system
+configuration, your code, your data, and who can access all three.2 This is a legal line as much as a practical one,
+and teams forget it at their peril: a world-readable storage bucket full of customer records is your breach, however
+secure the datacenter around it was.
+None of this makes the cloud automatic. The alternatives — on-premises servers you own, or rented space and
+machines in a shared datacenter (co-location) — never went away, and the honest question is when each wins.
+
+===== صفحة الكتاب 378 =====
+Cloud makes clear sense when you do not yet know what hardware you need, when demand is spiky or
+unpredictable (provision for the spike and pay for it forever, or scale for the hour it lasts), when speed to a first
+MVP matters more than unit cost, and when a small team has no one to spare for operations.
+Case study. Cloud repatriation. The trade cuts the other way, too. In 2022–23, 37signals — the company
+behind Basecamp — publicly moved its products off the cloud and onto purchased hardware, documenting
+seven-figure annual savings for workloads that were steady and predictable rather than spiky.3 4 And
+Amazon’s own Prime Video team published an account of cutting the cost of one audio/video monitoring
+service by roughly 90 percent — by moving it away from a serverless, distributed-microservices design and
+back into a monolith-style process.5 None of this means the cloud is over. The cloud is a cost-and-flexibility
+trade, not an axiom. Elastic, uncertain load is where renting wins; steady, predictable load is where owning
+wins. Run the numbers, not the fashion.
+14.1.5 Containers, Clusters, and Kubernetes
+The unit of cloud deployment that has won in practice is the container: a package containing an application plus
+everything it needs to run — language runtime, libraries, configuration — isolated from other software on the
+same machine while sharing the host operating system’s kernel. Sharing the kernel is what distinguishes a
+container from a virtual machine, which carries an entire guest operating system of its own: a container starts in
+seconds rather than minutes, and a single host can run dozens of them.6 The container image is the immutable,
+versioned artifact that a CI pipeline (§14.2.2) builds exactly once and then deploys everywhere — the same byte-
+for-byte thing on a laptop, in the test environment, and in production, which retires “works on my machine” as a
+category of excuse.
+One host is rarely enough, so containers are run on a cluster: a set of network-connected machines managed as a
+single pool of compute, storage, and memory. And the de-facto standard software for managing that pool is
+Kubernetes (84% of organizations in CNCF’s 2023 survey were using or evaluating it), often described as the
+operating system for the cloud: just as an OS schedules processes onto CPU cores, Kubernetes schedules
+containers onto the machines of a cluster.7 Around that core job it handles ingress (routing incoming traffic to the
+right containers), scaling the number of running copies up and down with demand, restarting containers that crash
+or fail health checks, and attaching storage to containers that need it — the operational chores of §14.1.2’s
+horizontal scaling, automated.
+One caveat: Kubernetes earns its considerable complexity at fleet scale. For a small team — certainly for a class
+project — a single container on one host, or a platform-as-a-service that runs your container for you, delivers most
+of the benefit at a small fraction of the operational cost. Learn what Kubernetes is for; reach for it when you have
+the problem it solves.
+
+===== صفحة الكتاب 379 =====
+14.1.6 Distributed Trade-Offs: The CAP Theorem
+Horizontal scaling (§14.1.2) eventually reaches the data layer, and the moment state is replicated — living on
+more than one machine — a hard theoretical limit applies. Eric Brewer’s CAP theorem concerns three properties
+of a distributed data system: consistency (every read sees the most recent write), availability (every request
+receives a response), and partition tolerance (the system keeps operating when the network splits and some
+machines cannot reach others).8 Its real content is narrower than the popular “pick two of three”: in the presence
+of a partition, a replicated system cannot guarantee both strong consistency and availability, so for that data it
+must choose which of the two to weaken until the network heals.9
+Since partitions are a fact of real networks — switches fail, cables get cut, datacenters lose connectivity —
+partition tolerance is not really optional, and the practical content of the theorem is a forced choice during a
+partition: consistency or availability. A replica that cannot reach the others can either refuse to answer (staying
+consistent but unavailable) or answer from possibly stale data (staying available but inconsistent). Which to
+sacrifice is a requirements question, not a technical one. A bank chooses consistency: better to refuse service for a
+minute than to show two customers different balances for the same account. A social feed chooses availability: a
+like count that is a few seconds stale harms no one, but an unreachable feed is a product failure.
+System
+Under partition, it keeps…
+What users see
+Bank ledger
+Consistency
+Brief “service unavailable” — never a wrong balance
+Social feed
+Availability
+The feed always loads; counts may lag and converge later
+The theorem is why architecture and delivery keep meeting in this chapter: the shared-data pattern (§7.2.1) put
+one authoritative store at the center of a system, and scaling that store horizontally (§14.1.2) replicates it — at
+which point CAP stops being theory and becomes a decision your team must make on purpose, per feature, with
+the requirements in hand.
+14.2 Continuous Integration Pipelines
+Chapter 2 introduced continuous integration (CI) as an XP engineering practice: everyone merges into a shared
+mainline many times a day, and an automated build-and-test run verifies each merge (§2.3.4). That definition told
+you what CI is and why it exists — to surface integration mismatches one small change at a time instead of all at
+once. This section goes deeper: what the automation actually consists of, what branching discipline it demands,
+and what social contract makes it work.
+14.2.1 Trunk-Based Development
+CI is first a branching policy, and only second a server. In trunk-based development, the whole team commits to
+a single shared mainline (the trunk), directly or through short-lived branches that live hours to a couple of days
+
+===== صفحة الكتاب 380 =====
+before merging. The alternative — long-lived feature branches, where each developer or feature camps on its
+own branch for weeks — feels safer because nobody’s half-done work disturbs anyone else. But the safety is an
+illusion with interest due at merge time: the longer two branches evolve apart, the more their eventual merge
+resembles the big-bang integration of §2.4.1, with conflicting assumptions surfacing all at once, weeks after they
+were made.
+Integration becomes more difficult as branches diverge, and divergence increases with time. Trunk-based
+development keeps divergence permanently small by construction. Merging several times a day means each merge
+carries at most a few hours of divergence — small enough that conflicts are rare, and trivial when they occur. The
+obvious objection — “how do I commit work that isn’t finished?” — has a standard answer you will meet in
+§14.3.3: hide unfinished work behind a feature flag so it can be integrated without being released. Integration
+and release become independent decisions, which is one of the most useful separations in this whole chapter.
+14.2.2 The Stages of a Pipeline
+A CI pipeline is the automated gauntlet every commit runs before it is declared good. The pipeline is where
+earlier chapters’ verification techniques stop being activities a diligent person might perform and become gates no
+change can skip. A typical pipeline runs stages in increasing order of cost, failing fast on the cheap ones:
+
+===== صفحة الكتاب 381 =====
+Take the stages in order. The build proves the change even compiles and its dependencies resolve — the cheapest
+possible check, so it runs first. Static checks run the automated analysis of Chapter 9 (§9.4) — linters, type
+checkers, style and bug-pattern analyzers — catching whole classes of defects without executing a line. Then the
+tests by level from Chapter 10 run in pyramid order: unit tests first because they are fast and localize failures
+precisely, then integration, then a thin layer of end-to-end tests. If everything passes, the pipeline produces a
+versioned artifact — a container image, a package, a binary — that is stored and never rebuilt. This last rule
+matters more than it looks: the artifact you tested is byte-for-byte the artifact you will deploy. Rebuilding “the
+same code” later invites the possibility that a changed compiler, dependency, or build machine produces
+something subtly different from what passed the tests. Mature pipelines add one more gate on the far side of
+deployment itself: a smoke-test stage — a fast is-it-alive check (does the service start, answer a trivial request,
+
+===== صفحة الكتاب 382 =====
+reach its database?) run against the newly deployed version, gating the rollout before real traffic widens onto it
+(the testing levels these stages draw on are Chapter 10’s).
+14.2.3 Broken-Build Discipline
+A pipeline is only as good as the team’s response when it turns red. The working culture of CI rests on a small
+social contract. First, a red mainline is everyone’s emergency: when the trunk build breaks, fixing it (or
+reverting the breaking commit) takes priority over new work, because every hour the build stays red, every other
+developer is either blocked or building on sand. Second, never commit onto a broken build — you would be
+stacking unverified change on unverified change, exactly the divergence CI exists to prevent. Third, do not leave
+a broken build overnight; revert if you cannot fix quickly. Reverting is not an insult. It is the cheap, always-
+available path back to a known-good state, and teams that treat it as routine stay green far more than teams that
+treat it as defeat.
+A broken build interrupts the entire team’s work and should be treated as an urgent operational problem. While it
+is green, every developer has a continuous, machine-checked guarantee that the shared codebase works and can
+build on top of it; while it is red, nobody knows whether the system works, and restoring it comes before other
+work.
+Pitfall. The flaky test. A test that fails intermittently without a code change is more corrosive than a test that
+always fails, because it teaches the team to ignore red. Once “just re-run it, that one’s flaky” enters the
+vocabulary, the build has become a slot machine, and real failures start slipping through on the same shrug.
+Quarantine flaky tests immediately, fix or delete them promptly, and treat their existence as a defect in the
+suite. §10.2.4 catalogs the usual causes — races, shared state, order dependence, unstable externals — and
+their fixes.
+14.2.4 Keeping Pipelines Fast
+Pipeline speed is a hard constraint, not a convenience. Developers are supposed to merge several times a day and
+to wait for green before moving on. If the pipeline takes an hour, they will not wait — they will batch up bigger
+changes to amortize the wait, which re-creates the large, risky merges CI exists to eliminate. A useful target is
+roughly ten minutes from push to verdict for the merge-blocking stages.10
+Achieving that is the testing pyramid of §10.2.4 applied as an engineering budget: push checks down the pyramid,
+where they are fast, and keep the slow end-to-end layer thin. Beyond that, run independent stages in parallel,
+cache dependencies and build outputs so unchanged parts are not rebuilt, and split the pipeline into a fast merge-
+blocking core plus deeper suites (full end-to-end runs, performance tests, long fuzzing) that run continuously
+against the trunk without holding up merges.
+
+===== صفحة الكتاب 383 =====
+Order matters inside the merge-blocking core, too. The pipeline’s verdict arrives when the first test fails, not when
+the last one passes — so run the tests most likely to fail first: the ones nearest the changed code, and the ones that
+have failed most recently. At the largest scale, teams select per change the subset of tests worth running at all — a
+budgeted-selection problem (the knapsack problem in disguise) that §10.1.6 examines, and that industrial CI
+systems implement as predictive test selection. Treat a slow pipeline as a process defect that changes how your
+team behaves, not as a tooling annoyance to live with.
+14.3 Continuous Deployment
+14.3.1 Delivery versus Deployment
+Two similar terms name genuinely different commitments. Continuous delivery means every change that passes
+the pipeline yields an artifact that is proven deployable — the release decision is a business choice, but it is always
+available, at the push of a button, with no additional engineering work. Continuous deployment goes one step
+further: every change that passes the pipeline is deployed to production automatically, with no human in the loop.
+Delivery makes release possible at any moment; deployment makes it actual at every moment.
+Continuous deployment sounds reckless until you notice what it forbids. If every green commit goes to
+production, then there is no such thing as a “safe to merge but not ready to ship” change without a flag, no manual
+pre-release checklist to lean on, and no batching of changes into a big release whose failures cannot be attributed.
+Every safety property must be automated, because automation is all there is. Teams that adopt it report a
+paradoxical result that §14.7 will make precise: deploying more often makes each deployment less risky, because
+each one is smaller, better attributed, and easier to undo.
+14.3.2 Deployment Strategies
+However often you deploy, how you swap new code into a live system determines the blast radius when
+something is wrong. Two infrastructure-level strategies dominate practice; a third approach moves the switch into
+code, and it gets its own section (§14.3.3).
+Blue-green deployment runs two identical production environments. At any moment one (say, blue) serves all
+traffic while the other (green) sits idle. To release, you deploy the new version to the idle environment, verify it
+there against production conditions, then switch the router so all traffic flows to it. The old environment stays
+warm, so if the new version misbehaves, recovery is one router change back. You pay for this in doubled
+infrastructure and in the care demanded by anything stateful: a database schema shared by both environments
+must remain compatible with both versions during the switch.
+Canary deployment releases the new version to a small slice of traffic first — one server, one percent of users,
+one region — and watches error rates, latency, and business metrics before widening. The name comes from the
+caged canary that warned miners of gas: the small exposed population absorbs the harm and sounds the alarm
+
+===== صفحة الكتاب 384 =====
+while the damage is still bounded. Large operators generalize canaries into staged rings: the change rolls to ring
+after ring — internal users, then a small public slice, then broader populations — with automated health checks
+gating each promotion and halting the rollout on regression. The essential idea is progressive exposure: no change
+reaches everyone until it has demonstrably survived contact with someone.
+14.3.3 Feature Flags: Decoupling Deploy from Release
+Blue-green and canary deployments control exposure with infrastructure — routers, server pools, traffic slices. A
+feature flag (or feature toggle) moves the same control into code: a runtime conditional that turns a code path on
+or off without redeploying.11 Deploying and releasing become fully independent acts. A feature’s code can sit in
+production for weeks, dark and disabled, while the team keeps merging; when the moment comes, “releasing” it is
+a configuration change that takes effect in seconds, and un-releasing it is the same change in reverse. This is the
+endpoint of §14.1.3’s argument: release is no longer even a deployment decision — it is a bit you flip.
+Flags are also the standard answer to §14.2.1’s objection (“how do I commit work that isn’t finished?”):
+unfinished work merges to trunk dark and disabled, so integration stays continuous while release waits. In practice
+flags come in a few kinds with very different lifespans, and confusing them is where trouble starts:
+Release flags hide work in progress until it is ready. They should live days to weeks — a release flag whose
+feature has fully rolled out is a deletion you owe.
+Operational flags — including the kill switch — guard risky paths so an operator can disable a
+misbehaving feature instantly, without a deploy. These are deliberately long-lived, few in number, and
+tested like the safety equipment they are.
+Experiment flags split traffic between variants so you can measure a change (the A/B tests your metrics
+chapter made honest — §12.5). They live exactly as long as the experiment.
+Targeting is what makes flags more than an on/off switch: a flag can be on for one user, one tenant, or three
+percent of traffic — a percentage rollout, which is canary deployment’s progressive-exposure idea (§14.3.2)
+implemented in code, with no second environment to pay for.
+In the clinic scheduler, both are one conditional — only the predicate changes:
+
+===== صفحة الكتاب 385 =====
+How does a flip actually reach production? In real systems the flag’s state lives outside the code, in a flag-
+management service — LaunchDarkly and Unleash are common platforms, and open-source flag libraries exist
+for every major language — while the application’s SDK keeps a local, in-memory copy of every flag rule.
+Evaluation happens locally in microseconds, so the hot path never waits on a network call; changes stream to the
+SDKs within seconds of someone flipping the toggle.12 And the failure mode is designed in advance: if the flag
+service becomes unreachable, SDKs keep serving the last configuration they saw — the flag system must never be
+the outage.13
+The practice is older than the tooling. Flickr described running trunk-only development with flags and multiple
+deploys a day back in 2009, in the post that popularized the term feature flipper.14 Facebook’s quasi-continuous
+release keeps many changes “behind our Gatekeeper system,” rolling out code and features independently — “if
+we do find a problem, we can simply switch the gatekeeper off rather than revert back to a previous version or fix
+forward.”15 That sentence is the next section’s economics in miniature: the cheapest rollback is the one that is a
+config flip. And flag management has graduated from house hack to shared infrastructure — OpenFeature, a
+vendor-neutral flag API, is now a CNCF incubating project.16
+None of this is free. Every long-lived flag doubles the configuration space your tests must consider — Chapter
+10’s combinatorial lesson (§10.6) applies directly, so test both states of any flag that will live past a sprint, and at
+least pairwise across flags that interact. And flags demand hygiene because they are so easy to add: every flag
+needs an owner, an intended lifespan, and a removal date, and a retired flag’s code — both the dead branch and
+the conditional — must be deleted promptly. Stale flags are technical debt (§15.5) of an unusually dangerous kind:
+dormant behavior sitting in production, waiting for someone to trip it. The first case study below turned that
+danger from hypothetical to historical.
+from zlib import crc32
+def scheduler_page(user_id, flags):
+if flags["new_scheduler"]:                        # release flag: one bit, everyone
+return render_new(user_id)
+return render_old(user_id)
+def scheduler_page_rollout(user_id, flags):           # same conditional, new predicate
+if crc32(user_id.encode()) % 100 < flags["new_scheduler_pct"]:  # stable bucket 0..99
+return render_new(user_id)
+return render_old(user_id)
+
+===== صفحة الكتاب 386 =====
+Pitfall. Never repurpose an existing flag to control new behavior. The old name still points at whatever code
+the flag used to trigger, and that code is often dormant rather than deleted — Knight Capital’s repurposed
+Power Peg flag (§14.3.5) is the canonical demonstration of what happens when it runs again. Retire the old
+flag, delete its dead code, and mint a new one; flag names are cheap, and the alternative was not.
+14.3.4 Rollback versus Roll-Forward
+When a deployment goes wrong, you have two exits. Rollback returns production to the previous version; roll-
+forward ships a new fix on top of the broken state. Rollback is usually faster and requires no new (unverified)
+code, so mature teams treat it as the default reflex. But a rollback path is a mechanism, and Chapter 10’s lesson
+applies to mechanisms too: an untested rollback is a rumor, not a capability. Version skew can make the old code
+unable to read data the new code wrote; a config change may have accompanied the code; the “previous artifact”
+may no longer exist. Teams that take this seriously rehearse rollback routinely — some by making it the normal
+end of every canary that fails a health check, so the path is exercised weekly rather than discovered during a crisis.
+And some changes cannot be rolled back at all (an irreversible data migration, a security fix you must not un-
+ship), which is why roll-forward speed — how fast your pipeline can carry a one-line fix to production — is itself
+a safety property.
+14.3.5 When Deployment Goes Wrong: Two Case Studies
+The two case studies below are, respectively, the strongest argument on record for deployment automation and the
+strongest argument that automation alone is not safety. They are worth studying closely, and honestly, from the
+primary sources.
+
+===== صفحة الكتاب 387 =====
+Case study. Knight Capital, August 1, 2012. Knight Capital was one of the largest equity market makers in
+the United States. When the New York Stock Exchange launched its Retail Liquidity Program, Knight
+updated SMARS — its automated order router — to participate. What follows is drawn from the findings in
+the SEC’s later enforcement order (Release No. 34-70694, October 2013).17
+The new code reused a feature flag that had previously activated “Power Peg,” defunct order-routing
+functionality unused since 2003, whose dead code had been left in SMARS. Worse, the safety counter that
+once told Power Peg to stop when orders were filled had been inadvertently disabled in 2005, when the
+counter was moved elsewhere in the code and Power Peg was never retested. In the week before launch, a
+technician manually copied the new code onto SMARS’s eight production servers — and missed one. No
+second person reviewed the deployment; there was no automated, repeatable deployment process to make
+the eight servers provably identical.
+On the morning of August 1, orders routed to the un-updated eighth server hit the repurposed flag and woke
+the old Power Peg code, which began generating child orders continuously, never tracking fills, never
+stopping. Ninety-seven automated email messages referencing the Power Peg error had gone out before the
+market opened; no one acted on them — they were not designed as alerts, and they went to a group of
+personnel rather than to an owner with a duty to respond. In the roughly forty-five minutes that followed,
+Knight executed about four million trades across 154 stocks — on the order of 397 million shares — and,
+during diagnosis, engineers made the situation worse: suspecting the new code, they rolled it back on the
+seven correct servers, which put the repurposed flag’s old behavior in force on all eight. There was no
+procedure for halting the system’s aberrant activity and no documented incident-response plan. The loss
+exceeded $460 million. Knight survived only through an emergency investment18 and was merged away
+within a year; the SEC fined it $12 million for violating market-access risk-control and related rules.
+A note on honesty: the SEC order is an enforcement action about risk controls, and the deployment details
+above are findings within it — the record shows a chain of process failures, not the folklore version in which
+“one line of config” destroyed a company. The lessons are about the chain. Deployment must be automated,
+repeatable, and verified — an all-servers-identical check would have caught the eighth server in seconds.
+Never repurpose an old flag; delete dead code rather than leaving it armed. Alerts without owners are noise.
+Rollback is only a safety mechanism if it has been tested as one — here it was the step that completed the
+disaster. And a kill switch is required, not optional.
+
+===== صفحة الكتاب 388 =====
+Case study. CrowdStrike, July 19, 2024. CrowdStrike’s Falcon sensor is endpoint security software that runs
+inside the Windows kernel — the most privileged, least forgiving place code can live. To respond to new
+threats quickly, CrowdStrike ships “Rapid Response Content”: threat-detection configuration delivered to all
+customers through a fully automated global push. The account below follows CrowdStrike’s own external
+root-cause analysis, published in August 2024.19
+In February 2024, sensor version 7.11 added a new content type defined with twenty-one input fields. The
+code that supplied those inputs provided twenty. The mismatch stayed latent for months because both the
+tests and all earlier content of that type used a wildcard match for the twenty-first field, so the missing input
+was never read. On July 19, a new content instance — Channel File 291 — used a non-wildcard twenty-first
+field for the first time. Reading the field that was not there caused an out-of-bounds memory read inside the
+kernel, crashing Windows. Because the sensor loads at boot, the machine crashed again on restart: a boot
+loop. The automated Content Validator that should have rejected the bad content had a bug of its own and
+passed it.
+The push was global and simultaneous. Within hours, roughly 8.5 million Windows machines (Microsoft’s
+estimate) were down: airlines (Delta alone canceled on the order of 7,000 flights), hospitals, banks,
+broadcasters, emergency services.20 21 Damage estimates ran into the billions — direct losses for the
+Fortune 500 alone were estimated at $5.4 billion, only a fraction of it insured.22 Recovery was brutal
+precisely because the machines could not boot: in many cases a human had to start each machine in safe
+mode and delete the file by hand.23 CrowdStrike’s committed remediations read like this chapter’s outline:
+staged canary rings for content, customer control over update cadence, a hardened validator, bounds
+checking in the interpreter, and more diverse testing.
+The lessons generalize far beyond security software. Config and content are code: anything that changes
+the behavior of a running system deserves the same testing, staging, and progressive rollout as a code
+change, no matter how routine its format. A fully automated pipeline without progressive exposure is not
+safety — it is a machine for shipping a defect to every user on Earth at once. Validators are code too, with
+false negatives of their own (§9.4.2); a gate you never test is a gate you cannot trust. Design for a bounded
+blast radius before you need one. And recovery paths must be designed for the worst case — a fix pushed
+over the network is useless to a machine that cannot boot to receive it.
+Read as a pair, the two cases bracket this chapter’s argument. Knight shows what manual deployment costs:
+without automation, you cannot even guarantee that eight servers run the same code. CrowdStrike shows what
+automation without staging costs: with a perfect distribution machine and no progressive rollout, one latent defect
+reached the whole world before anyone could react. Twelve years apart, the timelines rhyme — about forty-five
+minutes for Knight’s loss, about eighty minutes from CrowdStrike’s push to its reversion.24 Automation sets the
+speed of your outcomes; only progressive exposure and tested recovery decide their sign.
+
+===== صفحة الكتاب 389 =====
+14.4 Packaging and Running a Service: Docker and Compose
+Section 14.1.5 named the container as the unit of cloud deployment, and §14.3 covered when and how often to
+release. This section closes the gap between them: the concrete mechanics of turning a program that runs on your
+laptop into a service that runs on a server. You will build a container image, run an application together with the
+database and cache it depends on, and keep the whole stack reproducible. The tools are Docker and Docker
+Compose; the ideas they embody — immutable images, declared dependencies, externalized configuration,
+persistent volumes — outlast any particular tool.
+14.4.1 From Dockerfile to Image
+A container image (§14.1.5) is built from a Dockerfile: a text file of ordered instructions describing, step by step,
+how to assemble the environment your application needs.25 Each instruction adds a layer, a cached filesystem
+diff, so a rebuild that changes only your source reuses the earlier layers that installed the runtime and
+dependencies and finishes in seconds. Here is a Dockerfile for a small Python web service:
+Two ordering choices there are deliberate. Copying requirements.txt and installing dependencies before copying
+the source means editing a source file does not invalidate the dependency layer, so most rebuilds skip it entirely.
+Pinning the base image to python:3.12-slim rather than python:latest makes the build reproducible, because
+“latest” is a moving target that can change the runtime under you between two builds. You build the image once
+and run it as many times as you like:
+# Start from a minimal, versioned base image. Pin the tag; never use "latest".
+FROM python:3.12-slim
+# Do the work inside a dedicated directory in the image.
+WORKDIR /app
+# Copy dependency manifests first, so "pip install" is cached until they change.
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+# Copy the application source last, because it changes most often.
+COPY . .
+# Document the listening port and the command that starts the app.
+EXPOSE 8000
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]
+
+===== صفحة الكتاب 390 =====
+Principle. Build once, run anywhere. The image your CI pipeline (§14.2) builds is the exact artifact that
+runs in test and in production, byte for byte. A bug seen in production can be reproduced on your laptop by
+running the same tagged image, and that reproducibility is what makes the container’s overhead worth
+paying.
+A .dockerignore file keeps the build small and secrets out of the image: list .git, node_modules, .env, and local
+build output so they are never copied into a layer. For a compiled language, a multi-stage build compiles in a fat
+builder image and copies only the finished binary into a tiny runtime image, so the shipped image carries no
+compiler and no source.
+14.4.2 Composing a Stack with Docker Compose
+A real service is rarely one container. A typical web application is at least three: the app itself, a database that
+holds its state, and often a cache. Starting these by hand, creating a network and passing connection strings
+between them, is tedious and easy to get wrong. Docker Compose replaces that with one declarative file that
+describes the whole stack and brings it up with a single command.26
+docker build -t clinic-app:1.4.3 .        # build, tag with a version
+docker run -p 8000:8000 clinic-app:1.4.3  # run, mapping host port to container port
+
+===== صفحة الكتاب 391 =====
+docker compose up reads this file, creates a private network so the containers can reach one another by name, and
+starts them. Look at the connection strings: the app reaches the database at the host db and the cache at cache.
+Compose resolves those service names to the right containers on the shared network, so the app never needs to
+know their IP addresses. The depends_on health condition makes the app wait until Postgres is actually ready to
+accept connections, not merely started, which removes a whole class of start-order race conditions.
+# docker-compose.yml — an app, a database, and a cache as one stack.
+services:
+app:
+build: .                      # build from the Dockerfile in this directory
+ports:
+- "8000:8000"               # publish the app to the host
+environment:
+DATABASE_URL: postgres://clinic:${DB_PASSWORD}@db:5432/clinic
+REDIS_URL: redis://cache:6379
+depends_on:
+db: { condition: service_healthy }
+cache: { condition: service_started }
+db:
+image: postgres:16
+environment:
+POSTGRES_USER: clinic
+POSTGRES_PASSWORD: ${DB_PASSWORD}
+POSTGRES_DB: clinic
+volumes:
+- db-data:/var/lib/postgresql/data   # persist data across restarts
+healthcheck:
+test: ["CMD-SHELL", "pg_isready -U clinic"]
+interval: 5s
+retries: 5
+cache:
+image: redis:7
+volumes:
+db-data:                        # a named volume, managed by Docker
+
+===== صفحة الكتاب 392 =====
+14.4.3 Stateful Services: Postgres and Redis
+Two of those services deserve a closer look, because they hold state, and state is where deployment gets hard. A
+container is ephemeral: stop it and everything written inside its writable layer is gone. That is exactly what you
+want for the stateless app container, which you replace wholesale on every deploy, and exactly what you must
+prevent for a database. The fix is a volume: storage that lives outside any container’s lifecycle and is mounted into
+one. In the file above, db-data:/var/lib/postgresql/data mounts a Docker-managed volume at the directory
+where Postgres keeps its files, so the data survives docker compose down and the next deploy.
+The two data services play different roles, and the difference is a direct instance of the CAP trade-off (§14.1.6)
+and the shared-data pattern (§7.2.1):
+PostgreSQL is the system of record: a relational database offering transactions, constraints, and durability.
+When correctness matters — a patient record, a payment, an appointment — the data goes here, and
+Postgres guarantees a committed write is not lost. It is the authoritative store §7.2.1 told you to design
+around.
+Redis is an in-memory cache and data-structure store: it keeps data in RAM, so reads and writes are
+very fast, and it holds work that tolerates loss — session tokens, rate-limit counters, computed results you
+can recompute, a queue of background jobs. Putting a cache in front of Postgres is the usual way to make a
+read-heavy service fast, and it is safe precisely because the cache is disposable: if Redis loses its data, the
+system reads from Postgres and refills it.
+Pitfall. Treating the cache as a source of truth. The moment your system cannot rebuild Redis’s contents
+from the database, you have quietly made an in-memory store your system of record, and Redis by default
+has promised you no such durability. Keep the authoritative copy in the durable store and let the cache stay
+something you can throw away and rebuild at any time.
+Both Postgres and Redis ship as official images on the public registry, maintained and security-patched by the
+wider community, which is why the Compose file pulls postgres:16 and redis:7 instead of installing and
+configuring database servers by hand.27 Pin the major version, as with any dependency (§14.6.2), so an
+unattended pull cannot upgrade your database engine underneath you.
+14.4.4 Configuration and Secrets
+The Compose file contains neither a password embedded in the image nor a connection string hard-coded in the
+source. Those values arrive as environment variables (${DB_PASSWORD}), read from an untracked .env file or
+injected by the deployment platform. This is the externalized-configuration rule of the twelve-factor model: one
+image runs in every environment, and what differs between environments — credentials, hostnames, feature
+toggles — lives in configuration outside the image.28
+
+===== صفحة الكتاب 393 =====
+The rule earns its keep twice. It keeps a single image promotable from test to production without a rebuild, and it
+keeps secrets out of the image and out of version control, where §14.6.3 shows they cause real breaches once
+leaked. A committed .env file is one of the most common ways a live credential ends up in a public repository.
+Principle. One image, many environments. If moving a build from staging to production requires rebuilding
+it, the build was never really the artifact; its configuration was. Externalize what changes between
+environments so the thing you tested is exactly the thing you ship.
+14.5 Reaching Users: DNS, TLS, and the Edge
+You now have a stack running on a server. That server has an IP address like 203.0.113.143, but no user will type
+that, and no browser will trust it without a padlock. Two pieces of internet infrastructure bridge the distance
+between “a container is running somewhere” and “anyone can reach it safely at https://clinic.example.com”:
+the Domain Name System, which turns a name into an address, and TLS, which encrypts and authenticates the
+connection. This section explains both, adds the layer most real deployments put in front of everything else, and
+closes with a complete deployment from start to finish.
+14.5.1 How a Name Becomes an Address
+The Domain Name System (DNS) is the internet’s directory: a globally distributed database that maps human-
+readable names like clinic.example.com to the numeric IP addresses machines actually route to.29 A client’s first
+connection to an uncached hostname generally requires name resolution — commonly through DNS — and
+understanding the pieces clears up what is otherwise the most common source of “it works locally but not in
+production.”
+You obtain a domain from a registrar, the company you buy example.com from. The registrar records which
+nameservers are authoritative for your domain — the servers that hold the real answers. When someone visits
+your site, their computer asks a resolver (usually run by their ISP, or a public one like 1.1.1.1), which walks the
+hierarchy: it asks a root server who handles .com, asks that TLD server who is authoritative for example.com, and
+finally asks your authoritative nameserver for the specific record. Each answer is cached along the way for a
+period set by the record’s TTL (time to live), which is why a DNS change is not instant: older cached answers
+linger until their TTL expires. The authoritative nameserver holds records, each a typed mapping. The handful
+you actually set for a deployment:
+
+===== صفحة الكتاب 394 =====
+Record
+Maps a name to
+Example use
+A
+an IPv4 address
+clinic.example.com → 203.0.113.143
+AAAA
+an IPv6 address
+clinic.example.com → 2001:db8::143
+CNAME
+another name (an alias)
+www.example.com → clinic.example.com
+MX
+a mail server
+routes email addressed to the domain
+TXT
+arbitrary text
+domain verification, email (SPF/DKIM) policy
+To point a domain at your running server, you create an A record from your name to the server’s IP address. That
+is the whole mechanism: a name, a type, a value, and a TTL.
+Pitfall. Blaming the code for a DNS TTL. You repoint an A record to a new server, test from your own
+machine, and it works — yet users keep hitting the old server for minutes or hours, because their resolvers
+cached the previous answer for its TTL. Before a planned migration, lower the record’s TTL well in advance
+so the cutover is quick, then raise it again afterward to cut lookup load.
+14.5.2 HTTPS and TLS Certificates
+A DNS lookup gets a browser to your server; TLS (Transport Layer Security, the protocol behind the s in https)
+makes the connection between them private and trustworthy. It does two things at once: it encrypts the traffic so
+no one on the network path can read or alter it, and it authenticates the server so the browser knows it is really
+talking to clinic.example.com and not an impostor. Modern browsers now treat plain HTTP as a defect, labeling
+it “Not Secure,” and the large majority of page loads happen over HTTPS.30 For a real deployment, TLS is not a
+nicety to add later.
+Authentication rests on a certificate: a file, issued by a Certificate Authority (CA), that binds your domain name
+to a cryptographic key and carries the signature of an authority the browser already trusts. When a browser
+connects, the server presents its certificate; the browser checks the CA’s signature and that the name matches, then
+negotiates an encrypted session. A certificate for a name you do not control cannot normally be obtained from a
+trusted CA, which is what stops an attacker from impersonating your site.
+Certificates were once a paid, manual chore. Let’s Encrypt changed that: a nonprofit CA that issues certificates
+for free and fully automatically over the ACME protocol, which lets a program prove it controls a domain and
+receive a certificate with no human in the loop.31 Let’s Encrypt now secures over 700 million sites and issues on
+the order of ten million certificates a day.32 Its certificates are deliberately short-lived and auto-renewed: a
+program renews them well before they expire, so a forgotten manual renewal can no longer take a site down. In
+practice you rarely touch a certificate directly — a reverse proxy such as nginx or Caddy sits in front of your app
+
+===== صفحة الكتاب 395 =====
+container, obtains and renews the certificate, terminates TLS, and forwards plain HTTP to the app over the private
+network.
+14.5.3 The Edge: CDNs and Cloudflare
+That reverse-proxy idea generalizes into one of the most important pieces of modern deployment: a layer at the
+edge, between your users and your server, that handles concerns you would rather not build yourself. The
+dominant provider is Cloudflare, and the mechanism is a small DNS change. Instead of pointing your domain
+straight at your server, you point it at Cloudflare, which proxies each request to your origin server behind the
+scenes.33 Your server’s real address is hidden, and every request flows through Cloudflare first. Sitting in that
+position lets the edge do several jobs:
+Content delivery (CDN). Cloudflare runs servers in hundreds of cities and caches your static content close
+to users, so a visitor in Sydney is served from Sydney rather than waiting on a round trip to your origin.
+This cuts latency and offloads your server.
+TLS termination. The edge presents the HTTPS certificate and encrypts the user connection, so you get
+valid TLS without configuring it on the origin at all.
+Security. Because all traffic passes through it, the edge can absorb distributed denial-of-service (DDoS)
+attacks — floods of traffic meant to exhaust your server — and filter malicious requests with a web
+application firewall (WAF) before they reach you.
+The scale is what makes this remarkable. Cloudflare sits in front of roughly one in five of all websites, so a large
+share of the web is proxied through this one network.34 That scale is the source of both its value, because it sees
+enough traffic to recognize new attacks quickly, and a real concern: when a service this central has an outage, a
+visible slice of the web goes down with it. The concentration is worth weighing when you decide how much of
+your delivery to place behind a single provider.
+Pitfall. Assuming the edge makes your origin safe to ignore. Cloudflare hides and protects your origin only
+if the origin is not also reachable at its real IP address. If an attacker finds the origin IP and your server still
+accepts direct connections, they bypass the edge entirely. Configure the origin to accept traffic only from the
+edge, so the protection cannot be stepped around.
+14.5.4 A Full Deployment, End to End
+The pieces now assemble into one picture. Here is the whole path a request travels, and the sequence a team
+follows to put a first real service online:
+
+===== صفحة الكتاب 396 =====
+Walking the deployment in order:
+1. Build the image. Your CI pipeline (§14.2) builds the container image from the Dockerfile, tags it with the
+commit’s version, and pushes it to an image registry.
+2. Run the stack. On a host — a rented virtual machine, or a platform-as-a-service that runs containers for
+you — you bring up the Compose stack: the app image plus postgres:16 and redis:7, with a volume for
+the database and configuration supplied through environment variables.
+3. Point the domain. In DNS you create a record for clinic.example.com. Behind Cloudflare, it points at
+Cloudflare and Cloudflare proxies to your origin; otherwise it is an A record straight to the origin’s IP.
+4. Get a certificate. A reverse proxy on the origin obtains a Let’s Encrypt certificate over ACME, or
+Cloudflare terminates TLS at the edge, so the site serves valid HTTPS.
+5. Release safely. You roll the new version out with a strategy from §14.3 — behind a feature flag, or as a
+canary to a slice of traffic — and watch the DORA signals of §14.7: when deployment frequency is high
+and change-fail rate stays low, the machinery is sound.
+None of these steps is exotic, and a practiced small team can stand up a minimal version of this stack in an
+afternoon — expect your first time through to take longer, with DNS, TLS, and container networking supplying
+the surprises. The chapter’s argument is that doing it repeatably — an image built once by a pipeline,
+configuration externalized, the database on a durable volume, the release automated and progressively exposed,
+the whole path observed — is what separates a demo that happens to be online from a service a team can operate,
+and keep operating, as it changes.
+Principle. A deployment is a system, not an event. The domain, the certificate, the container, the database
+volume, and the release strategy are parts that must fit together and keep working without you watching.
+Automate each one so that shipping a change is boring, because boring, as this chapter has insisted
+throughout, is what you want production to be.
+
+===== صفحة الكتاب 397 =====
+14.6 Continuous Security Pipelines
+Chapter 9 taught static analysis as a practice; the pipeline is where it becomes policy. Modern teams extend the CI
+pipeline of §14.2 into a continuous security pipeline — a set of automated gates that check not just whether the
+code works, but whether it is safe to expose to an adversarial world. Three scanner families divide the work.
+14.6.1 SAST, DAST, and SCA
+Static application security testing (SAST) is the security-focused end of the static analysis you met in §9.4:
+tools that examine source code without running it, hunting injection flaws, unsafe deserialization, buffer misuse,
+and other vulnerable patterns. Everything Chapter 9 said about false positives and false negatives applies with
+interest — a noisy SAST gate that developers learn to rubber-stamp protects no one.
+Dynamic application security testing (DAST) attacks the running application from outside, the way an
+adversary would: probing endpoints with malformed inputs, injection payloads, and authentication bypasses,
+knowing nothing about the source. SAST and DAST are complementary the way white-box and black-box testing
+were in Chapter 10: SAST sees code paths DAST may never reach; DAST sees emergent, deployed behavior —
+server configuration, header mistakes, the composition of services — that no source scan can.35
+Software composition analysis (SCA) examines neither your code nor your running app but your dependency
+manifest: the inventory of third-party packages your build pulls in, checked against databases of known
+vulnerabilities. SCA exists because of an uncomfortable arithmetic: in a typical modern application, code you
+wrote is a thin layer atop orders of magnitude more code you imported. You ship your dependencies. Their
+vulnerabilities are your vulnerabilities, and no review of your code will find them.
+14.6.2 Dependencies and the Supply Chain
+Because dependencies drift out of date on their own — vulnerabilities are discovered in versions you already ship
+— SCA cannot be a one-time gate; it must run continuously. The practical pattern is the automated update bot
+(GitHub’s Dependabot is the archetype): a service that watches vulnerability databases and your manifests, and
+when a dependency needs bumping, opens a pull request that updates it.36 The elegance is in what happens next:
+your CI pipeline runs on that PR like any other, so the same suite that protects you from your own mistakes now
+proves the upgrade is safe to merge. The stronger your pipeline, the cheaper staying current becomes — one more
+return on the investment of §14.2.
+The wider issue is supply-chain risk: your build is only as trustworthy as everything it downloads. Attackers have
+learned to poison the well — typosquatting packages whose names are one keystroke from a popular library, or
+compromising a legitimate package’s maintainer account and publishing a malicious release. The 2020
+SolarWinds attack planted malicious code inside a vendor’s build process, so customers received a compromised
+product signed with authentic signatures;37 the 2016 left-pad incident showed the fragility side, when the removal
+of an eleven-line package briefly broke builds across the industry.38 39 Defenses are accumulating — lockfiles
+
+===== صفحة الكتاب 398 =====
+that pin exact versions, cryptographic signing and provenance attestation for artifacts (the SLSA framework),40
+and a software bill of materials (SBOM) enumerating everything inside a release41 — but the first defense is the
+cultural one: treat adding a dependency as an engineering decision with a threat model, not a free lunch. Chapter
+11 develops this into a full treatment of supply-chain security — the Log4Shell and xz-utils case studies, and a
+framework for continuously verifying the open-source components you depend on.
+14.6.3 Secrets and Gate Placement
+One more scanner belongs in every pipeline: secrets scanning, which searches commits for credentials — API
+keys, tokens, passwords, private keys — before they enter history. A secret pushed to a repository must be treated
+as compromised the moment it lands, because git history is effectively permanent and harvesting bots scan public
+commits continuously. Rotating a leaked credential is painful; a pre-commit or pre-receive scan that blocks the
+leak is nearly free.
+Placement follows one principle: run each gate at the earliest point it can give a correct answer. Secrets scans
+and SAST need only source, so they run at commit time, inside the fast merge-blocking core. SCA needs the
+resolved dependency set, so it runs at build time — and again on a schedule, since the world’s knowledge of your
+dependencies changes while your code does not. DAST needs a running system, so it runs against a staging
+deployment, after the artifact exists. The result is defense in depth through the pipeline itself: by the time an
+artifact reaches production, it has been examined as source, as a composition, and as a running target.
+14.7 DORA Delivery Metrics
+14.7.1 The Four Keys — Now Five
+How would you know whether any of this is working? As Chapter 12 explained, metrics programs often choose
+convenient measurements that do not reflect the outcomes the team needs to improve. The delivery world has an
+unusually good answer, produced by the DORA research program (DevOps Research and Assessment) — a multi-
+year academic effort, surveying tens of thousands of professionals, published in the annual State of DevOps
+reports and the book Accelerate (Forsgren, Humble, and Kim).42 43 Its best-known finding is a set of outcome
+measures — the famous four keys — that jointly predict software-delivery performance:
+1. Deployment frequency — how often your team deploys to production.
+2. Change lead time — how long a commit takes to reach production.
+3. Change fail rate — what fraction of deployments cause a failure in production (an incident, a rollback, a
+hotfix).
+4. Failed-deployment recovery time — when a deployment does cause a failure, how long restoring service
+takes.44
+
+===== صفحة الكتاب 399 =====
+The model has since been refined: the 2024 research added a fifth metric, deployment rework rate — the share
+of deployments that are unplanned, shipped in response to a production incident — and DORA’s current guidance
+presents the five in two groups.45 Throughput is change lead time, deployment frequency, and failed-deployment
+recovery time: how fast changes — including fixes — flow to production. Instability is change fail rate and
+deployment rework rate: how often deployments go wrong, or exist only to clean up after one that did. The
+regrouping is worth a moment’s thought. Recovery time is a speed, so it now sits with throughput; and rework rate
+was added because a team could look stable while quietly spending its deployments patching production —
+reactive work the original four keys never surfaced.
+Notice the shape either way: one group measures how fast value moves, the other how safely it moves. All five are
+outcomes of your whole delivery system, not activities within it — which is what makes them worth watching.
+14.7.2 Why Paired Metrics Resist Gaming
+Chapter 12 introduced Goodhart’s Law (§12.1.2): when a measure becomes a target, people optimize the measure
+rather than the goal, and the chapter’s advice was to pair each metric with a counter-metric that degrades when
+someone cheats. The DORA metrics are that advice, institutionalized. Try to game throughput — deploy half-
+baked changes constantly — and change fail rate rises to expose you. Try to game stability — deploy once a
+quarter after months of manual checking — and deployment frequency and lead time collapse. Each group is the
+other’s counter-metric. And the fifth metric closed a cheat the original four left open: recover fast by shipping
+quick, unplanned patches, and recovery time looks elite while deployment rework rate exposes how much of your
+delivery is cleanup. A team can only improve all five together by actually getting better at delivery: smaller
+changes, stronger pipelines, faster recovery. There is no cheap move that improves the whole dashboard, which is
+the property §12.1.2 said to look for.
+14.7.3 What the Research Found
+Two findings from the DORA research deserve to reshape your intuitions. First, the spread between the best and
+the rest is not incremental — it is multiplicative. In the 2019 survey, elite performers deployed on demand (many
+times per day) where low performers deployed between once a month and once every six months; elite lead times
+were under a day against months; elite recovery times under an hour against a week or more — differences of
+orders of magnitude on the throughput measures, with change fail rates lower as well.42 The bands are re-
+measured each survey year and move — read them as a dated yardstick from a specific report, not a permanent
+threshold.
+Second — and this is the finding that overturned decades of folklore — speed and stability correlate
+positively.42 The traditional assumption was a trade-off: move fast or be careful. The data say the teams that
+deploy most often are also the teams that break production least and recover fastest. The mechanism should be
+familiar by now: high frequency forces small changes; small changes are easier to review (Chapter 9), test
+
+===== صفحة الكتاب 400 =====
+(Chapter 10), and attribute; attribution makes recovery fast; and fast, safe recovery removes the fear that drives
+batching. Slow, careful, big-batch releases are the risky choice wearing caution’s clothes.
+14.7.4 Measuring Your Own Five
+A student team can measure all five metrics with data it already has, and the exercise is worth doing because the
+numbers will be humbler than the elite benchmarks. Define “production” honestly — your deployed demo
+environment, or your instructor-facing release — then: deployment frequency is a count of deploy events per
+week, from your pipeline’s history. Lead time is deploy timestamp minus commit timestamp, taken as a median
+over recent changes (git log and your CI dashboard give you both ends). Change fail rate requires a log
+discipline: record each deploy and whether it needed a revert or hotfix; failures divided by deploys. Recovery
+time is the gap from noticing a bad deploy to restored service, from the same log. Rework rate comes from the
+same log too: mark each deploy planned or unplanned (a revert or hotfix shipped because production broke is
+unplanned); unplanned divided by total. Review the five numbers at your retrospective, and resist the urge to set
+targets — use them, in GQM fashion (Chapter 12), to ask why lead time is three days and which stage of your
+pipeline the time hides in.
+14.8 Conclusion
+Delivery is the connective tissue of everything this book has taught. The CI pipeline of §14.2 is Chapters 9 and 10
+made mandatory: reviews, static analysis, and tests by level, converted from practices a diligent team performs
+into gates no change can bypass. The DORA delivery metrics of §14.7 are Chapter 12 made honest: outcome
+metrics, paired against their own counter-metrics, measuring the whole system rather than rewarding activity.
+Continuous deployment of §14.3 is Chapter 2’s short-cycle bet made physical: the same argument that favored
+small iterations over big-bang phases favors small deployments over big releases, with Knight Capital and
+CrowdStrike as the permanent record of what happens at either failed extreme — no automation, and automation
+without staging. The packaging and networking of §§14.4–14.5 are that same pipeline made tangible: an image
+built once, a database on a durable volume, a name, a certificate, and an edge in front, so the artifact a pipeline
+produces actually becomes a service a user can reach. What delivery cannot do is stop the clock: the system you
+now ship continuously will spend years being changed, and that long tail — legacy code, refactoring, technical
+debt — is Chapter 15’s subject.
+If the chapter compresses to one sentence, it is this: make change small, make its path to users automatic and
+progressively exposed, and watch the outcomes.
+Sources
+1 Synergy Research Group, Cloud Market Share Trends — Big Three Together Hold 63% (2025). srgresearch.com.
+2 Amazon Web Services, Shared Responsibility Model. aws.amazon.com.
+
+===== صفحة الكتاب 401 =====
+3 David Heinemeier Hansson (37signals), Why we’re leaving the cloud (2022). world.hey.com/dhh.
+4 David Heinemeier Hansson (37signals), We have left the cloud (2023). world.hey.com/dhh.
+5 Marcin Kolny (Prime Video Tech), Scaling up the Prime Video audio/video monitoring service and reducing costs by 90%
+(2023). web.archive.org (original post now offline).
+6 Amazon Web Services, What’s the Difference Between Containers and Virtual Machines? aws.amazon.com.
+7 Cloud Native Computing Foundation, CNCF Annual Survey 2023 (2023). cncf.io.
+8 Eric Brewer, Towards Robust Distributed Systems (PODC keynote, 2000). people.eecs.berkeley.edu.
+9 Seth Gilbert and Nancy Lynch, Brewer’s Conjecture and the Feasibility of Consistent, Available, Partition-Tolerant Web
+Services (ACM SIGACT News, 2002). doi.org.
+10 Martin Fowler, Continuous Integration (2006; revised 2024). martinfowler.com.
+11 Pete Hodgson, Feature Toggles (aka Feature Flags) (martinfowler.com, 2017). martinfowler.com.
+12 LaunchDarkly, A Deeper Look at LaunchDarkly Architecture (documentation). launchdarkly.com.
+13 Unleash, 11 best practices for building and scaling feature flag systems (documentation). docs.getunleash.io.
+14 Ross Harmes (Flickr Engineering), Flipping Out (2009). code.flickr.net.
+15 Chuck Rossi (Facebook Engineering), Rapid release at massive scale (2017). engineering.fb.com.
+16 OpenFeature, a CNCF incubating project since 2023. openfeature.dev.
+17 U.S. Securities and Exchange Commission, In the Matter of Knight Capital Americas LLC, Exchange Act Release No. 34-
+70694 (2013). sec.gov.
+18 CNNMoney, Knight Capital in $400 million rescue agreement (2012). money.cnn.com.
+19 CrowdStrike, External Technical Root Cause Analysis — Channel File 291 (2024). crowdstrike.com.
+20 David Weston (Microsoft), Helping our customers through the CrowdStrike outage (2024). blogs.microsoft.com.
+21 Delta Air Lines, Form 8-K (October 2024). sec.gov.
+22 Parametrix, CrowdStrike to cost Fortune 500 $5.4 billion; insured loss range of $540 million to $1.08 billion (2024).
+parametrixinsurance.com.
+23 CrowdStrike, Falcon Content Update Remediation and Guidance Hub (2024). crowdstrike.com.
+24 CrowdStrike, Preliminary Post Incident Review — Falcon Content Update for Windows Hosts (2024). crowdstrike.com.
+25 Docker, Inc., Dockerfile reference and Get started. docs.docker.com/reference/dockerfile, docs.docker.com/get-started.
+26 Docker, Inc., Docker Compose documentation. docs.docker.com/compose.
+27 Docker Official Images for postgres and redis (community-maintained, security-patched base images).
+hub.docker.com/_/postgres, hub.docker.com/_/redis.
+28 Adam Wiggins, The Twelve-Factor App, factor III: “Config.” 12factor.net/config.
+29 P. Mockapetris, Domain Names — Concepts and Facilities, RFC 1034 (1987); readable overview: Cloudflare, “What is DNS?”
+rfc-editor.org/rfc/rfc1034, cloudflare.com/learning/dns/what-is-dns.
+
+===== صفحة الكتاب 402 =====
+30 Google, HTTPS encryption on the web (Transparency Report), which tracks the share of page loads served over HTTPS; and
+Chrome’s move to mark plain HTTP “Not Secure.” transparencyreport.google.com/https/overview.
+31 R. Barnes, J. Hoffman-Andrews, D. McCarney, and J. Kasten, Automatic Certificate Management Environment (ACME), RFC
+8555 (2019); Let’s Encrypt, “How It Works.” rfc-editor.org/rfc/rfc8555, letsencrypt.org/how-it-works.
+32 Let’s Encrypt, Let’s Encrypt Stats and “Ten Years of Let’s Encrypt” (2025), reporting hundreds of millions of sites secured and
+roughly ten million certificates issued per day. letsencrypt.org/stats, letsencrypt.org/2025/12/09/10-years.
+33 Cloudflare, How Cloudflare works and What is a reverse proxy? developers.cloudflare.com/fundamentals/concepts/how-
+cloudflare-works, cloudflare.com/learning/cdn/glossary/reverse-proxy.
+34 W3Techs, Usage statistics and market share of reverse proxy services for websites, July 2026 — Cloudflare is used as a reverse
+proxy by 20.4% of all websites. (W3Techs measures website adoption, not request volume; the share of global request traffic is
+a different quantity and is not measured here.) w3techs.com/technologies/overview/proxy.
+35 OWASP Foundation, community references for the scanner families: Source Code Analysis Tools (SAST), Vulnerability
+Scanning Tools (DAST), and Component Analysis (SCA).
+36 GitHub, Dependabot documentation. docs.github.com.
+37 CISA, Alert AA20-352A: Advanced Persistent Threat Compromise of Government Agencies, Critical Infrastructure, and
+Private Sector Organizations (2020). cisa.gov.
+38 npm, kik, left-pad, and npm (2016). blog.npmjs.org.
+39 The Register, How one developer just broke Node, Babel and thousands of projects in 11 lines of JavaScript (2016).
+theregister.com.
+40 OpenSSF, SLSA — Supply-chain Levels for Software Artifacts. slsa.dev.
+41 CISA, Software Bill of Materials (SBOM). cisa.gov/sbom.
+42 DORA, Accelerate State of DevOps Report 2019 (2019). dora.dev.
+43 Nicole Forsgren, Jez Humble, and Gene Kim, Accelerate: The Science of Lean Software and DevOps (IT Revolution Press,
+2018). itrevolution.com.
+44 DORA, DORA’s software delivery performance metrics. dora.dev.
+45 DORA, A history of DORA’s software delivery metrics — the transition from the original four keys to the current five-metric
+model; deployment rework rate (“the ratio of deployments that are unplanned but happen as a result of an incident in
+production”) was introduced with the 2024 State of DevOps research. dora.dev.
+Key takeaways are summarized above in §14.8.
+Continue to the Exercises.
+Go deeper with the Open Resources for this chapter.
+
+===== صفحة الكتاب 403 =====
+
+===== صفحة الكتاب 404 =====
+Chapter 14 — Exercises
+Exercises are graded by depth: [warm‑up] checks understanding, [analysis] asks you to reason. Several exercises
+require actual work — computing metrics from a log, designing a rollout, writing a real test — not just prose.
+Show the work, not only the answer.
+Concepts
+1. [warm‑up] In one sentence each, distinguish continuous integration, continuous delivery, and continuous
+deployment (§14.2.1, §14.3.1). Then state which of the three a team practices if every green build produces
+a deployable artifact but a product manager clicks “release” once a week — and what single change would
+move them to the next level.
+2. [warm‑up] Explain why horizontal scaling (§14.1.2) depends on the statelessness convention from §7.5.4.
+Give one concrete example of per-client state that would break “any server can answer any request,” and
+one standard place to move it.
+3. [warm‑up] A teammate says “we don’t need rollback — we’ll just fix forward, our pipeline is fast.” Using
+§14.3.4, give one situation where roll-forward is genuinely the only option and one where an untested
+reliance on it would be dangerous.
+4. [warm‑up] For each scanner family in §14.6 — SAST, DAST, SCA, secrets scanning — name the earliest
+pipeline stage at which it can give a correct answer, and say why it cannot run earlier.
+5. [warm‑up] A teammate’s docker-compose.yml writes the database password directly into the
+environment: block as a literal string, and the file is committed to the repository. Using §14.4.4, name two
+distinct things that go wrong with this, and rewrite the relevant lines so the password comes from an
+untracked source instead. Then, using §14.4.3, explain why the db (Postgres) service needs a volumes:
+entry but the cache (Redis) service can safely omit one.
+Analysis
+6. [analysis] Compute the DORA metrics. A student team’s combined git and deploy log for two weeks is
+below. A deploy is “failed” if it required a revert or hotfix; recovery time is from deploy to restored service.
+Note that the revert and the hotfix are themselves deployments — unplanned ones, shipped because
+production broke.
+
+===== صفحة الكتاب 405 =====
+Change
+Commit time
+Deployed
+Outcome
+C1
+Mon 09:00
+Mon 15:00
+ok
+C2
+Mon 11:00
+Tue 10:00
+ok
+C3
+Tue 14:00
+Thu 09:00
+failed — reverted Thu 10:30
+C4
+Thu 11:00
+Thu 16:00
+ok
+C5
+Fri 10:00
+Mon 10:00 (wk 2)
+ok
+C6
+Mon 13:00 (wk 2)
+Wed 09:00 (wk 2)
+failed — hotfixed Wed 15:00
+C7
+Wed 10:00 (wk 2)
+Wed 17:00 (wk 2)
+ok
+C8
+Thu 09:00 (wk 2)
+Fri 11:00 (wk 2)
+ok
+Compute (a) deployment frequency (deploys per week), (b) median change lead time, (c) change fail rate,
+(d) mean failed-deployment recovery time, and (e) deployment rework rate — counting the revert and the
+hotfix as deployments, what share of all deployments were unplanned (§14.7.1)? Then (f) using the 2019
+elite bands quoted in §14.7.3, identify which metric is furthest from elite and propose the single pipeline
+change most likely to improve it.
+7. [analysis] Design a canary rollout. Your team is shipping a rewritten session-handling module to a service
+with 200,000 daily users. Design a staged rollout plan (§14.3.2): define at least three rings with their traffic
+percentages, the health metrics that gate each promotion (name at least three, and give a numeric threshold
+for one), the soak time per ring, and the automatic action on regression. State explicitly what your plan’s
+worst-case blast radius is, and compare it to a blue-green switch of 100% of traffic.
+8. [analysis] Knight versus CrowdStrike. Using only the facts in §14.3.5, write a structured comparison of the
+two incidents: for each, identify (a) the latent defect and how long it lay dormant, (b) the deployment-
+process failure that activated or spread it, (c) the missing safeguard that would have bounded the damage,
+and (d) the time from trigger to full impact. Then answer the pairing question directly: why does Knight
+argue for deployment automation while CrowdStrike shows automation is not sufficient — and what one
+practice, common to both post-mortems, addresses each?
+9. [analysis] The CrowdStrike case says “config and content are code.” A teammate objects: “running our full
+test suite on every config change would be absurd — it’s just data.” Steelman the teammate’s position, then
+rebut it: what proportionate pipeline (validation, testing, staged rollout) would you design for pure-content
+changes, and which properties of code changes must it preserve?
+10. [analysis] Goodhart’s Law (§12.1.2) says any single metric target gets gamed. For each of the four classic
+DORA keys taken alone, describe a way a cynical team could improve the number while making delivery
+worse — then show which other metric would expose each cheat (§14.7.2). Finally: DORA’s 2024 addition
+
+===== صفحة الكتاب 406 =====
+of deployment rework rate closed exactly one such gap — which of your cheats does it catch that the
+original four keys missed, and why did that cheat survive the original pairing?
+11. [analysis] You are putting a small service online at app.example.com, running as a Compose stack (app +
+Postgres + Redis) on a single rented virtual machine. Using §14.5, write the deployment as an ordered
+checklist: (a) the DNS record(s) you create and what each points to; (b) how the service obtains a valid
+HTTPS certificate; (c) what placing the domain behind Cloudflare would add, and one risk it introduces;
+and (d) one thing that could still be broken for users after all of the above is correct, and how you would
+detect it — connecting your answer to the DORA signals of §14.7.
+
+===== صفحة الكتاب 407 =====
+
+===== صفحة الكتاب 408 =====
+Chapter 14 — Open Resources
+Free, open-licensed, or freely accessible materials that reinforce this chapter. Types: 📘 open text · 🎓 course ·
+📄 primary source / standard · 🎥 video · 🛠 tool. Licenses vary and are noted where known. Each entry notes its
+license or access terms; when in doubt, check the linked page.
+Primary sources for the case studies
+📄 SEC Release No. 34-70694 — In the Matter of Knight Capital Americas LLC (October 2013) —
+sec.gov. The enforcement order behind §14.3.5’s first case study: the reused flag, the eighth server, the 97
+unheeded alerts, and the rollback that made things worse are all findings in this document. Read it — it is
+short, plainly written, and the definitive corrective to the folklore versions. License: U.S. government work,
+public domain.
+📄 CrowdStrike — External Technical Root Cause Analysis, Channel File 291 (August 2024) —
+crowdstrike.com. The vendor’s own account of the 21-versus-20 field mismatch, the validator bug, and the
+committed remediations (staged rings, customer-controlled cadence, bounds checking). A model of what a
+public post-incident analysis should contain. Access: free on the vendor’s site.
+📄 CrowdStrike — Preliminary Post Incident Review, and Remediation and Guidance Hub (July
+2024) — crowdstrike.com. The first public account, with the deployment timeline (content released 04:09
+UTC, reverted 05:27 UTC on July 19); the companion Remediation Hub documents the manual safe-mode
+recovery steps. Access: free on the vendor’s site.
+📄 Microsoft — “Helping our customers through the CrowdStrike outage” (July 20, 2024) —
+blogs.microsoft.com. The source of the widely cited ~8.5 million affected-devices estimate (“less than one
+percent of all Windows machines”). Access: free to read.
+📄 Delta Air Lines — Form 8-K (October 2024) — sec.gov. Delta’s own filing on the outage:
+approximately 7,000 flight cancellations over five days and at least $500 million in claimed damages.
+Access: SEC filing, public record.
+📄 Parametrix — “CrowdStrike to cost Fortune 500 $5.4 billion” (July 2024) —
+parametrixinsurance.com. The loss-estimate source: $5.4 billion in direct losses for the US Fortune 500
+(excluding Microsoft), with only 10–20 percent likely covered by cyber insurance. Access: free to read.
+📄 CNNMoney — “Knight Capital in $400 million rescue agreement” (August 6, 2012) —
+money.cnn.com. Contemporary account of the emergency financing that kept Knight alive after August 1;
+the SEC order above records the July 2013 merger into KCG Holdings. Access: free to read.
+
+===== صفحة الكتاب 409 =====
+The cloud and distributed systems
+📄 Kubernetes documentation — kubernetes.io/docs. The official concepts, tutorials, and reference for
+§14.1.5: containers, pods, services, ingress, and cluster architecture, with a browser-based interactive
+tutorial that needs no installation. License: docs are CC BY 4.0.
+📘 37signals — “We have left the cloud” — world.hey.com/dhh. The first-person record of §14.1.4’s
+repatriation case study; the announcement post “Why we’re leaving the cloud” (October 2022) —
+world.hey.com/dhh — lays out the reasoning and the cost arithmetic for leaving the cloud on steady,
+predictable workloads. Access: free to read.
+📘 InfoQ — “Prime Video Switched from Serverless to EC2 and ECS to Save Costs” (May 2023) —
+infoq.com. A concise writeup of the Prime Video team’s account of cutting one monitoring service’s cost by
+roughly 90 percent by consolidating a distributed serverless design into a monolith-style process (§14.1.4).
+The original Prime Video Tech post (Marcin Kolny, March 2023) is offline; an archived copy survives at
+web.archive.org. Access: free to read.
+📄 Gilbert & Lynch — “Brewer’s Conjecture and the Feasibility of Consistent, Available, Partition-
+Tolerant Web Services” (ACM SIGACT News, 2002) — doi.org/10.1145/564585.564601. The paper that
+turned Brewer’s conjecture into §14.1.6’s CAP theorem by proving it; author copies circulate freely. Pair it
+with Brewer’s own retrospective, “CAP Twelve Years Later: How the ‘Rules’ Have Changed” (IEEE
+Computer, 2012), free to read at infoq.com/articles/cap-twelve-years-later, which corrects the folklore “pick
+two of three” reading. Access: both freely readable.
+📄 Eric Brewer — “Towards Robust Distributed Systems” (PODC 2000 keynote slides) —
+people.eecs.berkeley.edu. The keynote in which Brewer stated CAP as a conjecture, two years before the
+Gilbert & Lynch proof above. Access: free on the author’s site.
+📄 AWS — Shared Responsibility Model, and “What’s the Difference Between Containers and
+Virtual Machines?” — aws.amazon.com and aws.amazon.com/compare. Vendor statements of §14.1.4’s
+security-responsibility split (“security of the cloud” versus “security in the cloud”) and §14.1.5’s
+container/VM distinction. Access: free to read.
+📄 Synergy Research Group — cloud market share updates — srgresearch.com. Quarterly market data
+behind §14.1.4’s “big three” claim: Amazon, Microsoft, and Google together held 63 percent of enterprise
+cloud-infrastructure spending in late 2025. Access: press releases free to read.
+📄 CNCF Annual Survey 2023 — cncf.io. Adoption data behind §14.1.5’s “de-facto standard” description
+of Kubernetes: 84 percent of respondents were using or evaluating it. Access: free to read.
+CI/CD and deployment practice
+📘 Martin Fowler — “Continuous Integration” —
+martinfowler.com/articles/continuousIntegration.html. The canonical long-form article behind §14.2:
+mainline commits, self-testing builds, broken-build discipline, and the ten-minute build. Access: free to
+read; © martinfowler.com.
+
+===== صفحة الكتاب 410 =====
+📘 Pete Hodgson — “Feature Toggles (aka Feature Flags)” — martinfowler.com/articles/feature-
+toggles.html. The definitive long-form treatment behind §14.3.3: toggle categories (release, ops,
+experiment, permission), lifespans, implementation patterns, and toggle-debt hygiene. Access: free to read;
+© martinfowler.com.
+📘 Martin Fowler — “DeploymentPipeline”, “BlueGreenDeployment”, and “CanaryRelease” —
+martinfowler.com/bliki. Short, precise entries on the deployment strategies of §14.3.2. Access: free to read.
+📄 Ross Harmes (Flickr) — “Flipping Out” (2009) — code.flickr.net. The post that popularized the
+feature flipper: trunk-only development, flags, and multiple deploys a day, years before the tooling industry
+existed (§14.3.3). Access: free to read.
+📄 Chuck Rossi (Facebook Engineering) — “Rapid release at massive scale” (2017) —
+engineering.fb.com. How Facebook’s quasi-continuous release uses the Gatekeeper flag system to roll out
+code and features independently (§14.3.3). Access: free to read.
+🛠 OpenFeature — openfeature.dev. The CNCF-incubating, vendor-neutral feature-flag API (§14.3.3);
+pairs with open-source flag backends such as Unleash and GitHub’s Flipper for Ruby. License: Apache-2.0
+(OpenFeature); vendor docs free to read.
+📄 Minimum CD — minimumcd.org. A community-maintained, vendor-neutral statement of the minimum
+practices that constitute continuous delivery — a useful checklist for auditing your own pipeline against
+§§14.2–14.3. License: CC BY-SA 4.0.
+📘 Bryan Finster — “5-Minute DevOps” series — free to read on bdfinst.medium.com and
+bryanfinster.com. Short, blunt essays from a practitioner on trunk-based development, small batches,
+pipeline discipline, and why “we’re too regulated for CD” is usually wrong. Several installments pair
+directly with this chapter’s sections. Access: free to read.
+📘 Google — Site Reliability Engineering (the SRE book and workbook) — sre.google/books. Free
+online editions covering release engineering, canarying, error budgets, and postmortem culture — the
+operations side of §14.3 and §14.7 at planetary scale. License: CC BY-NC-ND 4.0 (free to read).
+Deployment mechanics: containers, DNS, and TLS
+🛠 Docker — official documentation — docs.docker.com. The Dockerfile reference, image-building
+guide, and Get Started tutorial behind §14.4.1. Access: free to read; Docker Engine is Apache-2.0.
+🛠 Docker Compose documentation — docs.docker.com/compose. The Compose file reference and
+multi-service examples used in §14.4.2. Access: free to read.
+🛠 Docker Official Images — Postgres and Redis — hub.docker.com/_/postgres ·
+hub.docker.com/_/redis. Maintained, security-patched base images, with usage notes on volumes and
+environment configuration (§14.4.3). Access: free; images under their projects’ licenses.
+📘 The Twelve-Factor App — 12factor.net. The widely cited methodology for cloud-native services;
+factor III (config) is the externalized-configuration rule of §14.4.4. Access: free to read.
+📄 Cloudflare Learning Center — DNS and reverse proxies — what is DNS? · what is a reverse
+proxy?. Readable explainers for the DNS resolution chain (§14.5.1) and the edge-proxy model (§14.5.3).
+
+===== صفحة الكتاب 411 =====
+Access: free to read.
+📄 Let’s Encrypt — How It Works, and ACME (RFC 8555) — letsencrypt.org/how-it-works · rfc-
+editor.org/rfc/rfc8555. The free, automated certificate authority and the protocol behind automatic HTTPS
+(§14.5.2). Access: free; RFC is an IETF standard.
+🛠 Caddy — automatic-HTTPS reverse proxy — caddyserver.com. A web server that obtains and
+renews Let’s Encrypt certificates with no configuration, the simplest way to put TLS in front of a container
+(§14.5.2). License: Apache-2.0.
+📄 Google — HTTPS encryption on the web (Transparency Report) —
+transparencyreport.google.com/https. Ongoing measurement of the share of web traffic served over HTTPS
+(§14.5.2). Access: free to read.
+DORA and delivery research
+📄 DORA — research program, delivery-metric definitions, and annual State of DevOps reports —
+dora.dev. The research base for §14.7: the current five-metric model (guides/dora-metrics), the four-keys-
+to-five history (insights/dora-metrics-history), performance-band data, capability catalog, and a quick check
+for assessing your own team. Access: site content free; reports free to download.
+📘 Forsgren, Humble, Kim — Accelerate (IT Revolution Press, 2018). The book-length treatment of the
+research methodology and the speed-and-stability finding. Not openly licensed — listed here as the
+standard citation; the dora.dev material above covers the findings freely.
+Continuous security and the supply chain
+📄 OWASP — scanner-family references — Source Code Analysis Tools (SAST) · Vulnerability
+Scanning Tools (DAST) · Component Analysis (SCA). The community definitions behind §14.6.1’s three
+scanner families, with maintained tool lists. Free to read; OWASP content is CC BY-SA.
+📄 CISA — Software Bill of Materials (SBOM) — cisa.gov/sbom. The U.S. government’s SBOM
+resource hub referenced in §14.6.2. License: U.S. government work, public domain.
+📄 GitHub Docs — Dependabot — docs.github.com/en/code-security/dependabot. Reference for the
+update-bot workflow of §14.6.2. License: GitHub docs are CC BY 4.0.
+🛠 OWASP Dependency-Check and Dependency-Track — owasp.org/www-project-dependency-check
+and dependencytrack.org. Open-source SCA: the first scans a build for known-vulnerable components; the
+second tracks SBOMs across an organization. License: Apache-2.0.
+📄 SLSA — Supply-chain Levels for Software Artifacts — slsa.dev. A leveled framework for build-
+pipeline integrity and artifact provenance — the structured answer to the SolarWinds-style attacks of
+§14.6.2. License: spec on GitHub under Community Specification License; site content CC BY 4.0.
+📄 CISA — Alert AA20-352A (December 2020) — cisa.gov. The US government advisory on the
+SolarWinds compromise behind §14.6.2: malicious code inserted during the software build and signed with
+the vendor’s legitimate code-signing certificate. License: U.S. government work, public domain.
+
+===== صفحة الكتاب 412 =====
+📄 npm — “kik, left-pad, and npm” (March 2016) — blog.npmjs.org. The registry’s own account of
+§14.6.2’s left-pad unpublication and the breakage that followed; The Register’s contemporaneous report
+prints the eleven-line package in full — theregister.com. Access: both free to read.
+License note
+Linked resources remain under their own licenses (noted above where known); this page is licensed CC BY-SA
+4.0.
+
+===== صفحة الكتاب 413 =====

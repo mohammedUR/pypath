@@ -1,0 +1,217 @@
+{
+ "traces": [
+  {
+   "lesson": "py4e.ch11.l1",
+   "id": "ex2.trace-anchor",
+   "code": "import re\nline = 'X-Spam: From: here'\nprint(bool(re.search('From:', line)))\nprint(bool(re.search('^From:', line)))\nprint(line.find('From:') > 0)",
+   "answer": "True\nFalse\nTrue"
+  },
+  {
+   "lesson": "py4e.ch11.l2",
+   "id": "ex2.trace-findall",
+   "code": "import re\ns = 'from csev@umich.edu to cwen@iupui.edu @2PM'\nx = re.findall(r'\\S+@\\S+', s)\nprint(len(x))\nprint(x[0])\nprint(bool(re.search(r'\\S+@\\S+', 'meet @2PM')))",
+   "answer": "2\ncsev@umich.edu\nFalse"
+  },
+  {
+   "lesson": "py4e.ch11.l3",
+   "id": "ex2.trace-combined",
+   "code": "import re\nlines = ['X-Spam: 5', 'X-DSPAM-Confidence: 0.8475', 'Subject: Update now']\ntotal = 0\nfor line in lines:\n    x = re.findall(r'^X\\S*: ([0-9.]+)', line)\n    if len(x) > 0:\n        total = total + 1\nprint(total)\nprint(re.findall(r'^X\\S*: ([0-9.]+)', 'X-DSPAM-Confidence: 0.8475')[0])",
+   "answer": "2\n0.8475"
+  },
+  {
+   "lesson": "py4e.ch11.l4",
+   "id": "ex2.trace-classes",
+   "code": "import re\nx = re.findall(r'\\d+', 'a1b22c333')\nprint(len(x))\nprint(x[1])\nprint(len(re.findall(r'\\w+', 'hi there, ok')))\nprint(bool(re.search(r'\\d{3}', 'ab12c')))",
+   "answer": "3\n22\n3\nFalse"
+  },
+  {
+   "lesson": "py4e.ch11.l5",
+   "id": "ex2.trace-escape",
+   "code": "import re\nx = re.findall(r'\\$([0-9.]+)', 'cost: $5.25 and $10.00 total')\nprint(len(x))\nprint(x[0])\nprint(bool(re.search(r'\\.', 'a.b')))\nprint(bool(re.search(r'\\d\\.\\d', 'a.b')))",
+   "answer": "2\n5.25\nTrue\nFalse"
+  },
+  {
+   "lesson": "py4e.ch11.l6",
+   "id": "ex1.trace-chapter",
+   "code": "import re\nx = re.findall(r'\\d+', 'rev=39772')\nprint(len(x))\nprint(x[0])\nprint(bool(re.search(r'^From:', 'Re: From: me')))\nprint(len(re.findall(r'\\S+@\\S+', 'a csev@umich.edu b')))",
+   "answer": "1\n39772\nFalse\n1"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "py4e.ch11.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import re\nlines = ['From: stephen@uct.ac.za', 'Spam: From: not really']\nfor line in lines:\n    if re.search('From:', line):\n        print(line)\nprint('---')\nfor line in lines:\n    if re.search('^From:', line):\n        print(line)"
+  },
+  {
+   "lesson": "py4e.ch11.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import re\nlines = [\n    'From: stephen.marquard@uct.ac.za',\n    'Return-Path: From: postmaster@collab.sakaiproject.org',\n    'From: cwen@iupui.edu',\n    'Author: stephen.marquard@uct.ac.za',\n]\nfor line in lines:\n    line = line.rstrip()\n    if re.search('^From:', line):\n        print(line)"
+  },
+  {
+   "lesson": "py4e.ch11.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — مرساتك الأولى\n# Your playground — your first anchor\n\nimport re\n\nlines = [\n    \"From: a@b.c\",\n    \"Spam: From: nope\",\n    \"FromX: tricky\",\n    \"from: lowercase\",\n]\nfor line in lines:\n    if re.search(\"From:\", line):\n        print(\"anywhere:\", line)\nfor line in lines:\n    if re.search(\"^From:\", line):\n        print(\"anchored:\", line)\nprint(re.search(\"^From:\", \"From: yes\"))\nprint(re.search(\"^From:\", \"no match here\"))"
+  },
+  {
+   "lesson": "py4e.ch11.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import re\ns = 'A message from csev@umich.edu to cwen@iupui.edu about meeting @2PM'\nlst = re.findall(r'\\S+@\\S+', s)\nprint(len(lst))\nprint(lst[1])\nprint(len(re.findall(r'\\S+@\\S+', 'meet @2PM')))"
+  },
+  {
+   "lesson": "py4e.ch11.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import re\nlines = [\n    'From stephen.marquard@uct.ac.za Sat Jan  5 09:14:16 2008',\n    'Return-Path: <postmaster@collab.sakaiproject.org>',\n    'Received: (from apache@localhost)',\n    'Author: stephen.marquard@uct.ac.za',\n]\nfor line in lines:\n    line = line.rstrip()\n    x = re.findall(r'\\S+@\\S+', line)\n    if len(x) > 0:\n        print(x)"
+  },
+  {
+   "lesson": "py4e.ch11.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — احصد ما تشاء\n# Your playground — harvest at will\n\nimport re\n\ns = \"ping alice@ex.com, bob@ex.org and trudy@ex.net before 3PM\"\nlst = re.findall(r\"\\S+@\\S+\", s)\nprint(lst)\nprint(len(lst))\nprint(re.search(r\"\\S+@\\S+\", s).group())\nprint(re.findall(r\"\\S+\", s))\nprint(re.findall(r\"@\", s))"
+  },
+  {
+   "lesson": "py4e.ch11.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import re\nline = 'X-DSPAM-Confidence: 0.8475'\nprint(re.findall(r'^X\\S*: ([0-9.]+)', line))\nprint(re.findall(r'^X\\S*: [0-9.]+', line))"
+  },
+  {
+   "lesson": "py4e.ch11.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import re\nlines = [\n    'X-DSPAM-Confidence: 0.8475',\n    'X-DSPAM-Probability: 0.0000',\n    'X-DSPAM-Confidence: 0.6178',\n    'X-DSPAM-Probability: 0.0000',\n    'X-DSPAM-Confidence: 0.6961',\n    'X-DSPAM-Probability: 0.0000',\n]\nfor line in lines:\n    line = line.rstrip()\n    x = re.findall(r'^X\\S*: ([0-9.]+)', line)\n    if len(x) > 0:\n        print(x)"
+  },
+  {
+   "lesson": "py4e.ch11.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — نمط واحد ثلاثة ألغاز\n# Your playground — one pattern, three riddles\n\nimport re\n\nlines = [\n    \"X-DSPAM-Confidence: 0.8475\",\n    \"X-Plane-Speed: 2.5 mach\",\n    \"Received: from X-Fake: 9.9\",\n]\nfor line in lines:\n    print(re.findall(r\"^X\\S*: ([0-9.]+)\", line))\nprint(\"--- now break it ---\")\nprint(re.findall(r\"^X\\S*:([0-9.]+)\", \"X-DSPAM-Confidence: 0.8475\"))\nprint(re.findall(r\"^X\\S*: [0-9.]+\", \"X-DSPAM-Confidence: 0.8475\"))\nprint(re.findall(r\"X\\S*: ([0-9.]+)\", \"Received: from X-Fake: 9.9\"))"
+  },
+  {
+   "lesson": "py4e.ch11.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import re\nprint(re.findall(r'\\d+', 'room 12, floor 3'))\nprint(re.findall(r'\\w+', 'room 12, floor 3'))"
+  },
+  {
+   "lesson": "py4e.ch11.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import re\nline = 'From: stephen.marquard@uct.ac.za, csev@umich.edu, and cwen@iupui.edu'\nprint(re.search(r'From:.+@', line).group())\nprint(re.search(r'From:.+?@', line).group())\nprint(re.findall(r'\\d{2,4}', 'years 1998, 2004 and 8'))"
+  },
+  {
+   "lesson": "py4e.ch11.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — فئات ومكررات\n# Your playground — classes and repeaters\n\nimport re\n\nprint(re.findall(r\"[a-z]+\", \"Code 42 lines and 3 Bugs\"))\nprint(re.findall(r\"[A-Za-z]+\", \"Code 42 lines and 3 Bugs\"))\nprint(re.findall(r\"\\w+@\\w+\", \"mail csev@umich or kate@ex\"))\nprint(re.findall(r\"o*\", \"cool\"))\nprint(re.findall(r\"o+\", \"cool\"))\nprint(re.findall(r\"\\d{2,4}\", \"12 123 1234 12345 5\"))"
+  },
+  {
+   "lesson": "py4e.ch11.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import re\ns = 'We just received $10.00 for cookies.'\nprint(re.findall(r'\\$[0-9.]+', s))\nprint(re.findall(r'[0-9.]+', s))"
+  },
+  {
+   "lesson": "py4e.ch11.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import re\nreceipt = 'cookies: $10.00, milk: $3.50, bread: $2.25'\nprices = re.findall(r'\\$([0-9.]+)', receipt)\ntotal = 0.0\nfor p in prices:\n    total = total + float(p)\nprint(len(prices))\nprint('total: %.2f' % total)"
+  },
+  {
+   "lesson": "py4e.ch11.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — الهروب في كل اتجاه\n# Your playground — escaping in every direction\n\nimport re\n\nprint(re.findall(r\"\\$\\d+\\.\\d\\d\", \"pay $10.00 or $5.50, not 7.25\"))\nprint(re.findall(r\"\\.\", \"mbox.txt and mbox2txt\"))\nprint(re.findall(r\"mbox\\.txt\", \"open mbox.txt or read mbox2txt\"))\nprint(re.findall(r\"mbox.txt\", \"open mbox.txt or read mbox2txt\"))\nprint(re.findall(r\"\\d\\d:\\d\\d\", \"at 09:14 then 9:15 late\"))"
+  },
+  {
+   "lesson": "py4e.ch11.l6",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import re\ns = 'X-DSPAM-Confidence: 0.8475'\nprint(bool(re.search(r'^X\\S*: [0-9.]+', s)))\nprint(re.findall(r'^X\\S*: ([0-9.]+)', s)[0])\nprint(len(re.findall(r'\\S+@\\S+', 'mail csev@umich.edu now')))"
+  },
+  {
+   "lesson": "py4e.ch11.l6",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import re\nlog = [\n    'From stephen.marquard@uct.ac.za Sat Jan  5 09:14:16 2008',\n    'X-DSPAM-Confidence: 0.8475',\n    'Author: stephen.marquard@uct.ac.za',\n    'X-DSPAM-Probability: 0.0000',\n    'From cwen@iupui.edu Thu Jan  3 16:23:48 2008',\n    'X-DSPAM-Confidence: 0.6178',\n    'X-DSPAM-Probability: 0.0000',\n    'X-DSPAM-Confidence: 0.6961',\n    'Subject: Past deadline',\n    'X-DSPAM-Confidence: 0.8386',\n    'From zqian@umich.edu Fri Jan  4 18:10:48 2008',\n]\ntotal = 0.0\ncount = 0\nfor line in log:\n    x = re.findall(r'^X-DSPAM-Confidence: ([0-9.]+)', line)\n    if len(x) > 0:\n        total = total + float(x[0])\n        count = count + 1\nprint('confidence count: %d' % count)\nprint('average: %.4f' % (total / count))"
+  },
+  {
+   "lesson": "py4e.ch11.l6",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — محللك الخاص\n# Your playground — your own analyzer\n\nimport re\n\nlog = [\n    \"From alice@ex.com Mon Jan  1 08:00:00 2024\",\n    \"X-DSPAM-Confidence: 0.9100\",\n    \"X-Spam-Status: hits=2\",\n    \"X-DSPAM-Confidence: 0.8200\",\n    \"Subject: lunch?\",\n]\ntotal = 0.0\ncount = 0\nfor line in log:\n    x = re.findall(r\"^X-DSPAM-Confidence: ([0-9.]+)\", line)\n    if len(x) > 0:\n        total = total + float(x[0])\n        count = count + 1\nprint(\"confidence count: %d\" % count)\nprint(\"average: %.4f\" % (total / count))\nprint(re.findall(r\"^X-Spam-Status: hits=(\\d+)\", \"X-Spam-Status: hits=2\"))\nprint(re.findall(r\"^From (\\S+)@\\S+\", log[0]))"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "py4e.ch11.l1",
+   "id": "ex3.mcq-anchor",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch11.l2",
+   "id": "ex3.mcq-backslash-s",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch11.l3",
+   "id": "ex3.mcq-parens",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch11.l4",
+   "id": "ex3.mcq-class-dot",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch11.l5",
+   "id": "ex3.mcq-escape-dot",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch11.l6",
+   "id": "ex3.mcq-silent",
+   "answer": "a",
+   "solution": "a"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "py4e.ch11.l1",
+   "id": "ex4.fill-search",
+   "answer": "search"
+  },
+  {
+   "lesson": "py4e.ch11.l2",
+   "id": "ex4.fill-findall",
+   "answer": "findall"
+  },
+  {
+   "lesson": "py4e.ch11.l3",
+   "id": "ex4.fill-group",
+   "answer": "group"
+  },
+  {
+   "lesson": "py4e.ch11.l5",
+   "id": "ex4.fill-raw",
+   "answer": "r"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "py4e.ch11.l6",
+   "id": "ex5.debug-loose-pattern",
+   "brokenCode": "import re\nlog = [\n    'From stephen.marquard@uct.ac.za Sat Jan  5 09:14:16 2008',\n    'X-DSPAM-Confidence: 0.8475',\n    'Author: stephen.marquard@uct.ac.za',\n    'X-DSPAM-Probability: 0.0000',\n    'From cwen@iupui.edu Thu Jan  3 16:23:48 2008',\n    'X-DSPAM-Confidence: 0.6178',\n    'X-DSPAM-Probability: 0.0000',\n    'X-DSPAM-Confidence: 0.6961',\n    'Subject: Past deadline',\n    'X-DSPAM-Confidence: 0.8386',\n    'From zqian@umich.edu Fri Jan  4 18:10:48 2008',\n]\ntotal = 0.0\ncount = 0\nfor line in log:\n    # نمط عمومي يقبل أي ترويسة X — يبدو معقولاً / a general pattern for any X header — looks reasonable\n    x = re.findall(r'^X\\S*: ([0-9.]+)', line)\n    if len(x) > 0:\n        total = total + float(x[0])\n        count = count + 1\nprint('confidence count: %d' % count)\nprint('average: %.4f' % (total / count))"
+  }
+ ]
+}

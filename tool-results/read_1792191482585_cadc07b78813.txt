@@ -1,0 +1,552 @@
+     1→
+     2→===== صفحة الكتاب 253 =====
+     3→Chapter 10 — Testing
+     4→Where we are. Chapter 9 attacked defects before the program runs, with static checking, types, and review.
+     5→This chapter attacks them by running the program on chosen inputs and comparing what it does against what
+     6→it should do. Testing cannot prove a program correct, but it is the single most practical net for catching the
+     7→defects that reviews miss — and the ones a future change will introduce. The central skill is deciding which
+     8→tests to write and knowing when you have written enough.
+     9→You have already met testing in miniature: run the code, look at the output, decide if it is right. The trouble is that
+    10→a real program has more possible inputs than there are atoms in the universe, so “run it and look” does not scale
+    11→and does not tell you when to stop. This chapter turns testing from an art into an engineering activity with
+    12→criteria: systematic ways to select inputs, to measure how thoroughly you have exercised the code and its
+    13→specification, and to justify — to yourself, your team, and sometimes a regulator — the claim that the software
+    14→has been tested well enough to ship.
+    15→10.1 Overview of Testing
+    16→At its simplest, a test records three things: an input or setup, an expected property or result, and the actual
+    17→behavior observed when you run it. The test passes when the observed behavior matches what was expected and
+    18→fails otherwise. A test suite is a collection of tests run together. This sounds trivial, and for one test it is; the
+    19→engineering lives in the four questions the rest of this section raises.
+    20→Principle. Testing can reveal the presence of defects but never their absence.1 A passing suite means “no
+    21→defect was triggered by these inputs,” not “no defect exists.” Everything in this chapter is about making that
+    22→first statement as strong as it can practically be.
+    23→10.1.1 Issues during Testing
+    24→Four hard problems recur every time you test anything. Name them now, because the rest of the chapter is a set of
+    25→answers to them.
+    26→Selection. The input space is astronomically large. Which handful of inputs should you actually run?
+    27→(§10.1.2, and all of §§10.3–10.6.) And once a suite exists: which of its tests does this change need to run?
+    28→(§10.1.6.)
+    29→Adequacy. Having run some tests, how do you know whether you have run enough? What is the stopping
+    30→rule? (§10.1.3.)
+    31→
+    32→===== صفحة الكتاب 254 =====
+    33→Oracle. For each input, how do you decide whether the observed output is correct? Sometimes that is
+    34→harder than producing the output. (§10.1.4.)
+    35→Automation and repeatability. A test you cannot re-run cheaply is nearly worthless, because its main
+    36→long-term value is catching regressions — old defects reintroduced by new changes. Manual “click around
+    37→and see” testing fails this test.
+    38→Keep these four in view. A criticism like “your tests are weak” almost always resolves into one of them: you
+    39→picked the wrong inputs, you stopped too early, your oracle was too lax, or your tests do not run automatically.
+    40→10.1.2 Test Selection
+    41→Because you cannot try every input, you must sample the input space — and a random or lazy sample usually
+    42→misses the inputs most likely to break. Good selection is criterion-driven: you choose a rule that partitions the
+    43→space of possibilities and then pick inputs to satisfy the rule. Two great families of criteria run through this
+    44→chapter, and they look at the program from opposite sides:
+    45→Black-box (specification-based) selection reads the spec and ignores the code. You pick inputs that
+    46→represent distinct required behaviors — valid and invalid classes, boundaries, combinations (§10.4, §10.6).
+    47→Its virtue: it finds missing code and survives a rewrite.
+    48→White-box (structure-based) selection reads the code and picks inputs that exercise its statements,
+    49→branches, and paths (§10.3, §10.5). Its virtue: it finds code the spec-based tests never reached, and it
+    50→measures thoroughness precisely.
+    51→Neither subsumes the other. A black-box suite can achieve 100% of every code-coverage metric and still miss a
+    52→feature that was never implemented (there is no code to cover). A white-box suite can cover every branch of the
+    53→code that exists and never notice the branch that should exist. Mature teams use both and measure with both.
+    54→10.1.3 Test Adequacy: Deciding When to Stop
+    55→“We tested it” is not a stopping rule; “we covered every branch, every equivalence class, and every boundary, and
+    56→all tests pass” is. A test-adequacy criterion (also called a coverage criterion) is a checkable condition that tells
+    57→you whether a suite is done with respect to that criterion. It converts the vague question “have we tested enough?”
+    58→into a countable one.
+    59→Most criteria have the shape: there is a set of things to cover, and the suite is adequate when it covers all of them.
+    60→The “things” might be statements, branches, paths, equivalence classes, boundaries, or condition-outcome pairs.
+    61→Coverage is then the fraction covered:
+    62→coverage =
+    63→items exercised by the suite
+    64→total items required by the criterion
+    65→
+    66→===== صفحة الكتاب 255 =====
+    67→Coverage is a floor, not a ceiling: 100% branch coverage means every branch ran, not that every branch is correct.
+    68→But low coverage is a genuine alarm — code that never ran under any test is code you know nothing about
+    69→empirically.
+    70→Pitfall. Do not manage to a coverage number for its own sake. A team told “hit 90%” can write assertion-
+    71→free tests that execute code without checking it, gaming the metric while learning nothing. Coverage is a
+    72→diagnostic, not a goal; pair it always with meaningful oracles (§10.1.4).
+    73→10.1.4 Test Oracles: Evaluating the Response to a Test
+    74→An oracle is whatever decides, for a given input, whether the actual output is correct. In a textbook example the
+    75→oracle is obvious — you write assert add(2, 3) == 5, and 5 is the oracle. In real systems it is often the hardest
+    76→part of testing, a difficulty known as the oracle problem.2 If you are testing a function that renders a map, or
+    77→ranks search results, or predicts weather, what exactly should you compare against?
+    78→Several oracle strategies, from strongest to weakest:
+    79→Exact expected value. You know the right answer and hard-code it: assert reverse("abc") == "cba".
+    80→Strongest, but only available when you can compute the answer independently.
+    81→Property / invariant oracle. You cannot name the exact answer but you know a property it must satisfy.
+    82→For a sort: the output is a permutation of the input and is non-decreasing. For encryption:
+    83→decrypt(encrypt(x)) == x (a round-trip oracle). These power property-based testing, where a tool
+    84→generates many random inputs and checks the property on each.
+    85→Cross-check / differential oracle. Compare against an independent implementation — a slow reference
+    86→version, a previous release, or a competitor. If they disagree, at least one is wrong.
+    87→Human judgment. A person inspects the output. Necessary for look-and-feel, but slow, non-repeatable,
+    88→and the enemy of automation — use it sparingly.
+    89→Consider a function median(xs). An exact oracle requires you to know the median of each test list. A cheaper
+    90→property oracle: after sorting, the result equals the middle element; and median(xs) == median(reversed(xs))
+    91→(order independence). Property oracles let you throw thousands of generated inputs at the function without hand-
+    92→computing each answer — often the difference between a suite that finds real defects and one that only confirms
+    93→the three cases you already thought of.
+    94→With a property-based testing tool — every ecosystem has one — both properties become one test run against
+    95→hundreds of generated lists:
+    96→
+    97→===== صفحة الكتاب 256 =====
+    98→10.1.5 Mutation Testing: Grading Your Suite
+    99→Coverage tells you what your tests ran; it cannot tell you what they would catch. The pitfall in §10.1.3 —
+   100→assertion-free tests that execute everything and check nothing — scores 100% on any coverage criterion while
+   101→detecting no defects at all. Mutation testing closes that gap by testing the tests.3
+   102→Principle — never trust a test you have never seen fail. A passing test is evidence only if you know the
+   103→test can detect the defect it claims to guard against. Before you trust a new test, temporarily remove or break
+   104→the behavior under test and confirm the test turns red for the reason you expected; then restore the behavior
+   105→and watch it return to green.4 Seeing a test fail once does not prove it catches every defect, but never seeing
+   106→it fail leaves a more basic question unanswered — does the test test anything? An assertion may never
+   107→execute, the runner may discover no tests, a mock may intercept the wrong boundary, or the expected value
+   108→may reproduce the very mistake the implementation makes. Test-driven development (§2.3.2) runs this
+   109→check at birth — red first, then green; mutation testing applies the same idea to an established suite by
+   110→inserting defects and asking whether the tests notice.
+   111→A mutation tool takes your working code and plants small, deliberate defects called mutants: flip a < to <=,
+   112→change a constant by one, negate a condition, delete a statement. Each mutant is a plausible bug — exactly the
+   113→kind a tired programmer writes. The tool then reruns your suite against each mutant in turn:
+   114→If at least one test fails, the suite noticed the defect: the mutant is killed.
+   115→If every test still passes, the mutant is a survivor — your suite executed the broken line and did not notice.
+   116→The mutation score — mutants killed divided by mutants generated — grades your suite’s defect-detecting
+   117→strength in a way coverage never can. Better, nearly every survivor is actionable: it points at a specific line where
+   118→an assertion is weak or missing.
+   119→# Hypothesis generates the inputs: pip install hypothesis
+   120→from hypothesis import given, strategies as st
+   121→def median(xs):
+   122→return sorted(xs)[len(xs) // 2]          # middle element (upper median)
+   123→@given(st.lists(st.integers(), min_size=1))
+   124→def test_median_properties(xs):
+   125→m = median(xs)
+   126→assert m == median(list(reversed(xs)))   # order independence
+   127→assert m in xs                           # the median is one of the inputs
+   128→
+   129→===== صفحة الكتاب 257 =====
+   130→Watch it work on the discount function, the worked example you will meet in §10.2.1. Suppose the tool mutates
+   131→the guard price < 0 into price <= 0, so a price of exactly zero is now (wrongly) rejected. Rerun the suite: no
+   132→test ever passes a zero price, so every test still passes and the mutant survives. The survivor names the missing
+   133→test precisely:
+   134→Add it, rerun, and the mutant dies — and, not coincidentally, you have just written the boundary-value test
+   135→(§10.4.2) your suite was missing. Mature tools exist in every ecosystem: go-mutesting for Go, PIT for Java,
+   136→Stryker for JavaScript and TypeScript, mutmut for Python, mutant for Ruby.
+   137→Pitfall — mutation testing is expensive. Each mutant means rerunning the suite, and a modest module can
+   138→generate hundreds of mutants, so a full run can take hours. Do not put it on every commit. Use it selectively
+   139→— on critical modules, on changed code, or in a periodic job — and treat the survivors it reports as a curated
+   140→to-do list for your suite, not a number to chase.
+   141→10.1.6 Selecting from the Suite: Regression Selection and Prioritization
+   142→Everything so far selects inputs — it builds the suite. A second selection problem appears once the suite exists and
+   143→keeps growing: on every change, which of the tests you already have should run, and in what order? Early in a
+   144→project the answer is “all of them, every time,” and you should keep that answer for as long as you can. But suites
+   145→grow with their codebase, and eventually the full run no longer fits the feedback loop it exists to power — one
+   146→industrial team reported a suite that took seven weeks to run in full.5 The moment there is a budget, three
+   147→techniques share the work, and the vocabulary is worth knowing:
+   148→Minimization permanently deletes tests that no longer earn their runtime: redundant (everything they
+   149→exercise, another test also exercises) or obsolete (the behavior they check no longer exists).
+   150→Selection picks, per change, the subset of tests relevant to what changed. A CSS change does not need the
+   151→payroll calculation suite — if you can establish which tests a change can possibly affect.
+   152→Prioritization keeps every test but orders the run so likely failures come first. Feedback arrives when the
+   153→first test fails, not when the last one passes; researchers score an ordering by its rate of fault detection
+   154→(APFD).5
+   155→The subtle point is that a time budget changes what “best” means. Suppose your merge gate has a ten-minute
+   156→budget (§14.2.4), and history gives you a value estimate for each test — say, the distinct regressions each one has
+   157→caught over the past year:
+   158→def test_free_item_allowed():
+   159→assert apply_discount(0.0, 50) == 0.0
+   160→# kills the `price <= 0` mutant
+   161→
+   162→===== صفحة الكتاب 258 =====
+   163→Test
+   164→Regressions caught
+   165→Runtime
+   166→T1
+   167→9
+   168→9 min
+   169→T2
+   170→4
+   171→3 min
+   172→T3
+   173→4
+   174→4 min
+   175→T4
+   176→3
+   177→3 min
+   178→The obvious greedy rule — most valuable test first — spends nine of the ten minutes on T1, for nine regressions’
+   179→worth of protection. Selecting against the budget runs T2, T3, and T4 instead: eleven regressions’ worth in the
+   180→same ten minutes. This is the 0/1 knapsack problem — each test an item with a weight (its runtime) and a value;
+   181→maximize value within the budget — which is NP-complete, and the real problem is harder still, because test
+   182→values overlap: two tests that exercise the same code catch the same defects, so a selection’s value is less than the
+   183→sum of its parts. Practical approaches therefore lean on heuristics and search — knapsack approximations and
+   184→genetic algorithms have both been studied6 — and large CI systems apply the same idea as predictive test
+   185→selection, weighting each test by its failure history and its relevance to the changed files.
+   186→Principle. A test budget is a constraint to design against, not permission to skip testing quietly. Decide
+   187→explicitly what runs at the merge gate and what runs continuously behind it (§14.2.4), and never let “the
+   188→suite is slow” drift into “we don’t run the suite.”
+   189→10.2 Levels of Testing
+   190→Testing happens at several levels, distinguished by how much of the system is under test at once. Each level
+   191→answers a different question and catches a different class of defect, and the levels are complementary, not
+   192→redundant.
+   193→10.2.1 Unit Testing
+   194→A unit test exercises the smallest independently testable piece — typically one function, method, or class — in
+   195→isolation from the rest of the system. Its dependencies are replaced by test doubles: a stub returns canned
+   196→answers, a mock additionally records how it was called and lets you assert on those calls, and a fake is a
+   197→lightweight working implementation (an in-memory database standing in for the real one).
+   198→Each double below stands in for the discounts dependency of PriceService (§10.2.2) — the stub feeds the unit a
+   199→canned percent and nothing more:
+   200→
+   201→===== صفحة الكتاب 259 =====
+   202→The mock also records the interaction, so the test can assert on how the unit used it:
+   203→And the fake actually works — an in-memory table stands in for the discount database, so any lookup behaves the
+   204→way the real component would:
+   205→Unit tests are the workhorses of a suite because they are fast, precise, and stable: fast because they touch no
+   206→network or disk, precise because a failure points at one unit, and stable because they do not break when an
+   207→unrelated part of the system changes. Here is a unit under test and a small suite:
+   208→class StubCatalog:
+   209→def price_of(self, item): return 12.0
+   210→# every item costs 12.0
+   211→class StubDiscounts:
+   212→def percent_for(self, item): return 25
+   213→# canned answer, whatever the item
+   214→svc = PriceService(StubCatalog(), StubDiscounts())
+   215→assert svc.quote("mug") == 9.0
+   216→# 12.0 * (1 - 0.25)
+   217→class MockDiscounts:
+   218→def __init__(self): self.calls = []
+   219→def percent_for(self, item):
+   220→self.calls.append(item)
+   221→return 25
+   222→mock = MockDiscounts()
+   223→PriceService(StubCatalog(), mock).quote("mug")
+   224→assert mock.calls == ["mug"]                     # called exactly once, with "mug"
+   225→class FakeDiscounts:
+   226→def __init__(self, table): self.table = dict(table)      # in-memory stand-in
+   227→def percent_for(self, item): return self.table.get(item, 0)
+   228→svc = PriceService(StubCatalog(), FakeDiscounts({"mug": 25}))
+   229→assert svc.quote("mug") == 9.0
+   230→assert svc.quote("bowl") == 12.0
+   231→# unknown item: no discount
+   232→
+   233→===== صفحة الكتاب 260 =====
+   234→Each test names a distinct behavior and carries its own oracle (the expected value or the expected exception).
+   235→Notice we are already thinking about selection: 0 and 100 are the boundaries of the valid percent range (§10.4.2),
+   236→and 150 is an invalid class.
+   237→What makes a unit test good? The FIRST mnemonic names five properties worth enforcing on every test you
+   238→write:7
+   239→Fast — milliseconds, so the whole suite runs on every save;
+   240→Independent — no shared state and no required order, so any subset runs alone and a failure implicates
+   241→exactly one test;
+   242→Repeatable — the same result on every run and every machine, with no dependence on network, clock, or
+   243→leftover environment;
+   244→Self-validating — the test asserts its own pass or fail, carrying its oracle (§10.1.4) instead of printing output
+   245→for a human to eyeball;
+   246→Timely — written with (or before — §2.3.2) the code it tests, while the design can still respond to what
+   247→testing reveals.
+   248→10.2.2 Integration Testing
+   249→Units that each pass in isolation can still fail together — one returns meters where the other expects feet, one
+   250→returns a null value where the other never checks. Integration testing exercises the interfaces and interactions
+   251→def apply_discount(price, percent):
+   252→"""Reduce price by percent (0..100). Raises ValueError on bad input."""
+   253→if price < 0:
+   254→raise ValueError("price must be non-negative")
+   255→if percent < 0 or percent > 100:
+   256→raise ValueError("percent must be in 0..100")
+   257→return round(price * (1 - percent / 100), 2)
+   258→def test_no_discount():        assert apply_discount(100.0, 0)   == 100.0
+   259→def test_half_off():           assert apply_discount(143.0, 50)  == 71.5
+   260→def test_rounds_to_cents():    assert apply_discount(9.99, 10)   == 8.99
+   261→def test_full_discount():      assert apply_discount(40.0, 100)  == 0.0
+   262→def test_rejects_bad_percent():
+   263→import pytest
+   264→with pytest.raises(ValueError):
+   265→apply_discount(100.0, 150)
+   266→
+   267→===== صفحة الكتاب 261 =====
+   268→between units, growing the scope from a pair of collaborators up toward whole subsystems. This is where
+   269→mismatched assumptions, wrong data formats, and protocol errors surface.
+   270→A unit test of PriceService’s quote method would mock catalog and discounts. An integration test instead
+   271→wires the real (or fake) catalog and discount components together and checks that their contract holds end to end:
+   272→If Discounts returned a fraction (0.25) while the discount function expects a percentage (25), every unit test could
+   273→pass while this integration test correctly fails. That interface mismatch is the defect class unit tests are blind to.
+   274→10.2.3 Functional, System, and Acceptance Testing
+   275→Higher levels test the assembled product against ever-broader notions of “correct”:
+   276→Functional testing checks that a complete feature behaves per its specification, treating the system as a
+   277→black box: given a shopping cart with these items and this coupon, the checkout total is X. It spans many
+   278→units but is scoped to one function of the product.
+   279→System testing exercises the entire, integrated system in a production-like environment, including non-
+   280→functional requirements — performance, security, reliability, usability. “The page loads in under 500 ms at
+   281→1,000 concurrent users” is a system-level test.
+   282→Acceptance testing answers the customer’s question, “will I sign for this?” It is run against the customer’s
+   283→own criteria, often by or with the customer. User acceptance testing (UAT) uses real users and realistic
+   284→tasks; alpha/beta releases are acceptance testing in the wild.
+   285→class PriceService:
+   286→def __init__(self, catalog, discounts):
+   287→self.catalog = catalog          # unit A: name -> base price
+   288→self.discounts = discounts      # unit B: name -> percent off
+   289→def quote(self, item):
+   290→base = self.catalog.price_of(item)
+   291→pct = self.discounts.percent_for(item)
+   292→return apply_discount(base, pct)
+   293→def test_quote_integrates_catalog_and_discounts():
+   294→catalog = Catalog({"mug": 12.0})
+   295→discounts = Discounts({"mug": 25})
+   296→svc = PriceService(catalog, discounts)
+   297→assert svc.quote("mug") == 9.0
+   298→# 12.0 * (1 - 0.25)
+   299→
+   300→===== صفحة الكتاب 262 =====
+   301→A useful way to remember the difference: functional and system testing ask “did we build the product right?”
+   302→(verification), while acceptance testing asks “did we build the right product?” (validation).8 Both matter, and
+   303→passing one is no guarantee of the other.
+   304→From acceptance criteria to acceptance tests. The Given / When / Then scenarios you wrote as a story’s
+   305→acceptance criteria (§3.4.1) are your acceptance tests. In Behavior-Driven Development (BDD), those
+   306→Gherkin .feature scenarios are made executable by tools like Cucumber, behave, or SpecFlow/Reqnroll:
+   307→each Given/When/Then step binds to code, so the customer-readable specification runs on every build. This
+   308→is functional/acceptance testing whose oracle (§10.1.4) is the agreed scenario itself.
+   309→One more system-level suite gets its own name because you will run it constantly. A smoke test is a fast, shallow
+   310→pass that answers a single question: is the build fundamentally alive? The app starts, the homepage loads, a user
+   311→can log in — nothing deeper. The name comes from hardware bring-up: power the board on and see whether
+   312→smoke comes out before bothering with finer measurements.9 Smoke tests run immediately after a build or a
+   313→deployment, as a gate: if they fail, the build is dead on arrival, no deeper (and more expensive) testing is worth
+   314→starting, and a deploy must not proceed.10 Chapter 14 gives them a formal home as a stage of the delivery
+   315→pipeline, run right after each deploy (§14.2.2).
+   316→10.2.4 Case Study: Test Early and Often — the Testing Pyramid
+   317→The levels are not equally cheap. A good unit test runs in milliseconds and almost never flakes; a full end-to-end
+   318→(E2E) test may spin up a browser, a database, and three services, take minutes, and fail intermittently for reasons
+   319→that have nothing to do with your code. This cost gradient motivates the testing pyramid: have many fast unit
+   320→tests, fewer integration tests, and only a handful of slow end-to-end tests.11
+   321→
+   322→===== صفحة الكتاب 263 =====
+   323→The pyramid is an economic argument. Suppose a defect in the discount logic could be caught at any level. Caught
+   324→by a unit test, the feedback arrives in seconds, on the exact line, before you even commit. Caught by an E2E test
+   325→in CI, it arrives twenty minutes later as “checkout total was wrong,” and you must debug down to the line. Caught
+   326→in production, it arrives as a customer complaint and a refund. The cost of a defect typically rises substantially
+   327→with each stage it survives — the exact multiplier varies by domain, tooling, and release process (§2.4.2) — so
+   328→you push detection as far down and early as it will go.12
+   329→Pitfall — the ice-cream cone. Teams that skip unit tests and lean on a big pile of slow, flaky E2E tests
+   330→invert the pyramid into an “ice-cream cone.” Their CI is slow, failures are hard to localize, and developers
+   331→learn to ignore red builds (“probably just flaky”). An ignored test suite protects nothing. Prefer the pyramid
+   332→deliberately.
+   333→Because flakiness is what poisons trust, know its causes. A flaky test — one that passes and fails across runs with
+   334→no code change — most often traces to one of four roots: race conditions and async timing (the assertion runs
+   335→before the work finishes); shared mutable state between tests (one test’s leftovers change another’s result); test-
+   336→order dependence (the suite passes in one order and fails in another); or unstable external dependencies (real
+   337→networks, real clocks, third-party services).13 The fixes mirror the causes: isolate state so each test builds and tears
+   338→down its own world; make tests order-independent (and let the runner randomize order to prove it); await
+   339→asynchronous work properly with sane timeouts instead of sleeping and hoping; and replace or fake unstable
+   340→dependencies. For the incorrigible case, quarantine the test out of the gating suite — then fix it or delete it,
+   341→because a test allowed to stay red-then-green trains the team to ignore the suite.
+   342→
+   343→===== صفحة الكتاب 264 =====
+   344→“Test early and often” also means testing continuously: run the fast tests on every save, the full suite on every
+   345→push, and treat a broken build as a stop-the-line event. This is the testing half of continuous integration (Chapter
+   346→2) — the discipline that keeps the “make change cheap” promise from Chapter 1 honest. Chapter 14 assembles
+   347→these tests, with the static checks of Chapter 9, into the full delivery pipeline.
+   348→10.3 Code Coverage I: White-Box Testing
+   349→White-box testing selects inputs by looking at the code’s structure. To talk about structure precisely, we model a
+   350→function as a graph.
+   351→10.3.1 Control-Flow Graphs
+   352→A control-flow graph (CFG) represents a function as a directed graph: nodes are basic blocks (maximal straight-
+   353→line sequences of statements), and edges are the possible transfers of control between them. A branch (an if, a
+   354→loop condition) is a node with two outgoing edges; a merge is a node with two incoming edges. The CFG makes
+   355→“statements,” “branches,” and “paths” into things you can count.
+   356→Consider a function that classifies a number and, for positive numbers, sums 1..n:
+   357→Its control-flow graph:
+   358→def classify_and_sum(n):        # node 1  (entry)
+   359→if n < 0:                   # node 2  (decision)
+   360→return "negative"
+   361→# node 3
+   362→total = 0
+   363→# node 4
+   364→i = 1
+   365→# node 4
+   366→while i <= n:               # node 5  (decision)
+   367→total += i              # node 6
+   368→i += 1
+   369→# node 6
+   370→return f"sum={total}"
+   371→# node 7  (exit)
+   372→
+   373→===== صفحة الكتاب 265 =====
+   374→Two structural features matter for what follows. First, node 2 and node 5 are decisions, each with a true edge and
+   375→a false edge. Second, node 5’s true edge loops back — a cycle — which is why the number of paths through this
+   376→function is unbounded (you can go around the loop 0, 1, 2, … times), while the number of edges is finite. That gap
+   377→is the whole reason path coverage is usually impractical and weaker criteria exist.
+   378→
+   379→===== صفحة الكتاب 266 =====
+   380→The CFG also gives you a number worth knowing. Cyclomatic complexity is the count of a function’s decision
+   381→points plus one — equivalently, for a graph with 𝐸 edges and 𝑁 nodes, 𝐸−𝑁+ 2.14 It measures how many
+   382→independent paths thread the function, and so roughly how many tests branch coverage will demand. For the
+   383→function above: two decisions (nodes 2 and 5), so complexity 2 + 1 = 3; or count the graph above, 𝐸= 9, 𝑁= 8,
+   384→9 −8 + 2 = 3. Typical interpretation bands are 1–10 for simple, readily testable code; 11–20 for moderate
+   385→complexity; 21–50 for risky code; and above 50 for code that is extremely difficult to test comprehensively and
+   386→should usually be decomposed.15 High-complexity functions tend to contain more defects and hard-to-cover
+   387→branches, so the metric helps teams direct testing and refactoring effort (Chapter 15, §15.3) toward the areas of
+   388→greatest risk.16
+   389→10.3.2 Control-Flow Coverage Criteria
+   390→Three classic criteria form a hierarchy of increasing strength. We work each one on the classify-and-sum function
+   391→from §10.3.1.
+   392→Statement coverage requires every node (statement) to be executed by at least one test. What set of inputs runs
+   393→every node? Node 3 needs n < 0; nodes 4–7 need n >= 0; node 6 (the loop body) needs n >= 1. So:
+   394→Test
+   395→Input n
+   396→Nodes executed
+   397→New nodes
+   398→T1
+   399→-5
+   400→1, 2, 3
+   401→1,2,3
+   402→T2
+   403→3
+   404→1,2,4,5,6,5,6,5,6,5,7
+   405→4,5,6,7
+   406→Two tests (n=-5, n=3) achieve 100% statement coverage — every node has run.
+   407→Branch (decision) coverage requires every edge out of a decision to be taken — both the true and false outcome
+   408→of each decision. List the four decision edges: node 2 true, node 2 false, node 5 true, node 5 false. Check the tests
+   409→above:
+   410→n=-5 takes node 2 true. (node 5 never reached.)
+   411→n=3 takes node 2 false, node 5 true (loop body runs), and node 5 false (loop exits).
+   412→Between them, all four edges are covered, so the same two tests also give 100% branch coverage here. That is a
+   413→coincidence of this function’s shape; branch coverage is strictly stronger than statement coverage in general. To
+   414→see why, change the function so the loop can be skipped entirely and a statement after it depends on the loop
+   415→having run — a test that covers every statement can still fail to take the “loop body never executes” edge.
+   416→
+   417→===== صفحة الكتاب 267 =====
+   418→Note — branch coverage subsumes statement coverage. If every branch is taken, every node between
+   419→branches must have run, so 100% branch ⇒ 100% statement. The converse fails: a single if with no else
+   420→can reach 100% statement coverage with one test (condition true) while never taking the false edge.
+   421→Whenever a team says “coverage,” ask which coverage — the gap between these two is where real defects
+   422→hide.
+   423→Path coverage requires every distinct path from entry to exit to be executed. Count the paths in the classify-and-
+   424→sum function:
+   425→The n < 0 path (through node 3): 1 path.
+   426→The n >= 0 paths differ by how many times the loop runs: 0 iterations, 1 iteration, 2 iterations, … — one
+   427→path per possible value of n >= 0, i.e. unbounded.
+   428→So full path coverage is impossible here — a decisive illustration of why we settle for branch coverage plus
+   429→judgment about loops (commonly: test the loop 0 times, once, and “many” times). Even in loop-free code, path
+   430→count grows as roughly 2𝑑 for 𝑑 independent decisions, so path coverage is exponential and reserved for tiny,
+   431→critical routines.
+   432→The hierarchy, then: path ⇒ branch ⇒ statement (each implies the ones to its right).17 Strength costs test cases;
+   433→the engineering choice is how far up the hierarchy a given piece of code justifies climbing. A checkout total merits
+   434→branch coverage; an autopilot demands more (§10.5).
+   435→Case study — measuring coverage isn’t free. Coverage tools work by instrumenting the program: a probe
+   436→at every statement or branch records what ran. The probes cost real time and memory — overheads of 10–
+   437→30% in time, with instrumented binaries 60–90% larger, have been reported — unnoticeable for a unit suite
+   438→on a laptop, prohibitive on a memory-constrained phone. One line of research sidesteps instrumentation
+   439→entirely: modern CPUs already record where they branch, and sampling those hardware monitors during a
+   440→test run recovered up to ~90% of branch coverage with less overhead and no code growth — enough to
+   441→measure coverage on the device a mobile app actually ships to.6
+   442→10.4 Input Coverage I: Black-Box Testing
+   443→Black-box testing turns the specification into a set of items to cover, without looking at the code. The two most
+   444→valuable criteria partition the input space and then probe its edges.
+   445→10.4.1 Equivalence-Class Coverage
+   446→The insight is that inputs are not all different: a program usually treats whole classes of inputs identically, so one
+   447→representative of a class is (almost) as good as any other. An equivalence class (equivalence partition) is a set of
+   448→
+   449→===== صفحة الكتاب 268 =====
+   450→inputs the specification implies should be handled the same way.18 You partition the input space into classes —
+   451→covering both valid and invalid classes — and pick one representative from each. This slashes the number of tests
+   452→from “every input” to “one per class” while keeping strong coverage of behaviors.
+   453→Take a spec: set_volume(level) accepts an integer level from 1 to 100 inclusive and sets the volume; any other
+   454→value is rejected. The classes are:
+   455→Class
+   456→Example representative
+   457→Expected behavior
+   458→C1: below range ( < 1)
+   459→-3
+   460→rejected
+   461→C2: in range (1..100)
+   462→55
+   463→accepted
+   464→C3: above range ( > 100)
+   465→250
+   466→rejected
+   467→C4: non-integer type
+   468→"loud", 3.5
+   469→rejected
+   470→Four tests, one per class, cover every distinct specified behavior. Compare this to testing 1, 2, 3, …, 100 (100 tests
+   471→that all exercise the same behavior C2) — equivalence partitioning gives you the same behavioral coverage for a
+   472→fraction of the cost, and it forces you to remember the invalid classes that ad-hoc testing skips.
+   473→10.4.2 Boundary-Value Coverage
+   474→Defects cluster at the edges of equivalence classes, because that is where programmers write the fragile
+   475→comparisons: < versus <=, an off-by-one in a loop bound, > versus >=. Boundary-value analysis targets exactly
+   476→those edges: for each boundary, test the value just below it, at it, and just above it.18
+   477→For set_volume, valid range 1..100, the two boundaries are 1 (lower) and 100 (upper). The boundary values to
+   478→test:
+   479→Boundary
+   480→Values to test
+   481→Expected
+   482→lower = 1
+   483→0
+   484→rejected (just below)
+   485→1
+   486→accepted (at)
+   487→2
+   488→accepted (just above)
+   489→upper = 100
+   490→99
+   491→accepted (just below)
+   492→100
+   493→accepted (at)
+   494→101
+   495→rejected (just above)
+   496→Six boundary tests. Watch them do their job. Suppose a developer wrote the guard as:
+   497→
+   498→===== صفحة الكتاب 269 =====
+   499→The equivalence-class test with representative 55 passes (it is happily accepted), and so would 250 (rejected) and
+   500→-3 (rejected). The defect hides at the top edge. But the boundary test at level 100 fails — the code rejects a value
+   501→the spec says is valid — pinpointing the >=/> mistake. This is the payoff: boundary values find one of the most
+   502→common categories of numeric defect, and they cost only a few extra tests on top of equivalence classes.
+   503→Note. Combine the two criteria: equivalence partitioning tells you which regions exist; boundary analysis
+   504→tells you where within and between regions to probe. In practice you write one “interior” representative per
+   505→class plus the below/at/above triples at each boundary. For set_volume that is roughly 4 + 6 = a handful of
+   506→tests that together cover behavior far better than dozens of random ones.
+   507→One black-box technique abandons careful selection altogether. Fuzz testing (fuzzing) throws huge volumes of
+   508→malformed, random, or mutated inputs at a program and watches for crashes, hangs, and memory errors — no
+   509→specification, no partitions, just the implicit oracle (§10.1.4) that the program must not fall over.19 It is a cousin of
+   510→property-based testing but adversarial in spirit: instead of checking a property on well-formed inputs, it hunts for
+   511→the ill-formed input nobody thought to reject. That makes fuzzing a mainstay of security testing — buffer
+   512→overflows, injection flaws, and denial-of-service defects are the bugs that surface when a parser meets input its
+   513→author never imagined. Because an effective fuzzing campaign runs for hours or days, it belongs in a non-blocking
+   514→pipeline stage (Chapter 14), not on the every-commit path.
+   515→10.5 Code Coverage II: MC/DC
+   516→Branch coverage checks that each decision comes out true and false at least once. But a decision can be a
+   517→compound boolean expression — (A && B) || C — and branch coverage says nothing about the individual
+   518→conditions inside it. A suite can flip the whole decision true/false while some condition never actually influenced
+   519→the outcome. For the highest-criticality software (in avionics, DO-178C requires it at the most critical design-
+   520→assurance level), we need a stronger criterion: Modified Condition/Decision Coverage (MC/DC).20
+   521→10.5.1 Condition and Decision Coverage Are Independent
+   522→First untangle two finer criteria:
+   523→Condition coverage requires each individual condition (A, B, C) to be both true and false at least once —
+   524→but says nothing about the decision’s outcome.
+   525→def set_volume(level):
+   526→if not isinstance(level, int) or level < 1 or level >= 100:   # BUG: >= should be >
+   527→raise ValueError("level must be 1..100")
+   528→_apply(level)
+   529→
+   530→===== صفحة الكتاب 270 =====
+   531→Decision coverage (= branch coverage) requires the whole decision to be both true and false — but says
+   532→nothing about individual conditions.
+   533→Neither implies the other. Consider the decision A || B with just two tests: (A=true, B=false) and (A=false,
+   534→B=true).
+   535→Test
+   536→A
+   537→B
+   538→A || B
+   539→t1
+   540→T
+   541→F
+   542→T
+   543→t2
+   544→F
+   545→T
+   546→T
+   547→Every condition takes both values (A is T then F; B is F then T), so condition coverage is 100%. Yet the decision
+   548→is true in both tests — it never came out false — so decision coverage is only 50%. Conversely, testing
+   549→(A=true, B=false) and (A=false, B=false) gives full decision coverage (T then F) while B never takes the
+   550→value true — so condition coverage is not met. Because each criterion can be satisfied while the other is not,
+
+[showing lines 1-550 of 1077; use offset=551 with limit to continue reading]

@@ -1,0 +1,3746 @@
+
+===== صفحة الكتاب 632 =====
+14
+Computer Vision
+Whether it is medical diagnosis, self-driving vehicles, camera monitoring, or smart filters,
+many applications in the field of computer vision are closely related to our current and fu-
+ture lives. In recent years, deep learning has been the transformative power for advancing
+the performance of computer vision systems. It can be said that the most advanced com-
+puter vision applications are almost inseparable from deep learning. In view of this, this
+chapter will focus on the field of computer vision, and investigate methods and applications
+that have recently been influential in academia and industry.
+In Chapter 7 and Chapter 8, we studied various convolutional neural networks that are
+commonly used in computer vision, and applied them to simple image classification tasks.
+At the beginning of this chapter, we will describe two methods that may improve model
+generalization, namely image augmentation and fine-tuning, and apply them to image clas-
+sification. Since deep neural networks can effectively represent images in multiple lev-
+els, such layerwise representations have been successfully used in various computer vision
+tasks such as object detection, semantic segmentation, and style transfer. Following the key
+idea of leveraging layerwise representations in computer vision, we will begin with major
+components and techniques for object detection. Next, we will show how to use fully con-
+volutional networks for semantic segmentation of images. Then we will explain how to use
+style transfer techniques to generate images like the cover of this book. In the end, we con-
+clude this chapter by applying the materials of this chapter and several previous chapters
+on two popular computer vision benchmark datasets.
+14.1 Image Augmentation
+In Section 8.1, we mentioned that large datasets are a prerequisite for the success of deep
+neural networks in various applications. Image augmentation generates similar but distinct
+training examples after a series of random changes to the training images, thereby expand-
+ing the size of the training set. Alternatively, image augmentation can be motivated by the
+fact that random tweaks of training examples allow models to rely less on certain attributes,
+thereby improving their generalization ability. For example, we can crop an image in dif-
+ferent ways to make the object of interest appear in different positions, thereby reducing
+the dependence of a model on the position of the object. We can also adjust factors such as
+brightness and color to reduce a model’s sensitivity to color. It is probably true that image
+592
+
+===== صفحة الكتاب 633 =====
+593
+Image Augmentation
+augmentation was indispensable for the success of AlexNet at that time. In this section we
+will discuss this widely used technique in computer vision.
+%matplotlib inline
+import torch
+import torchvision
+from torch import nn
+from d2l import torch as d2l
+14.1.1 Common Image Augmentation Methods
+In our investigation of common image augmentation methods, we will use the following
+400 × 500 image an example.
+d2l.set_figsize()
+img = d2l.Image.open('../img/cat1.jpg')
+d2l.plt.imshow(img);
+Most image augmentation methods have a certain degree of randomness. To make it easier
+for us to observe the effect of image augmentation, next we define an auxiliary function
+apply. This function runs the image augmentation method aug multiple times on the input
+image img and shows all the results.
+def apply(img, aug, num_rows=2, num_cols=4, scale=1.5):
+Y = [aug(img) for _ in range(num_rows * num_cols)]
+d2l.show_images(Y, num_rows, num_cols, scale=scale)
+Flipping and Cropping
+Flipping the image left and right usually does not change the category of the object. This is
+one of the earliest and most widely used methods of image augmentation. Next, we use the
+transforms module to create the RandomHorizontalFlip instance, which flips an image
+left and right with a 50% chance.
+apply(img, torchvision.transforms.RandomHorizontalFlip())
+Flipping up and down is not as common as flipping left and right. But at least for this
+
+===== صفحة الكتاب 634 =====
+594
+Computer Vision
+example image, flipping up and down does not hinder recognition. Next, we create a Ran-
+domVerticalFlip instance to flip an image up and down with a 50% chance.
+apply(img, torchvision.transforms.RandomVerticalFlip())
+In the example image we used, the cat is in the middle of the image, but this may not be the
+case in general. In Section 7.5, we explained that the pooling layer can reduce the sensitivity
+of a convolutional layer to the target position. In addition, we can also randomly crop the
+image to make objects appear in different positions in the image at different scales, which
+can also reduce the sensitivity of a model to the target position.
+In the code below, we randomly crop an area with an area of 10% ∼100% of the original
+area each time, and the ratio of width to height of this area is randomly selected from 0.5 ∼
+2. Then, the width and height of the region are both scaled to 200 pixels. Unless otherwise
+specified, the random number between 𝑎and 𝑏in this section refers to a continuous value
+obtained by random and uniform sampling from the interval [𝑎, 𝑏].
+shape_aug = torchvision.transforms.RandomResizedCrop(
+(200, 200), scale=(0.1, 1), ratio=(0.5, 2))
+apply(img, shape_aug)
+Changing Colors
+Another augmentation method is changing colors. We can change four aspects of the image
+color: brightness, contrast, saturation, and hue. In the example below, we randomly change
+the brightness of the image to a value between 50% (1 −0.5) and 150% (1 + 0.5) of the
+original image.
+
+===== صفحة الكتاب 635 =====
+595
+Image Augmentation
+apply(img, torchvision.transforms.ColorJitter(
+brightness=0.5, contrast=0, saturation=0, hue=0))
+Similarly, we can randomly change the hue of the image.
+apply(img, torchvision.transforms.ColorJitter(
+brightness=0, contrast=0, saturation=0, hue=0.5))
+We can also create a RandomColorJitter instance and set how to randomly change the
+brightness, contrast, saturation, and hue of the image at the same time.
+color_aug = torchvision.transforms.ColorJitter(
+brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5)
+apply(img, color_aug)
+
+===== صفحة الكتاب 636 =====
+596
+Computer Vision
+Combining Multiple Image Augmentation Methods
+In practice, we will combine multiple image augmentation methods. For example, we can
+combine the different image augmentation methods defined above and apply them to each
+image via a Compose instance.
+augs = torchvision.transforms.Compose([
+torchvision.transforms.RandomHorizontalFlip(), color_aug, shape_aug])
+apply(img, augs)
+14.1.2 Training with Image Augmentation
+Let’s train a model with image augmentation. Here we use the CIFAR-10 dataset instead
+of the Fashion-MNIST dataset that we used before. This is because the position and size
+of the objects in the Fashion-MNIST dataset have been normalized, while the color and
+size of the objects in the CIFAR-10 dataset have more significant differences. The first 32
+training images in the CIFAR-10 dataset are shown below.
+all_images = torchvision.datasets.CIFAR10(train=True, root="../data",
+download=True)
+d2l.show_images([all_images[i][0] for i in range(32)], 4, 8, scale=0.8);
+Downloading https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz to ../data/
+↩→cifar-10-python.tar.gz
+100%|￿￿￿￿￿￿￿￿￿￿| 170498071/170498071 [00:04<00:00, 37716809.52it/s]
+Extracting ../data/cifar-10-python.tar.gz to ../data
+In order to obtain definitive results during prediction, we usually only apply image aug-
+
+===== صفحة الكتاب 637 =====
+597
+Image Augmentation
+mentation to training examples, and do not use image augmentation with random opera-
+tions during prediction. Here we only use the simplest random left-right flipping method.
+In addition, we use a ToTensor instance to convert a minibatch of images into the format
+required by the deep learning framework, i.e., 32-bit floating point numbers between 0 and
+1 with the shape of (batch size, number of channels, height, width).
+train_augs = torchvision.transforms.Compose([
+torchvision.transforms.RandomHorizontalFlip(),
+torchvision.transforms.ToTensor()])
+test_augs = torchvision.transforms.Compose([
+torchvision.transforms.ToTensor()])
+Next, we define an auxiliary function to facilitate reading the image and applying image
+augmentation. The transform argument provided by PyTorch’s dataset applies augmen-
+tation to transform the images. For a detailed introduction to DataLoader, please refer to
+Section 4.2.
+def load_cifar10(is_train, augs, batch_size):
+dataset = torchvision.datasets.CIFAR10(root="../data", train=is_train,
+transform=augs, download=True)
+dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
+shuffle=is_train, num_workers=d2l.get_dataloader_workers())
+return dataloader
+Multi-GPU Training
+We train the ResNet-18 model from Section 8.6 on the CIFAR-10 dataset. Recall the in-
+troduction to multi-GPU training in Section 13.6. In the following, we define a function to
+train and evaluate the model using multiple GPUs.
+#@save
+def train_batch_ch13(net, X, y, loss, trainer, devices):
+"""Train for a minibatch with multiple GPUs (defined in Chapter 13)."""
+if isinstance(X, list):
+# Required for BERT fine-tuning (to be covered later)
+X = [x.to(devices[0]) for x in X]
+(continues on next page)
+
+===== صفحة الكتاب 638 =====
+598
+Computer Vision
+(continued from previous page)
+else:
+X = X.to(devices[0])
+y = y.to(devices[0])
+net.train()
+trainer.zero_grad()
+pred = net(X)
+l = loss(pred, y)
+l.sum().backward()
+trainer.step()
+train_loss_sum = l.sum()
+train_acc_sum = d2l.accuracy(pred, y)
+return train_loss_sum, train_acc_sum
+#@save
+def train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
+devices=d2l.try_all_gpus()):
+"""Train a model with multiple GPUs (defined in Chapter 13)."""
+timer, num_batches = d2l.Timer(), len(train_iter)
+animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs], ylim=[0, 1],
+legend=['train loss', 'train acc', 'test acc'])
+net = nn.DataParallel(net, device_ids=devices).to(devices[0])
+for epoch in range(num_epochs):
+# Sum of training loss, sum of training accuracy, no. of examples,
+# no. of predictions
+metric = d2l.Accumulator(4)
+for i, (features, labels) in enumerate(train_iter):
+timer.start()
+l, acc = train_batch_ch13(
+net, features, labels, loss, trainer, devices)
+metric.add(l, acc, labels.shape[0], labels.numel())
+timer.stop()
+if (i + 1) % (num_batches // 5) == 0 or i == num_batches - 1:
+animator.add(epoch + (i + 1) / num_batches,
+(metric[0] / metric[2], metric[1] / metric[3],
+None))
+test_acc = d2l.evaluate_accuracy_gpu(net, test_iter)
+animator.add(epoch + 1, (None, None, test_acc))
+print(f'loss {metric[0] / metric[2]:.3f}, train acc '
+f'{metric[1] / metric[3]:.3f}, test acc {test_acc:.3f}')
+print(f'{metric[2] * num_epochs / timer.sum():.1f} examples/sec on '
+f'{str(devices)}')
+Now we can define the train_with_data_aug function to train the model with image
+augmentation. This function gets all available GPUs, uses Adam as the optimization algo-
+rithm, applies image augmentation to the training dataset, and finally calls the train_ch13
+function just defined to train and evaluate the model.
+batch_size, devices, net = 256, d2l.try_all_gpus(), d2l.resnet18(10, 3)
+net.apply(d2l.init_cnn)
+def train_with_data_aug(train_augs, test_augs, net, lr=0.001):
+train_iter = load_cifar10(True, train_augs, batch_size)
+(continues on next page)
+
+===== صفحة الكتاب 639 =====
+599
+Image Augmentation
+(continued from previous page)
+test_iter = load_cifar10(False, test_augs, batch_size)
+loss = nn.CrossEntropyLoss(reduction="none")
+trainer = torch.optim.Adam(net.parameters(), lr=lr)
+net(next(iter(train_iter))[0])
+train_ch13(net, train_iter, test_iter, loss, trainer, 10, devices)
+Let’s train the model using image augmentation based on random left-right flipping.
+train_with_data_aug(train_augs, test_augs, net)
+loss 0.215, train acc 0.925, test acc 0.810
+4728.8 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+↩→index=1)]
+14.1.3 Summary
+• Image augmentation generates random images based on existing training data to improve
+the generalization ability of models.
+• In order to obtain definitive results during prediction, we usually only apply image aug-
+mentation to training examples, and do not use image augmentation with random op-
+erations during prediction.
+• Deep learning frameworks provide many different image augmentation methods, which
+can be applied simultaneously.
+14.1.4 Exercises
+1. Train the model without using image augmentation: train_with_data_aug(test_augs,
+test_augs). Compare training and testing accuracy when using and not using image
+augmentation. Can this comparative experiment support the argument that image aug-
+mentation can mitigate overfitting? Why?
+2. Combine multiple different image augmentation methods in model training on the CIFAR-
+10 dataset. Does it improve test accuracy?
+
+===== صفحة الكتاب 640 =====
+600
+Computer Vision
+212
+3. Refer to the online documentation of the deep learning framework. What other image
+augmentation methods does it also provide?
+Discussions212.
+14.2 Fine-Tuning
+In earlier chapters, we discussed how to train models on the Fashion-MNIST training
+dataset with only 60000 images. We also described ImageNet, the most widely used large-
+scale image dataset in academia, which has more than 10 million images and 1000 objects.
+However, the size of the dataset that we usually encounter is between those of the two
+datasets.
+Suppose that we want to recognize different types of chairs from images, and then recom-
+mend purchase links to users. One possible method is to first identify 100 common chairs,
+take 1000 images of different angles for each chair, and then train a classification model
+on the collected image dataset. Although this chair dataset may be larger than the Fashion-
+MNIST dataset, the number of examples is still less than one-tenth of that in ImageNet.
+This may lead to overfitting of complicated models that are suitable for ImageNet on this
+chair dataset. Besides, due to the limited amount of training examples, the accuracy of the
+trained model may not meet practical requirements.
+In order to address the above problems, an obvious solution is to collect more data. How-
+ever, collecting and labeling data can take a lot of time and money. For example, in order
+to collect the ImageNet dataset, researchers have spent millions of dollars from research
+funding. Although the current data collection cost has been significantly reduced, this cost
+still cannot be ignored.
+Another solution is to apply transfer learning to transfer the knowledge learned from the
+source dataset to the target dataset. For example, although most of the images in the Ima-
+geNet dataset have nothing to do with chairs, the model trained on this dataset may extract
+more general image features, which can help identify edges, textures, shapes, and object
+composition. These similar features may also be effective for recognizing chairs.
+14.2.1 Steps
+In this section, we will introduce a common technique in transfer learning: fine-tuning. As
+shown in Fig. 14.2.1, fine-tuning consists of the following four steps:
+1. Pretrain a neural network model, i.e., the source model, on a source dataset (e.g., the
+ImageNet dataset).
+2. Create a new neural network model, i.e., the target model. This copies all model de-
+signs and their parameters on the source model except the output layer. We assume that
+these model parameters contain the knowledge learned from the source dataset and this
+
+===== صفحة الكتاب 641 =====
+601
+Fine-Tuning
+knowledge will also be applicable to the target dataset. We also assume that the output
+layer of the source model is closely related to the labels of the source dataset; thus it is
+not used in the target model.
+3. Add an output layer to the target model, whose number of outputs is the number of
+categories in the target dataset. Then randomly initialize the model parameters of this
+layer.
+4. Train the target model on the target dataset, such as a chair dataset. The output layer
+will be trained from scratch, while the parameters of all the other layers are fine-tuned
+based on the parameters of the source model.
+t
+Fig. 14.2.1
+Fine tuning.
+When target datasets are much smaller than source datasets, fine-tuning helps to improve
+models’ generalization ability.
+14.2.2 Hot Dog Recognition
+Let’s demonstrate fine-tuning via a concrete case: hot dog recognition. We will fine-tune
+a ResNet model on a small dataset, which was pretrained on the ImageNet dataset. This
+small dataset consists of thousands of images with and without hot dogs. We will use the
+fine-tuned model to recognize hot dogs from images.
+%matplotlib inline
+import os
+import torch
+import torchvision
+from torch import nn
+from d2l import torch as d2l
+Reading the Dataset
+The hot dog dataset we use was taken from online images. This dataset consists of 1400
+positive-class images containing hot dogs, and as many negative-class images containing
+other foods. 1000 images of both classes are used for training and the rest are for test-
+ing.
+
+===== صفحة الكتاب 642 =====
+602
+Computer Vision
+After unzipping the downloaded dataset, we obtain two folders hotdog/train and hotdog/
+test. Both folders have hotdog and not-hotdog subfolders, either of which contains
+images of the corresponding class.
+#@save
+d2l.DATA_HUB['hotdog'] = (d2l.DATA_URL + 'hotdog.zip',
+'fba480ffa8aa7e0febbb511d181409f899b9baa5')
+data_dir = d2l.download_extract('hotdog')
+Downloading ../data/hotdog.zip from http://d2l-data.s3-accelerate.amazonaws.
+↩→com/hotdog.zip...
+We create two instances to read all the image files in the training and testing datasets, re-
+spectively.
+train_imgs = torchvision.datasets.ImageFolder(os.path.join(data_dir, 'train'))
+test_imgs = torchvision.datasets.ImageFolder(os.path.join(data_dir, 'test'))
+The first 8 positive examples and the last 8 negative images are shown below. As you can
+see, the images vary in size and aspect ratio.
+hotdogs = [train_imgs[i][0] for i in range(8)]
+not_hotdogs = [train_imgs[-i - 1][0] for i in range(8)]
+d2l.show_images(hotdogs + not_hotdogs, 2, 8, scale=1.4);
+During training, we first crop a random area of random size and random aspect ratio from
+the image, and then scale this area to a 224×224 input image. During testing, we scale both
+the height and width of an image to 256 pixels, and then crop a central 224 × 224 area as
+input. In addition, for the three RGB (red, green, and blue) color channels we standardize
+their values channel by channel. Concretely, the mean value of a channel is subtracted from
+each value of that channel and then the result is divided by the standard deviation of that
+channel.
+# Specify the means and standard deviations of the three RGB channels to
+# standardize each channel
+normalize = torchvision.transforms.Normalize(
+(continues on next page)
+
+===== صفحة الكتاب 643 =====
+603
+Fine-Tuning
+(continued from previous page)
+[0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+train_augs = torchvision.transforms.Compose([
+torchvision.transforms.RandomResizedCrop(224),
+torchvision.transforms.RandomHorizontalFlip(),
+torchvision.transforms.ToTensor(),
+normalize])
+test_augs = torchvision.transforms.Compose([
+torchvision.transforms.Resize([256, 256]),
+torchvision.transforms.CenterCrop(224),
+torchvision.transforms.ToTensor(),
+normalize])
+Defining and Initializing the Model
+We use ResNet-18, which was pretrained on the ImageNet dataset, as the source model.
+Here, we specify pretrained=True to automatically download the pretrained model pa-
+rameters. If this model is used for the first time, Internet connection is required for down-
+load.
+pretrained_net = torchvision.models.resnet18(pretrained=True)
+The pretrained source model instance contains a number of feature layers and an output
+layer fc. The main purpose of this division is to facilitate the fine-tuning of model param-
+eters of all layers but the output layer. The member variable fc of source model is given
+below.
+pretrained_net.fc
+Linear(in_features=512, out_features=1000, bias=True)
+As a fully connected layer, it transforms ResNet’s final global average pooling outputs into
+1000 class outputs of the ImageNet dataset. We then construct a new neural network as
+the target model. It is defined in the same way as the pretrained source model except that
+its number of outputs in the final layer is set to the number of classes in the target dataset
+(rather than 1000).
+In the code below, the model parameters before the output layer of the target model in-
+stance finetune_net are initialized to model parameters of the corresponding layers from
+the source model. Since these model parameters were obtained via pretraining on Ima-
+geNet, they are effective. Therefore, we can only use a small learning rate to fine-tune such
+pretrained parameters. In contrast, model parameters in the output layer are randomly ini-
+tialized and generally require a larger learning rate to be learned from scratch. Letting the
+base learning rate be 𝜂, a learning rate of 10𝜂will be used to iterate the model parameters
+in the output layer.
+
+===== صفحة الكتاب 644 =====
+604
+Computer Vision
+finetune_net = torchvision.models.resnet18(pretrained=True)
+finetune_net.fc = nn.Linear(finetune_net.fc.in_features, 2)
+nn.init.xavier_uniform_(finetune_net.fc.weight);
+Fine-Tuning the Model
+First, we define a training function train_fine_tuning that uses fine-tuning so it can be
+called multiple times.
+# If `param_group=True`, the model parameters in the output layer will be
+# updated using a learning rate ten times greater
+def train_fine_tuning(net, learning_rate, batch_size=128, num_epochs=5,
+param_group=True):
+train_iter = torch.utils.data.DataLoader(torchvision.datasets.ImageFolder(
+os.path.join(data_dir, 'train'), transform=train_augs),
+batch_size=batch_size, shuffle=True)
+test_iter = torch.utils.data.DataLoader(torchvision.datasets.ImageFolder(
+os.path.join(data_dir, 'test'), transform=test_augs),
+batch_size=batch_size)
+devices = d2l.try_all_gpus()
+loss = nn.CrossEntropyLoss(reduction="none")
+if param_group:
+params_1x = [param for name, param in net.named_parameters()
+if name not in ["fc.weight", "fc.bias"]]
+trainer = torch.optim.SGD([{'params': params_1x},
+{'params': net.fc.parameters(),
+'lr': learning_rate * 10}],
+lr=learning_rate, weight_decay=0.001)
+else:
+trainer = torch.optim.SGD(net.parameters(), lr=learning_rate,
+weight_decay=0.001)
+d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
+devices)
+We set the base learning rate to a small value in order to fine-tune the model parameters
+obtained via pretraining. Based on the previous settings, we will train the output layer
+parameters of the target model from scratch using a learning rate ten times greater.
+train_fine_tuning(finetune_net, 5e-5)
+loss 0.242, train acc 0.909, test acc 0.940
+1062.4 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+↩→index=1)]
+For comparison, we define an identical model, but initialize all of its model parameters to
+random values. Since the entire model needs to be trained from scratch, we can use a larger
+learning rate.
+
+===== صفحة الكتاب 645 =====
+605
+Fine-Tuning
+scratch_net = torchvision.models.resnet18()
+scratch_net.fc = nn.Linear(scratch_net.fc.in_features, 2)
+train_fine_tuning(scratch_net, 5e-4, param_group=False)
+loss 0.352, train acc 0.846, test acc 0.850
+1525.4 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+↩→index=1)]
+As we can see, the fine-tuned model tends to perform better for the same epoch because its
+initial parameter values are more effective.
+14.2.3 Summary
+• Transfer learning transfers knowledge learned from the source dataset to the target dataset.
+Fine-tuning is a common technique for transfer learning.
+• The target model copies all model designs with their parameters from the source model
+except the output layer, and fine-tunes these parameters based on the target dataset. In
+contrast, the output layer of the target model needs to be trained from scratch.
+• Generally, fine-tuning parameters uses a smaller learning rate, while training the output
+layer from scratch can use a larger learning rate.
+14.2.4 Exercises
+
+===== صفحة الكتاب 646 =====
+606
+Computer Vision
+213
+1. Keep increasing the learning rate of finetune_net. How does the accuracy of the
+model change?
+2. Further adjust hyperparameters of finetune_net and scratch_net in the comparative
+experiment. Do they still differ in accuracy?
+3. Set the parameters before the output layer of finetune_net to those of the source model
+and do not update them during training. How does the accuracy of the model change?
+You can use the following code.
+for param in finetune_net.parameters():
+param.requires_grad = False
+4. In fact, there is a “hotdog” class in the ImageNet dataset. Its corresponding weight
+parameter in the output layer can be obtained via the following code. How can we
+leverage this weight parameter?
+weight = pretrained_net.fc.weight
+hotdog_w = torch.split(weight.data, 1, dim=0)[934]
+hotdog_w.shape
+torch.Size([1, 512])
+Discussions213.
+14.3 Object Detection and Bounding Boxes
+In earlier sections (e.g., Section 8.1–Section 8.4), we introduced various models for image
+classification. In image classification tasks, we assume that there is only one major object
+in the image and we only focus on how to recognize its category. However, there are often
+multiple objects in the image of interest. We not only want to know their categories, but
+also their specific positions in the image. In computer vision, we refer to such tasks as
+object detection (or object recognition).
+Object detection has been widely applied in many fields. For example, self-driving needs to
+plan traveling routes by detecting the positions of vehicles, pedestrians, roads, and obstacles
+in the captured video images. Besides, robots may use this technique to detect and localize
+objects of interest throughout its navigation of an environment. Moreover, security systems
+may need to detect abnormal objects, such as intruders or bombs.
+In the next few sections, we will introduce several deep learning methods for object detec-
+tion. We will begin with an introduction to positions (or locations) of objects.
+
+===== صفحة الكتاب 647 =====
+607
+Object Detection and Bounding Boxes
+%matplotlib inline
+import torch
+from d2l import torch as d2l
+We will load the sample image to be used in this section. We can see that there is a dog
+on the left side of the image and a cat on the right. They are the two major objects in this
+image.
+d2l.set_figsize()
+img = d2l.plt.imread('../img/catdog.jpg')
+d2l.plt.imshow(img);
+14.3.1 Bounding Boxes
+In object detection, we usually use a bounding box to describe the spatial location of an
+object. The bounding box is rectangular, which is determined by the 𝑥and 𝑦coordinates
+of the upper-left corner of the rectangle and the such coordinates of the lower-right corner.
+Another commonly used bounding box representation is the (𝑥, 𝑦)-axis coordinates of the
+bounding box center, and the width and height of the box.
+Here we define functions to convert between these two representations: box_corner_to_center
+converts from the two-corner representation to the center-width-height presentation, and
+box_center_to_corner vice versa. The input argument boxes should be a two-dimensional
+tensor of shape (𝑛, 4), where 𝑛is the number of bounding boxes.
+#@save
+def box_corner_to_center(boxes):
+"""Convert from (upper-left, lower-right) to (center, width, height)."""
+x1, y1, x2, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+cx = (x1 + x2) / 2
+cy = (y1 + y2) / 2
+w = x2 - x1
+h = y2 - y1
+boxes = torch.stack((cx, cy, w, h), axis=-1)
+return boxes
+#@save
+def box_center_to_corner(boxes):
+(continues on next page)
+
+===== صفحة الكتاب 648 =====
+608
+Computer Vision
+(continued from previous page)
+"""Convert from (center, width, height) to (upper-left, lower-right)."""
+cx, cy, w, h = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+x1 = cx - 0.5 * w
+y1 = cy - 0.5 * h
+x2 = cx + 0.5 * w
+y2 = cy + 0.5 * h
+boxes = torch.stack((x1, y1, x2, y2), axis=-1)
+return boxes
+We will define the bounding boxes of the dog and the cat in the image based on the co-
+ordinate information. The origin of the coordinates in the image is the upper-left corner
+of the image, and to the right and down are the positive directions of the 𝑥and 𝑦axes,
+respectively.
+# Here `bbox` is the abbreviation for bounding box
+dog_bbox, cat_bbox = [60.0, 45.0, 378.0, 516.0], [400.0, 112.0, 655.0, 493.0]
+We can verify the correctness of the two bounding box conversion functions by converting
+twice.
+boxes = torch.tensor((dog_bbox, cat_bbox))
+box_center_to_corner(box_corner_to_center(boxes)) == boxes
+tensor([[True, True, True, True],
+[True, True, True, True]])
+Let’s draw the bounding boxes in the image to check if they are accurate. Before drawing,
+we will define a helper function bbox_to_rect. It represents the bounding box in the
+bounding box format of the matplotlib package.
+#@save
+def bbox_to_rect(bbox, color):
+"""Convert bounding box to matplotlib format."""
+# Convert the bounding box (upper-left x, upper-left y, lower-right x,
+# lower-right y) format to the matplotlib format: ((upper-left x,
+# upper-left y), width, height)
+return d2l.plt.Rectangle(
+xy=(bbox[0], bbox[1]), width=bbox[2]-bbox[0], height=bbox[3]-bbox[1],
+fill=False, edgecolor=color, linewidth=2)
+After adding the bounding boxes on the image, we can see that the main outline of the two
+objects are basically inside the two boxes.
+fig = d2l.plt.imshow(img)
+fig.axes.add_patch(bbox_to_rect(dog_bbox, 'blue'))
+fig.axes.add_patch(bbox_to_rect(cat_bbox, 'red'));
+
+===== صفحة الكتاب 649 =====
+609
+Anchor Boxes
+214
+14.3.2 Summary
+• Object detection not only recognizes all the objects of interest in the image, but also their
+positions. The position is generally represented by a rectangular bounding box.
+• We can convert between two commonly used bounding box representations.
+14.3.3 Exercises
+1. Find another image and try to label a bounding box that contains the object. Compare
+labeling bounding boxes and categories: which usually takes longer?
+2. Why is the innermost dimension of the input argument boxes of box_corner_to_center
+and box_center_to_corner always 4?
+Discussions214.
+14.4 Anchor Boxes
+Object detection algorithms usually sample a large number of regions in the input image,
+determine whether these regions contain objects of interest, and adjust the boundaries of
+the regions so as to predict the ground-truth bounding boxes of the objects more accurately.
+Different models may adopt different region sampling schemes. Here we introduce one of
+such methods: it generates multiple bounding boxes with varying scales and aspect ratios
+centered on each pixel. These bounding boxes are called anchor boxes. We will design an
+object detection model based on anchor boxes in Section 14.7.
+First, let’s modify the printing accuracy just for more concise outputs.
+%matplotlib inline
+import torch
+from d2l import torch as d2l
+torch.set_printoptions(2)
+# Simplify printing accuracy
+
+===== صفحة الكتاب 650 =====
+610
+Computer Vision
+14.4.1 Generating Multiple Anchor Boxes
+Suppose that the input image has a height of ℎand width of 𝑤. We generate anchor boxes
+with different shapes centered on each pixel of the image. Let the scale be 𝑠∈(0, 1] and the
+aspect ratio (ratio of width to height) is 𝑟> 0. Then the width and height of the anchor box
+are 𝑤𝑠√𝑟and ℎ𝑠/√𝑟, respectively. Note that when the center position is given, an anchor
+box with known width and height is determined.
+To generate multiple anchor boxes with different shapes, let’s set a series of scales 𝑠1, . . . , 𝑠𝑛
+and a series of aspect ratios 𝑟1, . . . , 𝑟𝑚. When using all the combinations of these scales
+and aspect ratios with each pixel as the center, the input image will have a total of 𝑤ℎ𝑛𝑚
+anchor boxes. Although these anchor boxes may cover all the ground-truth bounding boxes,
+the computational complexity is easily too high. In practice, we can only consider those
+combinations containing 𝑠1 or 𝑟1:
+(𝑠1, 𝑟1), (𝑠1, 𝑟2), . . . , (𝑠1, 𝑟𝑚), (𝑠2, 𝑟1), (𝑠3, 𝑟1), . . . , (𝑠𝑛, 𝑟1).
+(14.4.1)
+That is to say, the number of anchor boxes centered on the same pixel is 𝑛+ 𝑚−1. For the
+entire input image, we will generate a total of 𝑤ℎ(𝑛+ 𝑚−1) anchor boxes.
+The above method of generating anchor boxes is implemented in the following multi-
+box_prior function. We specify the input image, a list of scales, and a list of aspect ratios,
+then this function will return all the anchor boxes.
+#@save
+def multibox_prior(data, sizes, ratios):
+"""Generate anchor boxes with different shapes centered on each pixel."""
+in_height, in_width = data.shape[-2:]
+device, num_sizes, num_ratios = data.device, len(sizes), len(ratios)
+boxes_per_pixel = (num_sizes + num_ratios - 1)
+size_tensor = torch.tensor(sizes, device=device)
+ratio_tensor = torch.tensor(ratios, device=device)
+# Offsets are required to move the anchor to the center of a pixel. Since
+# a pixel has height=1 and width=1, we choose to offset our centers by 0.5
+offset_h, offset_w = 0.5, 0.5
+steps_h = 1.0 / in_height
+# Scaled steps in y axis
+steps_w = 1.0 / in_width
+# Scaled steps in x axis
+# Generate all center points for the anchor boxes
+center_h = (torch.arange(in_height, device=device) + offset_h) * steps_h
+center_w = (torch.arange(in_width, device=device) + offset_w) * steps_w
+shift_y, shift_x = torch.meshgrid(center_h, center_w, indexing='ij')
+shift_y, shift_x = shift_y.reshape(-1), shift_x.reshape(-1)
+# Generate `boxes_per_pixel` number of heights and widths that are later
+# used to create anchor box corner coordinates (xmin, xmax, ymin, ymax)
+w = torch.cat((size_tensor * torch.sqrt(ratio_tensor[0]),
+sizes[0] * torch.sqrt(ratio_tensor[1:])))\
+* in_height / in_width
+# Handle rectangular inputs
+h = torch.cat((size_tensor / torch.sqrt(ratio_tensor[0]),
+sizes[0] / torch.sqrt(ratio_tensor[1:])))
+# Divide by 2 to get half height and half width
+anchor_manipulations = torch.stack((-w, -h, w, h)).T.repeat(
+(continues on next page)
+
+===== صفحة الكتاب 651 =====
+611
+Anchor Boxes
+(continued from previous page)
+in_height * in_width, 1) / 2
+# Each center point will have `boxes_per_pixel` number of anchor boxes, so
+# generate a grid of all anchor box centers with `boxes_per_pixel` repeats
+out_grid = torch.stack([shift_x, shift_y, shift_x, shift_y],
+dim=1).repeat_interleave(boxes_per_pixel, dim=0)
+output = out_grid + anchor_manipulations
+return output.unsqueeze(0)
+We can see that the shape of the returned anchor box variable Y is (batch size, number of
+anchor boxes, 4).
+img = d2l.plt.imread('../img/catdog.jpg')
+h, w = img.shape[:2]
+print(h, w)
+X = torch.rand(size=(1, 3, h, w))
+# Construct input data
+Y = multibox_prior(X, sizes=[0.75, 0.5, 0.25], ratios=[1, 2, 0.5])
+Y.shape
+561 728
+torch.Size([1, 2042040, 4])
+After changing the shape of the anchor box variable Y to (image height, image width, num-
+ber of anchor boxes centered on the same pixel, 4), we can obtain all the anchor boxes
+centered on a specified pixel position. In the following, we access the first anchor box cen-
+tered on (250, 250). It has four elements: the (𝑥, 𝑦)-axis coordinates at the upper-left corner
+and the (𝑥, 𝑦)-axis coordinates at the lower-right corner of the anchor box. The coordinate
+values of both axes are divided by the width and height of the image, respectively.
+boxes = Y.reshape(h, w, 5, 4)
+boxes[250, 250, 0, :]
+tensor([0.06, 0.07, 0.63, 0.82])
+In order to show all the anchor boxes centered on one pixel in the image, we define the
+following show_bboxes function to draw multiple bounding boxes on the image.
+#@save
+def show_bboxes(axes, bboxes, labels=None, colors=None):
+"""Show bounding boxes."""
+def make_list(obj, default_values=None):
+if obj is None:
+obj = default_values
+(continues on next page)
+
+===== صفحة الكتاب 652 =====
+612
+Computer Vision
+(continued from previous page)
+elif not isinstance(obj, (list, tuple)):
+obj = [obj]
+return obj
+labels = make_list(labels)
+colors = make_list(colors, ['b', 'g', 'r', 'm', 'c'])
+for i, bbox in enumerate(bboxes):
+color = colors[i % len(colors)]
+rect = d2l.bbox_to_rect(bbox.detach().numpy(), color)
+axes.add_patch(rect)
+if labels and len(labels) > i:
+text_color = 'k' if color == 'w' else 'w'
+axes.text(rect.xy[0], rect.xy[1], labels[i],
+va='center', ha='center', fontsize=9, color=text_color,
+bbox=dict(facecolor=color, lw=0))
+As we just saw, the coordinate values of the 𝑥and 𝑦axes in the variable boxes have been
+divided by the width and height of the image, respectively. When drawing anchor boxes,
+we need to restore their original coordinate values; thus, we define variable bbox_scale
+below. Now, we can draw all the anchor boxes centered on (250, 250) in the image. As you
+can see, the blue anchor box with a scale of 0.75 and an aspect ratio of 1 well surrounds
+the dog in the image.
+d2l.set_figsize()
+bbox_scale = torch.tensor((w, h, w, h))
+fig = d2l.plt.imshow(img)
+show_bboxes(fig.axes, boxes[250, 250, :, :] * bbox_scale,
+['s=0.75, r=1', 's=0.5, r=1', 's=0.25, r=1', 's=0.75, r=2',
+'s=0.75, r=0.5'])
+14.4.2 Intersection over Union (IoU)
+We just mentioned that an anchor box “well” surrounds the dog in the image. If the ground-
+truth bounding box of the object is known, how can “well” here be quantified? Intuitively,
+we can measure the similarity between the anchor box and the ground-truth bounding box.
+We know that the Jaccard index can measure the similarity between two sets. Given sets
+A and B, their Jaccard index is the size of their intersection divided by the size of their
+
+===== صفحة الكتاب 653 =====
+613
+Anchor Boxes
+union:
+𝐽(A, B) = |A ∩B|
+|A ∪B| .
+(14.4.2)
+In fact, we can consider the pixel area of any bounding box as a set of pixels. In this way,
+we can measure the similarity of the two bounding boxes by the Jaccard index of their pixel
+sets. For two bounding boxes, we usually refer their Jaccard index as intersection over
+union (IoU), which is the ratio of their intersection area to their union area, as shown in
+Fig. 14.4.1. The range of an IoU is between 0 and 1: 0 means that two bounding boxes do
+not overlap at all, while 1 indicates that the two bounding boxes are equal.
+t
+Fig. 14.4.1
+IoU is the ratio of the intersection area to the union area of two bounding boxes.
+For the remainder of this section, we will use IoU to measure the similarity between anchor
+boxes and ground-truth bounding boxes, and between different anchor boxes. Given two
+lists of anchor or bounding boxes, the following box_iou computes their pairwise IoU
+across these two lists.
+#@save
+def box_iou(boxes1, boxes2):
+"""Compute pairwise IoU across two lists of anchor or bounding boxes."""
+box_area = lambda boxes: ((boxes[:, 2] - boxes[:, 0]) *
+(boxes[:, 3] - boxes[:, 1]))
+# Shape of `boxes1`, `boxes2`, `areas1`, `areas2`: (no. of boxes1, 4),
+# (no. of boxes2, 4), (no. of boxes1,), (no. of boxes2,)
+areas1 = box_area(boxes1)
+areas2 = box_area(boxes2)
+# Shape of `inter_upperlefts`, `inter_lowerrights`, `inters`: (no. of
+# boxes1, no. of boxes2, 2)
+inter_upperlefts = torch.max(boxes1[:, None, :2], boxes2[:, :2])
+inter_lowerrights = torch.min(boxes1[:, None, 2:], boxes2[:, 2:])
+inters = (inter_lowerrights - inter_upperlefts).clamp(min=0)
+# Shape of `inter_areas` and `union_areas`: (no. of boxes1, no. of boxes2)
+inter_areas = inters[:, :, 0] * inters[:, :, 1]
+union_areas = areas1[:, None] + areas2 - inter_areas
+return inter_areas / union_areas
+14.4.3 Labeling Anchor Boxes in Training Data
+In a training dataset, we consider each anchor box as a training example. In order to train
+an object detection model, we need class and offset labels for each anchor box, where the
+former is the class of the object relevant to the anchor box and the latter is the offset of the
+ground-truth bounding box relative to the anchor box. During the prediction, for each im-
+age we generate multiple anchor boxes, predict classes and offsets for all the anchor boxes,
+
+===== صفحة الكتاب 654 =====
+614
+Computer Vision
+adjust their positions according to the predicted offsets to obtain the predicted bounding
+boxes, and finally only output those predicted bounding boxes that satisfy certain crite-
+ria.
+As we know, an object detection training set comes with labels for locations of ground-truth
+bounding boxes and classes of their surrounded objects. To label any generated anchor box,
+we refer to the labeled location and class of its assigned ground-truth bounding box that is
+closest to the anchor box. In the following, we describe an algorithm for assigning closest
+ground-truth bounding boxes to anchor boxes.
+Assigning Ground-Truth Bounding Boxes to Anchor Boxes
+Given an image, suppose that the anchor boxes are 𝐴1, 𝐴2, . . . , 𝐴𝑛𝑎and the ground-truth
+bounding boxes are 𝐵1, 𝐵2, . . . , 𝐵𝑛𝑏, where 𝑛𝑎≥𝑛𝑏. Let’s define a matrix X ∈R𝑛𝑎×𝑛𝑏,
+whose element 𝑥𝑖𝑗in the 𝑖th row and 𝑗th column is the IoU of the anchor box 𝐴𝑖and the
+ground-truth bounding box 𝐵𝑗. The algorithm consists of the following steps:
+1. Find the largest element in matrix X and denote its row and column indices as 𝑖1 and
+𝑗1, respectively. Then the ground-truth bounding box 𝐵𝑗1 is assigned to the anchor box
+𝐴𝑖1. This is quite intuitive because 𝐴𝑖1 and 𝐵𝑗1 are the closest among all the pairs of
+anchor boxes and ground-truth bounding boxes. After the first assignment, discard all
+the elements in the 𝑖1th row and the 𝑗1th column in matrix X.
+2. Find the largest of the remaining elements in matrix X and denote its row and column
+indices as 𝑖2 and 𝑗2, respectively. We assign ground-truth bounding box 𝐵𝑗2 to anchor
+box 𝐴𝑖2 and discard all the elements in the 𝑖2th row and the 𝑗2th column in matrix X.
+3. At this point, elements in two rows and two columns in matrix X have been discarded.
+We proceed until all elements in 𝑛𝑏columns in matrix X are discarded. At this time,
+we have assigned a ground-truth bounding box to each of 𝑛𝑏anchor boxes.
+4. Only traverse through the remaining 𝑛𝑎−𝑛𝑏anchor boxes. For example, given any
+anchor box 𝐴𝑖, find the ground-truth bounding box 𝐵𝑗with the largest IoU with 𝐴𝑖
+throughout the 𝑖th row of matrix X, and assign 𝐵𝑗to 𝐴𝑖only if this IoU is greater than
+a predefined threshold.
+Let’s illustrate the above algorithm using a concrete example. As shown in Fig. 14.4.2 (left),
+assuming that the maximum value in matrix X is 𝑥23, we assign the ground-truth bounding
+box 𝐵3 to the anchor box 𝐴2. Then, we discard all the elements in row 2 and column 3 of the
+matrix, find the largest 𝑥71 in the remaining elements (shaded area), and assign the ground-
+truth bounding box 𝐵1 to the anchor box 𝐴7. Next, as shown in Fig. 14.4.2 (middle), discard
+all the elements in row 7 and column 1 of the matrix, find the largest 𝑥54 in the remaining
+elements (shaded area), and assign the ground-truth bounding box 𝐵4 to the anchor box
+𝐴5. Finally, as shown in Fig. 14.4.2 (right), discard all the elements in row 5 and column 4
+of the matrix, find the largest 𝑥92 in the remaining elements (shaded area), and assign the
+ground-truth bounding box 𝐵2 to the anchor box 𝐴9. After that, we only need to traverse
+through the remaining anchor boxes 𝐴1, 𝐴3, 𝐴4, 𝐴6, 𝐴8 and determine whether to assign
+them ground-truth bounding boxes according to the threshold.
+
+===== صفحة الكتاب 655 =====
+615
+Anchor Boxes
+t
+Fig. 14.4.2
+Assigning ground-truth bounding boxes to anchor boxes.
+This algorithm is implemented in the following assign_anchor_to_bbox function.
+#@save
+def assign_anchor_to_bbox(ground_truth, anchors, device, iou_threshold=0.5):
+"""Assign closest ground-truth bounding boxes to anchor boxes."""
+num_anchors, num_gt_boxes = anchors.shape[0], ground_truth.shape[0]
+# Element x_ij in the i-th row and j-th column is the IoU of the anchor
+# box i and the ground-truth bounding box j
+jaccard = box_iou(anchors, ground_truth)
+# Initialize the tensor to hold the assigned ground-truth bounding box for
+# each anchor
+anchors_bbox_map = torch.full((num_anchors,), -1, dtype=torch.long,
+device=device)
+# Assign ground-truth bounding boxes according to the threshold
+max_ious, indices = torch.max(jaccard, dim=1)
+anc_i = torch.nonzero(max_ious >= iou_threshold).reshape(-1)
+box_j = indices[max_ious >= iou_threshold]
+anchors_bbox_map[anc_i] = box_j
+col_discard = torch.full((num_anchors,), -1)
+row_discard = torch.full((num_gt_boxes,), -1)
+for _ in range(num_gt_boxes):
+max_idx = torch.argmax(jaccard)
+# Find the largest IoU
+box_idx = (max_idx % num_gt_boxes).long()
+anc_idx = (max_idx / num_gt_boxes).long()
+anchors_bbox_map[anc_idx] = box_idx
+jaccard[:, box_idx] = col_discard
+jaccard[anc_idx, :] = row_discard
+return anchors_bbox_map
+Labeling Classes and Offsets
+Now we can label the class and offset for each anchor box. Suppose that an anchor box
+𝐴is assigned a ground-truth bounding box 𝐵. On the one hand, the class of the anchor
+box 𝐴will be labeled as that of 𝐵. On the other hand, the offset of the anchor box 𝐴will
+be labeled according to the relative position between the central coordinates of 𝐵and 𝐴
+together with the relative size between these two boxes. Given varying positions and sizes
+
+===== صفحة الكتاب 656 =====
+616
+Computer Vision
+of different boxes in the dataset, we can apply transformations to those relative positions
+and sizes that may lead to more uniformly distributed offsets that are easier to fit. Here we
+describe a common transformation. Given the central coordinates of 𝐴and 𝐵as (𝑥𝑎, 𝑦𝑎)
+and (𝑥𝑏, 𝑦𝑏), their widths as 𝑤𝑎and 𝑤𝑏, and their heights as ℎ𝑎and ℎ𝑏, respectively. We
+may label the offset of 𝐴as
+ 𝑥𝑏−𝑥𝑎
+𝑤𝑎
+−𝜇𝑥
+𝜎𝑥
+,
+𝑦𝑏−𝑦𝑎
+ℎ𝑎
+−𝜇𝑦
+𝜎𝑦
+,
+log 𝑤𝑏
+𝑤𝑎−𝜇𝑤
+𝜎𝑤
+,
+log ℎ𝑏
+ℎ𝑎−𝜇ℎ
+𝜎ℎ
+!
+,
+(14.4.3)
+where default values of the constants are 𝜇𝑥= 𝜇𝑦= 𝜇𝑤= 𝜇ℎ= 0, 𝜎𝑥= 𝜎𝑦= 0.1,
+and 𝜎𝑤= 𝜎ℎ= 0.2. This transformation is implemented below in the offset_boxes
+function.
+#@save
+def offset_boxes(anchors, assigned_bb, eps=1e-6):
+"""Transform for anchor box offsets."""
+c_anc = d2l.box_corner_to_center(anchors)
+c_assigned_bb = d2l.box_corner_to_center(assigned_bb)
+offset_xy = 10 * (c_assigned_bb[:, :2] - c_anc[:, :2]) / c_anc[:, 2:]
+offset_wh = 5 * torch.log(eps + c_assigned_bb[:, 2:] / c_anc[:, 2:])
+offset = torch.cat([offset_xy, offset_wh], axis=1)
+return offset
+If an anchor box is not assigned a ground-truth bounding box, we just label the class of
+the anchor box as “background”. Anchor boxes whose classes are background are often
+referred to as negative anchor boxes, and the rest are called positive anchor boxes. We
+implement the following multibox_target function to label classes and offsets for anchor
+boxes (the anchors argument) using ground-truth bounding boxes (the labels argument).
+This function sets the background class to zero and increments the integer index of a new
+class by one.
+#@save
+def multibox_target(anchors, labels):
+"""Label anchor boxes using ground-truth bounding boxes."""
+batch_size, anchors = labels.shape[0], anchors.squeeze(0)
+batch_offset, batch_mask, batch_class_labels = [], [], []
+device, num_anchors = anchors.device, anchors.shape[0]
+for i in range(batch_size):
+label = labels[i, :, :]
+anchors_bbox_map = assign_anchor_to_bbox(
+label[:, 1:], anchors, device)
+bbox_mask = ((anchors_bbox_map >= 0).float().unsqueeze(-1)).repeat(
+1, 4)
+# Initialize class labels and assigned bounding box coordinates with
+# zeros
+class_labels = torch.zeros(num_anchors, dtype=torch.long,
+device=device)
+assigned_bb = torch.zeros((num_anchors, 4), dtype=torch.float32,
+device=device)
+# Label classes of anchor boxes using their assigned ground-truth
+# bounding boxes. If an anchor box is not assigned any, we label its
+(continues on next page)
+
+===== صفحة الكتاب 657 =====
+617
+Anchor Boxes
+(continued from previous page)
+# class as background (the value remains zero)
+indices_true = torch.nonzero(anchors_bbox_map >= 0)
+bb_idx = anchors_bbox_map[indices_true]
+class_labels[indices_true] = label[bb_idx, 0].long() + 1
+assigned_bb[indices_true] = label[bb_idx, 1:]
+# Offset transformation
+offset = offset_boxes(anchors, assigned_bb) * bbox_mask
+batch_offset.append(offset.reshape(-1))
+batch_mask.append(bbox_mask.reshape(-1))
+batch_class_labels.append(class_labels)
+bbox_offset = torch.stack(batch_offset)
+bbox_mask = torch.stack(batch_mask)
+class_labels = torch.stack(batch_class_labels)
+return (bbox_offset, bbox_mask, class_labels)
+An Example
+Let’s illustrate anchor box labeling via a concrete example. We define ground-truth bound-
+ing boxes for the dog and cat in the loaded image, where the first element is the class (0
+for dog and 1 for cat) and the remaining four elements are the (𝑥, 𝑦)-axis coordinates at
+the upper-left corner and the lower-right corner (range is between 0 and 1). We also con-
+struct five anchor boxes to be labeled using the coordinates of the upper-left corner and the
+lower-right corner: 𝐴0, . . . , 𝐴4 (the index starts from 0). Then we plot these ground-truth
+bounding boxes and anchor boxes in the image.
+ground_truth = torch.tensor([[0, 0.1, 0.08, 0.52, 0.92],
+[1, 0.55, 0.2, 0.9, 0.88]])
+anchors = torch.tensor([[0, 0.1, 0.2, 0.3], [0.15, 0.2, 0.4, 0.4],
+[0.63, 0.05, 0.88, 0.98], [0.66, 0.45, 0.8, 0.8],
+[0.57, 0.3, 0.92, 0.9]])
+fig = d2l.plt.imshow(img)
+show_bboxes(fig.axes, ground_truth[:, 1:] * bbox_scale, ['dog', 'cat'], 'k')
+show_bboxes(fig.axes, anchors * bbox_scale, ['0', '1', '2', '3', '4']);
+Using the multibox_target function defined above, we can label classes and offsets of
+these anchor boxes based on the ground-truth bounding boxes for the dog and cat. In this
+example, indices of the background, dog, and cat classes are 0, 1, and 2, respectively.
+
+===== صفحة الكتاب 658 =====
+618
+Computer Vision
+Below we add an dimension for examples of anchor boxes and ground-truth bounding
+boxes.
+labels = multibox_target(anchors.unsqueeze(dim=0),
+ground_truth.unsqueeze(dim=0))
+There are three items in the returned result, all of which are in the tensor format. The third
+item contains the labeled classes of the input anchor boxes.
+Let’s analyze the returned class labels below based on anchor box and ground-truth bound-
+ing box positions in the image. First, among all the pairs of anchor boxes and ground-truth
+bounding boxes, the IoU of the anchor box 𝐴4 and the ground-truth bounding box of the
+cat is the largest. Thus, the class of 𝐴4 is labeled as the cat. Taking out pairs containing
+𝐴4 or the ground-truth bounding box of the cat, among the rest the pair of the anchor box
+𝐴1 and the ground-truth bounding box of the dog has the largest IoU. So the class of 𝐴1 is
+labeled as the dog. Next, we need to traverse through the remaining three unlabeled anchor
+boxes: 𝐴0, 𝐴2, and 𝐴3. For 𝐴0, the class of the ground-truth bounding box with the largest
+IoU is the dog, but the IoU is below the predefined threshold (0.5), so the class is labeled
+as background; for 𝐴2, the class of the ground-truth bounding box with the largest IoU is
+the cat and the IoU exceeds the threshold, so the class is labeled as the cat; for 𝐴3, the class
+of the ground-truth bounding box with the largest IoU is the cat, but the value is below the
+threshold, so the class is labeled as background.
+labels[2]
+tensor([[0, 1, 2, 0, 2]])
+The second returned item is a mask variable of the shape (batch size, four times the number
+of anchor boxes). Every four elements in the mask variable correspond to the four offset
+values of each anchor box. Since we do not care about background detection, offsets of this
+negative class should not affect the objective function. Through elementwise multiplica-
+tions, zeros in the mask variable will filter out negative class offsets before calculating the
+objective function.
+labels[1]
+tensor([[0., 0., 0., 0., 1., 1., 1., 1., 1., 1., 1., 1., 0., 0., 0., 0., 1., 1.
+↩→,
+1., 1.]])
+The first returned item contains the four offset values labeled for each anchor box. Note
+that the offsets of negative-class anchor boxes are labeled as zeros.
+labels[0]
+
+===== صفحة الكتاب 659 =====
+619
+Anchor Boxes
+tensor([[-0.00e+00, -0.00e+00, -0.00e+00, -0.00e+00,
+1.40e+00,
+1.00e+01,
+2.59e+00,
+7.18e+00, -1.20e+00,
+2.69e-01,
+1.68e+00, -1.57e+00,
+-0.00e+00, -0.00e+00, -0.00e+00, -0.00e+00, -5.71e-01, -1.00e+00,
+4.17e-06,
+6.26e-01]])
+14.4.4 Predicting Bounding Boxes with Non-Maximum Suppression
+During prediction, we generate multiple anchor boxes for the image and predict classes and
+offsets for each of them. A predicted bounding box is thus obtained according to an anchor
+box with its predicted offset. Below we implement the offset_inverse function that takes
+in anchors and offset predictions as inputs and applies inverse offset transformations to
+return the predicted bounding box coordinates.
+#@save
+def offset_inverse(anchors, offset_preds):
+"""Predict bounding boxes based on anchor boxes with predicted offsets."""
+anc = d2l.box_corner_to_center(anchors)
+pred_bbox_xy = (offset_preds[:, :2] * anc[:, 2:] / 10) + anc[:, :2]
+pred_bbox_wh = torch.exp(offset_preds[:, 2:] / 5) * anc[:, 2:]
+pred_bbox = torch.cat((pred_bbox_xy, pred_bbox_wh), axis=1)
+predicted_bbox = d2l.box_center_to_corner(pred_bbox)
+return predicted_bbox
+When there are many anchor boxes, many similar (with significant overlap) predicted bound-
+ing boxes can be potentially output for surrounding the same object. To simplify the output,
+we can merge similar predicted bounding boxes that belong to the same object by using
+non-maximum suppression (NMS).
+Here is how non-maximum suppression works. For a predicted bounding box 𝐵, the object
+detection model calculates the predicted likelihood for each class. Denoting by 𝑝the largest
+predicted likelihood, the class corresponding to this probability is the predicted class for 𝐵.
+Specifically, we refer to 𝑝as the confidence (score) of the predicted bounding box 𝐵. On the
+same image, all the predicted non-background bounding boxes are sorted by confidence in
+descending order to generate a list 𝐿. Then we manipulate the sorted list 𝐿in the following
+steps:
+1. Select the predicted bounding box 𝐵1 with the highest confidence from 𝐿as a basis and
+remove all non-basis predicted bounding boxes whose IoU with 𝐵1 exceeds a predefined
+threshold 𝜖from 𝐿. At this point, 𝐿keeps the predicted bounding box with the highest
+confidence but drops others that are too similar to it. In a nutshell, those with non-
+maximum confidence scores are suppressed.
+2. Select the predicted bounding box 𝐵2 with the second highest confidence from 𝐿as
+another basis and remove all non-basis predicted bounding boxes whose IoU with 𝐵2
+exceeds 𝜖from 𝐿.
+3. Repeat the above process until all the predicted bounding boxes in 𝐿have been used as
+
+===== صفحة الكتاب 660 =====
+620
+Computer Vision
+a basis. At this time, the IoU of any pair of predicted bounding boxes in 𝐿is below the
+threshold 𝜖; thus, no pair is too similar with each other.
+4. Output all the predicted bounding boxes in the list 𝐿.
+The following nms function sorts confidence scores in descending order and returns their
+indices.
+#@save
+def nms(boxes, scores, iou_threshold):
+"""Sort confidence scores of predicted bounding boxes."""
+B = torch.argsort(scores, dim=-1, descending=True)
+keep = []
+# Indices of predicted bounding boxes that will be kept
+while B.numel() > 0:
+i = B[0]
+keep.append(i)
+if B.numel() == 1: break
+iou = box_iou(boxes[i, :].reshape(-1, 4),
+boxes[B[1:], :].reshape(-1, 4)).reshape(-1)
+inds = torch.nonzero(iou <= iou_threshold).reshape(-1)
+B = B[inds + 1]
+return torch.tensor(keep, device=boxes.device)
+We define the following multibox_detection to apply non-maximum suppression to pre-
+dicting bounding boxes. Do not worry if you find the implementation a bit complicated:
+we will show how it works with a concrete example right after the implementation.
+#@save
+def multibox_detection(cls_probs, offset_preds, anchors, nms_threshold=0.5,
+pos_threshold=0.009999999):
+"""Predict bounding boxes using non-maximum suppression."""
+device, batch_size = cls_probs.device, cls_probs.shape[0]
+anchors = anchors.squeeze(0)
+num_classes, num_anchors = cls_probs.shape[1], cls_probs.shape[2]
+out = []
+for i in range(batch_size):
+cls_prob, offset_pred = cls_probs[i], offset_preds[i].reshape(-1, 4)
+conf, class_id = torch.max(cls_prob[1:], 0)
+predicted_bb = offset_inverse(anchors, offset_pred)
+keep = nms(predicted_bb, conf, nms_threshold)
+# Find all non-`keep` indices and set the class to background
+all_idx = torch.arange(num_anchors, dtype=torch.long, device=device)
+combined = torch.cat((keep, all_idx))
+uniques, counts = combined.unique(return_counts=True)
+non_keep = uniques[counts == 1]
+all_id_sorted = torch.cat((keep, non_keep))
+class_id[non_keep] = -1
+class_id = class_id[all_id_sorted]
+conf, predicted_bb = conf[all_id_sorted], predicted_bb[all_id_sorted]
+# Here `pos_threshold` is a threshold for positive (non-background)
+# predictions
+below_min_idx = (conf < pos_threshold)
+class_id[below_min_idx] = -1
+conf[below_min_idx] = 1 - conf[below_min_idx]
+(continues on next page)
+
+===== صفحة الكتاب 661 =====
+621
+Anchor Boxes
+(continued from previous page)
+pred_info = torch.cat((class_id.unsqueeze(1),
+conf.unsqueeze(1),
+predicted_bb), dim=1)
+out.append(pred_info)
+return torch.stack(out)
+Now let’s apply the above implementations to a concrete example with four anchor boxes.
+For simplicity, we assume that the predicted offsets are all zeros. This means that the
+predicted bounding boxes are anchor boxes. For each class among the background, dog,
+and cat, we also define its predicted likelihood.
+anchors = torch.tensor([[0.1, 0.08, 0.52, 0.92], [0.08, 0.2, 0.56, 0.95],
+[0.15, 0.3, 0.62, 0.91], [0.55, 0.2, 0.9, 0.88]])
+offset_preds = torch.tensor([0] * anchors.numel())
+cls_probs = torch.tensor([[0] * 4,
+# Predicted background likelihood
+[0.9, 0.8, 0.7, 0.1],
+# Predicted dog likelihood
+[0.1, 0.2, 0.3, 0.9]])
+# Predicted cat likelihood
+We can plot these predicted bounding boxes with their confidence on the image.
+fig = d2l.plt.imshow(img)
+show_bboxes(fig.axes, anchors * bbox_scale,
+['dog=0.9', 'dog=0.8', 'dog=0.7', 'cat=0.9'])
+Now we can invoke the multibox_detection function to perform non-maximum suppres-
+sion, where the threshold is set to 0.5. Note that we add a dimension for examples in the
+tensor input.
+We can see that the shape of the returned result is (batch size, number of anchor boxes,
+6). The six elements in the innermost dimension gives the output information for the same
+predicted bounding box. The first element is the predicted class index, which starts from
+0 (0 is dog and 1 is cat). The value -1 indicates background or removal in non-maximum
+suppression. The second element is the confidence of the predicted bounding box. The
+remaining four elements are the (𝑥, 𝑦)-axis coordinates of the upper-left corner and the
+lower-right corner of the predicted bounding box, respectively (range is between 0 and
+1).
+
+===== صفحة الكتاب 662 =====
+622
+Computer Vision
+output = multibox_detection(cls_probs.unsqueeze(dim=0),
+offset_preds.unsqueeze(dim=0),
+anchors.unsqueeze(dim=0),
+nms_threshold=0.5)
+output
+tensor([[[ 0.00,
+0.90,
+0.10,
+0.08,
+0.52,
+0.92],
+[ 1.00,
+0.90,
+0.55,
+0.20,
+0.90,
+0.88],
+[-1.00,
+0.80,
+0.08,
+0.20,
+0.56,
+0.95],
+[-1.00,
+0.70,
+0.15,
+0.30,
+0.62,
+0.91]]])
+After removing those predicted bounding boxes of class -1, we can output the final predicted
+bounding box kept by non-maximum suppression.
+fig = d2l.plt.imshow(img)
+for i in output[0].detach().numpy():
+if i[0] == -1:
+continue
+label = ('dog=', 'cat=')[int(i[0])] + str(i[1])
+show_bboxes(fig.axes, [torch.tensor(i[2:]) * bbox_scale], label)
+In practice, we can remove predicted bounding boxes with lower confidence even before
+performing non-maximum suppression, thereby reducing computation in this algorithm.
+We may also post-process the output of non-maximum suppression, for example, by only
+keeping results with higher confidence in the final output.
+14.4.5 Summary
+• We generate anchor boxes with different shapes centered on each pixel of the image.
+• Intersection over union (IoU), also known as Jaccard index, measures the similarity of
+two bounding boxes. It is the ratio of their intersection area to their union area.
+• In a training set, we need two types of labels for each anchor box. One is the class of
+the object relevant to the anchor box and the other is the offset of the ground-truth
+bounding box relative to the anchor box.
+• During prediction, we can use non-maximum suppression (NMS) to remove similar pre-
+dicted bounding boxes, thereby simplifying the output.
+
+===== صفحة الكتاب 663 =====
+623
+Multiscale Object Detection
+215
+14.4.6 Exercises
+1. Change values of sizes and ratios in the multibox_prior function. What are the
+changes to the generated anchor boxes?
+2. Construct and visualize two bounding boxes with an IoU of 0.5. How do they overlap
+with each other?
+3. Modify the variable anchors in Section 14.4.3 and Section 14.4.4. How do the results
+change?
+4. Non-maximum suppression is a greedy algorithm that suppresses predicted bounding
+boxes by removing them. Is it possible that some of these removed ones are actually
+useful? How can this algorithm be modified to suppress softly? You may refer to Soft-
+NMS (Bodla et al., 2017).
+5. Rather than being hand-crafted, can non-maximum suppression be learned?
+Discussions215.
+14.5 Multiscale Object Detection
+In Section 14.4, we generated multiple anchor boxes centered on each pixel of an input
+image. Essentially these anchor boxes represent samples of different regions of the image.
+However, we may end up with too many anchor boxes to compute if they are generated for
+every pixel. Think of a 561 × 728 input image. If five anchor boxes with varying shapes
+are generated for each pixel as their center, over two million anchor boxes (561 × 728 × 5)
+need to be labeled and predicted on the image.
+14.5.1 Multiscale Anchor Boxes
+You may realize that it is not difficult to reduce anchor boxes on an image. For instance, we
+can just uniformly sample a small portion of pixels from the input image to generate anchor
+boxes centered on them. In addition, at different scales we can generate different numbers
+of anchor boxes of different sizes. Intuitively, smaller objects are more likely to appear on
+an image than larger ones. As an example, 1 × 1, 1 × 2, and 2 × 2 objects can appear on a
+2×2 image in 4, 2, and 1 possible ways, respectively. Therefore, when using smaller anchor
+boxes to detect smaller objects, we can sample more regions, while for larger objects we
+can sample fewer regions.
+To demonstrate how to generate anchor boxes at multiple scales, let’s read an image. Its
+height and width are 561 and 728 pixels, respectively.
+%matplotlib inline
+import torch
+(continues on next page)
+
+===== صفحة الكتاب 664 =====
+624
+Computer Vision
+(continued from previous page)
+from d2l import torch as d2l
+img = d2l.plt.imread('../img/catdog.jpg')
+h, w = img.shape[:2]
+h, w
+(561, 728)
+Recall that in Section 7.2 we call a two-dimensional array output of a convolutional layer
+a feature map. By defining the feature map shape, we can determine centers of uniformly
+sampled anchor boxes on any image.
+The display_anchors function is defined below. We generate anchor boxes (anchors) on
+the feature map (fmap) with each unit (pixel) as the anchor box center. Since the (𝑥, 𝑦)-
+axis coordinate values in the anchor boxes (anchors) have been divided by the width and
+height of the feature map (fmap), these values are between 0 and 1, which indicate the
+relative positions of anchor boxes in the feature map.
+Since centers of the anchor boxes (anchors) are spread over all units on the feature map
+(fmap), these centers must be uniformly distributed on any input image in terms of their
+relative spatial positions. More concretely, given the width and height of the feature map
+fmap_w and fmap_h, respectively, the following function will uniformly sample pixels in
+fmap_h rows and fmap_w columns on any input image. Centered on these uniformly sam-
+pled pixels, anchor boxes of scale s (assuming the length of the list s is 1) and different
+aspect ratios (ratios) will be generated.
+def display_anchors(fmap_w, fmap_h, s):
+d2l.set_figsize()
+# Values on the first two dimensions do not affect the output
+fmap = torch.zeros((1, 10, fmap_h, fmap_w))
+anchors = d2l.multibox_prior(fmap, sizes=s, ratios=[1, 2, 0.5])
+bbox_scale = torch.tensor((w, h, w, h))
+d2l.show_bboxes(d2l.plt.imshow(img).axes,
+anchors[0] * bbox_scale)
+First, let’s consider detection of small objects. In order to make it easier to distinguish
+when displayed, the anchor boxes with different centers here do not overlap: the anchor
+box scale is set to 0.15 and the height and width of the feature map are set to 4. We can see
+that the centers of the anchor boxes in 4 rows and 4 columns on the image are uniformly
+distributed.
+display_anchors(fmap_w=4, fmap_h=4, s=[0.15])
+We move on to reduce the height and width of the feature map by half and use larger anchor
+boxes to detect larger objects. When the scale is set to 0.4, some anchor boxes will overlap
+with each other.
+
+===== صفحة الكتاب 665 =====
+625
+Multiscale Object Detection
+display_anchors(fmap_w=2, fmap_h=2, s=[0.4])
+Finally, we further reduce the height and width of the feature map by half and increase the
+anchor box scale to 0.8. Now the center of the anchor box is the center of the image.
+display_anchors(fmap_w=1, fmap_h=1, s=[0.8])
+14.5.2 Multiscale Detection
+Since we have generated multiscale anchor boxes, we will use them to detect objects of
+various sizes at different scales. In the following we introduce a CNN-based multiscale
+object detection method that we will implement in Section 14.7.
+At some scale, say that we have 𝑐feature maps of shape ℎ×𝑤. Using the method in Section
+14.5.1, we generate ℎ𝑤sets of anchor boxes, where each set has 𝑎anchor boxes with the
+same center. For example, at the first scale in the experiments in Section 14.5.1, given ten
+
+===== صفحة الكتاب 666 =====
+626
+Computer Vision
+(number of channels) 4×4 feature maps, we generated 16 sets of anchor boxes, where each
+set contains 3 anchor boxes with the same center. Next, each anchor box is labeled with
+the class and offset based on ground-truth bounding boxes. At the current scale, the object
+detection model needs to predict the classes and offsets of ℎ𝑤sets of anchor boxes on the
+input image, where different sets have different centers.
+Assume that the 𝑐feature maps here are the intermediate outputs obtained by the CNN for-
+ward propagation based on the input image. Since there are ℎ𝑤different spatial positions
+on each feature map, the same spatial position can be thought of as having 𝑐units. Ac-
+cording to the definition of receptive field in Section 7.2, these 𝑐units at the same spatial
+position of the feature maps have the same receptive field on the input image: they repre-
+sent the input image information in the same receptive field. Therefore, we can transform
+the 𝑐units of the feature maps at the same spatial position into the classes and offsets of the
+𝑎anchor boxes generated using this spatial position. In essence, we use the information of
+the input image in a certain receptive field to predict the classes and offsets of the anchor
+boxes that are close to that receptive field on the input image.
+When the feature maps at different layers have varying-size receptive fields on the input
+image, they can be used to detect objects of different sizes. For example, we can design a
+neural network where units of feature maps that are closer to the output layer have wider
+receptive fields, so they can detect larger objects from the input image.
+In a nutshell, we can leverage layerwise representations of images at multiple levels by deep
+neural networks for multiscale object detection. We will show how this works through a
+concrete example in Section 14.7.
+14.5.3 Summary
+• At multiple scales, we can generate anchor boxes with different sizes to detect objects
+with different sizes.
+• By defining the shape of feature maps, we can determine centers of uniformly sampled
+anchor boxes on any image.
+• We use the information of the input image in a certain receptive field to predict the classes
+and offsets of the anchor boxes that are close to that receptive field on the input image.
+• Through deep learning, we can leverage its layerwise representations of images at mul-
+tiple levels for multiscale object detection.
+14.5.4 Exercises
+1. According to our discussions in Section 8.1, deep neural networks learn hierarchical
+features with increasing levels of abstraction for images. In multiscale object detection,
+do feature maps at different scales correspond to different levels of abstraction? Why or
+why not?
+2. At the first scale (fmap_w=4, fmap_h=4) in the experiments in Section 14.5.1, generate
+uniformly distributed anchor boxes that may overlap.
+
+===== صفحة الكتاب 667 =====
+627
+The Object Detection Dataset
+216
+3. Given a feature map variable with shape 1 × 𝑐× ℎ× 𝑤, where 𝑐, ℎ, and 𝑤are the
+number of channels, height, and width of the feature maps, respectively. How can you
+transform this variable into the classes and offsets of anchor boxes? What is the shape
+of the output?
+Discussions216.
+14.6 The Object Detection Dataset
+There is no small dataset such as MNIST and Fashion-MNIST in the field of object detec-
+tion. In order to quickly demonstrate object detection models, we collected and labeled a
+small dataset. First, we took photos of free bananas from our office and generated 1000
+banana images with different rotations and sizes. Then we placed each banana image at a
+random position on some background image. In the end, we labeled bounding boxes for
+those bananas on the images.
+14.6.1 Downloading the Dataset
+The banana detection dataset with all the image and csv label files can be downloaded
+directly from the Internet.
+%matplotlib inline
+import os
+import pandas as pd
+import torch
+import torchvision
+from d2l import torch as d2l
+#@save
+d2l.DATA_HUB['banana-detection'] = (
+d2l.DATA_URL + 'banana-detection.zip',
+'5de26c8fce5ccdea9f91267273464dc968d20d72')
+14.6.2 Reading the Dataset
+We are going to read the banana detection dataset in the read_data_bananas function
+below. The dataset includes a csv file for object class labels and ground-truth bounding
+box coordinates at the upper-left and lower-right corners.
+#@save
+def read_data_bananas(is_train=True):
+"""Read the banana detection dataset images and labels."""
+data_dir = d2l.download_extract('banana-detection')
+csv_fname = os.path.join(data_dir, 'bananas_train' if is_train
+(continues on next page)
+
+===== صفحة الكتاب 668 =====
+628
+Computer Vision
+(continued from previous page)
+else 'bananas_val', 'label.csv')
+csv_data = pd.read_csv(csv_fname)
+csv_data = csv_data.set_index('img_name')
+images, targets = [], []
+for img_name, target in csv_data.iterrows():
+images.append(torchvision.io.read_image(
+os.path.join(data_dir, 'bananas_train' if is_train else
+'bananas_val', 'images', f'{img_name}')))
+# Here `target` contains (class, upper-left x, upper-left y,
+# lower-right x, lower-right y), where all the images have the same
+# banana class (index 0)
+targets.append(list(target))
+return images, torch.tensor(targets).unsqueeze(1) / 256
+By using the read_data_bananas function to read images and labels, the following Ba-
+nanasDataset class will allow us to create a customized Dataset instance for loading the
+banana detection dataset.
+#@save
+class BananasDataset(torch.utils.data.Dataset):
+"""A customized dataset to load the banana detection dataset."""
+def __init__(self, is_train):
+self.features, self.labels = read_data_bananas(is_train)
+print('read ' + str(len(self.features)) + (f' training examples' if
+is_train else f' validation examples'))
+def __getitem__(self, idx):
+return (self.features[idx].float(), self.labels[idx])
+def __len__(self):
+return len(self.features)
+Finally, we define the load_data_bananas function to return two data iterator instances
+for both the training and test sets. For the test dataset, there is no need to read it in random
+order.
+#@save
+def load_data_bananas(batch_size):
+"""Load the banana detection dataset."""
+train_iter = torch.utils.data.DataLoader(BananasDataset(is_train=True),
+batch_size, shuffle=True)
+val_iter = torch.utils.data.DataLoader(BananasDataset(is_train=False),
+batch_size)
+return train_iter, val_iter
+Let’s read a minibatch and print the shapes of both images and labels in this minibatch.
+The shape of the image minibatch, (batch size, number of channels, height, width), looks
+familiar: it is the same as in our earlier image classification tasks. The shape of the label
+minibatch is (batch size, 𝑚, 5), where 𝑚is the largest possible number of bounding boxes
+that any image has in the dataset.
+
+===== صفحة الكتاب 669 =====
+629
+The Object Detection Dataset
+Although computation in minibatches is more efficient, it requires that all the image exam-
+ples contain the same number of bounding boxes to form a minibatch via concatenation.
+In general, images may have a varying number of bounding boxes; thus, images with fewer
+than 𝑚bounding boxes will be padded with illegal bounding boxes until 𝑚is reached. Then
+the label of each bounding box is represented by an array of length 5. The first element in
+the array is the class of the object in the bounding box, where -1 indicates an illegal bound-
+ing box for padding. The remaining four elements of the array are the (𝑥, 𝑦)-coordinate
+values of the upper-left corner and the lower-right corner of the bounding box (the range
+is between 0 and 1). For the banana dataset, since there is only one bounding box on each
+image, we have 𝑚= 1.
+batch_size, edge_size = 32, 256
+train_iter, _ = load_data_bananas(batch_size)
+batch = next(iter(train_iter))
+batch[0].shape, batch[1].shape
+Downloading ../data/banana-detection.zip from http://d2l-data.s3-accelerate.
+↩→amazonaws.com/banana-detection.zip...
+read 1000 training examples
+read 100 validation examples
+(torch.Size([32, 3, 256, 256]), torch.Size([32, 1, 5]))
+14.6.3 Demonstration
+Let’s demonstrate ten images with their labeled ground-truth bounding boxes. We can see
+that the rotations, sizes, and positions of bananas vary across all these images. Of course,
+this is just a simple artificial dataset. In practice, real-world datasets are usually much more
+complicated.
+imgs = (batch[0][:10].permute(0, 2, 3, 1)) / 255
+axes = d2l.show_images(imgs, 2, 5, scale=2)
+for ax, label in zip(axes, batch[1][:10]):
+d2l.show_bboxes(ax, [label[0][1:5] * edge_size], colors=['w'])
+14.6.4 Summary
+• The banana detection dataset we collected can be used to demonstrate object detection
+models.
+• The data loading for object detection is similar to that for image classification. However,
+in object detection the labels also contain information of ground-truth bounding boxes,
+which is missing in image classification.
+14.6.5 Exercises
+
+===== صفحة الكتاب 670 =====
+630
+Computer Vision
+217
+1. Demonstrate other images with ground-truth bounding boxes in the banana detection
+dataset. How do they differ with respect to bounding boxes and objects?
+2. Say that we want to apply data augmentation, such as random cropping, to object detec-
+tion. How can it be different from that in image classification? Hint: what if a cropped
+image only contains a small portion of an object?
+Discussions217.
+14.7 Single Shot Multibox Detection
+In Section 14.3–Section 14.6, we introduced bounding boxes, anchor boxes, multiscale
+object detection, and the dataset for object detection. Now we are ready to use such back-
+ground knowledge to design an object detection model: single shot multibox detection
+(SSD) (Liu et al., 2016). This model is simple, fast, and widely used. Although this is
+just one of vast amounts of object detection models, some of the design principles and
+implementation details in this section are also applicable to other models.
+14.7.1 Model
+Fig. 14.7.1 provides an overview of the design of single-shot multibox detection. This
+model mainly consists of a base network followed by several multiscale feature map blocks.
+The base network is for extracting features from the input image, so it can use a deep CNN.
+For example, the original single-shot multibox detection paper adopts a VGG network trun-
+cated before the classification layer (Liu et al., 2016), while ResNet has also been commonly
+used. Through our design we can make the base network output larger feature maps so as
+to generate more anchor boxes for detecting smaller objects. Subsequently, each multiscale
+feature map block reduces (e.g., by half) the height and width of the feature maps from the
+previous block, and enables each unit of the feature maps to increase its receptive field on
+the input image.
+
+===== صفحة الكتاب 671 =====
+631
+Single Shot Multibox Detection
+Recall the design of multiscale object detection through layerwise representations of images
+by deep neural networks in Section 14.5. Since multiscale feature maps closer to the top of
+Fig. 14.7.1 are smaller but have larger receptive fields, they are suitable for detecting fewer
+but larger objects.
+In a nutshell, via its base network and several multiscale feature map blocks, single-shot
+multibox detection generates a varying number of anchor boxes with different sizes, and
+detects varying-size objects by predicting classes and offsets of these anchor boxes (thus
+the bounding boxes); thus, this is a multiscale object detection model.
+t
+Fig. 14.7.1
+As a multiscale object detection model, single-shot multibox detection mainly consists of
+a base network followed by several multiscale feature map blocks.
+In the following, we will describe the implementation details of different blocks in Fig.
+14.7.1. To begin with, we discuss how to implement the class and bounding box predic-
+tion.
+Class Prediction Layer
+Let the number of object classes be 𝑞. Then anchor boxes have 𝑞+1 classes, where class 0 is
+background. At some scale, suppose that the height and width of feature maps are ℎand 𝑤,
+respectively. When 𝑎anchor boxes are generated with each spatial position of these feature
+maps as their center, a total of ℎ𝑤𝑎anchor boxes need to be classified. This often makes
+classification with fully connected layers infeasible due to likely heavy parametrization
+costs. Recall how we used channels of convolutional layers to predict classes in Section
+8.3. Single-shot multibox detection uses the same technique to reduce model complex-
+ity.
+Specifically, the class prediction layer uses a convolutional layer without altering width
+or height of feature maps. In this way, there can be a one-to-one correspondence between
+outputs and inputs at the same spatial dimensions (width and height) of feature maps. More
+concretely, channels of the output feature maps at any spatial position (𝑥, 𝑦) represent class
+predictions for all the anchor boxes centered on (𝑥, 𝑦) of the input feature maps. To produce
+valid predictions, there must be 𝑎(𝑞+1) output channels, where for the same spatial position
+
+===== صفحة الكتاب 672 =====
+632
+Computer Vision
+the output channel with index 𝑖(𝑞+1)+ 𝑗represents the prediction of the class 𝑗(0 ≤𝑗≤𝑞)
+for the anchor box 𝑖(0 ≤𝑖< 𝑎).
+Below we define such a class prediction layer, specifying 𝑎and 𝑞via arguments num_anchors
+and num_classes, respectively. This layer uses a 3 × 3 convolutional layer with a padding
+of 1. The width and height of the input and output of this convolutional layer remain un-
+changed.
+%matplotlib inline
+import torch
+import torchvision
+from torch import nn
+from torch.nn import functional as F
+from d2l import torch as d2l
+def cls_predictor(num_inputs, num_anchors, num_classes):
+return nn.Conv2d(num_inputs, num_anchors * (num_classes + 1),
+kernel_size=3, padding=1)
+Bounding Box Prediction Layer
+The design of the bounding box prediction layer is similar to that of the class prediction
+layer. The only difference lies in the number of outputs for each anchor box: here we need
+to predict four offsets rather than 𝑞+ 1 classes.
+def bbox_predictor(num_inputs, num_anchors):
+return nn.Conv2d(num_inputs, num_anchors * 4, kernel_size=3, padding=1)
+Concatenating Predictions for Multiple Scales
+As we mentioned, single-shot multibox detection uses multiscale feature maps to generate
+anchor boxes and predict their classes and offsets. At different scales, the shapes of feature
+maps or the numbers of anchor boxes centered on the same unit may vary. Therefore, shapes
+of the prediction outputs at different scales may vary.
+In the following example, we construct feature maps at two different scales, Y1 and Y2, for
+the same minibatch, where the height and width of Y2 are half of those of Y1. Let’s take
+class prediction as an example. Suppose that 5 and 3 anchor boxes are generated for every
+unit in Y1 and Y2, respectively. Suppose further that the number of object classes is 10.
+For feature maps Y1 and Y2 the numbers of channels in the class prediction outputs are
+5 × (10 + 1) = 55 and 3 × (10 + 1) = 33, respectively, where either output shape is (batch
+size, number of channels, height, width).
+def forward(x, block):
+return block(x)
+(continues on next page)
+
+===== صفحة الكتاب 673 =====
+633
+Single Shot Multibox Detection
+(continued from previous page)
+Y1 = forward(torch.zeros((2, 8, 20, 20)), cls_predictor(8, 5, 10))
+Y2 = forward(torch.zeros((2, 16, 10, 10)), cls_predictor(16, 3, 10))
+Y1.shape, Y2.shape
+(torch.Size([2, 55, 20, 20]), torch.Size([2, 33, 10, 10]))
+As we can see, except for the batch size dimension, the other three dimensions all have
+different sizes. To concatenate these two prediction outputs for more efficient computation,
+we will transform these tensors into a more consistent format.
+Note that the channel dimension holds the predictions for anchor boxes with the same center.
+We first move this dimension to the innermost. Since the batch size remains the same for
+different scales, we can transform the prediction output into a two-dimensional tensor with
+shape (batch size, height × width × number of channels). Then we can concatenate such
+outputs at different scales along dimension 1.
+def flatten_pred(pred):
+return torch.flatten(pred.permute(0, 2, 3, 1), start_dim=1)
+def concat_preds(preds):
+return torch.cat([flatten_pred(p) for p in preds], dim=1)
+In this way, even though Y1 and Y2 have different sizes in channels, heights, and widths,
+we can still concatenate these two prediction outputs at two different scales for the same
+minibatch.
+concat_preds([Y1, Y2]).shape
+torch.Size([2, 25300])
+Downsampling Block
+In order to detect objects at multiple scales, we define the following downsampling block
+down_sample_blk that halves the height and width of input feature maps. In fact, this block
+applies the design of VGG blocks in Section 8.2.1. More concretely, each downsampling
+block consists of two 3 × 3 convolutional layers with padding of 1 followed by a 2 × 2 max-
+pooling layer with stride of 2. As we know, 3 × 3 convolutional layers with padding of 1 do
+not change the shape of feature maps. However, the subsequent 2 × 2 max-pooling reduces
+the height and width of input feature maps by half. For both input and output feature maps
+of this downsampling block, because 1 × 2 + (3 −1) + (3 −1) = 6, each unit in the output
+has a 6 × 6 receptive field on the input. Therefore, the downsampling block enlarges the
+receptive field of each unit in its output feature maps.
+
+===== صفحة الكتاب 674 =====
+634
+Computer Vision
+def down_sample_blk(in_channels, out_channels):
+blk = []
+for _ in range(2):
+blk.append(nn.Conv2d(in_channels, out_channels,
+kernel_size=3, padding=1))
+blk.append(nn.BatchNorm2d(out_channels))
+blk.append(nn.ReLU())
+in_channels = out_channels
+blk.append(nn.MaxPool2d(2))
+return nn.Sequential(*blk)
+In the following example, our constructed downsampling block changes the number of input
+channels and halves the height and width of the input feature maps.
+forward(torch.zeros((2, 3, 20, 20)), down_sample_blk(3, 10)).shape
+torch.Size([2, 10, 10, 10])
+Base Network Block
+The base network block is used to extract features from input images. For simplicity, we
+construct a small base network consisting of three downsampling blocks that double the
+number of channels at each block. Given a 256 × 256 input image, this base network block
+outputs 32 × 32 feature maps (256/23 = 32).
+def base_net():
+blk = []
+num_filters = [3, 16, 32, 64]
+for i in range(len(num_filters) - 1):
+blk.append(down_sample_blk(num_filters[i], num_filters[i+1]))
+return nn.Sequential(*blk)
+forward(torch.zeros((2, 3, 256, 256)), base_net()).shape
+torch.Size([2, 64, 32, 32])
+The Complete Model
+The complete single shot multibox detection model consists of five blocks. The feature
+maps produced by each block are used for both (i) generating anchor boxes and (ii) predict-
+ing classes and offsets of these anchor boxes. Among these five blocks, the first one is the
+base network block, the second to the fourth are downsampling blocks, and the last block
+uses global max-pooling to reduce both the height and width to 1. Technically, the second
+to the fifth blocks are all those multiscale feature map blocks in Fig. 14.7.1.
+
+===== صفحة الكتاب 675 =====
+635
+Single Shot Multibox Detection
+def get_blk(i):
+if i == 0:
+blk = base_net()
+elif i == 1:
+blk = down_sample_blk(64, 128)
+elif i == 4:
+blk = nn.AdaptiveMaxPool2d((1,1))
+else:
+blk = down_sample_blk(128, 128)
+return blk
+Now we define the forward propagation for each block. Different from in image classifica-
+tion tasks, outputs here include (i) CNN feature maps Y, (ii) anchor boxes generated using
+Y at the current scale, and (iii) classes and offsets predicted (based on Y) for these anchor
+boxes.
+def blk_forward(X, blk, size, ratio, cls_predictor, bbox_predictor):
+Y = blk(X)
+anchors = d2l.multibox_prior(Y, sizes=size, ratios=ratio)
+cls_preds = cls_predictor(Y)
+bbox_preds = bbox_predictor(Y)
+return (Y, anchors, cls_preds, bbox_preds)
+Recall that in Fig. 14.7.1 a multiscale feature map block that is closer to the top is for
+detecting larger objects; thus, it needs to generate larger anchor boxes. In the above forward
+propagation, at each multiscale feature map block we pass in a list of two scale values via the
+sizes argument of the invoked multibox_prior function (described in Section 14.4). In
+the following, the interval between 0.2 and 1.05 is split evenly into five sections to determine
+the smaller scale values at the five blocks: 0.2, 0.37, 0.54, 0.71, and 0.88. Then their larger
+scale values are given by
+√
+0.2 × 0.37 = 0.272,
+√
+0.37 × 0.54 = 0.447, and so on.
+sizes = [[0.2, 0.272], [0.37, 0.447], [0.54, 0.619], [0.71, 0.79],
+[0.88, 0.961]]
+ratios = [[1, 2, 0.5]] * 5
+num_anchors = len(sizes[0]) + len(ratios[0]) - 1
+Now we can define the complete model TinySSD as follows.
+class TinySSD(nn.Module):
+def __init__(self, num_classes, **kwargs):
+super(TinySSD, self).__init__(**kwargs)
+self.num_classes = num_classes
+idx_to_in_channels = [64, 128, 128, 128, 128]
+for i in range(5):
+# Equivalent to the assignment statement `self.blk_i = get_blk(i)`
+setattr(self, f'blk_{i}', get_blk(i))
+setattr(self, f'cls_{i}', cls_predictor(idx_to_in_channels[i],
+num_anchors, num_classes))
+setattr(self, f'bbox_{i}', bbox_predictor(idx_to_in_channels[i],
+num_anchors))
+(continues on next page)
+
+===== صفحة الكتاب 676 =====
+636
+Computer Vision
+(continued from previous page)
+def forward(self, X):
+anchors, cls_preds, bbox_preds = [None] * 5, [None] * 5, [None] * 5
+for i in range(5):
+# Here `getattr(self, 'blk_%d' % i)` accesses `self.blk_i`
+X, anchors[i], cls_preds[i], bbox_preds[i] = blk_forward(
+X, getattr(self, f'blk_{i}'), sizes[i], ratios[i],
+getattr(self, f'cls_{i}'), getattr(self, f'bbox_{i}'))
+anchors = torch.cat(anchors, dim=1)
+cls_preds = concat_preds(cls_preds)
+cls_preds = cls_preds.reshape(
+cls_preds.shape[0], -1, self.num_classes + 1)
+bbox_preds = concat_preds(bbox_preds)
+return anchors, cls_preds, bbox_preds
+We create a model instance and use it to perform forward propagation on a minibatch of
+256 × 256 images X.
+As shown earlier in this section, the first block outputs 32×32 feature maps. Recall that the
+second to fourth downsampling blocks halve the height and width and the fifth block uses
+global pooling. Since 4 anchor boxes are generated for each unit along spatial dimensions
+of feature maps, at all the five scales a total of (322 + 162 + 82 + 42 + 1) × 4 = 5444 anchor
+boxes are generated for each image.
+net = TinySSD(num_classes=1)
+X = torch.zeros((32, 3, 256, 256))
+anchors, cls_preds, bbox_preds = net(X)
+print('output anchors:', anchors.shape)
+print('output class preds:', cls_preds.shape)
+print('output bbox preds:', bbox_preds.shape)
+output anchors: torch.Size([1, 5444, 4])
+output class preds: torch.Size([32, 5444, 2])
+output bbox preds: torch.Size([32, 21776])
+14.7.2 Training
+Now we will explain how to train the single shot multibox detection model for object de-
+tection.
+Reading the Dataset and Initializing the Model
+To begin with, let’s read the banana detection dataset described in Section 14.6.
+batch_size = 32
+train_iter, _ = d2l.load_data_bananas(batch_size)
+
+===== صفحة الكتاب 677 =====
+637
+Single Shot Multibox Detection
+read 1000 training examples
+read 100 validation examples
+There is only one class in the banana detection dataset. After defining the model, we need
+to initialize its parameters and define the optimization algorithm.
+device, net = d2l.try_gpu(), TinySSD(num_classes=1)
+trainer = torch.optim.SGD(net.parameters(), lr=0.2, weight_decay=5e-4)
+Defining Loss and Evaluation Functions
+Object detection has two types of losses. The first loss concerns classes of anchor boxes:
+its computation can simply reuse the cross-entropy loss function that we used for image
+classification. The second loss concerns offsets of positive (non-background) anchor boxes:
+this is a regression problem. For this regression problem, however, here we do not use the
+squared loss described in Section 3.1.3. Instead, we use the ℓ1 norm loss, the absolute
+value of the difference between the prediction and the ground-truth. The mask variable
+bbox_masks filters out negative anchor boxes and illegal (padded) anchor boxes in the loss
+calculation. In the end, we sum up the anchor box class loss and the anchor box offset loss
+to obtain the loss function for the model.
+cls_loss = nn.CrossEntropyLoss(reduction='none')
+bbox_loss = nn.L1Loss(reduction='none')
+def calc_loss(cls_preds, cls_labels, bbox_preds, bbox_labels, bbox_masks):
+batch_size, num_classes = cls_preds.shape[0], cls_preds.shape[2]
+cls = cls_loss(cls_preds.reshape(-1, num_classes),
+cls_labels.reshape(-1)).reshape(batch_size, -1).mean(dim=1)
+bbox = bbox_loss(bbox_preds * bbox_masks,
+bbox_labels * bbox_masks).mean(dim=1)
+return cls + bbox
+We can use accuracy to evaluate the classification results. Due to the used ℓ1 norm loss
+for the offsets, we use the mean absolute error to evaluate the predicted bounding boxes.
+These prediction results are obtained from the generated anchor boxes and the predicted
+offsets for them.
+def cls_eval(cls_preds, cls_labels):
+# Because the class prediction results are on the final dimension,
+# `argmax` needs to specify this dimension
+return float((cls_preds.argmax(dim=-1).type(
+cls_labels.dtype) == cls_labels).sum())
+def bbox_eval(bbox_preds, bbox_labels, bbox_masks):
+return float((torch.abs((bbox_labels - bbox_preds) * bbox_masks)).sum())
+
+===== صفحة الكتاب 678 =====
+638
+Computer Vision
+Training the Model
+When training the model, we need to generate multiscale anchor boxes (anchors) and pre-
+dict their classes (cls_preds) and offsets (bbox_preds) in the forward propagation. Then
+we label the classes (cls_labels) and offsets (bbox_labels) of such generated anchor
+boxes based on the label information Y. Finally, we calculate the loss function using the
+predicted and labeled values of the classes and offsets. For concise implementations, eval-
+uation of the test dataset is omitted here.
+num_epochs, timer = 20, d2l.Timer()
+animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs],
+legend=['class error', 'bbox mae'])
+net = net.to(device)
+for epoch in range(num_epochs):
+# Sum of training accuracy, no. of examples in sum of training accuracy,
+# Sum of absolute error, no. of examples in sum of absolute error
+metric = d2l.Accumulator(4)
+net.train()
+for features, target in train_iter:
+timer.start()
+trainer.zero_grad()
+X, Y = features.to(device), target.to(device)
+# Generate multiscale anchor boxes and predict their classes and
+# offsets
+anchors, cls_preds, bbox_preds = net(X)
+# Label the classes and offsets of these anchor boxes
+bbox_labels, bbox_masks, cls_labels = d2l.multibox_target(anchors, Y)
+# Calculate the loss function using the predicted and labeled values
+# of the classes and offsets
+l = calc_loss(cls_preds, cls_labels, bbox_preds, bbox_labels,
+bbox_masks)
+l.mean().backward()
+trainer.step()
+metric.add(cls_eval(cls_preds, cls_labels), cls_labels.numel(),
+bbox_eval(bbox_preds, bbox_labels, bbox_masks),
+bbox_labels.numel())
+cls_err, bbox_mae = 1 - metric[0] / metric[1], metric[2] / metric[3]
+animator.add(epoch + 1, (cls_err, bbox_mae))
+print(f'class err {cls_err:.2e}, bbox mae {bbox_mae:.2e}')
+print(f'{len(train_iter.dataset) / timer.stop():.1f} examples/sec on '
+f'{str(device)}')
+class err 3.27e-03, bbox mae 3.08e-03
+4279.7 examples/sec on cuda:0
+14.7.3 Prediction
+During prediction, the goal is to detect all the objects of interest on the image. Below we
+read and resize a test image, converting it to a four-dimensional tensor that is required by
+convolutional layers.
+
+===== صفحة الكتاب 679 =====
+639
+Single Shot Multibox Detection
+X = torchvision.io.read_image('../img/banana.jpg').unsqueeze(0).float()
+img = X.squeeze(0).permute(1, 2, 0).long()
+Using the multibox_detection function below, the predicted bounding boxes are obtained
+from the anchor boxes and their predicted offsets. Then non-maximum suppression is used
+to remove similar predicted bounding boxes.
+def predict(X):
+net.eval()
+anchors, cls_preds, bbox_preds = net(X.to(device))
+cls_probs = F.softmax(cls_preds, dim=2).permute(0, 2, 1)
+output = d2l.multibox_detection(cls_probs, bbox_preds, anchors)
+idx = [i for i, row in enumerate(output[0]) if row[0] != -1]
+return output[0, idx]
+output = predict(X)
+Finally, we display all the predicted bounding boxes with confidence 0.9 or above as out-
+put.
+def display(img, output, threshold):
+d2l.set_figsize((5, 5))
+fig = d2l.plt.imshow(img)
+for row in output:
+score = float(row[1])
+if score < threshold:
+continue
+h, w = img.shape[:2]
+bbox = [row[2:6] * torch.tensor((w, h, w, h), device=row.device)]
+d2l.show_bboxes(fig.axes, bbox, '%.2f' % score, 'w')
+display(img, output.cpu(), threshold=0.9)
+14.7.4 Summary
+• Single shot multibox detection is a multiscale object detection model. Via its base net-
+work and several multiscale feature map blocks, single-shot multibox detection gen-
+erates a varying number of anchor boxes with different sizes, and detects varying-size
+
+===== صفحة الكتاب 680 =====
+640
+Computer Vision
+objects by predicting classes and offsets of these anchor boxes (thus the bounding
+boxes).
+• When training the single-shot multibox detection model, the loss function is calculated
+based on the predicted and labeled values of the anchor box classes and offsets.
+14.7.5 Exercises
+1. Can you improve the single-shot multibox detection by improving the loss function? For
+example, replace ℓ1 norm loss with smooth ℓ1 norm loss for the predicted offsets. This
+loss function uses a square function around zero for smoothness, which is controlled by
+the hyperparameter 𝜎:
+𝑓(𝑥) =
+(
+(𝜎𝑥)2/2,
+if |𝑥| < 1/𝜎2
+|𝑥| −0.5/𝜎2,
+otherwise
+(14.7.1)
+When 𝜎is very large, this loss is similar to the ℓ1 norm loss. When its value is smaller, the
+loss function is smoother.
+def smooth_l1(data, scalar):
+out = []
+for i in data:
+if abs(i) < 1 / (scalar ** 2):
+out.append(((scalar * i) ** 2) / 2)
+else:
+out.append(abs(i) - 0.5 / (scalar ** 2))
+return torch.tensor(out)
+sigmas = [10, 1, 0.5]
+lines = ['-', '--', '-.']
+x = torch.arange(-2, 2, 0.1)
+d2l.set_figsize()
+(continues on next page)
+
+===== صفحة الكتاب 681 =====
+641
+Single Shot Multibox Detection
+(continued from previous page)
+for l, s in zip(lines, sigmas):
+y = smooth_l1(x, scalar=s)
+d2l.plt.plot(x, y, l, label='sigma=%.1f' % s)
+d2l.plt.legend();
+Besides, in the experiment we used cross-entropy loss for class prediction: denoting by 𝑝𝑗
+the predicted probability for the ground-truth class 𝑗, the cross-entropy loss is −log 𝑝𝑗. We
+can also use the focal loss (Lin et al., 2017): given hyperparameters 𝛾> 0 and 𝛼> 0, this
+loss is defined as:
+−𝛼(1 −𝑝𝑗)𝛾log 𝑝𝑗.
+(14.7.2)
+As we can see, increasing 𝛾can effectively reduce the relative loss for well-classified ex-
+amples (e.g., 𝑝𝑗> 0.5) so the training can focus more on those difficult examples that are
+misclassified.
+def focal_loss(gamma, x):
+return -(1 - x) ** gamma * torch.log(x)
+x = torch.arange(0.01, 1, 0.01)
+for l, gamma in zip(lines, [0, 1, 5]):
+y = d2l.plt.plot(x, focal_loss(gamma, x), l, label='gamma=%.1f' % gamma)
+d2l.plt.legend();
+2. Due to space limitations, we have omitted some implementation details of the single
+shot multibox detection model in this section. Can you further improve the model in the
+following aspects:
+
+===== صفحة الكتاب 682 =====
+642
+Computer Vision
+218
+1. When an object is much smaller compared with the image, the model could resize
+the input image bigger.
+2. There are typically a vast number of negative anchor boxes. To make the class dis-
+tribution more balanced, we could downsample negative anchor boxes.
+3. In the loss function, assign different weight hyperparameters to the class loss and the
+offset loss.
+4. Use other methods to evaluate the object detection model, such as those in the single
+shot multibox detection paper (Liu et al., 2016).
+Discussions218.
+14.8 Region-based CNNs (R-CNNs)
+Besides single shot multibox detection described in Section 14.7, region-based CNNs or
+regions with CNN features (R-CNNs) are also among many pioneering approaches of ap-
+plying deep learning to object detection (Girshick et al., 2014). In this section, we will
+introduce the R-CNN and its series of improvements: the fast R-CNN (Girshick, 2015), the
+faster R-CNN (Ren et al., 2015), and the mask R-CNN (He et al., 2017). Due to limited
+space, we will only focus on the design of these models.
+14.8.1 R-CNNs
+The R-CNN first extracts many (e.g., 2000) region proposals from the input image (e.g., an-
+chor boxes can also be considered as region proposals), labeling their classes and bounding
+boxes (e.g., offsets).
+(Girshick et al., 2014)
+Then a CNN is used to perform forward propagation on each region proposal to extract
+its features. Next, features of each region proposal are used for predicting the class and
+bounding box of this region proposal.
+t
+Fig. 14.8.1
+The R-CNN model.
+Fig. 14.8.1 shows the R-CNN model. More concretely, the R-CNN consists of the following
+four steps:
+
+===== صفحة الكتاب 683 =====
+643
+Region-based CNNs (R-CNNs)
+1. Perform selective search to extract multiple high-quality region proposals on the input
+image (Uijlings et al., 2013). These proposed regions are usually selected at multiple
+scales with different shapes and sizes. Each region proposal will be labeled with a class
+and a ground-truth bounding box.
+2. Choose a pretrained CNN and truncate it before the output layer. Resize each region
+proposal to the input size required by the network, and output the extracted features for
+the region proposal through forward propagation.
+3. Take the extracted features and labeled class of each region proposal as an example.
+Train multiple support vector machines to classify objects, where each support vector
+machine individually determines whether the example contains a specific class.
+4. Take the extracted features and labeled bounding box of each region proposal as an
+example. Train a linear regression model to predict the ground-truth bounding box.
+Although the R-CNN model uses pretrained CNNs to effectively extract image features, it
+is slow. Imagine that we select thousands of region proposals from a single input image:
+this requires thousands of CNN forward propagations to perform object detection. This
+massive computing load makes it infeasible to widely use R-CNNs in real-world applica-
+tions.
+14.8.2 Fast R-CNN
+The main performance bottleneck of an R-CNN lies in the independent CNN forward prop-
+agation for each region proposal, without sharing computation. Since these regions usually
+have overlaps, independent feature extractions lead to much repeated computation. One
+of the major improvements of the fast R-CNN from the R-CNN is that the CNN forward
+propagation is only performed on the entire image (Girshick, 2015).
+t
+Fig. 14.8.2
+The fast R-CNN model.
+Fig. 14.8.2 describes the fast R-CNN model. Its major computations are as follows:
+1. Compared with the R-CNN, in the fast R-CNN the input of the CNN for feature extrac-
+tion is the entire image, rather than individual region proposals. Moreover, this CNN is
+trainable. Given an input image, let the shape of the CNN output be 1 × 𝑐× ℎ1 × 𝑤1.
+
+===== صفحة الكتاب 684 =====
+644
+Computer Vision
+2. Suppose that selective search generates 𝑛region proposals. These region proposals (of
+different shapes) mark regions of interest (of different shapes) on the CNN output. Then
+these regions of interest further extract features of the same shape (say height ℎ2 and
+width 𝑤2 are specified) in order to be easily concatenated. To achieve this, the fast R-
+CNN introduces the region of interest (RoI) pooling layer: the CNN output and region
+proposals are input into this layer, outputting concatenated features of shape 𝑛×𝑐× ℎ2 ×
+𝑤2 that are further extracted for all the region proposals.
+3. Using a fully connected layer, transform the concatenated features into an output of
+shape 𝑛× 𝑑, where 𝑑depends on the model design.
+4. Predict the class and bounding box for each of the 𝑛region proposals. More concretely,
+in class and bounding box prediction, transform the fully connected layer output into
+an output of shape 𝑛× 𝑞(𝑞is the number of classes) and an output of shape 𝑛× 4,
+respectively. The class prediction uses softmax regression.
+The region of interest pooling layer proposed in the fast R-CNN is different from the pooling
+layer introduced in Section 7.5. In the pooling layer, we indirectly control the output shape
+by specifying sizes of the pooling window, padding, and stride. In contrast, we can directly
+specify the output shape in the region of interest pooling layer.
+For example, let’s specify the output height and width for each region as ℎ2 and 𝑤2, re-
+spectively. For any region of interest window of shape ℎ× 𝑤, this window is divided
+into a ℎ2 × 𝑤2 grid of subwindows, where the shape of each subwindow is approximately
+(ℎ/ℎ2) × (𝑤/𝑤2). In practice, the height and width of any subwindow shall be rounded up,
+and the largest element shall be used as output of the subwindow. Therefore, the region of
+interest pooling layer can extract features of the same shape even when regions of interest
+have different shapes.
+As an illustrative example, in Fig. 14.8.3, the upper-left 3 × 3 region of interest is selected
+on a 4×4 input. For this region of interest, we use a 2×2 region of interest pooling layer to
+obtain a 2 × 2 output. Note that each of the four divided subwindows contains elements 0,
+1, 4, and 5 (5 is the maximum); 2 and 6 (6 is the maximum); 8 and 9 (9 is the maximum);
+and 10.
+t
+Fig. 14.8.3
+A 2 × 2 region of interest pooling layer.
+Below we demonstrate the computation of the region of interest pooling layer. Suppose
+that the height and width of the CNN-extracted features X are both 4, and there is only a
+single channel.
+import torch
+import torchvision
+(continues on next page)
+
+===== صفحة الكتاب 685 =====
+645
+Region-based CNNs (R-CNNs)
+(continued from previous page)
+X = torch.arange(16.).reshape(1, 1, 4, 4)
+X
+tensor([[[[ 0.,
+1.,
+2.,
+3.],
+[ 4.,
+5.,
+6.,
+7.],
+[ 8.,
+9., 10., 11.],
+[12., 13., 14., 15.]]]])
+Let’s further suppose that the height and width of the input image are both 40 pixels and
+that selective search generates two region proposals on this image. Each region proposal is
+expressed as five elements: its object class followed by the (𝑥, 𝑦)-coordinates of its upper-
+left and lower-right corners.
+rois = torch.Tensor([[0, 0, 0, 20, 20], [0, 0, 10, 30, 30]])
+Because the height and width of X are 1/10 of the height and width of the input image,
+the coordinates of the two region proposals are multiplied by 0.1 according to the specified
+spatial_scale argument. Then the two regions of interest are marked on X as X[:, :,
+0:3, 0:3] and X[:, :, 1:4, 0:4], respectively. Finally in the 2 × 2 region of interest
+pooling, each region of interest is divided into a grid of sub-windows to further extract
+features of the same shape 2 × 2.
+torchvision.ops.roi_pool(X, rois, output_size=(2, 2), spatial_scale=0.1)
+tensor([[[[ 5.,
+6.],
+[ 9., 10.]]],
+[[[ 9., 11.],
+[13., 15.]]]])
+14.8.3 Faster R-CNN
+To be more accurate in object detection, the fast R-CNN model usually has to generate
+a lot of region proposals in selective search. To reduce region proposals without loss of
+accuracy, the faster R-CNN proposes to replace selective search with a region proposal
+network (Ren et al., 2015).
+Fig. 14.8.4 shows the faster R-CNN model. Compared with the fast R-CNN, the faster R-
+CNN only changes the region proposal method from selective search to a region proposal
+network. The rest of the model remain unchanged. The region proposal network works in
+the following steps:
+1. Use a 3 × 3 convolutional layer with padding of 1 to transform the CNN output to a
+
+===== صفحة الكتاب 686 =====
+646
+Computer Vision
+t
+Fig. 14.8.4
+The faster R-CNN model.
+new output with 𝑐channels. In this way, each unit along the spatial dimensions of the
+CNN-extracted feature maps gets a new feature vector of length 𝑐.
+2. Centered on each pixel of the feature maps, generate multiple anchor boxes of different
+scales and aspect ratios and label them.
+3. Using the length-𝑐feature vector at the center of each anchor box, predict the binary
+class (background or objects) and bounding box for this anchor box.
+4. Consider those predicted bounding boxes whose predicted classes are objects. Remove
+overlapped results using non-maximum suppression. The remaining predicted bounding
+boxes for objects are the region proposals required by the region of interest pooling layer.
+It is worth noting that, as part of the faster R-CNN model, the region proposal network
+is jointly trained with the rest of the model. In other words, the objective function of the
+faster R-CNN includes not only the class and bounding box prediction in object detection,
+but also the binary class and bounding box prediction of anchor boxes in the region proposal
+network. As a result of the end-to-end training, the region proposal network learns how to
+generate high-quality region proposals, so as to stay accurate in object detection with a
+reduced number of region proposals that are learned from data.
+14.8.4 Mask R-CNN
+In the training dataset, if pixel-level positions of object are also labeled on images, the
+mask R-CNN can effectively leverage such detailed labels to further improve the accuracy
+of object detection (He et al., 2017).
+As shown in Fig. 14.8.5, the mask R-CNN is modified based on the faster R-CNN. Specif-
+ically, the mask R-CNN replaces the region of interest pooling layer with the region of
+interest (RoI) alignment layer. This region of interest alignment layer uses bilinear inter-
+polation to preserve the spatial information on the feature maps, which is more suitable for
+pixel-level prediction. The output of this layer contains feature maps of the same shape for
+all the regions of interest. They are used to predict not only the class and bounding box
+for each region of interest, but also the pixel-level position of the object through an addi-
+tional fully convolutional network. More details on using a fully convolutional network to
+
+===== صفحة الكتاب 687 =====
+647
+Region-based CNNs (R-CNNs)
+t
+Fig. 14.8.5
+The mask R-CNN model.
+219
+predict pixel-level semantics of an image will be provided in subsequent sections of this
+chapter.
+14.8.5 Summary
+• The R-CNN extracts many region proposals from the input image, uses a CNN to perform
+forward propagation on each region proposal to extract its features, then uses these
+features to predict the class and bounding box of this region proposal.
+• One of the major improvements of the fast R-CNN from the R-CNN is that the CNN for-
+ward propagation is only performed on the entire image. It also introduces the region
+of interest pooling layer, so that features of the same shape can be further extracted
+for regions of interest that have different shapes.
+• The faster R-CNN replaces the selective search used in the fast R-CNN with a jointly
+trained region proposal network, so that the former can stay accurate in object detec-
+tion with a reduced number of region proposals.
+• Based on the faster R-CNN, the mask R-CNN additionally introduces a fully convolu-
+tional network, so as to leverage pixel-level labels to further improve the accuracy of
+object detection.
+14.8.6 Exercises
+1. Can we frame object detection as a single regression problem, such as predicting bound-
+ing boxes and class probabilities? You may refer to the design of the YOLO model
+(Redmon et al., 2016).
+2. Compare single shot multibox detection with the methods introduced in this section.
+What are their major differences? You may refer to Figure 2 of Zhao et al. (2019).
+Discussions219.
+
+===== صفحة الكتاب 688 =====
+648
+Computer Vision
+220
+14.9 Semantic Segmentation and the Dataset
+When discussing object detection tasks in Section 14.3–Section 14.8, rectangular bound-
+ing boxes are used to label and predict objects in images. This section will discuss the
+problem of semantic segmentation, which focuses on how to divide an image into regions
+belonging to different semantic classes. Different from object detection, semantic seg-
+mentation recognizes and understands what are in images in pixel level: its labeling and
+prediction of semantic regions are in pixel level. Fig. 14.9.1 shows the labels of the dog,
+cat, and background of the image in semantic segmentation. Compared with in object de-
+tection, the pixel-level borders labeled in semantic segmentation are obviously more fine-
+grained.
+t
+Fig. 14.9.1
+Labels of the dog, cat, and background of the image in semantic segmentation.
+14.9.1 Image Segmentation and Instance Segmentation
+There are also two important tasks in the field of computer vision that are similar to seman-
+tic segmentation, namely image segmentation and instance segmentation. We will briefly
+distinguish them from semantic segmentation as follows.
+• Image segmentation divides an image into several constituent regions. The methods for
+this type of problem usually make use of the correlation between pixels in the image.
+It does not need label information about image pixels during training, and it cannot
+guarantee that the segmented regions will have the semantics that we hope to obtain
+during prediction. Taking the image in Fig. 14.9.1 as input, image segmentation may
+divide the dog into two regions: one covers the mouth and eyes which are mainly
+black, and the other covers the rest of the body which is mainly yellow.
+• Instance segmentation is also called simultaneous detection and segmentation. It studies
+how to recognize the pixel-level regions of each object instance in an image. Differ-
+ent from semantic segmentation, instance segmentation needs to distinguish not only
+semantics, but also different object instances. For example, if there are two dogs in
+the image, instance segmentation needs to distinguish which of the two dogs a pixel
+belongs to.
+14.9.2 The Pascal VOC2012 Semantic Segmentation Dataset
+On of the most important semantic segmentation dataset is Pascal VOC2012 220 . In the
+
+===== صفحة الكتاب 689 =====
+649
+Semantic Segmentation and the Dataset
+following, we will take a look at this dataset.
+%matplotlib inline
+import os
+import torch
+import torchvision
+from d2l import torch as d2l
+The tar file of the dataset is about 2 GB, so it may take a while to download the file. The
+extracted dataset is located at ../data/VOCdevkit/VOC2012.
+#@save
+d2l.DATA_HUB['voc2012'] = (d2l.DATA_URL + 'VOCtrainval_11-May-2012.tar',
+'4e443f8a2eca6b1dac8a6c57641b67dd40621a49')
+voc_dir = d2l.download_extract('voc2012', 'VOCdevkit/VOC2012')
+Downloading ../data/VOCtrainval_11-May-2012.tar from http://d2l-data.s3-
+↩→accelerate.amazonaws.com/VOCtrainval_11-May-2012.tar...
+After entering the path ../data/VOCdevkit/VOC2012, we can see the different compo-
+nents of the dataset. The ImageSets/Segmentation path contains text files that specify
+training and test samples, while the JPEGImages and SegmentationClass paths store the
+input image and label for each example, respectively. The label here is also in the im-
+age format, with the same size as its labeled input image. Besides, pixels with the same
+color in any label image belong to the same semantic class. The following defines the
+read_voc_images function to read all the input images and labels into the memory.
+#@save
+def read_voc_images(voc_dir, is_train=True):
+"""Read all VOC feature and label images."""
+txt_fname = os.path.join(voc_dir, 'ImageSets', 'Segmentation',
+'train.txt' if is_train else 'val.txt')
+mode = torchvision.io.image.ImageReadMode.RGB
+with open(txt_fname, 'r') as f:
+images = f.read().split()
+features, labels = [], []
+for i, fname in enumerate(images):
+features.append(torchvision.io.read_image(os.path.join(
+voc_dir, 'JPEGImages', f'{fname}.jpg')))
+labels.append(torchvision.io.read_image(os.path.join(
+voc_dir, 'SegmentationClass' ,f'{fname}.png'), mode))
+return features, labels
+train_features, train_labels = read_voc_images(voc_dir, True)
+We draw the first five input images and their labels. In the label images, white and black rep-
+resent borders and background, respectively, while the other colors correspond to different
+classes.
+
+===== صفحة الكتاب 690 =====
+650
+Computer Vision
+n = 5
+imgs = train_features[:n] + train_labels[:n]
+imgs = [img.permute(1,2,0) for img in imgs]
+d2l.show_images(imgs, 2, n);
+Next, we enumerate the RGB color values and class names for all the labels in this dataset.
+#@save
+VOC_COLORMAP = [[0, 0, 0], [128, 0, 0], [0, 128, 0], [128, 128, 0],
+[0, 0, 128], [128, 0, 128], [0, 128, 128], [128, 128, 128],
+[64, 0, 0], [192, 0, 0], [64, 128, 0], [192, 128, 0],
+[64, 0, 128], [192, 0, 128], [64, 128, 128], [192, 128, 128],
+[0, 64, 0], [128, 64, 0], [0, 192, 0], [128, 192, 0],
+[0, 64, 128]]
+#@save
+VOC_CLASSES = ['background', 'aeroplane', 'bicycle', 'bird', 'boat',
+'bottle', 'bus', 'car', 'cat', 'chair', 'cow',
+'diningtable', 'dog', 'horse', 'motorbike', 'person',
+'potted plant', 'sheep', 'sofa', 'train', 'tv/monitor']
+With the two constants defined above, we can conveniently find the class index for each
+pixel in a label. We define the voc_colormap2label function to build the mapping from
+the above RGB color values to class indices, and the voc_label_indices function to map
+any RGB values to their class indices in this Pascal VOC2012 dataset.
+#@save
+def voc_colormap2label():
+"""Build the mapping from RGB to class indices for VOC labels."""
+colormap2label = torch.zeros(256 ** 3, dtype=torch.long)
+for i, colormap in enumerate(VOC_COLORMAP):
+colormap2label[
+(colormap[0] * 256 + colormap[1]) * 256 + colormap[2]] = i
+return colormap2label
+#@save
+def voc_label_indices(colormap, colormap2label):
+"""Map any RGB values in VOC labels to their class indices."""
+colormap = colormap.permute(1, 2, 0).numpy().astype('int32')
+(continues on next page)
+
+===== صفحة الكتاب 691 =====
+651
+Semantic Segmentation and the Dataset
+(continued from previous page)
+idx = ((colormap[:, :, 0] * 256 + colormap[:, :, 1]) * 256
++ colormap[:, :, 2])
+return colormap2label[idx]
+For example, in the first example image, the class index for the front part of the airplane is
+1, while the background index is 0.
+y = voc_label_indices(train_labels[0], voc_colormap2label())
+y[105:115, 130:140], VOC_CLASSES[1]
+(tensor([[0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+[0, 0, 0, 0, 0, 0, 0, 1, 1, 1],
+[0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+[0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+[0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+[0, 0, 0, 0, 1, 1, 1, 1, 1, 1],
+[0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+[0, 0, 0, 0, 0, 1, 1, 1, 1, 1],
+[0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+[0, 0, 0, 0, 0, 0, 0, 0, 1, 1]]),
+'aeroplane')
+Data Preprocessing
+In previous experiments such as in Section 8.1–Section 8.4, images are rescaled to fit the
+model’s required input shape. However, in semantic segmentation, doing so requires rescal-
+ing the predicted pixel classes back to the original shape of the input image. Such rescaling
+may be inaccurate, especially for segmented regions with different classes. To avoid this
+issue, we crop the image to a fixed shape instead of rescaling. Specifically, using random
+cropping from image augmentation, we crop the same area of the input image and the la-
+bel.
+#@save
+def voc_rand_crop(feature, label, height, width):
+"""Randomly crop both feature and label images."""
+rect = torchvision.transforms.RandomCrop.get_params(
+feature, (height, width))
+feature = torchvision.transforms.functional.crop(feature, *rect)
+label = torchvision.transforms.functional.crop(label, *rect)
+return feature, label
+imgs = []
+for _ in range(n):
+imgs += voc_rand_crop(train_features[0], train_labels[0], 200, 300)
+imgs = [img.permute(1, 2, 0) for img in imgs]
+d2l.show_images(imgs[::2] + imgs[1::2], 2, n);
+
+===== صفحة الكتاب 692 =====
+652
+Computer Vision
+Custom Semantic Segmentation Dataset Class
+We define a custom semantic segmentation dataset class VOCSegDataset by inheriting the
+Dataset class provided by high-level APIs. By implementing the __getitem__ function,
+we can arbitrarily access the input image indexed as idx in the dataset and the class index
+of each pixel in this image. Since some images in the dataset have a smaller size than
+the output size of random cropping, these examples are filtered out by a custom filter
+function. In addition, we also define the normalize_image function to standardize the
+values of the three RGB channels of input images.
+#@save
+class VOCSegDataset(torch.utils.data.Dataset):
+"""A customized dataset to load the VOC dataset."""
+def __init__(self, is_train, crop_size, voc_dir):
+self.transform = torchvision.transforms.Normalize(
+mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+self.crop_size = crop_size
+features, labels = read_voc_images(voc_dir, is_train=is_train)
+self.features = [self.normalize_image(feature)
+for feature in self.filter(features)]
+self.labels = self.filter(labels)
+self.colormap2label = voc_colormap2label()
+print('read ' + str(len(self.features)) + ' examples')
+def normalize_image(self, img):
+return self.transform(img.float() / 255)
+def filter(self, imgs):
+return [img for img in imgs if (
+img.shape[1] >= self.crop_size[0] and
+img.shape[2] >= self.crop_size[1])]
+def __getitem__(self, idx):
+feature, label = voc_rand_crop(self.features[idx], self.labels[idx],
+*self.crop_size)
+return (feature, voc_label_indices(label, self.colormap2label))
+def __len__(self):
+return len(self.features)
+
+===== صفحة الكتاب 693 =====
+653
+Semantic Segmentation and the Dataset
+Reading the Dataset
+We use the custom VOCSegDataset class to create instances of the training set and test set,
+respectively. Suppose that we specify that the output shape of randomly cropped images is
+320 × 480. Below we can view the number of examples that are retained in the training set
+and test set.
+crop_size = (320, 480)
+voc_train = VOCSegDataset(True, crop_size, voc_dir)
+voc_test = VOCSegDataset(False, crop_size, voc_dir)
+read 1114 examples
+read 1078 examples
+Setting the batch size to 64, we define the data iterator for the training set. Let’s print
+the shape of the first minibatch. Different from in image classification or object detection,
+labels here are three-dimensional tensors.
+batch_size = 64
+train_iter = torch.utils.data.DataLoader(voc_train, batch_size, shuffle=True,
+drop_last=True,
+num_workers=d2l.get_dataloader_workers())
+for X, Y in train_iter:
+print(X.shape)
+print(Y.shape)
+break
+torch.Size([64, 3, 320, 480])
+torch.Size([64, 320, 480])
+Putting It All Together
+Finally, we define the following load_data_voc function to download and read the Pascal
+VOC2012 semantic segmentation dataset. It returns data iterators for both the training and
+test datasets.
+#@save
+def load_data_voc(batch_size, crop_size):
+"""Load the VOC semantic segmentation dataset."""
+voc_dir = d2l.download_extract('voc2012', os.path.join(
+'VOCdevkit', 'VOC2012'))
+num_workers = d2l.get_dataloader_workers()
+train_iter = torch.utils.data.DataLoader(
+VOCSegDataset(True, crop_size, voc_dir), batch_size,
+shuffle=True, drop_last=True, num_workers=num_workers)
+test_iter = torch.utils.data.DataLoader(
+VOCSegDataset(False, crop_size, voc_dir), batch_size,
+drop_last=True, num_workers=num_workers)
+return train_iter, test_iter
+
+===== صفحة الكتاب 694 =====
+654
+Computer Vision
+221
+14.9.3 Summary
+• Semantic segmentation recognizes and understands what are in an image in pixel level
+by dividing the image into regions belonging to different semantic classes.
+• One of the most important semantic segmentation dataset is Pascal VOC2012.
+• In semantic segmentation, since the input image and label correspond one-to-one on the
+pixel, the input image is randomly cropped to a fixed shape rather than rescaled.
+14.9.4 Exercises
+1. How can semantic segmentation be applied in autonomous vehicles and medical image
+diagnostics? Can you think of other applications?
+2. Recall the descriptions of data augmentation in Section 14.1. Which of the image aug-
+mentation methods used in image classification would be infeasible to be applied in
+semantic segmentation?
+Discussions221.
+14.10 Transposed Convolution
+The CNN layers we have seen so far, such as convolutional layers (Section 7.2) and pool-
+ing layers (Section 7.5), typically reduce (downsample) the spatial dimensions (height and
+width) of the input, or keep them unchanged. In semantic segmentation that classifies at
+pixel-level, it will be convenient if the spatial dimensions of the input and output are the
+same. For example, the channel dimension at one output pixel can hold the classification
+results for the input pixel at the same spatial position.
+To achieve this, especially after the spatial dimensions are reduced by CNN layers, we
+can use another type of CNN layers that can increase (upsample) the spatial dimensions of
+intermediate feature maps. In this section, we will introduce transposed convolution, which
+is also called fractionally-strided convolution (Dumoulin and Visin, 2016), for reversing
+downsampling operations by the convolution.
+import torch
+from torch import nn
+from d2l import torch as d2l
+14.10.1 Basic Operation
+Ignoring channels for now, let’s begin with the basic transposed convolution operation with
+stride of 1 and no padding. Suppose that we are given a 𝑛ℎ× 𝑛𝑤input tensor and a 𝑘ℎ× 𝑘𝑤
+kernel. Sliding the kernel window with stride of 1 for 𝑛𝑤times in each row and 𝑛ℎtimes
+
+===== صفحة الكتاب 695 =====
+655
+Transposed Convolution
+in each column yields a total of 𝑛ℎ𝑛𝑤intermediate results. Each intermediate result is
+a (𝑛ℎ+ 𝑘ℎ−1) × (𝑛𝑤+ 𝑘𝑤−1) tensor that are initialized as zeros. To compute each
+intermediate tensor, each element in the input tensor is multiplied by the kernel so that
+the resulting 𝑘ℎ× 𝑘𝑤tensor replaces a portion in each intermediate tensor. Note that the
+position of the replaced portion in each intermediate tensor corresponds to the position of
+the element in the input tensor used for the computation. In the end, all the intermediate
+results are summed over to produce the output.
+As an example, Fig. 14.10.1 illustrates how transposed convolution with a 2 × 2 kernel is
+computed for a 2 × 2 input tensor.
+t
+Fig. 14.10.1
+Transposed convolution with a 2 × 2 kernel. The shaded portions are a portion of an
+intermediate tensor as well as the input and kernel tensor elements used for the
+computation.
+We can implement this basic transposed convolution operation trans_conv for a input
+matrix X and a kernel matrix K.
+def trans_conv(X, K):
+h, w = K.shape
+Y = torch.zeros((X.shape[0] + h - 1, X.shape[1] + w - 1))
+for i in range(X.shape[0]):
+for j in range(X.shape[1]):
+Y[i: i + h, j: j + w] += X[i, j] * K
+return Y
+In contrast to the regular convolution (in Section 7.2) that reduces input elements via the
+kernel, the transposed convolution broadcasts input elements via the kernel, thereby pro-
+ducing an output that is larger than the input. We can construct the input tensor X and the
+kernel tensor K from Fig. 14.10.1 to validate the output of the above implementation of the
+basic two-dimensional transposed convolution operation.
+X = torch.tensor([[0.0, 1.0], [2.0, 3.0]])
+K = torch.tensor([[0.0, 1.0], [2.0, 3.0]])
+trans_conv(X, K)
+tensor([[ 0.,
+0.,
+1.],
+[ 0.,
+4.,
+6.],
+[ 4., 12.,
+9.]])
+
+===== صفحة الكتاب 696 =====
+656
+Computer Vision
+Alternatively, when the input X and kernel K are both four-dimensional tensors, we can use
+high-level APIs to obtain the same results.
+X, K = X.reshape(1, 1, 2, 2), K.reshape(1, 1, 2, 2)
+tconv = nn.ConvTranspose2d(1, 1, kernel_size=2, bias=False)
+tconv.weight.data = K
+tconv(X)
+tensor([[[[ 0.,
+0.,
+1.],
+[ 0.,
+4.,
+6.],
+[ 4., 12.,
+9.]]]], grad_fn=<ConvolutionBackward0>)
+14.10.2 Padding, Strides, and Multiple Channels
+Different from in the regular convolution where padding is applied to input, it is applied to
+output in the transposed convolution. For example, when specifying the padding number
+on either side of the height and width as 1, the first and last rows and columns will be
+removed from the transposed convolution output.
+tconv = nn.ConvTranspose2d(1, 1, kernel_size=2, padding=1, bias=False)
+tconv.weight.data = K
+tconv(X)
+tensor([[[[4.]]]], grad_fn=<ConvolutionBackward0>)
+In the transposed convolution, strides are specified for intermediate results (thus output),
+not for input. Using the same input and kernel tensors from Fig. 14.10.1, changing the
+stride from 1 to 2 increases both the height and weight of intermediate tensors, hence the
+output tensor in Fig. 14.10.2.
+The following code snippet can validate the transposed convolution output for stride of 2
+in Fig. 14.10.2.
+tconv = nn.ConvTranspose2d(1, 1, kernel_size=2, stride=2, bias=False)
+tconv.weight.data = K
+tconv(X)
+tensor([[[[0., 0., 0., 1.],
+[0., 0., 2., 3.],
+[0., 2., 0., 3.],
+[4., 6., 6., 9.]]]], grad_fn=<ConvolutionBackward0>)
+For multiple input and output channels, the transposed convolution works in the same way
+as the regular convolution. Suppose that the input has 𝑐𝑖channels, and that the transposed
+convolution assigns a 𝑘ℎ× 𝑘𝑤kernel tensor to each input channel. When multiple output
+channels are specified, we will have a 𝑐𝑖× 𝑘ℎ× 𝑘𝑤kernel for each output channel.
+
+===== صفحة الكتاب 697 =====
+657
+Transposed Convolution
+t
+Fig. 14.10.2
+Transposed convolution with a 2 × 2 kernel with stride of 2. The shaded portions are a
+portion of an intermediate tensor as well as the input and kernel tensor elements used for
+the computation.
+As in all, if we feed X into a convolutional layer 𝑓to output Y = 𝑓(X) and create a trans-
+posed convolutional layer 𝑔with the same hyperparameters as 𝑓except for the number of
+output channels being the number of channels in X, then 𝑔(𝑌) will have the same shape as
+X. This can be illustrated in the following example.
+X = torch.rand(size=(1, 10, 16, 16))
+conv = nn.Conv2d(10, 20, kernel_size=5, padding=2, stride=3)
+tconv = nn.ConvTranspose2d(20, 10, kernel_size=5, padding=2, stride=3)
+tconv(conv(X)).shape == X.shape
+True
+14.10.3 Connection to Matrix Transposition
+The transposed convolution is named after the matrix transposition. To explain, let’s first
+see how to implement convolutions using matrix multiplications. In the example below, we
+define a 3 × 3 input X and a 2 × 2 convolution kernel K, and then use the corr2d function
+to compute the convolution output Y.
+X = torch.arange(9.0).reshape(3, 3)
+K = torch.tensor([[1.0, 2.0], [3.0, 4.0]])
+Y = d2l.corr2d(X, K)
+Y
+tensor([[27., 37.],
+[57., 67.]])
+Next, we rewrite the convolution kernel K as a sparse weight matrix W containing a lot of
+
+===== صفحة الكتاب 698 =====
+658
+Computer Vision
+zeros. The shape of the weight matrix is (4, 9), where the non-zero elements come from
+the convolution kernel K.
+def kernel2matrix(K):
+k, W = torch.zeros(5), torch.zeros((4, 9))
+k[:2], k[3:5] = K[0, :], K[1, :]
+W[0, :5], W[1, 1:6], W[2, 3:8], W[3, 4:] = k, k, k, k
+return W
+W = kernel2matrix(K)
+W
+tensor([[1., 2., 0., 3., 4., 0., 0., 0., 0.],
+[0., 1., 2., 0., 3., 4., 0., 0., 0.],
+[0., 0., 0., 1., 2., 0., 3., 4., 0.],
+[0., 0., 0., 0., 1., 2., 0., 3., 4.]])
+Concatenate the input X row by row to get a vector of length 9. Then the matrix multiplica-
+tion of W and the vectorized X gives a vector of length 4. After reshaping it, we can obtain
+the same result Y from the original convolution operation above: we just implemented con-
+volutions using matrix multiplications.
+Y == torch.matmul(W, X.reshape(-1)).reshape(2, 2)
+tensor([[True, True],
+[True, True]])
+Likewise, we can implement transposed convolutions using matrix multiplications. In the
+following example, we take the 2 × 2 output Y from the above regular convolution as input
+to the transposed convolution. To implement this operation by multiplying matrices, we
+only need to transpose the weight matrix W with the new shape (9, 4).
+Z = trans_conv(Y, K)
+Z == torch.matmul(W.T, Y.reshape(-1)).reshape(3, 3)
+tensor([[True, True, True],
+[True, True, True],
+[True, True, True]])
+Consider implementing the convolution by multiplying matrices. Given an input vector
+x and a weight matrix W, the forward propagation function of the convolution can be
+implemented by multiplying its input with the weight matrix and outputting a vector y =
+Wx. Since backpropagation follows the chain rule and ∇xy = W⊤, the backpropagation
+function of the convolution can be implemented by multiplying its input with the transposed
+weight matrix W⊤. Therefore, the transposed convolutional layer can just exchange the
+forward propagation function and the backpropagation function of the convolutional layer:
+
+===== صفحة الكتاب 699 =====
+659
+Fully Convolutional Networks
+222
+its forward propagation and backpropagation functions multiply their input vector with W⊤
+and W, respectively.
+14.10.4 Summary
+• In contrast to the regular convolution that reduces input elements via the kernel, the
+transposed convolution broadcasts input elements via the kernel, thereby producing
+an output that is larger than the input.
+• If we feed X into a convolutional layer 𝑓to output Y = 𝑓(X) and create a transposed
+convolutional layer 𝑔with the same hyperparameters as 𝑓except for the number of
+output channels being the number of channels in X, then 𝑔(𝑌) will have the same shape
+as X.
+• We can implement convolutions using matrix multiplications. The transposed convolu-
+tional layer can just exchange the forward propagation function and the backpropaga-
+tion function of the convolutional layer.
+14.10.5 Exercises
+1. In Section 14.10.3, the convolution input X and the transposed convolution output Z have
+the same shape. Do they have the same value? Why?
+2. Is it efficient to use matrix multiplications to implement convolutions? Why?
+Discussions222.
+14.11 Fully Convolutional Networks
+As discussed in Section 14.9, semantic segmentation classifies images in pixel level. A
+fully convolutional network (FCN) uses a convolutional neural network to transform image
+pixels to pixel classes (Long et al., 2015). Unlike the CNNs that we encountered earlier
+for image classification or object detection, a fully convolutional network transforms the
+height and width of intermediate feature maps back to those of the input image: this is
+achieved by the transposed convolutional layer introduced in Section 14.10. As a result, the
+classification output and the input image have a one-to-one correspondence in pixel level:
+the channel dimension at any output pixel holds the classification results for the input pixel
+at the same spatial position.
+%matplotlib inline
+import torch
+import torchvision
+from torch import nn
+from torch.nn import functional as F
+from d2l import torch as d2l
+
+===== صفحة الكتاب 700 =====
+660
+Computer Vision
+14.11.1 The Model
+Here we describe the basic design of the fully convolutional network model. As shown
+in Fig. 14.11.1, this model first uses a CNN to extract image features, then transforms the
+number of channels into the number of classes via a 1 × 1 convolutional layer, and finally
+transforms the height and width of the feature maps to those of the input image via the
+transposed convolution introduced in Section 14.10. As a result, the model output has the
+same height and width as the input image, where the output channel contains the predicted
+classes for the input pixel at the same spatial position.
+t
+Fig. 14.11.1
+Fully convolutional network.
+Below, we use a ResNet-18 model pretrained on the ImageNet dataset to extract image
+features and denote the model instance as pretrained_net. The last few layers of this
+model include a global average pooling layer and a fully connected layer: they are not
+needed in the fully convolutional network.
+pretrained_net = torchvision.models.resnet18(pretrained=True)
+list(pretrained_net.children())[-3:]
+Downloading: "https://download.pytorch.org/models/resnet18-f37072fd.pth" to /
+↩→home/ci/.cache/torch/hub/checkpoints/resnet18-f37072fd.pth
+100%|￿￿￿￿￿￿￿￿￿￿| 44.7M/44.7M [00:00<00:00, 56.3MB/s]
+[Sequential(
+(0): BasicBlock(
+(conv1): Conv2d(256, 512, kernel_size=(3, 3), stride=(2, 2), padding=(1,␣
+↩→1), bias=False)
+(bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_
+↩→running_stats=True)
+(relu): ReLU(inplace=True)
+(conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1,␣
+↩→1), bias=False)
+(bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_
+(continues on next page)
+
+===== صفحة الكتاب 701 =====
+661
+Fully Convolutional Networks
+(continued from previous page)
+↩→running_stats=True)
+(downsample): Sequential(
+(0): Conv2d(256, 512, kernel_size=(1, 1), stride=(2, 2), bias=False)
+(1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_
+↩→running_stats=True)
+)
+)
+(1): BasicBlock(
+(conv1): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1,␣
+↩→1), bias=False)
+(bn1): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_
+↩→running_stats=True)
+(relu): ReLU(inplace=True)
+(conv2): Conv2d(512, 512, kernel_size=(3, 3), stride=(1, 1), padding=(1,␣
+↩→1), bias=False)
+(bn2): BatchNorm2d(512, eps=1e-05, momentum=0.1, affine=True, track_
+↩→running_stats=True)
+)
+),
+AdaptiveAvgPool2d(output_size=(1, 1)),
+Linear(in_features=512, out_features=1000, bias=True)]
+Next, we create the fully convolutional network instance net. It copies all the pretrained
+layers in the ResNet-18 except for the final global average pooling layer and the fully con-
+nected layer that are closest to the output.
+net = nn.Sequential(*list(pretrained_net.children())[:-2])
+Given an input with height and width of 320 and 480 respectively, the forward propagation
+of net reduces the input height and width to 1/32 of the original, namely 10 and 15.
+X = torch.rand(size=(1, 3, 320, 480))
+net(X).shape
+torch.Size([1, 512, 10, 15])
+Next, we use a 1 × 1 convolutional layer to transform the number of output channels into
+the number of classes (21) of the Pascal VOC2012 dataset. Finally, we need to increase the
+height and width of the feature maps by 32 times to change them back to the height and
+width of the input image. Recall how to calculate the output shape of a convolutional layer
+in Section 7.3. Since (320−64+16×2+32)/32 = 10 and (480−64+16×2+32)/32 = 15,
+we construct a transposed convolutional layer with stride of 32, setting the height and width
+of the kernel to 64, the padding to 16. In general, we can see that for stride 𝑠, padding 𝑠/2
+(assuming 𝑠/2 is an integer), and the height and width of the kernel 2𝑠, the transposed
+convolution will increase the height and width of the input by 𝑠times.
+
+===== صفحة الكتاب 702 =====
+662
+Computer Vision
+num_classes = 21
+net.add_module('final_conv', nn.Conv2d(512, num_classes, kernel_size=1))
+net.add_module('transpose_conv', nn.ConvTranspose2d(num_classes, num_classes,
+kernel_size=64, padding=16, stride=32))
+14.11.2 Initializing Transposed Convolutional Layers
+We already know that transposed convolutional layers can increase the height and width of
+feature maps. In image processing, we may need to scale up an image, i.e., upsampling.
+Bilinear interpolation is one of the commonly used upsampling techniques. It is also often
+used for initializing transposed convolutional layers.
+To explain bilinear interpolation, say that given an input image we want to calculate each
+pixel of the upsampled output image. In order to calculate the pixel of the output image
+at coordinate (𝑥, 𝑦), first map (𝑥, 𝑦) to coordinate (𝑥′, 𝑦′) on the input image, for example,
+according to the ratio of the input size to the output size. Note that the mapped 𝑥′ and 𝑦′ are
+real numbers. Then, find the four pixels closest to coordinate (𝑥′, 𝑦′) on the input image.
+Finally, the pixel of the output image at coordinate (𝑥, 𝑦) is calculated based on these four
+closest pixels on the input image and their relative distance from (𝑥′, 𝑦′).
+Upsampling of bilinear interpolation can be implemented by the transposed convolutional
+layer with the kernel constructed by the following bilinear_kernel function. Due to
+space limitations, we only provide the implementation of the bilinear_kernel function
+below without discussions on its algorithm design.
+def bilinear_kernel(in_channels, out_channels, kernel_size):
+factor = (kernel_size + 1) // 2
+if kernel_size % 2 == 1:
+center = factor - 1
+else:
+center = factor - 0.5
+og = (torch.arange(kernel_size).reshape(-1, 1),
+torch.arange(kernel_size).reshape(1, -1))
+filt = (1 - torch.abs(og[0] - center) / factor) * \
+(1 - torch.abs(og[1] - center) / factor)
+weight = torch.zeros((in_channels, out_channels,
+kernel_size, kernel_size))
+weight[range(in_channels), range(out_channels), :, :] = filt
+return weight
+Let’s experiment with upsampling of bilinear interpolation that is implemented by a trans-
+posed convolutional layer. We construct a transposed convolutional layer that doubles the
+height and weight, and initialize its kernel with the bilinear_kernel function.
+conv_trans = nn.ConvTranspose2d(3, 3, kernel_size=4, padding=1, stride=2,
+bias=False)
+conv_trans.weight.data.copy_(bilinear_kernel(3, 3, 4));
+
+===== صفحة الكتاب 703 =====
+663
+Fully Convolutional Networks
+Read the image X and assign the upsampling output to Y. In order to print the image, we
+need to adjust the position of the channel dimension.
+img = torchvision.transforms.ToTensor()(d2l.Image.open('../img/catdog.jpg'))
+X = img.unsqueeze(0)
+Y = conv_trans(X)
+out_img = Y[0].permute(1, 2, 0).detach()
+As we can see, the transposed convolutional layer increases both the height and width of
+the image by a factor of two. Except for the different scales in coordinates, the image
+scaled up by bilinear interpolation and the original image printed in Section 14.3 look the
+same.
+d2l.set_figsize()
+print('input image shape:', img.permute(1, 2, 0).shape)
+d2l.plt.imshow(img.permute(1, 2, 0));
+print('output image shape:', out_img.shape)
+d2l.plt.imshow(out_img);
+input image shape: torch.Size([561, 728, 3])
+output image shape: torch.Size([1122, 1456, 3])
+In a fully convolutional network, we initialize the transposed convolutional layer with up-
+sampling of bilinear interpolation. For the 1 × 1 convolutional layer, we use Xavier initial-
+ization.
+W = bilinear_kernel(num_classes, num_classes, 64)
+net.transpose_conv.weight.data.copy_(W);
+14.11.3 Reading the Dataset
+We read the semantic segmentation dataset as introduced in Section 14.9. The output image
+shape of random cropping is specified as 320×480: both the height and width are divisible
+by 32.
+batch_size, crop_size = 32, (320, 480)
+train_iter, test_iter = d2l.load_data_voc(batch_size, crop_size)
+
+===== صفحة الكتاب 704 =====
+664
+Computer Vision
+read 1114 examples
+read 1078 examples
+14.11.4 Training
+Now we can train our constructed fully convolutional network. The loss function and ac-
+curacy calculation here are not essentially different from those in image classification of
+earlier chapters. Because we use the output channel of the transposed convolutional layer
+to predict the class for each pixel, the channel dimension is specified in the loss calculation.
+In addition, the accuracy is calculated based on correctness of the predicted class for all the
+pixels.
+def loss(inputs, targets):
+return F.cross_entropy(inputs, targets, reduction='none').mean(1).mean(1)
+num_epochs, lr, wd, devices = 5, 0.001, 1e-3, d2l.try_all_gpus()
+trainer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=wd)
+d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
+loss 0.449, train acc 0.861, test acc 0.852
+226.7 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+↩→index=1)]
+14.11.5 Prediction
+When predicting, we need to standardize the input image in each channel and transform the
+image into the four-dimensional input format required by the CNN.
+def predict(img):
+X = test_iter.dataset.normalize_image(img).unsqueeze(0)
+pred = net(X.to(devices[0])).argmax(dim=1)
+return pred.reshape(pred.shape[1], pred.shape[2])
+To visualize the predicted class of each pixel, we map the predicted class back to its label
+color in the dataset.
+
+===== صفحة الكتاب 705 =====
+665
+Fully Convolutional Networks
+def label2image(pred):
+colormap = torch.tensor(d2l.VOC_COLORMAP, device=devices[0])
+X = pred.long()
+return colormap[X, :]
+Images in the test dataset vary in size and shape. Since the model uses a transposed con-
+volutional layer with stride of 32, when the height or width of an input image is indivisible
+by 32, the output height or width of the transposed convolutional layer will deviate from
+the shape of the input image. In order to address this issue, we can crop multiple rectangu-
+lar areas with height and width that are integer multiples of 32 in the image, and perform
+forward propagation on the pixels in these areas separately. Note that the union of these
+rectangular areas needs to completely cover the input image. When a pixel is covered by
+multiple rectangular areas, the average of the transposed convolution outputs in separate
+areas for this same pixel can be input to the softmax operation to predict the class.
+For simplicity, we only read a few larger test images, and crop a 320×480 area for prediction
+starting from the upper-left corner of an image. For these test images, we print their cropped
+areas, prediction results, and ground-truth row by row.
+voc_dir = d2l.download_extract('voc2012', 'VOCdevkit/VOC2012')
+test_images, test_labels = d2l.read_voc_images(voc_dir, False)
+n, imgs = 4, []
+for i in range(n):
+crop_rect = (0, 0, 320, 480)
+X = torchvision.transforms.functional.crop(test_images[i], *crop_rect)
+pred = label2image(predict(X))
+imgs += [X.permute(1,2,0), pred.cpu(),
+torchvision.transforms.functional.crop(
+test_labels[i], *crop_rect).permute(1,2,0)]
+d2l.show_images(imgs[::3] + imgs[1::3] + imgs[2::3], 3, n, scale=2);
+
+===== صفحة الكتاب 706 =====
+666
+Computer Vision
+223
+14.11.6 Summary
+• The fully convolutional network first uses a CNN to extract image features, then trans-
+forms the number of channels into the number of classes via a 1 × 1 convolutional
+layer, and finally transforms the height and width of the feature maps to those of the
+input image via the transposed convolution.
+• In a fully convolutional network, we can use upsampling of bilinear interpolation to
+initialize the transposed convolutional layer.
+14.11.7 Exercises
+1. If we use Xavier initialization for the transposed convolutional layer in the experiment,
+how does the result change?
+2. Can you further improve the accuracy of the model by tuning the hyperparameters?
+3. Predict the classes of all pixels in test images.
+4. The original fully convolutional network paper also uses outputs of some intermediate
+CNN layers (Long et al., 2015). Try to implement this idea.
+Discussions223.
+14.12 Neural Style Transfer
+If you are a photography enthusiast, you may be familiar with the filter. It can change
+the color style of photos so that landscape photos become sharper or portrait photos have
+whitened skins. However, one filter usually only changes one aspect of the photo. To apply
+an ideal style to a photo, you probably need to try many different filter combinations. This
+process is as complex as tuning the hyperparameters of a model.
+In this section, we will leverage layerwise representations of a CNN to automatically apply
+the style of one image to another image, i.e., style transfer (Gatys et al., 2016). This task
+needs two input images: one is the content image and the other is the style image. We will
+use neural networks to modify the content image to make it close to the style image in style.
+For example, the content image in Fig. 14.12.1 is a landscape photo taken by us in Mount
+Rainier National Park in the suburbs of Seattle, while the style image is an oil painting with
+the theme of autumn oak trees. In the output synthesized image, the oil brush strokes of
+the style image are applied, leading to more vivid colors, while preserving the main shape
+of the objects in the content image.
+14.12.1 Method
+Fig. 14.12.2 illustrates the CNN-based style transfer method with a simplified example.
+First, we initialize the synthesized image, for example, into the content image. This syn-
+
+===== صفحة الكتاب 707 =====
+667
+Neural Style Transfer
+t
+Fig. 14.12.1
+Given content and style images, style transfer outputs a synthesized image.
+thesized image is the only variable that needs to be updated during the style transfer process,
+i.e., the model parameters to be updated during training. Then we choose a pretrained CNN
+to extract image features and freeze its model parameters during training. This deep CNN
+uses multiple layers to extract hierarchical features for images. We can choose the output
+of some of these layers as content features or style features. Take Fig. 14.12.2 as an exam-
+ple. The pretrained neural network here has 3 convolutional layers, where the second layer
+outputs the content features, and the first and third layers output the style features.
+t
+Fig. 14.12.2
+CNN-based style transfer process. Solid lines show the direction of forward propagation
+and dotted lines show backward propagation.
+Next, we calculate the loss function of style transfer through forward propagation (direc-
+tion of solid arrows), and update the model parameters (the synthesized image for output)
+through backpropagation (direction of dashed arrows). The loss function commonly used
+in style transfer consists of three parts: (i) content loss makes the synthesized image and
+the content image close in content features; (ii) style loss makes the synthesized image and
+style image close in style features; and (iii) total variation loss helps to reduce the noise
+in the synthesized image. Finally, when the model training is over, we output the model
+parameters of the style transfer to generate the final synthesized image.
+In the following, we will explain the technical details of style transfer via a concrete exper-
+iment.
+
+===== صفحة الكتاب 708 =====
+668
+Computer Vision
+14.12.2 Reading the Content and Style Images
+First, we read the content and style images. From their printed coordinate axes, we can tell
+that these images have different sizes.
+%matplotlib inline
+import torch
+import torchvision
+from torch import nn
+from d2l import torch as d2l
+d2l.set_figsize()
+content_img = d2l.Image.open('../img/rainier.jpg')
+d2l.plt.imshow(content_img);
+style_img = d2l.Image.open('../img/autumn-oak.jpg')
+d2l.plt.imshow(style_img);
+14.12.3 Preprocessing and Postprocessing
+Below, we define two functions for preprocessing and postprocessing images. The pre-
+process function standardizes each of the three RGB channels of the input image and
+transforms the results into the CNN input format. The postprocess function restores the
+pixel values in the output image to their original values before standardization. Since the
+image printing function requires that each pixel has a floating point value from 0 to 1, we
+replace any value smaller than 0 or greater than 1 with 0 or 1, respectively.
+
+===== صفحة الكتاب 709 =====
+669
+Neural Style Transfer
+rgb_mean = torch.tensor([0.485, 0.456, 0.406])
+rgb_std = torch.tensor([0.229, 0.224, 0.225])
+def preprocess(img, image_shape):
+transforms = torchvision.transforms.Compose([
+torchvision.transforms.Resize(image_shape),
+torchvision.transforms.ToTensor(),
+torchvision.transforms.Normalize(mean=rgb_mean, std=rgb_std)])
+return transforms(img).unsqueeze(0)
+def postprocess(img):
+img = img[0].to(rgb_std.device)
+img = torch.clamp(img.permute(1, 2, 0) * rgb_std + rgb_mean, 0, 1)
+return torchvision.transforms.ToPILImage()(img.permute(2, 0, 1))
+14.12.4 Extracting Features
+We use the VGG-19 model pretrained on the ImageNet dataset to extract image features
+(Gatys et al., 2016).
+pretrained_net = torchvision.models.vgg19(pretrained=True)
+Downloading: "https://download.pytorch.org/models/vgg19-dcbb9e9d.pth" to /home/
+↩→ci/.cache/torch/hub/checkpoints/vgg19-dcbb9e9d.pth
+100%|￿￿￿￿￿￿￿￿￿￿| 548M/548M [00:02<00:00, 213MB/s]
+In order to extract the content features and style features of the image, we can select the
+output of certain layers in the VGG network. Generally speaking, the closer to the input
+layer, the easier to extract details of the image, and vice versa, the easier to extract the
+global information of the image. In order to avoid excessively retaining the details of the
+content image in the synthesized image, we choose a VGG layer that is closer to the output
+as the content layer to output the content features of the image. We also select the output
+of different VGG layers for extracting local and global style features. These layers are also
+called style layers. As mentioned in Section 8.2, the VGG network uses 5 convolutional
+blocks. In the experiment, we choose the last convolutional layer of the fourth convolutional
+block as the content layer, and the first convolutional layer of each convolutional block as
+the style layer. The indices of these layers can be obtained by printing the pretrained_net
+instance.
+style_layers, content_layers = [0, 5, 10, 19, 28], [25]
+When extracting features using VGG layers, we only need to use all those from the input
+layer to the content layer or style layer that is closest to the output layer. Let’s construct
+a new network instance net, which only retains all the VGG layers to be used for feature
+extraction.
+
+===== صفحة الكتاب 710 =====
+670
+Computer Vision
+net = nn.Sequential(*[pretrained_net.features[i] for i in
+range(max(content_layers + style_layers) + 1)])
+Given the input X, if we simply invoke the forward propagation net(X), we can only get
+the output of the last layer. Since we also need the outputs of intermediate layers, we need
+to perform layer-by-layer computation and keep the content and style layer outputs.
+def extract_features(X, content_layers, style_layers):
+contents = []
+styles = []
+for i in range(len(net)):
+X = net[i](X)
+if i in style_layers:
+styles.append(X)
+if i in content_layers:
+contents.append(X)
+return contents, styles
+Two functions are defined below: the get_contents function extracts content features
+from the content image, and the get_styles function extracts style features from the style
+image. Since there is no need to update the model parameters of the pretrained VGG during
+training, we can extract the content and the style features even before the training starts.
+Since the synthesized image is a set of model parameters to be updated for style transfer,
+we can only extract the content and style features of the synthesized image by calling the
+extract_features function during training.
+def get_contents(image_shape, device):
+content_X = preprocess(content_img, image_shape).to(device)
+contents_Y, _ = extract_features(content_X, content_layers, style_layers)
+return content_X, contents_Y
+def get_styles(image_shape, device):
+style_X = preprocess(style_img, image_shape).to(device)
+_, styles_Y = extract_features(style_X, content_layers, style_layers)
+return style_X, styles_Y
+14.12.5 Defining the Loss Function
+Now we will describe the loss function for style transfer. The loss function consists of the
+content loss, style loss, and total variation loss.
+Content Loss
+Similar to the loss function in linear regression, the content loss measures the difference in
+content features between the synthesized image and the content image via the squared loss
+function. The two inputs of the squared loss function are both outputs of the content layer
+computed by the extract_features function.
+
+===== صفحة الكتاب 711 =====
+671
+Neural Style Transfer
+def content_loss(Y_hat, Y):
+# We detach the target content from the tree used to dynamically compute
+# the gradient: this is a stated value, not a variable. Otherwise the loss
+# will throw an error.
+return torch.square(Y_hat - Y.detach()).mean()
+Style Loss
+Style loss, similar to content loss, also uses the squared loss function to measure the dif-
+ference in style between the synthesized image and the style image. To express the style
+output of any style layer, we first use the extract_features function to compute the style
+layer output. Suppose that the output has 1 example, 𝑐channels, height ℎ, and width 𝑤, we
+can transform this output into matrix X with 𝑐rows and ℎ𝑤columns. This matrix can be
+thought of as the concatenation of 𝑐vectors x1, . . . , x𝑐, each of which has a length of ℎ𝑤.
+Here, vector x𝑖represents the style feature of channel 𝑖.
+In the Gram matrix of these vectors XX⊤∈R𝑐×𝑐, element 𝑥𝑖𝑗in row 𝑖and column 𝑗is
+the dot product of vectors x𝑖and x 𝑗. It represents the correlation of the style features of
+channels 𝑖and 𝑗. We use this Gram matrix to represent the style output of any style layer.
+Note that when the value of ℎ𝑤is larger, it likely leads to larger values in the Gram matrix.
+Note also that the height and width of the Gram matrix are both the number of channels 𝑐.
+To allow style loss not to be affected by these values, the gram function below divides the
+Gram matrix by the number of its elements, i.e., 𝑐ℎ𝑤.
+def gram(X):
+num_channels, n = X.shape[1], X.numel() // X.shape[1]
+X = X.reshape((num_channels, n))
+return torch.matmul(X, X.T) / (num_channels * n)
+Obviously, the two Gram matrix inputs of the squared loss function for style loss are based
+on the style layer outputs for the synthesized image and the style image. It is assumed here
+that the Gram matrix gram_Y based on the style image has been precomputed.
+def style_loss(Y_hat, gram_Y):
+return torch.square(gram(Y_hat) - gram_Y.detach()).mean()
+Total Variation Loss
+Sometimes, the learned synthesized image has a lot of high-frequency noise, i.e., particu-
+larly bright or dark pixels. One common noise reduction method is total variation denois-
+ing. Denote by 𝑥𝑖, 𝑗the pixel value at coordinate (𝑖, 𝑗). Reducing total variation loss
+Õ
+𝑖, 𝑗
+𝑥𝑖, 𝑗−𝑥𝑖+1, 𝑗
+ +
+𝑥𝑖, 𝑗−𝑥𝑖, 𝑗+1
+
+(14.12.1)
+makes values of neighboring pixels on the synthesized image closer.
+
+===== صفحة الكتاب 712 =====
+672
+Computer Vision
+def tv_loss(Y_hat):
+return 0.5 * (torch.abs(Y_hat[:, :, 1:, :] - Y_hat[:, :, :-1, :]).mean() +
+torch.abs(Y_hat[:, :, :, 1:] - Y_hat[:, :, :, :-1]).mean())
+Loss Function
+The loss function of style transfer is the weighted sum of content loss, style loss, and total
+variation loss. By adjusting these weight hyperparameters, we can balance among content
+retention, style transfer, and noise reduction on the synthesized image.
+content_weight, style_weight, tv_weight = 1, 1e4, 10
+def compute_loss(X, contents_Y_hat, styles_Y_hat, contents_Y, styles_Y_gram):
+# Calculate the content, style, and total variance losses respectively
+contents_l = [content_loss(Y_hat, Y) * content_weight for Y_hat, Y in zip(
+contents_Y_hat, contents_Y)]
+styles_l = [style_loss(Y_hat, Y) * style_weight for Y_hat, Y in zip(
+styles_Y_hat, styles_Y_gram)]
+tv_l = tv_loss(X) * tv_weight
+# Add up all the losses
+l = sum(styles_l + contents_l + [tv_l])
+return contents_l, styles_l, tv_l, l
+14.12.6 Initializing the Synthesized Image
+In style transfer, the synthesized image is the only variable that needs to be updated during
+training. Thus, we can define a simple model, SynthesizedImage, and treat the synthe-
+sized image as the model parameters. In this model, forward propagation just returns the
+model parameters.
+class SynthesizedImage(nn.Module):
+def __init__(self, img_shape, **kwargs):
+super(SynthesizedImage, self).__init__(**kwargs)
+self.weight = nn.Parameter(torch.rand(*img_shape))
+def forward(self):
+return self.weight
+Next, we define the get_inits function. This function creates a synthesized image model
+instance and initializes it to the image X. Gram matrices for the style image at various style
+layers, styles_Y_gram, are computed prior to training.
+def get_inits(X, device, lr, styles_Y):
+gen_img = SynthesizedImage(X.shape).to(device)
+gen_img.weight.data.copy_(X.data)
+trainer = torch.optim.Adam(gen_img.parameters(), lr=lr)
+styles_Y_gram = [gram(Y) for Y in styles_Y]
+return gen_img(), styles_Y_gram, trainer
+
+===== صفحة الكتاب 713 =====
+673
+Neural Style Transfer
+14.12.7 Training
+When training the model for style transfer, we continuously extract content features and
+style features of the synthesized image, and calculate the loss function. Below defines the
+training loop.
+def train(X, contents_Y, styles_Y, device, lr, num_epochs, lr_decay_epoch):
+X, styles_Y_gram, trainer = get_inits(X, device, lr, styles_Y)
+scheduler = torch.optim.lr_scheduler.StepLR(trainer, lr_decay_epoch, 0.8)
+animator = d2l.Animator(xlabel='epoch', ylabel='loss',
+xlim=[10, num_epochs],
+legend=['content', 'style', 'TV'],
+ncols=2, figsize=(7, 2.5))
+for epoch in range(num_epochs):
+trainer.zero_grad()
+contents_Y_hat, styles_Y_hat = extract_features(
+X, content_layers, style_layers)
+contents_l, styles_l, tv_l, l = compute_loss(
+X, contents_Y_hat, styles_Y_hat, contents_Y, styles_Y_gram)
+l.backward()
+trainer.step()
+scheduler.step()
+if (epoch + 1) % 10 == 0:
+animator.axes[1].imshow(postprocess(X))
+animator.add(epoch + 1, [float(sum(contents_l)),
+float(sum(styles_l)), float(tv_l)])
+return X
+Now we start to train the model. We rescale the height and width of the content and style
+images to 300 by 450 pixels. We use the content image to initialize the synthesized im-
+age.
+device, image_shape = d2l.try_gpu(), (300, 450)
+# PIL Image (h, w)
+net = net.to(device)
+content_X, contents_Y = get_contents(image_shape, device)
+_, styles_Y = get_styles(image_shape, device)
+output = train(content_X, contents_Y, styles_Y, device, 0.3, 500, 50)
+We can see that the synthesized image retains the scenery and objects of the content image,
+and transfers the color of the style image at the same time. For example, the synthesized
+
+===== صفحة الكتاب 714 =====
+674
+Computer Vision
+224
+image has blocks of color like those in the style image. Some of these blocks even have the
+subtle texture of brush strokes.
+14.12.8 Summary
+• The loss function commonly used in style transfer consists of three parts: (i) content loss
+makes the synthesized image and the content image close in content features; (ii) style
+loss makes the synthesized image and style image close in style features; and (iii) total
+variation loss helps to reduce the noise in the synthesized image.
+• We can use a pretrained CNN to extract image features and minimize the loss function
+to continuously update the synthesized image as model parameters during training.
+• We use Gram matrices to represent the style outputs from the style layers.
+14.12.9 Exercises
+1. How does the output change when you select different content and style layers?
+2. Adjust the weight hyperparameters in the loss function. Does the output retain more
+content or have less noise?
+3. Use different content and style images. Can you create more interesting synthesized
+images?
+4. Can we apply style transfer for text? Hint: you may refer to the survey paper by Hu et
+al. (2022).
+Discussions224.
+14.13 Image Classification (CIFAR-10) on Kaggle
+So far, we have been using high-level APIs of deep learning frameworks to directly obtain
+image datasets in tensor format. However, custom image datasets often come in the form
+of image files. In this section, we will start from raw image files, and organize, read, then
+transform them into tensor format step by step.
+We experimented with the CIFAR-10 dataset in Section 14.1, which is an important dataset
+in computer vision. In this section, we will apply the knowledge we learned in previous
+sections to practice the Kaggle competition of CIFAR-10 image classification. The web
+address of the competition is https://www.kaggle.com/c/cifar-10
+Fig. 14.13.1 shows the information on the competition’s webpage. In order to submit the
+results, you need to register a Kaggle account.
+
+===== صفحة الكتاب 715 =====
+675
+Image Classiﬁcation (CIFAR-10) on Kaggle
+t
+Fig. 14.13.1
+CIFAR-10 image classiﬁcation competition webpage information. The competition
+dataset can be obtained by clicking the “Data” tab.
+import collections
+import math
+import os
+import shutil
+import pandas as pd
+import torch
+import torchvision
+from torch import nn
+from d2l import torch as d2l
+14.13.1 Obtaining and Organizing the Dataset
+The competition dataset is divided into a training set and a test set, which contain 50000
+and 300000 images, respectively. In the test set, 10000 images will be used for evaluation,
+while the remaining 290000 images will not be evaluated: they are included just to make
+it hard to cheat with manually labeled results of the test set. The images in this dataset
+are all png color (RGB channels) image files, whose height and width are both 32 pixels.
+The images cover a total of 10 categories, namely airplanes, cars, birds, cats, deer, dogs,
+frogs, horses, boats, and trucks. The upper-left corner of Fig. 14.13.1 shows some images
+of airplanes, cars, and birds in the dataset.
+Downloading the Dataset
+After logging in to Kaggle, we can click the “Data” tab on the CIFAR-10 image classifi-
+cation competition webpage shown in Fig. 14.13.1 and download the dataset by clicking
+the “Download All” button. After unzipping the downloaded file in ../data, and un-
+zipping train.7z and test.7z inside it, you will find the entire dataset in the following
+paths:
+• ../data/cifar-10/train/[1-50000].png
+• ../data/cifar-10/test/[1-300000].png
+
+===== صفحة الكتاب 716 =====
+676
+Computer Vision
+• ../data/cifar-10/trainLabels.csv
+• ../data/cifar-10/sampleSubmission.csv
+where the train and test directories contain the training and testing images, respectively,
+trainLabels.csv provides labels for the training images, and sample_submission.csv
+is a sample submission file.
+To make it easier to get started, we provide a small-scale sample of the dataset that contains
+the first 1000 training images and 5 random testing images. To use the full dataset of the
+Kaggle competition, you need to set the following demo variable to False.
+#@save
+d2l.DATA_HUB['cifar10_tiny'] = (d2l.DATA_URL + 'kaggle_cifar10_tiny.zip',
+'2068874e4b9a9f0fb07ebe0ad2b29754449ccacd')
+# If you use the full dataset downloaded for the Kaggle competition, set
+# `demo` to False
+demo = True
+if demo:
+data_dir = d2l.download_extract('cifar10_tiny')
+else:
+data_dir = '../data/cifar-10/'
+Downloading ../data/kaggle_cifar10_tiny.zip from http://d2l-data.s3-accelerate.
+↩→amazonaws.com/kaggle_cifar10_tiny.zip...
+Organizing the Dataset
+We need to organize datasets to facilitate model training and testing. Let’s first read the
+labels from the csv file. The following function returns a dictionary that maps the non-
+extension part of the filename to its label.
+#@save
+def read_csv_labels(fname):
+"""Read `fname` to return a filename to label dictionary."""
+with open(fname, 'r') as f:
+# Skip the file header line (column name)
+lines = f.readlines()[1:]
+tokens = [l.rstrip().split(',') for l in lines]
+return dict(((name, label) for name, label in tokens))
+labels = read_csv_labels(os.path.join(data_dir, 'trainLabels.csv'))
+print('# training examples:', len(labels))
+print('# classes:', len(set(labels.values())))
+# training examples: 1000
+# classes: 10
+
+===== صفحة الكتاب 717 =====
+677
+Image Classiﬁcation (CIFAR-10) on Kaggle
+Next, we define the reorg_train_valid function to split the validation set out of the orig-
+inal training set. The argument valid_ratio in this function is the ratio of the number
+of examples in the validation set to the number of examples in the original training set.
+More concretely, let 𝑛be the number of images of the class with the least examples, and
+𝑟be the ratio. The validation set will split out max(⌊𝑛𝑟⌋, 1) images for each class. Let’s
+use valid_ratio=0.1 as an example. Since the original training set has 50000 images,
+there will be 45000 images used for training in the path train_valid_test/train, while
+the other 5000 images will be split out as validation set in the path train_valid_test/
+valid. After organizing the dataset, images of the same class will be placed under the same
+folder.
+#@save
+def copyfile(filename, target_dir):
+"""Copy a file into a target directory."""
+os.makedirs(target_dir, exist_ok=True)
+shutil.copy(filename, target_dir)
+#@save
+def reorg_train_valid(data_dir, labels, valid_ratio):
+"""Split the validation set out of the original training set."""
+# The number of examples of the class that has the fewest examples in the
+# training dataset
+n = collections.Counter(labels.values()).most_common()[-1][1]
+# The number of examples per class for the validation set
+n_valid_per_label = max(1, math.floor(n * valid_ratio))
+label_count = {}
+for train_file in os.listdir(os.path.join(data_dir, 'train')):
+label = labels[train_file.split('.')[0]]
+fname = os.path.join(data_dir, 'train', train_file)
+copyfile(fname, os.path.join(data_dir, 'train_valid_test',
+'train_valid', label))
+if label not in label_count or label_count[label] < n_valid_per_label:
+copyfile(fname, os.path.join(data_dir, 'train_valid_test',
+'valid', label))
+label_count[label] = label_count.get(label, 0) + 1
+else:
+copyfile(fname, os.path.join(data_dir, 'train_valid_test',
+'train', label))
+return n_valid_per_label
+The reorg_test function below organizes the testing set for data loading during predic-
+tion.
+#@save
+def reorg_test(data_dir):
+"""Organize the testing set for data loading during prediction."""
+for test_file in os.listdir(os.path.join(data_dir, 'test')):
+copyfile(os.path.join(data_dir, 'test', test_file),
+os.path.join(data_dir, 'train_valid_test', 'test',
+'unknown'))
+
+===== صفحة الكتاب 718 =====
+678
+Computer Vision
+Finally, we use a function to invoke the read_csv_labels, reorg_train_valid, and re-
+org_test functions defined above.
+def reorg_cifar10_data(data_dir, valid_ratio):
+labels = read_csv_labels(os.path.join(data_dir, 'trainLabels.csv'))
+reorg_train_valid(data_dir, labels, valid_ratio)
+reorg_test(data_dir)
+Here we only set the batch size to 32 for the small-scale sample of the dataset. When
+training and testing the complete dataset of the Kaggle competition, batch_size should
+be set to a larger integer, such as 128. We split out 10% of the training examples as the
+validation set for tuning hyperparameters.
+batch_size = 32 if demo else 128
+valid_ratio = 0.1
+reorg_cifar10_data(data_dir, valid_ratio)
+14.13.2 Image Augmentation
+We use image augmentation to address overfitting. For example, images can be flipped hor-
+izontally at random during training. We can also perform standardization for the three RGB
+channels of color images. Below lists some of these operations that you can tweak.
+transform_train = torchvision.transforms.Compose([
+# Scale the image up to a square of 40 pixels in both height and width
+torchvision.transforms.Resize(40),
+# Randomly crop a square image of 40 pixels in both height and width to
+# produce a small square of 0.64 to 1 times the area of the original
+# image, and then scale it to a square of 32 pixels in both height and
+# width
+torchvision.transforms.RandomResizedCrop(32, scale=(0.64, 1.0),
+ratio=(1.0, 1.0)),
+torchvision.transforms.RandomHorizontalFlip(),
+torchvision.transforms.ToTensor(),
+# Standardize each channel of the image
+torchvision.transforms.Normalize([0.4914, 0.4822, 0.4465],
+[0.2023, 0.1994, 0.2010])])
+During testing, we only perform standardization on images so as to remove randomness in
+the evaluation results.
+transform_test = torchvision.transforms.Compose([
+torchvision.transforms.ToTensor(),
+torchvision.transforms.Normalize([0.4914, 0.4822, 0.4465],
+[0.2023, 0.1994, 0.2010])])
+14.13.3 Reading the Dataset
+Next, we read the organized dataset consisting of raw image files. Each example includes
+an image and a label.
+
+===== صفحة الكتاب 719 =====
+679
+Image Classiﬁcation (CIFAR-10) on Kaggle
+train_ds, train_valid_ds = [torchvision.datasets.ImageFolder(
+os.path.join(data_dir, 'train_valid_test', folder),
+transform=transform_train) for folder in ['train', 'train_valid']]
+valid_ds, test_ds = [torchvision.datasets.ImageFolder(
+os.path.join(data_dir, 'train_valid_test', folder),
+transform=transform_test) for folder in ['valid', 'test']]
+During training, we need to specify all the image augmentation operations defined above.
+When the validation set is used for model evaluation during hyperparameter tuning, no
+randomness from image augmentation should be introduced. Before final prediction, we
+train the model on the combined training set and validation set to make full use of all the
+labeled data.
+train_iter, train_valid_iter = [torch.utils.data.DataLoader(
+dataset, batch_size, shuffle=True, drop_last=True)
+for dataset in (train_ds, train_valid_ds)]
+valid_iter = torch.utils.data.DataLoader(valid_ds, batch_size, shuffle=False,
+drop_last=True)
+test_iter = torch.utils.data.DataLoader(test_ds, batch_size, shuffle=False,
+drop_last=False)
+14.13.4 Defining the Model
+We define the ResNet-18 model described in Section 8.6.
+def get_net():
+num_classes = 10
+net = d2l.resnet18(num_classes, 3)
+return net
+loss = nn.CrossEntropyLoss(reduction="none")
+14.13.5 Defining the Training Function
+We will select models and tune hyperparameters according to the model’s performance on
+the validation set. In the following, we define the model training function train.
+def train(net, train_iter, valid_iter, num_epochs, lr, wd, devices, lr_period,
+lr_decay):
+trainer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9,
+weight_decay=wd)
+scheduler = torch.optim.lr_scheduler.StepLR(trainer, lr_period, lr_decay)
+num_batches, timer = len(train_iter), d2l.Timer()
+legend = ['train loss', 'train acc']
+if valid_iter is not None:
+legend.append('valid acc')
+(continues on next page)
+
+===== صفحة الكتاب 720 =====
+680
+Computer Vision
+(continued from previous page)
+animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs],
+legend=legend)
+net = nn.DataParallel(net, device_ids=devices).to(devices[0])
+for epoch in range(num_epochs):
+net.train()
+metric = d2l.Accumulator(3)
+for i, (features, labels) in enumerate(train_iter):
+timer.start()
+l, acc = d2l.train_batch_ch13(net, features, labels,
+loss, trainer, devices)
+metric.add(l, acc, labels.shape[0])
+timer.stop()
+if (i + 1) % (num_batches // 5) == 0 or i == num_batches - 1:
+animator.add(epoch + (i + 1) / num_batches,
+(metric[0] / metric[2], metric[1] / metric[2],
+None))
+if valid_iter is not None:
+valid_acc = d2l.evaluate_accuracy_gpu(net, valid_iter)
+animator.add(epoch + 1, (None, None, valid_acc))
+scheduler.step()
+measures = (f'train loss {metric[0] / metric[2]:.3f}, '
+f'train acc {metric[1] / metric[2]:.3f}')
+if valid_iter is not None:
+measures += f', valid acc {valid_acc:.3f}'
+print(measures + f'\n{metric[2] * num_epochs / timer.sum():.1f}'
+f' examples/sec on {str(devices)}')
+14.13.6 Training and Validating the Model
+Now, we can train and validate the model. All the following hyperparameters can be tuned.
+For example, we can increase the number of epochs. When lr_period and lr_decay
+are set to 4 and 0.9, respectively, the learning rate of the optimization algorithm will be
+multiplied by 0.9 after every 4 epochs. Just for ease of demonstration, we only train 20
+epochs here.
+devices, num_epochs, lr, wd = d2l.try_all_gpus(), 20, 2e-4, 5e-4
+lr_period, lr_decay, net = 4, 0.9, get_net()
+net(next(iter(train_iter))[0])
+train(net, train_iter, valid_iter, num_epochs, lr, wd, devices, lr_period,
+lr_decay)
+train loss 0.654, train acc 0.789, valid acc 0.438
+958.1 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+↩→index=1)]
+14.13.7 Classifying the Testing Set and Submitting Results on Kaggle
+After obtaining a promising model with hyperparameters, we use all the labeled data (in-
+cluding the validation set) to retrain the model and classify the testing set.
+
+===== صفحة الكتاب 721 =====
+681
+Image Classiﬁcation (CIFAR-10) on Kaggle
+net, preds = get_net(), []
+net(next(iter(train_valid_iter))[0])
+train(net, train_valid_iter, None, num_epochs, lr, wd, devices, lr_period,
+lr_decay)
+for X, _ in test_iter:
+y_hat = net(X.to(devices[0]))
+preds.extend(y_hat.argmax(dim=1).type(torch.int32).cpu().numpy())
+sorted_ids = list(range(1, len(test_ds) + 1))
+sorted_ids.sort(key=lambda x: str(x))
+df = pd.DataFrame({'id': sorted_ids, 'label': preds})
+df['label'] = df['label'].apply(lambda x: train_valid_ds.classes[x])
+df.to_csv('submission.csv', index=False)
+train loss 0.608, train acc 0.786
+1040.8 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+↩→index=1)]
+The above code will generate a submission.csv file, whose format meets the requirement
+of the Kaggle competition. The method for submitting results to Kaggle is similar to that
+in Section 5.7.
+14.13.8 Summary
+• We can read datasets containing raw image files after organizing them into the required
+format.
+
+===== صفحة الكتاب 722 =====
+682
+Computer Vision
+225
+• We can use convolutional neural networks and image augmentation in an image classi-
+fication competition.
+14.13.9 Exercises
+1. Use the complete CIFAR-10 dataset for this Kaggle competition. Set hyperparameters
+as batch_size = 128, num_epochs = 100, lr = 0.1, lr_period = 50, and lr_decay
+= 0.1. See what accuracy and ranking you can achieve in this competition. Can you
+further improve them?
+2. What accuracy can you get when not using image augmentation?
+Discussions225.
+14.14 Dog Breed Identification (ImageNet Dogs) on
+Kaggle
+In this section, we will practice the dog breed identification problem on Kaggle. The web
+address of this competition is https://www.kaggle.com/c/dog-breed-identification
+In this competition, 120 different breeds of dogs will be recognized. In fact, the dataset for
+this competition is a subset of the ImageNet dataset. Unlike the images in the CIFAR-10
+dataset in Section 14.13, the images in the ImageNet dataset are both higher and wider in
+varying dimensions. Fig. 14.14.1 shows the information on the competition’s webpage.
+You need a Kaggle account to submit your results.
+import os
+import torch
+import torchvision
+from torch import nn
+from d2l import torch as d2l
+14.14.1 Obtaining and Organizing the Dataset
+The competition dataset is divided into a training set and a test set, which contain 10222
+and 10357 JPEG images of three RGB (color) channels, respectively. Among the training
+dataset, there are 120 breeds of dogs such as Labradors, Poodles, Dachshunds, Samoyeds,
+Huskies, Chihuahuas, and Yorkshire Terriers.
+Downloading the Dataset
+After logging into Kaggle, you can click on the “Data” tab on the competition webpage
+shown in Fig. 14.14.1 and download the dataset by clicking the “Download All” button.
+After unzipping the downloaded file in ../data, you will find the entire dataset in the
+following paths:
+
+===== صفحة الكتاب 723 =====
+683
+Dog Breed Identiﬁcation (ImageNet Dogs) on Kaggle
+t
+Fig. 14.14.1
+The dog breed identiﬁcation competition website. The competition dataset can be
+obtained by clicking the “Data” tab.
+• ../data/dog-breed-identification/labels.csv
+• ../data/dog-breed-identification/sample_submission.csv
+• ../data/dog-breed-identification/train
+• ../data/dog-breed-identification/test
+You may have noticed that the above structure is similar to that of the CIFAR-10 competition
+in Section 14.13, where folders train/ and test/ contain training and testing dog images,
+respectively, and labels.csv contains the labels for the training images. Similarly, to
+make it easier to get started, we provide a small sample of the dataset mentioned above:
+train_valid_test_tiny.zip. If you are going to use the full dataset for the Kaggle
+competition, you need to change the demo variable below to False.
+#@save
+d2l.DATA_HUB['dog_tiny'] = (d2l.DATA_URL + 'kaggle_dog_tiny.zip',
+'0cb91d09b814ecdc07b50f31f8dcad3e81d6a86d')
+# If you use the full dataset downloaded for the Kaggle competition, change
+# the variable below to `False`
+demo = True
+if demo:
+data_dir = d2l.download_extract('dog_tiny')
+(continues on next page)
+
+===== صفحة الكتاب 724 =====
+684
+Computer Vision
+(continued from previous page)
+else:
+data_dir = os.path.join('..', 'data', 'dog-breed-identification')
+Downloading ../data/kaggle_dog_tiny.zip from http://d2l-data.s3-accelerate.
+↩→amazonaws.com/kaggle_dog_tiny.zip...
+Organizing the Dataset
+We can organize the dataset similarly to what we did in Section 14.13, namely splitting out
+a validation set from the original training set, and moving images into subfolders grouped
+by labels.
+The reorg_dog_data function below reads the training data labels, splits out the validation
+set, and organizes the training set.
+def reorg_dog_data(data_dir, valid_ratio):
+labels = d2l.read_csv_labels(os.path.join(data_dir, 'labels.csv'))
+d2l.reorg_train_valid(data_dir, labels, valid_ratio)
+d2l.reorg_test(data_dir)
+batch_size = 32 if demo else 128
+valid_ratio = 0.1
+reorg_dog_data(data_dir, valid_ratio)
+14.14.2 Image Augmentation
+Recall that this dog breed dataset is a subset of the ImageNet dataset, whose images are
+larger than those of the CIFAR-10 dataset in Section 14.13. The following lists a few image
+augmentation operations that might be useful for relatively larger images.
+transform_train = torchvision.transforms.Compose([
+# Randomly crop the image to obtain an image with an area of 0.08 to 1 of
+# the original area and height-to-width ratio between 3/4 and 4/3. Then,
+# scale the image to create a new 224 x 224 image
+torchvision.transforms.RandomResizedCrop(224, scale=(0.08, 1.0),
+ratio=(3.0/4.0, 4.0/3.0)),
+torchvision.transforms.RandomHorizontalFlip(),
+# Randomly change the brightness, contrast, and saturation
+torchvision.transforms.ColorJitter(brightness=0.4,
+contrast=0.4,
+saturation=0.4),
+# Add random noise
+torchvision.transforms.ToTensor(),
+# Standardize each channel of the image
+torchvision.transforms.Normalize([0.485, 0.456, 0.406],
+[0.229, 0.224, 0.225])])
+During prediction, we only use image preprocessing operations without randomness.
+
+===== صفحة الكتاب 725 =====
+685
+Dog Breed Identiﬁcation (ImageNet Dogs) on Kaggle
+transform_test = torchvision.transforms.Compose([
+torchvision.transforms.Resize(256),
+# Crop a 224 x 224 square area from the center of the image
+torchvision.transforms.CenterCrop(224),
+torchvision.transforms.ToTensor(),
+torchvision.transforms.Normalize([0.485, 0.456, 0.406],
+[0.229, 0.224, 0.225])])
+14.14.3 Reading the Dataset
+As in Section 14.13, we can read the organized dataset consisting of raw image files.
+train_ds, train_valid_ds = [torchvision.datasets.ImageFolder(
+os.path.join(data_dir, 'train_valid_test', folder),
+transform=transform_train) for folder in ['train', 'train_valid']]
+valid_ds, test_ds = [torchvision.datasets.ImageFolder(
+os.path.join(data_dir, 'train_valid_test', folder),
+transform=transform_test) for folder in ['valid', 'test']]
+Below we create data iterator instances the same way as in Section 14.13.
+train_iter, train_valid_iter = [torch.utils.data.DataLoader(
+dataset, batch_size, shuffle=True, drop_last=True)
+for dataset in (train_ds, train_valid_ds)]
+valid_iter = torch.utils.data.DataLoader(valid_ds, batch_size, shuffle=False,
+drop_last=True)
+test_iter = torch.utils.data.DataLoader(test_ds, batch_size, shuffle=False,
+drop_last=False)
+14.14.4 Fine-Tuning a Pretrained Model
+Again, the dataset for this competition is a subset of the ImageNet dataset. Therefore, we
+can use the approach discussed in Section 14.2 to select a model pretrained on the full
+ImageNet dataset and use it to extract image features to be fed into a custom small-scale
+output network. High-level APIs of deep learning frameworks provide a wide range of
+models pretrained on the ImageNet dataset. Here, we choose a pretrained ResNet-34 model,
+where we simply reuse the input of this model’s output layer (i.e., the extracted features).
+Then we can replace the original output layer with a small custom output network that can
+be trained, such as stacking two fully connected layers. Different from the experiment in
+Section 14.2, the following does not retrain the pretrained model used for feature extraction.
+This reduces training time and memory for storing gradients.
+Recall that we standardized images using the means and standard deviations of the three
+RGB channels for the full ImageNet dataset. In fact, this is also consistent with the stan-
+dardization operation by the pretrained model on ImageNet.
+
+===== صفحة الكتاب 726 =====
+686
+Computer Vision
+def get_net(devices):
+finetune_net = nn.Sequential()
+finetune_net.features = torchvision.models.resnet34(pretrained=True)
+# Define a new output network (there are 120 output categories)
+finetune_net.output_new = nn.Sequential(nn.Linear(1000, 256),
+nn.ReLU(),
+nn.Linear(256, 120))
+# Move the model to devices
+finetune_net = finetune_net.to(devices[0])
+# Freeze parameters of feature layers
+for param in finetune_net.features.parameters():
+param.requires_grad = False
+return finetune_net
+Before calculating the loss, we first obtain the input of the pretrained model’s output layer,
+i.e., the extracted feature. Then we use this feature as input for our small custom output
+network to calculate the loss.
+loss = nn.CrossEntropyLoss(reduction='none')
+def evaluate_loss(data_iter, net, devices):
+l_sum, n = 0.0, 0
+for features, labels in data_iter:
+features, labels = features.to(devices[0]), labels.to(devices[0])
+outputs = net(features)
+l = loss(outputs, labels)
+l_sum += l.sum()
+n += labels.numel()
+return l_sum / n
+14.14.5 Defining the Training Function
+We will select the model and tune hyperparameters according to the model’s performance
+on the validation set. The model training function train only iterates parameters of the
+small custom output network.
+def train(net, train_iter, valid_iter, num_epochs, lr, wd, devices, lr_period,
+lr_decay):
+# Only train the small custom output network
+net = nn.DataParallel(net, device_ids=devices).to(devices[0])
+trainer = torch.optim.SGD((param for param in net.parameters()
+if param.requires_grad), lr=lr,
+momentum=0.9, weight_decay=wd)
+scheduler = torch.optim.lr_scheduler.StepLR(trainer, lr_period, lr_decay)
+num_batches, timer = len(train_iter), d2l.Timer()
+legend = ['train loss']
+if valid_iter is not None:
+legend.append('valid loss')
+animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs],
+legend=legend)
+for epoch in range(num_epochs):
+metric = d2l.Accumulator(2)
+(continues on next page)
+
+===== صفحة الكتاب 727 =====
+687
+Dog Breed Identiﬁcation (ImageNet Dogs) on Kaggle
+(continued from previous page)
+for i, (features, labels) in enumerate(train_iter):
+timer.start()
+features, labels = features.to(devices[0]), labels.to(devices[0])
+trainer.zero_grad()
+output = net(features)
+l = loss(output, labels).sum()
+l.backward()
+trainer.step()
+metric.add(l, labels.shape[0])
+timer.stop()
+if (i + 1) % (num_batches // 5) == 0 or i == num_batches - 1:
+animator.add(epoch + (i + 1) / num_batches,
+(metric[0] / metric[1], None))
+measures = f'train loss {metric[0] / metric[1]:.3f}'
+if valid_iter is not None:
+valid_loss = evaluate_loss(valid_iter, net, devices)
+animator.add(epoch + 1, (None, valid_loss.detach().cpu()))
+scheduler.step()
+if valid_iter is not None:
+measures += f', valid loss {valid_loss:.3f}'
+print(measures + f'\n{metric[1] * num_epochs / timer.sum():.1f}'
+f' examples/sec on {str(devices)}')
+14.14.6 Training and Validating the Model
+Now we can train and validate the model. The following hyperparameters are all tunable.
+For example, the number of epochs can be increased. Because lr_period and lr_decay
+are set to 2 and 0.9, respectively, the learning rate of the optimization algorithm will be
+multiplied by 0.9 after every 2 epochs.
+devices, num_epochs, lr, wd = d2l.try_all_gpus(), 10, 1e-4, 1e-4
+lr_period, lr_decay, net = 2, 0.9, get_net(devices)
+train(net, train_iter, valid_iter, num_epochs, lr, wd, devices, lr_period,
+lr_decay)
+train loss 1.240, valid loss 1.545
+577.5 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+↩→index=1)]
+
+===== صفحة الكتاب 728 =====
+688
+Computer Vision
+14.14.7 Classifying the Testing Set and Submitting Results on Kaggle
+Similar to the final step in Section 14.13, in the end all the labeled data (including the
+validation set) are used for training the model and classifying the testing set. We will use
+the trained custom output network for classification.
+net = get_net(devices)
+train(net, train_valid_iter, None, num_epochs, lr, wd, devices, lr_period,
+lr_decay)
+preds = []
+for data, label in test_iter:
+output = torch.nn.functional.softmax(net(data.to(devices[0])), dim=1)
+preds.extend(output.cpu().detach().numpy())
+ids = sorted(os.listdir(
+os.path.join(data_dir, 'train_valid_test', 'test', 'unknown')))
+with open('submission.csv', 'w') as f:
+f.write('id,' + ','.join(train_valid_ds.classes) + '\n')
+for i, output in zip(ids, preds):
+f.write(i.split('.')[0] + ',' + ','.join(
+[str(num) for num in output]) + '\n')
+train loss 1.217
+742.7 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+↩→index=1)]
+The above code will generate a submission.csv file to be submitted to Kaggle in the same
+way described in Section 5.7.
+14.14.8 Summary
+• Images in the ImageNet dataset are larger (with varying dimensions) than CIFAR-10 im-
+ages. We may modify image augmentation operations for tasks on a different dataset.
+• To classify a subset of the ImageNet dataset, we can leverage pre-trained models on the
+full ImageNet dataset to extract features and only train a custom small-scale output
+network. This will lead to less computational time and memory cost.
+14.14.9 Exercises
+
+===== صفحة الكتاب 729 =====
+689
+Dog Breed Identiﬁcation (ImageNet Dogs) on Kaggle
+226
+1. When using the full Kaggle competition dataset, what results can you achieve when you
+increase batch_size (batch size) and num_epochs (number of epochs) while setting
+some other hyperparameters as lr = 0.01, lr_period = 10, and lr_decay = 0.1?
+2. Do you get better results if you use a deeper pretrained model? How do you tune hyper-
+parameters? Can you further improve the results?
+Discussions226.

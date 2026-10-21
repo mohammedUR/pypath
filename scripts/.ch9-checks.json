@@ -1,0 +1,217 @@
+{
+ "traces": [
+  {
+   "lesson": "py4e.ch9.l1",
+   "id": "ex2.trace-lookup",
+   "code": "d = {'a': 1, 'b': 2}\nprint(d['b'])\nprint(len(d))\nprint('a' in d)\nprint(3 in d)",
+   "answer": "2\n2\nTrue\nFalse"
+  },
+  {
+   "lesson": "py4e.ch9.l2",
+   "id": "ex2.trace-get",
+   "code": "d = {'x': 5}\nprint(d.get('x', 0))\nprint(d.get('y', 0))\nd['y'] = d.get('y', 0) + 1\nprint(d['y'])",
+   "answer": "5\n0\n1"
+  },
+  {
+   "lesson": "py4e.ch9.l3",
+   "id": "ex2.trace-nested",
+   "code": "lines = ['a b', 'c']\nn = 0\nfor line in lines:\n    for word in line.split():\n        n = n + 1\nprint(n)",
+   "answer": "3"
+  },
+  {
+   "lesson": "py4e.ch9.l4",
+   "id": "ex2.trace-keys",
+   "code": "d = {'x': 2, 'y': 3}\ns = 0\nfor key in d:\n    s = s + d[key]\nprint(s)\nprint(list(d.keys()))",
+   "answer": "5\n['x', 'y']"
+  },
+  {
+   "lesson": "py4e.ch9.l5",
+   "id": "ex2.trace-clean",
+   "code": "s = 'Hi, There!'\nprint(s.lower())\nprint(s.translate(str.maketrans('', '', ',!')))\nprint(s.lower().translate(str.maketrans('', '', ',!')))",
+   "answer": "hi, there!\nHi There\nhi there"
+  },
+  {
+   "lesson": "py4e.ch9.l6",
+   "id": "ex1.trace-review",
+   "code": "d = {'a': 1, 'b': 2}\nd['a'] = d.get('a', 0) + 10\nd['c'] = d.get('c', 0) + 5\nprint(d['a'])\nprint(d['c'])\nprint(len(d))",
+   "answer": "11\n5\n3"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "py4e.ch9.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "counts = {'jan': 100, 'annie': 42}\nprint(counts['annie'])\nprint(len(counts))\nprint('jan' in counts)"
+  },
+  {
+   "lesson": "py4e.ch9.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "eng2sp = dict()\neng2sp['one'] = 'uno'\neng2sp['two'] = 'dos'\neng2sp['three'] = 'tres'\nprint(eng2sp)\nprint(eng2sp['two'])\nprint(len(eng2sp))\nprint('one' in eng2sp)\nprint('uno' in eng2sp)"
+  },
+  {
+   "lesson": "py4e.ch9.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — خريطتك الخاصة\n# Your playground — your own map\n\neng2ar = {}\neng2ar['book'] = 'kitab'\neng2ar['sun'] = 'shams'\nprint(eng2ar)\nprint(eng2ar['sun'])\nprint('book' in eng2ar)\nprint('shams' in eng2ar)\nprint(len(eng2ar))"
+  },
+  {
+   "lesson": "py4e.ch9.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "counts = {'chuck': 1, 'annie': 42}\nprint(counts.get('annie', 0))\nprint(counts.get('tim', 0))"
+  },
+  {
+   "lesson": "py4e.ch9.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "word = 'brontosaurus'\nd = dict()\nfor c in word:\n    d[c] = d.get(c, 0) + 1\nprint(d)\nprint(len(d))"
+  },
+  {
+   "lesson": "py4e.ch9.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — عدّاداتك\n# Your playground — your own counters\n\ntext = 'abracadabra'\nhist = dict()\nfor ch in text:\n    hist[ch] = hist.get(ch, 0) + 1\nprint(hist)\nprint('a:', hist.get('a', 0))\nprint('z:', hist.get('z', 0))"
+  },
+  {
+   "lesson": "py4e.ch9.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "line = 'It is the east and Juliet is the sun'\nwords = line.split()\nprint(len(words))\nprint(words[0])"
+  },
+  {
+   "lesson": "py4e.ch9.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "out = open('romeo.txt', 'w')\nout.write('But soft what light through yonder window breaks\\n')\nout.write('It is the east and Juliet is the sun\\n')\nout.write('Arise fair sun and kill the envious moon\\n')\nout.write('Who is already sick and pale with grief\\n')\nout.close()\n\ncounts = dict()\nfhand = open('romeo.txt')\nfor line in fhand:\n    words = line.split()\n    for word in words:\n        if word not in counts:\n            counts[word] = 1\n        else:\n            counts[word] += 1\nfhand.close()\nprint(counts)\nprint(len(counts))"
+  },
+  {
+   "lesson": "py4e.ch9.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — عدّد كلماتك\n# Your playground — count your own words\n\nout = open('mywords.txt', 'w')\nout.write('one two three\\n')\nout.write('two three four\\n')\nout.close()\n\ncounts = dict()\nfhand = open('mywords.txt')\nfor line in fhand:\n    for word in line.split():\n        counts[word] = counts.get(word, 0) + 1\nfhand.close()\nprint(counts)\nprint('two:', counts['two'])"
+  },
+  {
+   "lesson": "py4e.ch9.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "counts = {'jan': 100, 'chuck': 1}\nfor key in counts:\n    print(key, counts[key])"
+  },
+  {
+   "lesson": "py4e.ch9.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "counts = {'chuck': 1, 'annie': 42, 'jan': 100}\nfor key in counts:\n    if counts[key] > 10:\n        print(key, counts[key])\nvals = list(counts.values())\ntotal = 0\nfor v in vals:\n    total = total + v\nprint('total:', total)\nprint('average:', round(total / len(vals), 2))"
+  },
+  {
+   "lesson": "py4e.ch9.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — تقاريرك\n# Your playground — your own reports\n\nstock = {'pen': 12, 'ink': 3, 'paper': 7}\nfor key in stock:\n    print(key, stock[key])\nlow = list(stock.keys())\nlow.sort()\nprint(low)\nvals = list(stock.values())\nprint('sum:', sum(vals))\nprint('avg:', round(sum(vals) / len(vals), 2))"
+  },
+  {
+   "lesson": "py4e.ch9.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "w1 = 'soft!'\nw2 = 'soft'\nprint(w1 == w2)\nprint(w1.lower())\nclean = w1.translate(str.maketrans('', '', '!'))\nprint(clean == w2)"
+  },
+  {
+   "lesson": "py4e.ch9.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import string\n\nout = open('romeo-full.txt', 'w')\nout.write('But, soft! what light through yonder window breaks?\\n')\nout.write('It is the east, and Juliet is the sun.\\n')\nout.write('Arise, fair sun, and kill the envious moon,\\n')\nout.write('Who is already sick and pale with grief,\\n')\nout.close()\n\ncounts = dict()\nfhand = open('romeo-full.txt')\nfor line in fhand:\n    line = line.translate(str.maketrans('', '', string.punctuation))\n    line = line.lower()\n    words = line.split()\n    for word in words:\n        counts[word] = counts.get(word, 0) + 1\nfhand.close()\nprint(counts['sun'])\nprint(counts['is'])\nprint(len(counts))"
+  },
+  {
+   "lesson": "py4e.ch9.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — مصنع التنظيف\n# Your playground — the cleaning factory\n\nimport string\n\nline = 'Well, done! Keep, going!'\nclean = line.translate(str.maketrans('', '', string.punctuation)).lower()\nprint(line)\nprint(clean)\nprint(clean.split())"
+  },
+  {
+   "lesson": "py4e.ch9.l6",
+   "kind": "predict",
+   "id": "predict",
+   "code": "hist = {'sun': 4, 'moon': 1}\nprint(len(hist))\nprint('sun' in hist)\nprint(hist.get('sky', 0))"
+  },
+  {
+   "lesson": "py4e.ch9.l6",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import string\n\nout = open('poem-l6.txt', 'w')\nout.write('Love is patient, love is kind.\\n')\nout.write('Love is not envy; love never fails.\\n')\nout.close()\n\ncounts = dict()\nfhand = open('poem-l6.txt')\nfor line in fhand:\n    line = line.translate(str.maketrans('', '', string.punctuation))\n    line = line.lower()\n    for word in line.split():\n        counts[word] = counts.get(word, 0) + 1\nfhand.close()\nprint('unique words: %d' % len(counts))\nbest = None\nbest_word = None\nfor word in counts:\n    if best is None or counts[word] > best:\n        best = counts[word]\n        best_word = word\nprint('top word: %s (%d)' % (best_word, best))"
+  },
+  {
+   "lesson": "py4e.ch9.l6",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — عدّادك الخاص\n# Your playground — your very own counter\n\nimport string\n\ntext = 'Go now! Go, go! NOW, go.'\nclean = text.translate(str.maketrans('', '', string.punctuation)).lower()\ncounts = dict()\nfor word in clean.split():\n    counts[word] = counts.get(word, 0) + 1\nprint(counts)\nbest = None\nbest_word = None\nfor word in counts:\n    if best is None or counts[word] > best:\n        best = counts[word]\n        best_word = word\nprint('top:', best_word, best)"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "py4e.ch9.l1",
+   "id": "ex3.mcq-keyerror",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch9.l2",
+   "id": "ex3.mcq-implementation",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch9.l3",
+   "id": "ex3.mcq-nested",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch9.l4",
+   "id": "ex3.mcq-loopvar",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch9.l5",
+   "id": "ex3.mcq-maketrans",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch9.l6",
+   "id": "ex3.mcq-debug-shrink",
+   "answer": "a",
+   "solution": "a"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "py4e.ch9.l1",
+   "id": "ex4.fill-dict",
+   "answer": "dict"
+  },
+  {
+   "lesson": "py4e.ch9.l3",
+   "id": "ex4.fill-split",
+   "answer": "split"
+  },
+  {
+   "lesson": "py4e.ch9.l4",
+   "id": "ex4.fill-keys",
+   "answer": "keys"
+  },
+  {
+   "lesson": "py4e.ch9.l5",
+   "id": "ex4.fill-translate",
+   "answer": "translate"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "py4e.ch9.l6",
+   "id": "ex5.debug-missing-else",
+   "brokenCode": "text = 'sun sun moon'\ncounts = dict()\nfor word in text.split():\n    if word not in counts:\n        counts[word] = 1\n    counts[word] = counts[word] + 1\nprint(counts['sun'])\nprint(counts['moon'])"
+  }
+ ]
+}

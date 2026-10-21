@@ -1,0 +1,90 @@
+class MiniGit:
+    def __init__(self):
+        self.commits = {}
+        self.branches = {'main': None}
+        self.head = 'main'
+        self.files = {}
+        self.next_id = 1
+
+    def change(self, fname, version):
+        self.files[fname] = version
+
+    def commit(self, msg):
+        cid = 'c%d' % self.next_id
+        self.next_id = self.next_id + 1
+        self.commits[cid] = {'id': cid, 'parent': self.branches[self.head], 'msg': msg, 'files': dict(self.files)}
+        self.branches[self.head] = cid
+        return cid
+
+    def branch(self, name):
+        self.branches[name] = self.branches[self.head]
+
+    def checkout(self, name):
+        self.head = name
+        tip = self.branches[name]
+        if tip is not None:
+            self.files = dict(self.commits[tip]['files'])
+
+    def merge(self, source):
+        ours = self.branches[self.head]
+        theirs = self.branches[source]
+        if ours == theirs:
+            return 'already up to date'
+        node = theirs
+        while node is not None:
+            if node == ours:
+                self.branches[self.head] = theirs
+                self.files = dict(self.commits[theirs]['files'])
+                return 'fast-forward'
+            node = self.commits[node]['parent']
+
+        def ancestors(tip):
+            chain = []
+            node = tip
+            while node is not None:
+                chain.append(node)
+                node = self.commits[node]['parent']
+            return chain
+
+        base = None
+        for cid in ancestors(ours):
+            if cid in ancestors(theirs):
+                base = cid
+                break
+        base_files = self.commits[base]['files']
+        ours_files = self.commits[ours]['files']
+        theirs_files = self.commits[theirs]['files']
+        ours_changed = set()
+        for fname, ver in ours_files.items():
+            if base_files.get(fname) != ver:
+                ours_changed.add(fname)
+        theirs_changed = set()
+        for fname, ver in theirs_files.items():
+            if base_files.get(fname) != ver:
+                theirs_changed.add(fname)
+        conflicts = sorted(ours_changed & theirs_changed)
+        if conflicts:
+            return 'conflict: %s' % conflicts[0]
+        for fname, ver in theirs_files.items():
+            if base_files.get(fname) != ver:
+                self.files[fname] = ver
+        return 'merged'
+
+
+mg = MiniGit()
+mg.change('app.py', 'v1')
+mg.commit('Add app skeleton')
+mg.change('config.py', 'base')
+mg.commit('Add shared config')
+mg.branch('dev')
+mg.checkout('dev')
+mg.change('search.py', 'dev-v1')
+mg.commit('Add search box')
+mg.change('config.py', 'dev-v2')
+mg.commit('Tune config for search')
+mg.checkout('main')
+mg.change('config.py', 'main-v2')
+mg.commit('Tune config for pages')
+print('commits: %d' % len(mg.commits))
+print('branches: %d' % len(mg.branches))
+print(mg.merge('dev'))

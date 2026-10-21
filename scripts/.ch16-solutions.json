@@ -1,0 +1,357 @@
+[
+ {
+  "lesson": "py4e.ch16.l1",
+  "id": "ex1.geodata-write",
+  "solution": "import json\n\npayload = '''\n{\n  \"status\": \"OK\",\n  \"results\": [\n    { \"formatted_address\": \"Northeastern University, Boston, MA 02115, USA\", \"lat\": 42.3396998, \"lng\": -71.08975, \"place_id\": \"ChIJ0X6Y1cdw44kRfCQ5p1WHWvA\" },\n    { \"formatted_address\": \"Bradley University, Peoria, IL 61625, USA\", \"lat\": 40.6963857, \"lng\": -89.6160811, \"place_id\": \"ChIJN1t_tDeuEmsRUsoyG83frY4\" },\n    { \"formatted_address\": \"Monash University, Clayton VIC 3800, Australia\", \"lat\": -37.9152113, \"lng\": 145.134682, \"place_id\": \"ChIJrTLrKyuEj4ARi29s3WvMx0Q\" },\n    { \"formatted_address\": \"Kokshetau, Kazakhstan\", \"lat\": 53.2833333, \"lng\": 69.3833333, \"place_id\": \"ChIJ2c1nZAHDvJURf8Qz8x0X0vQ\" }\n  ]\n}'''\n\njs = json.loads(payload)\n\nplace = None\nif js['status'] == 'OK':\n    place = js\n\nif place is None:\n    print('status: error')\nelse:\n    print('places: %d' % len(place['results']))\n    for r in place['results']:\n        name = r['formatted_address'].split(',')[0]\n        print('%s -> %s, %s' % (name, r['lat'], r['lng']))\n    first = place['results'][0]\n    print('first place id: %s' % first['place_id'])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الحارس مرّ والرد سليم",
+     "en": "The guard passed and the reply is healthy"
+    },
+    "code": "assert place is not None, 'expected: place holds the parsed reply | actual: %r' % (place,)",
+    "expected": "place holds the parsed reply"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "العدد مطبوع",
+     "en": "The count is printed"
+    },
+    "code": "assert 'places: 4' in __learner_output__, 'expected: places: 4 | actual: %r' % __learner_output__",
+    "expected": "places: 4"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سطر موناش بالسالب صحيح",
+     "en": "The Monash line with its negative latitude"
+    },
+    "code": "assert 'Monash University -> -37.9152113, 145.134682' in __learner_output__, 'expected: Monash University -> -37.9152113, 145.134682 | actual: %r' % __learner_output__",
+    "expected": "Monash University -> -37.9152113, 145.134682"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "سطر كوكتشاو صحيح",
+     "en": "The Kokshetau line is correct"
+    },
+    "code": "assert 'Kokshetau -> 53.2833333, 69.3833333' in __learner_output__, 'expected: Kokshetau -> 53.2833333, 69.3833333 | actual: %r' % __learner_output__",
+    "expected": "Kokshetau -> 53.2833333, 69.3833333"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "معرّف المكان الأول مطبوع",
+     "en": "The first place id is printed"
+    },
+    "code": "assert 'first place id: ChIJ0X6Y1cdw44kRfCQ5p1WHWvA' in __learner_output__, 'expected: first place id: ChIJ0X6Y1cdw44kRfCQ5p1WHWvA | actual: %r' % __learner_output__",
+    "expected": "first place id: ChIJ0X6Y1cdw44kRfCQ5p1WHWvA"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch16.l2",
+  "id": "ex1.wherejs-write",
+  "solution": "rows = [\n    [53.2833333, 69.3833333, 'Kokshetau, Kazakhstan'],\n    [-37.9152113, 145.134682, 'Monash University, Clayton VIC 3800, Australia'],\n    [42.3396998, -71.08975, 'Northeastern University, Boston, MA 02115, USA'],\n]\nlines = ['myData = [']\nfor row in rows:\n    lines.append(\"[%s, %s, '%s'],\" % (row[0], row[1], row[2]))\nlines.append('];')\ncontent = '\\n'.join(lines)\n\nout = open('map-l16.js', 'w')\nout.write(content)\nout.close()\n\nfhand = open('map-l16.js')\nback = fhand.read()\nfhand.close()\n\nprint('records: %d' % len(rows))\nprint('lines: %d' % len(back.split('\\n')))\nprint('marker found: %s' % ('myData = [' in back))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "عدد السجلات مطبوع",
+     "en": "The record count is printed"
+    },
+    "code": "assert 'records: 3' in __learner_output__, 'expected: records: 3 | actual: %r' % __learner_output__",
+    "expected": "records: 3"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "عدد الأسطر صحيح: 3 صفوف مع الافتتاح والإغلاق",
+     "en": "The line count is right: 3 rows plus opener and closer"
+    },
+    "code": "assert 'lines: 5' in __learner_output__, 'expected: lines: 5 | actual: %r' % __learner_output__",
+    "expected": "lines: 5"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "العلامة وجدت",
+     "en": "The marker was found"
+    },
+    "code": "assert 'marker found: True' in __learner_output__, 'expected: marker found: True | actual: %r' % __learner_output__",
+    "expected": "marker found: True"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الملف نفسه يحمل صف موناش كاملًا",
+     "en": "The file itself carries the full Monash row"
+    },
+    "code": "data = open('map-l16.js').read()\nassert \"[-37.9152113, 145.134682, 'Monash University, Clayton VIC 3800, Australia'],\" in data, 'expected: the Monash row inside map-l16.js | actual: %r' % data",
+    "expected": "the Monash row inside map-l16.js"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch16.l3",
+  "id": "ex1.degree-write",
+  "solution": "links = [\n    ('page1', 'page2'), ('page1', 'page3'), ('page2', 'page3'),\n    ('page3', 'page1'), ('page3', 'page2'), ('page4', 'page3'),\n]\ncounts = dict()\nfor a, b in links:\n    counts[a] = counts.get(a, 0) + 1\n    counts[b] = counts.get(b, 0) + 1\n\nfor name in sorted(counts):\n    print('node: %s %d' % (name, counts[name]))\n\nbest = None\nfor name in counts:\n    if best is None or counts[name] > counts[best]:\n        best = name\nprint('hub: %s %d' % (best, counts[best]))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "درجة page3 الصحيحة في القاموس",
+     "en": "The right degree for page3 in the dict"
+    },
+    "code": "assert counts['page3'] == 5, 'expected: page3 degree 5 | actual: %r' % (counts.get('page3'),)",
+    "expected": "page3 degree 5"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "سطر المركز مطبوع",
+     "en": "The hub line is printed"
+    },
+    "code": "assert 'hub: page3 5' in __learner_output__, 'expected: hub: page3 5 | actual: %r' % __learner_output__",
+    "expected": "hub: page3 5"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سطر page3 في التقرير",
+     "en": "The page3 line in the report"
+    },
+    "code": "assert 'node: page3 5' in __learner_output__, 'expected: node: page3 5 | actual: %r' % __learner_output__",
+    "expected": "node: page3 5"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "العقدة النائية مطبوعة",
+     "en": "The remote node is printed"
+    },
+    "code": "assert 'node: page4 1' in __learner_output__, 'expected: node: page4 1 | actual: %r' % __learner_output__",
+    "expected": "node: page4 1"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "مجموع الدرجات = ضعف عدد الروابط",
+     "en": "Degrees sum to twice the link count"
+    },
+    "code": "assert sum(counts.values()) == 12, 'expected: degrees sum 12 | actual: %r' % (sum(counts.values()),)",
+    "expected": "degrees sum 12"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch16.l4",
+  "id": "ex1.bars-write",
+  "solution": "counts = {'gmail.com': 4, 'umich.edu': 2, 'uct.ac.za': 1}\n\ndef draw_bars(pairs, width):\n    biggest = 0\n    for name, value in pairs:\n        if value > biggest:\n            biggest = value\n    for name, value in pairs:\n        ticks = int(width * value / biggest)\n        print('%s | %s %d' % (name, '#' * ticks, value))\n\nranked = []\nfor name, value in counts.items():\n    ranked.append((value, name))\nranked.sort(reverse=True)\nordered = []\nfor value, name in ranked:\n    ordered.append((name, value))\ndraw_bars(ordered, 8)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "شريط المؤسسة الأولى بعرض كامل",
+     "en": "The top organization takes the full width"
+    },
+    "code": "assert 'gmail.com | ######## 4' in __learner_output__, 'expected: gmail.com | ######## 4 | actual: %r' % __learner_output__",
+    "expected": "gmail.com | ######## 4"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "شريط الوسط منصف",
+     "en": "The middle bar is fair"
+    },
+    "code": "assert 'umich.edu | #### 2' in __learner_output__, 'expected: umich.edu | #### 2 | actual: %r' % __learner_output__",
+    "expected": "umich.edu | #### 2"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "أصغر قيمة بشريطها الصغير",
+     "en": "The smallest value keeps its small bar"
+    },
+    "code": "assert 'uct.ac.za | ## 1' in __learner_output__, 'expected: uct.ac.za | ## 1 | actual: %r' % __learner_output__",
+    "expected": "uct.ac.za | ## 1"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الترتيب تنازلي في الخرج",
+     "en": "The output order is descending"
+    },
+    "code": "o = __learner_output__\nassert o.find('gmail.com') < o.find('umich.edu') < o.find('uct.ac.za'), 'expected: gmail.com before umich.edu before uct.ac.za | actual: %r' % o",
+    "expected": "gmail.com before umich.edu before uct.ac.za"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch16.l5",
+  "id": "ex1.hours-write",
+  "solution": "import re\n\nmail = [\n    'Date: Sun, 6 Jan 2008 10:20:05',\n    'From: wagner@taylor.edu',\n    '',\n    'Date: Sun, 6 Jan 2008 10:51:12',\n    'From: antranig@caret.cam.ac.uk',\n    '',\n    'Date: Sun, 6 Jan 2008 07:15:30',\n    'From: ggolden22@mac.com',\n    '',\n    'Date: Sun, 6 Jan 2008 13:44:55',\n    'From: tpamsler@ucdavis.edu',\n    '',\n    'Date: Sun, 6 Jan 2008 10:03:20',\n    'From: lance@indiana.edu',\n]\nhours = dict()\nfor line in mail:\n    line = line.strip()\n    if not line.startswith('Date:'):\n        continue\n    m = re.search(r'^Date: .* ([0-9][0-9]):', line)\n    if m is None:\n        continue\n    hour = m.group(1)\n    hours[hour] = hours.get(hour, 0) + 1\n\nfor hour in sorted(hours):\n    print('hour %s: %d' % (hour, hours[hour]))\nbest = None\nfor hour in hours:\n    if best is None or hours[hour] > hours[best]:\n        best = hour\nprint('peak hour: %s' % best)\nprint('messages: %d' % sum(hours.values()))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "ساعة الذروة محصورة في القاموس",
+     "en": "The peak hour is captured in the dict"
+    },
+    "code": "assert hours['10'] == 3, 'expected: hours[10] == 3 | actual: %r' % (hours.get('10'),)",
+    "expected": "hours[10] == 3"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "سطر الذروة مطبوع",
+     "en": "The peak line is printed"
+    },
+    "code": "assert 'hour 10: 3' in __learner_output__, 'expected: hour 10: 3 | actual: %r' % __learner_output__",
+    "expected": "hour 10: 3"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الذروة مطبوعة صحيحة",
+     "en": "The peak is printed correctly"
+    },
+    "code": "assert 'peak hour: 10' in __learner_output__, 'expected: peak hour: 10 | actual: %r' % __learner_output__",
+    "expected": "peak hour: 10"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "المجموع رسائل الخمس",
+     "en": "The sum is the five messages"
+    },
+    "code": "assert 'messages: 5' in __learner_output__, 'expected: messages: 5 | actual: %r' % __learner_output__",
+    "expected": "messages: 5"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "لا تسريب من أسطر From",
+     "en": "No leakage from From lines"
+    },
+    "code": "assert len(hours) == 3, 'expected: 3 hour buckets | actual: %r' % (sorted(hours),)",
+    "expected": "3 hour buckets"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch16.l6",
+  "id": "ex2.mail-dashboard",
+  "solution": "import re\n\nlog = [\n    'Date: Sat, 5 Jan 2008 09:14:16',\n    'From: stephen.marquard@uct.ac.za',\n    '',\n    'Date: Sat, 5 Jan 2008 09:45:20',\n    'From: zqian@umich.edu',\n    '',\n    'Date: Sat, 5 Jan 2008 09:58:03',\n    'From: stephen.marquard@uct.ac.za',\n    '',\n    'Date: Sat, 5 Jan 2008 18:44:02',\n    'From: zqian@umich.edu',\n    '',\n    'Date: Fri, 4 Jan 2008 07:02:32',\n    'From: stephen.marquard@uct.ac.za',\n    '',\n    'Date: Fri, 4 Jan 2008 16:10:39',\n    'From: csev@umich.edu',\n]\nhours = dict()\nsenders = dict()\nfor line in log:\n    line = line.strip()\n    if not line.startswith('Date:'):\n        continue\n    m = re.search(r'^Date: .* ([0-9][0-9]):', line)\n    if m is None:\n        continue\n    hour = m.group(1)\n    hours[hour] = hours.get(hour, 0) + 1\nfor line in log:\n    line = line.strip()\n    if not line.startswith('From:'):\n        continue\n    sender = line[6:]\n    senders[sender] = senders.get(sender, 0) + 1\n\ndef bar_lines(pairs, width):\n    biggest = 0\n    for name, value in pairs:\n        if value > biggest:\n            biggest = value\n    lines = []\n    for name, value in pairs:\n        ticks = int(width * value / biggest)\n        lines.append('%s | %s %d' % (name, '#' * ticks, value))\n    return lines\n\nhour_pairs = []\nfor hour in sorted(hours):\n    hour_pairs.append(('hour ' + hour, hours[hour]))\nfor row in bar_lines(hour_pairs, 6):\n    print(row)\n\nranked = []\nfor name, value in senders.items():\n    ranked.append((value, name))\nranked.sort(reverse=True)\nsender_pairs = []\nfor value, name in ranked:\n    sender_pairs.append((name, value))\nfor row in bar_lines(sender_pairs, 6):\n    print(row)\n\nbest = None\nfor hour in hours:\n    if best is None or hours[hour] > hours[best]:\n        best = hour\ntop = None\nfor sender in senders:\n    if top is None or senders[sender] > senders[top]:\n        top = sender\nprint('messages: %d' % sum(hours.values()))\nprint('peak hour: %02d' % int(best))\nprint('top sender: %s' % top)\n\nout = open('dashboard-l16.txt', 'w')\nout.write('\\n'.join(bar_lines(hour_pairs, 6)))\nout.write('\\n')\nout.close()\nfhand = open('dashboard-l16.txt')\nback = fhand.read()\nfhand.close()\nprint('file lines: %d' % len(back.strip().split('\\n')))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "عدد الرسائل في الخلاصة",
+     "en": "The message count in the summary"
+    },
+    "code": "assert 'messages: 6' in __learner_output__, 'expected: messages: 6 | actual: %r' % __learner_output__",
+    "expected": "messages: 6"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "ساعة الذروة بالصفر المحفوظ",
+     "en": "The peak hour with its preserved zero"
+    },
+    "code": "assert 'peak hour: 09' in __learner_output__, 'expected: peak hour: 09 | actual: %r' % __learner_output__",
+    "expected": "peak hour: 09"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "أعلى مرسل مطبوع كاملًا",
+     "en": "The top sender printed in full"
+    },
+    "code": "assert 'top sender: stephen.marquard@uct.ac.za' in __learner_output__, 'expected: top sender: stephen.marquard@uct.ac.za | actual: %r' % __learner_output__",
+    "expected": "top sender: stephen.marquard@uct.ac.za"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "شريط ساعة الذروة في التقرير",
+     "en": "The peak hour bar in the report"
+    },
+    "code": "assert 'hour 09 | ###### 3' in __learner_output__, 'expected: hour 09 | ###### 3 | actual: %r' % __learner_output__",
+    "expected": "hour 09 | ###### 3"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "القاموسان محسوبان صحيحًا",
+     "en": "Both dicts computed correctly"
+    },
+    "code": "assert hours['09'] == 3 and senders['stephen.marquard@uct.ac.za'] == 3, 'expected: hours 09 = 3 and top sender = 3 | actual: %r %r' % (hours.get('09'), senders.get('stephen.marquard@uct.ac.za'))",
+    "expected": "hours 09 = 3 and top sender = 3"
+   },
+   {
+    "id": "t6",
+    "name": {
+     "ar": "الملف مكتوب ومتحقق منه",
+     "en": "The file written and verified"
+    },
+    "code": "back = open('dashboard-l16.txt').read()\nassert 'hour 09 | ###### 3' in back and len(back.strip().split('\\n')) == 4, 'expected: 4 verified hour lines in the file | actual: %r' % back",
+    "expected": "4 verified hour lines in the file"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch16.l6",
+  "id": "ex5.debug-wrong-header",
+  "solution": "import re\n\nlog = [\n    'Received: from mail.uct.ac.za by umich.edu; Sat, 5 Jan 2008 11:12:31',\n    'Date: Sat, 5 Jan 2008 09:14:16',\n    'From: stephen.marquard@uct.ac.za',\n    '',\n    'Received: from mail.uct.ac.za by umich.edu; Sat, 5 Jan 2008 11:47:02',\n    'Date: Sat, 5 Jan 2008 09:45:20',\n    'From: zqian@umich.edu',\n    '',\n    'Received: from umich.edu by uct.ac.za; Sat, 5 Jan 2008 11:59:44',\n    'Date: Sat, 5 Jan 2008 09:58:03',\n    'From: stephen.marquard@uct.ac.za',\n    '',\n    'Received: from uct.ac.za by mail.berkeley.edu; Sat, 5 Jan 2008 16:20:55',\n    'Date: Sat, 5 Jan 2008 14:20:33',\n    'From: csev@umich.edu',\n]\n\nhours = dict()\nfor line in log:\n    line = line.strip()\n    if not line.startswith('Date:'):  # ترويسة صياغة الرسالة / the message composition header\n        continue\n    m = re.search(r'^Date: .* ([0-9][0-9]):', line)\n    if m is None:\n        continue\n    hour = m.group(1)\n    hours[hour] = hours.get(hour, 0) + 1\nfor hour in sorted(hours):\n    print('hour %s: %d' % (hour, hours[hour]))\nbest = None\nfor hour in hours:\n    if best is None or hours[hour] > hours[best]:\n        best = hour\nprint('peak hour: %s' % best)\nprint('messages: %d' % sum(hours.values()))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الذروة عند ساعة الكتابة الصحيحة",
+     "en": "The peak at the true writing hour"
+    },
+    "code": "assert 'peak hour: 09' in __learner_output__, 'expected: peak hour: 09 | actual: %r' % __learner_output__",
+    "expected": "peak hour: 09"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "ساعة الوصول الزائفة اختفت",
+     "en": "The false arrival hour vanished"
+    },
+    "code": "assert 'peak hour: 11' not in __learner_output__, 'expected: no peak hour: 11 | actual: %r' % __learner_output__",
+    "expected": "no peak hour: 11"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سطر ذروة واحد فقط",
+     "en": "Exactly one peak line"
+    },
+    "code": "assert __learner_output__.count('peak hour') == 1, 'expected: exactly one peak hour line | actual: %r' % __learner_output__",
+    "expected": "exactly one peak hour line"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "المدرج الصحيح: 09 ثلاثًا و14 مرة",
+     "en": "The right histogram: 09 thrice and 14 once"
+    },
+    "code": "assert 'hour 09: 3' in __learner_output__ and 'hour 14: 1' in __learner_output__, 'expected: hour 09: 3 and hour 14: 1 | actual: %r' % __learner_output__",
+    "expected": "hour 09: 3 and hour 14: 1"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "المجموع أربع رسائل",
+     "en": "The sum is four messages"
+    },
+    "code": "assert 'messages: 4' in __learner_output__, 'expected: messages: 4 | actual: %r' % __learner_output__",
+    "expected": "messages: 4"
+   }
+  ]
+ }
+]

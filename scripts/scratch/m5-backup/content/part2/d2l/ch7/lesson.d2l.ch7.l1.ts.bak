@@ -1,0 +1,209 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * d2l.ch7.l1 — "From Fully Connected to Convolutions"
+ * من الطبقات المتصلة بالكامل إلى الالتفافات
+ * Aligned with D2L ch7 s1 (From Fully Connected Layers to Convolutions) +
+ * s2 (Convolutions for Images). All expression is original — a paraphrase of
+ * the source's ideas, never a verbatim translation. Runnable design: corr2d
+ * on the book's exact 3x3/2x2 grid (19/25/37/43), the 6x8 edge-detector
+ * image with kernel [1,-1], the transposed-image check, and the output-shape
+ * rule. Every literal verified under CPython 3. Deterministic only: no
+ * input(), no exit(), no unittest.main.
+ */
+const lesson = {
+  id: 'd2l.ch7.l1',
+  version: 1,
+  part: 'II',
+  track: 'A4',
+  book: 'D2L',
+  chapter: 7,
+  title: {
+    ar: 'من الطبقات المتصلة بالكامل إلى الالتفافات',
+    en: 'From Fully Connected to Convolutions',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['d2l.ch6.l3'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'صورة واحدة بدقة ميجابكسل تمر عبر طبقة متصلة بالكامل نحو ألف وحدة خفية تكلفتها مليار معامل — بلا أي ضمان أن هذا الإنفاق يتعلم شيئًا عن الصور. الالتفاف يبدأ من مبدأين يعرفهما عينك منذ الطفولة: الشيء نفسه يُعرف أينما ظهر (ثبات الانتقال)، وللتعرف على حاجة قريبة يكفي النظر إلى الجوار (المحلية). في هذا الدرس تشتق الالتفاف من المبدأين، ثم تنفذه بحلقتين متداخلتين وترى كاشف حواف يعمل أمامك.',
+        en: 'A one-megapixel image pushed through a fully connected layer into a thousand hidden units costs a billion parameters — with no guarantee any of that spend learns anything about images. Convolution starts from two principles your eyes have known since childhood: the same thing is recognized wherever it appears (translation invariance), and recognizing something nearby only needs its neighborhood (locality). In this lesson you derive convolution from those principles, then implement it with two nested loops and watch an edge detector work.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'مبدآن يقودان إلى نواة', en: 'Two principles that lead to a kernel' },
+      chunks: [
+        {
+          ar: 'ابدأ من الطبقة المتصلة بالكامل على شبكة صور: كل وحدة خفية تتصل بكل بكسل، فمليون بكسل إلى مليون وحدة تحتاج 10¹² معامل — مستحيل. أضف ثبات الانتقال translation invariance: النمط نفسه يُكتشف بأي مكان، فالمعاملات لا تعتمد على الموقع (i, j) بل على الإزاحة (a, b) فقط، وينزل العدد إلى 10⁶. أضف المحلية locality: يكفي جوار نصف قطره Δ، فكل ما بعد |a| > Δ يصفَّر وينزل العدد إلى 4Δ² — مئات المعاملات بدل تريليونات. الناتج هو الالتفاف: نواة V صغيرة تنزلق على الصورة، وبديلنا هو أن التعميم يصبح أسهل حين توافق الانحيازات inductive biases الواقع.',
+          en: 'Start from a fully connected layer over an image grid: every hidden unit touches every pixel, so a million pixels into a million units needs 10\u00b9\u00b2 parameters — impossible. Add translation invariance: the same pattern is detected anywhere, so weights depend on the offset (a, b) but not the location (i, j), dropping the count to 10\u2076. Add locality: a neighborhood of radius \u0394 suffices, so everything with |a| > \u0394 is zeroed and the count falls to 4\u0394\u00b2 — hundreds of parameters instead of trillions. The result is convolution: a small kernel V sliding over the image. The bonus: generalization improves when inductive biases match reality.',
+        },
+        {
+          ar: 'تنفيذاً: ما تفعله طبقات الالتفاف فعليًا هو ارتباط متبادل cross-correlation — نافذة النواة تنزلق من أعلى اليسار، وعند كل موضع تُجمع حواصل ضرب عناصر النافذة بالنواة. الالتفاف الرياضي الصارم يقلب النواة أولًا، لكن لأن النوى تُتعلم من البيانات فالفرق لا يغير النتائج، والتسمية التبسيطية باقية. شكل المخرج بقاعدة (nh − kh + 1) × (nw − kw + 1) لأن النافذة يجب أن تبقى داخل الصورة. وكل عمود مخرج يسمى خريطة سمات feature map، وحقل الإدراك receptive field لعنصر ما هو كل ما يؤثر فيه من الطبقات السابقة — ويتسع كلما تعمّقنا، وهذا ما يجعل الطبقات العميقة ترى أنماطًا أبعد.',
+          en: 'In practice: what convolutional layers actually compute is cross-correlation — the kernel window slides from the top-left, and at each position the elementwise products of window and kernel are summed. The strict mathematical convolution flips the kernel first, but because kernels are learned from data the distinction changes nothing, and the loose name stuck. Output shape follows (nh \u2212 kh + 1) \u00d7 (nw \u2212 kw + 1) since the window must stay inside the image. Each output channel is called a feature map, and an element\u2019s receptive field is everything from earlier layers that affects it — growing with depth, which is how deeper layers see longer-range patterns.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: {
+        ar: 'corr2d بالحلقات + كاشف الحواف العمودية',
+        en: 'corr2d with loops + a vertical edge detector',
+      },
+      code: "def corr2d(X, K):\n    kh, kw = len(K), len(K[0])\n    nh, nw = len(X), len(X[0])\n    return [[sum(X[i + a][j + b] * K[a][b] for a in range(kh) for b in range(kw))\n             for j in range(nw - kw + 1)] for i in range(nh - kh + 1)]\n\nX = [[0.0, 1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0]]\nK = [[0.0, 1.0], [2.0, 3.0]]\nprint('Y:', corr2d(X, K))\n\nimg = [[1.0] * 8 for _ in range(6)]\nfor i in range(6):\n    for j in range(2, 6):\n        img[i][j] = 0.0\nE = corr2d(img, [[1.0, -1.0]])\nprint('edge row0:', E[0])\nimgT = [[img[i][j] for i in range(6)] for j in range(8)]\nET = corr2d(imgT, [[1.0, -1.0]])\nprint('transposed detect:', ET == [[0.0] * 5 for _ in range(8)], '| shape:', (len(ET), len(ET[0])))\nY = corr2d(X, K)\nprint('shape rule: (3-2+1) x (3-2+1) =', (len(Y), len(Y[0])))",
+      explanation: {
+        ar: 'corr2d هي الارتباط المتبادل بحلقتين: كل خلية مخرج تجمع حواصل ضرب نافذة 2×2 بالنواة. على شبكة الكتاب نحصل على [[19, 25], [37, 43]] — الخلية الأولى 0×0 + 1×1 + 3×2 + 4×3 = 19. النواة [1, −1] تحسب فرق جارين أفقيين: على صورة 6×8 بأعمدة سوداء وسطى تلتقط حافة الانتقال من الأبيض للأسود (+1) وحافتها المعاكسة (−1) وتصفر كل ما عدا؛ وعلى الصورة المقلوبة تختفي الحافة رأسيًا فالمخرج 8×5 كله أصفار — النواة كاشف حواف عمودية فقط.',
+        en: 'corr2d is cross-correlation with two loops: each output cell sums the elementwise products of a 2\u00d72 window with the kernel. On the book\u2019s grid we get [[19, 25], [37, 43]] — the first cell is 0\u00d70 + 1\u00d71 + 3\u00d72 + 4\u00d73 = 19. The kernel [1, \u22121] takes the difference of horizontal neighbors: on a 6\u00d78 image with black middle columns it fires +1 at the white-to-black transition, \u22121 at the reverse, and zero elsewhere; on the transposed image the edge disappears vertically, so the 8\u00d75 output is all zeros — this kernel is a strictly vertical edge detector.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.corr2d-edge',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفّذ corr2d(X, K) — الارتباط المتبادل الثنائي بقوائم متداخلة — ثم طبّقها: أولاً على شبكة الكتاب 3×3 بالنواة [[0,1],[2,3]]، وثانيًا كاشف حواف عمودي على صورة 6×8 (عمودان أبيضان، أربعة سوداء، عمودان أبيضان) بالنواة [[1,−1]].',
+        en: 'Implement corr2d(X, K) — two-dimensional cross-correlation over nested lists — then apply it: first to the book\u2019s 3\u00d73 grid with kernel [[0,1],[2,3]], and second as a vertical edge detector on a 6\u00d78 image (two white columns, four black, two white) with kernel [[1,\u22121]].',
+      },
+      starterCode: "def corr2d(X, K):\n    kh, kw = len(K), len(K[0])\n    nh, nw = len(X), len(X[0])\n    ...  # TODO: (nh-kh+1) x (nw-kw+1) sums of window * kernel products\n\nX = [[0.0, 1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0]]\nK = [[0.0, 1.0], [2.0, 3.0]]\nprint(corr2d(X, K))\n",
+      solution: "def corr2d(X, K):\n    kh, kw = len(K), len(K[0])\n    nh, nw = len(X), len(X[0])\n    return [[sum(X[i + a][j + b] * K[a][b] for a in range(kh) for b in range(kw))\n             for j in range(nw - kw + 1)] for i in range(nh - kh + 1)]",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'شبكة الكتاب: [[19, 25], [37, 43]]', en: 'The book grid: [[19, 25], [37, 43]]' },
+          code: "X = [[0.0, 1.0, 2.0], [3.0, 4.0, 5.0], [6.0, 7.0, 8.0]]\nK = [[0.0, 1.0], [2.0, 3.0]]\nassert corr2d(X, K) == [[19.0, 25.0], [37.0, 43.0]], 'expected [[19.0, 25.0], [37.0, 43.0]] | actual: %r' % corr2d(X, K)",
+          expected: '[[19.0, 25.0], [37.0, 43.0]]',
+        },
+        {
+          id: 't2',
+          name: { ar: 'صف الحواف: [0, 1, 0, 0, 0, -1, 0]', en: 'Edge row: [0, 1, 0, 0, 0, -1, 0]' },
+          code: "img = [[1.0] * 8 for _ in range(6)]\nfor i in range(6):\n    for j in range(2, 6):\n        img[i][j] = 0.0\nE = corr2d(img, [[1.0, -1.0]])\nassert E[0] == [0.0, 1.0, 0.0, 0.0, 0.0, -1.0, 0.0], 'expected [0.0, 1.0, 0.0, 0.0, 0.0, -1.0, 0.0] | actual: %r' % E[0]",
+          expected: '[0.0, 1.0, 0.0, 0.0, 0.0, -1.0, 0.0]',
+        },
+        {
+          id: 't3',
+          name: { ar: 'قاعدة الشكل: 4×5 مع نواة 2×2 → 3×4', en: 'Shape rule: 4\u00d75 with 2\u00d72 kernel -> 3\u00d74' },
+          code: "X45 = [[float(r * 5 + c) for c in range(5)] for r in range(4)]\nY45 = corr2d(X45, [[1.0, 0.0], [0.0, 1.0]])\nassert len(Y45) == 3 and len(Y45[0]) == 4, 'expected 3x4 output | actual: %dx%d' % (len(Y45), len(Y45[0]))\nassert Y45[0][0] == 6.0, 'top-left = X[0][0] + X[1][1] = 6.0 | actual: %r' % Y45[0][0]",
+          expected: '3x4, top-left 6.0',
+        },
+      ],
+      hints: [
+        { ar: 'المخرجات: (nh − kh + 1) صفًا و(nw − kw + 1) عمودًا — النافذة يجب أن تبقى داخل الصورة.', en: 'Output: (nh \u2212 kh + 1) rows and (nw \u2212 kw + 1) columns — the window must stay inside the image.' },
+        { ar: 'كل خلية: sum(X[i+a][j+b] * K[a][b] for a in range(kh) for b in range(kw)).', en: 'Each cell: sum(X[i+a][j+b] * K[a][b] for a in range(kh) for b in range(kw)).' },
+        { ar: 'صورة الحواف: ابدأ بجميع الآحاد ثم اجعل الأعمدة 2..5 أصفارًا؛ النواة [[1.0, -1.0]] تحسب فرق الجارين الأفقيين.', en: 'Edge image: start from all ones, then make columns 2..5 zeros; the kernel [[1.0, -1.0]] differences horizontal neighbors.' },
+        { ar: 'قيم تحقق: أول خلية في t1 هي 0×0 + 1×1 + 3×2 + 4×3 = 19، وأول خلية في t3 هي X[0][0] + X[1][1] = 6.0.', en: 'Sanity: t1\u2019s first cell is 0\u00d70 + 1\u00d71 + 3\u00d72 + 4\u00d73 = 19, and t3\u2019s first is X[0][0] + X[1][1] = 6.0.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-shift-kernel',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الشيفرة بتمعن (نواة 1×2 فيها واحد في الموضع الأيمن فقط) وتوقع سطر المخرج الوحيد تمامًا.',
+        en: 'Read the code carefully (a 1\u00d72 kernel with a single 1 in its right slot) and predict the single output line exactly.',
+      },
+      code: "def corr2d(X, K):\n    kh, kw = len(K), len(K[0])\n    nh, nw = len(X), len(X[0])\n    return [[sum(X[i + a][j + b] * K[a][b] for a in range(kh) for b in range(kw))\n             for j in range(nw - kw + 1)] for i in range(nh - kh + 1)]\n\nX = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]\nK = [[0.0, 1.0]]\nY = corr2d(X, K)\nprint(Y)",
+      answer: '[[2.0, 3.0], [5.0, 6.0], [8.0, 9.0]]',
+      solution: '[[2.0, 3.0], [5.0, 6.0], [8.0, 9.0]]',
+      hints: [
+        { ar: 'النواة 1×2: كل خلية مخرج تساوي X[i][j+1] فقط — الواحد الوحيد يختار الجار الأيمن.', en: 'The 1\u00d72 kernel: each output cell equals X[i][j+1] alone — the single 1 selects the right neighbor.' },
+        { ar: 'الشكل: 3 صفوف (3−1+1) وعمودان (3−2+1).', en: 'Shape: 3 rows (3\u22121+1) and 2 columns (3\u22122+1).' },
+        { ar: 'هذه النواة "إزاحة": المخرج هو X بلا عمودها الأول.', en: 'This is a shift kernel: the output is X without its first column.' },
+        { ar: 'الجواب: [[2.0, 3.0], [5.0, 6.0], [8.0, 9.0]].', en: 'Answer: [[2.0, 3.0], [5.0, 6.0], [8.0, 9.0]].' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "def corr2d(X, K):\n    kh, kw = len(K), len(K[0])\n    nh, nw = len(X), len(X[0])\n    return [[sum(X[i + a][j + b] * K[a][b] for a in range(kh) for b in range(kw))\n             for j in range(nw - kw + 1)] for i in range(nh - kh + 1)]\n\nX = [[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]\nones = corr2d(X, [[1.0, 1.0, 1.0], [1.0, 1.0, 1.0], [1.0, 1.0, 1.0]])\nprint('K = identity:', corr2d(X, [[1.0, 0.0], [0.0, 1.0]]))\nprint('K = ones 3x3:', ones)\nprint('K = blur (avg):', [[v / 9.0 for v in row] for row in ones])\n# جرّب: كاشف حواف قطري K = [[1.0, 0.0], [0.0, -1.0]] — أي العناصر تضيء ولماذا؟\n# try: a diagonal edge detector K = [[1.0, 0.0], [0.0, -1.0]] — which entries light up and why?\n# جرّب: طبق نفس النواة على X بصفوف مقلوبة — أين تنتقل الحافة؟\n# try: apply the same kernel to X with flipped rows — where does the edge move?\n",
+      prompt: {
+        ar: 'الملعب يطبق نوًى مختلفة على الشبكة نفسها: النواة القطرية تمسك القطر، ونواة الآحاد تجمع النافذة كاملة (ومتوسطها 45/9 = 5). عدّل النوى ولاحظ.',
+        en: 'The sandbox applies different kernels to the same grid: the diagonal kernel grabs the diagonal, and the all-ones kernel sums the full window (mean 45/9 = 5). Tweak the kernels and observe.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'طبقة متصلة بالكامل على صورة 1000×1000 نحو تمثيل خفي 1000×1000 تحتاج 10¹² معاملًا. بعد فرض ثبات الانتقال والمحلية (Δ = 10) كم يتبقى تقريبًا؟',
+            en: 'A fully connected layer on a 1000\u00d71000 image into a 1000\u00d71000 hidden representation needs 10\u00b9\u00b2 parameters. After imposing translation invariance and locality (\u0394 = 10), roughly how many remain?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'نحو 10¹² نفسها — المحلية لا تقلص شيئًا', en: 'Still about 10\u00b9\u00b2 — locality saves nothing' } },
+            { id: 'b', text: { ar: 'نحو 4Δ² = 400', en: 'About 4\u0394\u00b2 = 400' } },
+            { id: 'c', text: { ar: 'نحو 10⁶', en: 'About 10\u2076' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'ثبات الانتقال أسقط الاعتماد على الموقع (10¹² → 4×10⁶)، ثم المحلية صفّرت كل إزاحة أبعد من Δ فأصبحت النواة 2Δ+1 × 2Δ+1 ≈ 4Δ² معاملًا فقط.',
+            en: 'Translation invariance dropped the location dependence (10\u00b9\u00b2 \u2192 4\u00d710\u2076), then locality zeroed every offset beyond \u0394, leaving a (2\u0394+1)\u00d7(2\u0394+1) \u2248 4\u0394\u00b2 kernel.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'صورة 8×8 ونواة 3×3 بلا حشو — ما شكل المخرج؟',
+            en: 'An 8\u00d78 image and a 3\u00d73 kernel with no padding — what is the output shape?',
+          },
+          options: [
+            { id: 'a', text: { ar: '8×8', en: '8\u00d78' } },
+            { id: 'b', text: { ar: '6×6', en: '6\u00d76' } },
+            { id: 'c', text: { ar: '5×5', en: '5\u00d75' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'القاعدة (nh − kh + 1) × (nw − kw + 1): (8−3+1) × (8−3+1) = 6×6 — النافذة تحتاج مساحة للانزلاق.',
+            en: 'The rule (nh \u2212 kh + 1) \u00d7 (nw \u2212 kw + 1): (8\u22123+1) \u00d7 (8\u22123+1) = 6\u00d76 — the window needs room to slide.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'لماذا لا يهم عمليًا أن طبقات "الالتفاف" تنفذ ارتباطًا متبادلًا لا التفافًا صارمًا؟',
+            en: 'Why does it not matter in practice that "convolution" layers compute cross-correlation, not strict convolution?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن الفرق مجرد قلب النواة، والنوى تُتعلم من البيانات فتتأقلم تلقائيًا', en: 'The difference is only a kernel flip, and kernels are learned from data so they adapt automatically' } },
+            { id: 'b', text: { ar: 'لأن الاثنين يعطيان أشكال مخرج مختلفة', en: 'Because the two give different output shapes' } },
+            { id: 'c', text: { ar: 'لأن الارتباط المتبادل أسرع حسابيًا بثابت كبير', en: 'Because cross-correlation is orders of magnitude faster' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الالتفاف الصارم = ارتباط متبادل بنواة مقلوبة قطريًا؛ وحين تتعلم الشبكة النواة من البيانات فإنها تتعلم النسخة التي تعطي المخرج الصحيح — التسمية تاريخية فقط.',
+            en: 'Strict convolution = cross-correlation with a diagonally flipped kernel; when the network learns the kernel from data it simply learns whichever version produces the right output — the naming is historical.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'مبدأا ثبات الانتقال والمحلية يحولان طبقة بتريليون معامل إلى نواة صغيرة 4Δ²: انحيازات صحيحة تعني نماذج أصغر وتعميمًا أفضل (الهدف من s1 من الاتصال الكامل إلى الالتفاف).', en: 'Translation invariance plus locality turns a trillion-parameter layer into a tiny 4\u0394\u00b2 kernel: right inductive biases mean smaller models and better generalization (goal of s1 From Fully Connected to Convolutions).' },
+        { ar: 'التنفيذ مجرد حلقتين: ارتباط متبادل للنافذة مع النواة، وشكل مخرج (nh−kh+1)×(nw−kw+1)، والنوى تُتعلم لا تُصمم (الهدف من s2 الالتفافات للصور).', en: 'The implementation is two loops: cross-correlate window with kernel, output shape (nh\u2212kh+1)\u00d7(nw\u2212kw+1), and kernels are learned, not hand-designed (goal of s2 Convolutions for Images).' },
+        { ar: 'نواة [1, −1] كاشف حواف عمودي؛ وطبقة ثانية فوق مخرجها توسع حقل الإدراك — من كشف الحواف إلى رؤية الأنماط البعيدة.', en: 'A [1, \u22121] kernel is a vertical edge detector; a second layer on top widens the receptive field — from edge detection to long-range patterns.' },
+      ],
+      reflectPrompt: {
+        ar: 'لو كانت بياناتك لا تتبع ثبات الانتقال (مثلاً: الأهمية تعتمد على مكان البكسل في المستند)، ما خطر استخدام الالتفاف فيها؟ ومتى يكون الانحياز الخاطئ أسوأ من غياب أي انحياز؟',
+        en: 'If your data violates translation invariance (say, importance depends on a pixel\u2019s place in the document), what is the risk of applying convolution? And when is a wrong inductive bias worse than no bias at all?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'D2L', section: 'd2l.ch7.s1' },
+        { book: 'D2L', section: 'd2l.ch7.s2' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'D2L', section: 'd2l.ch7.s1' },
+    { book: 'D2L', section: 'd2l.ch7.s2' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

@@ -1,0 +1,322 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch3.l4 — "Clarifying Goals and Security Attacks"
+ * توضيح الأهداف وهجمات الأمان
+ * Aligned with SWE ch3 s6 (Clarifying User Goals, pp.79-82) +
+ * s7 (Identifying Security Attacks, pp.82-85).
+ * All expression is original — a paraphrase of the CC BY-SA 4.0 source, never
+ * a verbatim translation.
+ * Runnable design: (a) a deterministic goal-ladder stepper — a fixed WHY/HOW
+ * graph walked up from feature to goal to value and down again; (b) an
+ * abuse-case lister — fixed scenarios classified normal/abuse by a MISUSERS
+ * actor set, printing per-case verdicts and counts. STRIDE stays a data tag.
+ * Deterministic only: no input(), no exit(), no random, no unittest.main.
+ */
+const lesson = {
+  id: 'swe.ch3.l4',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 3,
+  title: { ar: 'توضيح الأهداف وهجمات الأمان', en: 'Clarifying Goals and Security Attacks' },
+  estimatedMinutes: 30,
+  prerequisites: ['swe.ch3.l3'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'غرفة المراجعة وافقت على طلب واحد: تسجيل الحضور يجب أن يصير أسرع. بعد ثلاثة أسابيع اكتشفوا أن أحدًا حذف خطوة تأكيد الهوية للسرعة — وممرضة اختارت سجل مريض آخر بنفس الاسم. لم يقرر أحد هذا: التعارض بين هدفين — سرعة التسجيل وصحة الهوية — لم يُذكر في أي اجتماع، فحُلّ بلا قصد، في الشيفرة، بيد من صادفه أن يكتب الميزة. هذا هو ثمن الأهداف الصامتة: التعارض الذي لا يُسمّى لا يزول — يُحل بالصدفة. والنصف الآخر من الدرس يقلب السؤال كله: حتى الآن سألنا ماذا يريد المستخدمون أن يفعل النظام؛ والأمان يسأل ماذا يريد المخترقون أن يفعل النظام — ولن يجيبك عنه مستخدم متعاون أبداً. بنهاية الدرس ستُصلّب الأهداف بخمسة أسئلة، وتبني سلم أهداف من ميزة إلى غاية، وتقرأ شجرة هجوم كقائمة دفاعات.',
+        en: 'A review room approved one request: check-in must get faster. Three weeks later a confirmation step had been dropped for speed — and a nurse picked the record of a different patient with the same name. Nobody decided that: the conflict between two goals — faster check-in and correct identification — was named in no meeting, so it resolved by accident, in code, by whoever happened to write the feature. That is the price of silent goals: a conflict nobody names does not vanish — it resolves by chance. The other half of the lesson flips the whole question: so far we asked what users want the system to do; security asks what adversaries want the system to do — and no cooperative user will ever answer that. By the end you will sharpen goals with five questions, build a goal ladder from feature to value, and read an attack tree as a to-do list of defenses.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "WHY = {'send SMS reminders': 'fewer missed appointments'}\nchain = ['send SMS reminders']\nwhile chain[-1] in WHY:\n    chain.append(WHY[chain[-1]])\nprint(chain[0], '->', WHY[chain[0]])",
+      question: {
+        ar: 'السلسلة تبدأ من ميزة رسائل SMS التذكيرية. هل send SMS reminders هدف؟ وماذا يصير حين تسأل لماذا مرة إضافية؟',
+        en: 'The chain starts from the SMS-reminder feature. Is send SMS reminders a goal? And what happens when you ask why once more?',
+      },
+      reveal: {
+        ar: 'لا — إرسال تذكيرات وسيلةٌ لا غاية: الهدف هو حالة العالم الذي يريد صاحب المصلحة بلوغها: مواعيد فائتة أقل. وسؤال لماذا مرة إضافية يفتح الخيارات: ربما البريد أو اتصال هاتفي يخدم الهدف أفضل لبعض المرضى — والوسيلة تُغلق الخيارات قبل النقاش، والغاية تُبقيها مفتوحة. كلما صعدت بلماذا اقتربت من الغاية، وكلما نزلت بـكيف اقتربت من الميزات — وهذا سلّم اليوم.',
+        en: 'No — sending reminders is a means, not an end: the goal is a state of the world a stakeholder wants — fewer missed appointments. Asking why once more opens options: maybe email or a phone call serves the goal better for some patients. A means closes options before the discussion; an end keeps them open. Climbing with why approaches the end state; descending with how approaches features — that is today\u2019s ladder.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الأهداف: الغاية لا الوسيلة', en: 'Goals: ends, not means' },
+      chunks: [
+        {
+          ar: 'تحت كل ميزة وقصة هدف: حالة من العالم يريد صاحب المصلحة إحداثها — تقليل المواعيد الفائتة، حماية خصوصية المرضى، سرعة إيصال المرضى للطبيب. الأهداف هي الـwhy الذي تشير إليه جملة so that. والأهداف الجيدة تشترك في خصائص: تصف غايةً لا وسيلة — أرسل رسائل SMS وسيلة، وتقليل الفائتات هي الغاية؛ وقابلة للإشباع بدرجات — كثير من الأهداف وخاصة الجودة منها لينة soft goals تُرضى بالحجة والقياس لا بمربّع إشعار؛ وقابلة للقياس مبدئيًا على الأقل — قلّل الفائتات إلى أقل من 8% يمكن فحصه ضد الواقع، وهدف لا يمكن قياسه ولو مبدئيًا شعارٌ لا يساعدك في قرار واحد؛ ولها مالك — إنسان يهتم ويقدر أن يتكلم باسمها، فالأهداف اليتيمة تنجرف وتُباع صامتة.',
+          en: 'Beneath every feature and story lies a goal: a state of the world a stakeholder wants brought about — reduce no-shows, protect patient privacy, get patients seen faster. Goals are the why behind so-that clauses. Good goals share properties: they describe an end, not a means — send SMS reminders is a means, reduce no-shows is the end; they are satisfiable to a degree — quality goals are soft goals, satisfied by argument and measurement, not a checkbox; they are measurable at least in principle — reduce no-shows to under 8% is checkable, while a goal unmeasurable even in principle is a slogan that decides nothing; and they have an owner who can speak for it — ownerless goals drift and get traded away silently.',
+        },
+        {
+          ar: 'ولتصليب الأهداف الغامضة خمسة أسئلة موثوقة: لماذا؟ يصعد — لماذا تريد تذكيرات SMS؟ كي يفوت مواعيد أقل: صار الهدف الحقيقي أمامك والتذكيرات مرشح واحد من حلوله. وكيف؟ ينزل — كيف نقلل الفائتات؟ تذكيرات وقوائم انتظار وعربونات: صار عندك أهداف فرعية وميزات مرشحة. وكم؟ يجعلها قابلة للقياس — كم يعدّ نجاحًا؟ تحول تسجيلًا أسرع إلى أقل من خمس عشرة ثانية للمريض. ولمَن ومتى؟ يكشف السياق المخفي — أسرع للموظفة الجديدة أم الخبيرة؟ في الذروة أم منتصف اليوم؟ وماذا سيحدث لو لم نفعلها؟ يختبر واقعية الهدف — إن لم يفسد شيء بغيابه فقد لا يستحق التمويل أصلًا. وسلسلتا لماذا وكيف تبنيان عمليًا التسلسل الهرمي للأهداف: غاية في القمة، تنقسم نزولًا إلى أهداف فرعية ثم إلى ميزات وقصص عند الأوراق — فتصبح منطق قائمتك مرئيًا: كل ورقة تصعد إلى هدف ذي مالك، وكل هدف ينزل إلى عمل يخدمه.',
+          en: 'Five reliable questions sharpen vague goals: Ask why? to go up — why SMS reminders? so fewer patients miss appointments: the real goal appears, reminders one candidate. Ask how? to go down — how would we reduce no-shows? reminders, waitlists, deposits: candidate sub-goals and features. Ask how much? to make it measurable — how much counts as success? faster check-in becomes under fifteen seconds per patient. Ask for whom? and when? to expose hidden context — fast for the new clerk or the expert? at morning rush or midday? And ask what goes wrong without it? to test reality — if nothing bad happens, it may not deserve funding. The why and how chains build the goal hierarchy: a high-level goal refined into sub-goals, then features and stories at the leaves — every leaf traces up to an owned goal, every goal down to work serving it.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'المساهمة والتعارض ثم قلب السؤال', en: 'Contribution, conflict, then the inversion' },
+      chunks: [
+        {
+          ar: 'الأهداف لا تسكن في شجرة هادئة؛ بينها علاقتان تُحددان القرارات الصعبة. المساهمة: هدف يخدم آخر — قائمة الانتظار تخفف أثر الفائتات وتزيد سرعة المرور معًا؛ والميزات التي تخدم أهدافًا متعددة عالية القيمة فترتفع في الأولوية: نفس الكلفة مقابل أكثر. والتعارض: هدف يعمل ضد آخر — تسريع التسجيل يدفع نحو خطوات تأكيد أقل، وحماية الخصوصية وتفادي الاختلاط بالخطأ يدفعان نحو تأكيد أكثر؛ لا تستطيع تعظيم الاثنين. وقيمة تسمية التعارض أنه يحول شدًّا صامتًا لا رابح فيه إلى مقايضة تُقرر صراحةً بواسطة صاحب القرار الصحيح: سنطلب تأكيد تاريخ الميلاد رغم ثلاث ثوانٍ إضافية، لأن اختلاط المريض حادثة سلامة والراعي يقبل كلفة السرعة. جملة كهذه — تعارض حُسم عمدًا بمالك ومنطق — تساوي أكثر من أي اتفاق ضبابي؛ أما التعارض غير المحسوم فلا يزول: يُحسم بالصدفة في الشيفرة، وعادةً بشكل سيء.',
+          en: 'Goals do not sit quietly in a tree; two relationships carry the hard decisions. Contribution: one goal helps another — a waitlist both softens no-shows and speeds throughput; features serving multiple goals are high-value and rise in priority: same cost, more value. Conflict: one goal works against another — faster check-in pushes toward fewer confirmation steps, while privacy and avoiding mis-identification push toward more verification; you cannot maximize both. Naming the conflict turns an unwinnable tug-of-war into an explicit trade-off made on record by the right owner: we will require date-of-birth confirmation even though it adds three seconds, because a mis-identified patient is a safety event and the sponsor accepts the speed cost. One such sentence — a conflict resolved on purpose with an owner and a rationale — beats any vague agreement; an unresolved conflict does not vanish: it resolves by accident in code, usually badly.',
+        },
+        {
+          ar: 'والآن اقلب السؤال. كل ما سبق سأل: ماذا يريد المستخدمون أن يفعل النظام؟ والأمان يسأل العكس: ماذا يريد الخصوم أن يفعل النظام — وكيف نوقفهم؟ وهذا الانقلاب سبب تفويت الأمان: لا يظهر حين تسأل المتعاونين — عليك أن تتقمص عقلًا يكسر نظامك عمدًا. وأسهل صورة له حالة الإساءة abuse case: قصة فاعلها misuser — منتحل أو موظف سابق — تُكتب بالقالب نفسه فتحوّل افتراضات الثقة إلى تهديدات مسمّاة. وأعمق أداة شجرةُ الهجوم attack tree: هرمٌ لأهداف العدو، الجذر غايته: اقرأ سجل مريض بلا تصريح، والأفرع طرقٌ تنقسم نزولًا إلى هجمات ملموسة. ثم اقرأ الأوراق قائمة دفاعات: كل ورقة متطلب أمني — مصادقة ثنائية، وانتهاء رموز الجلسات، وفحص التصريح على كل وصول من جهة الخادم، وتشفير النسخ الاحتياطية، وإخفاء المعرفات عن السجلات. والشجرة تربط كل دفاع بالهجوم الذي يوقفه — المنطق الذي يطلبه راعٍ متشكك.',
+          en: 'Now invert the question. Everything so far asked: what do users want the system to do? Security asks the opposite: what do adversaries want the system to do — and how do we stop them? That is why security gets missed: cooperative users never surface it — adopt the mindset of someone deliberately breaking your system. Its everyday form is the abuse case: a story whose actor is a misuser — an impostor or ex-employee — written in the same template, turning trust assumptions into named threats. The deeper tool is the attack tree: the enemy\u2019s goal hierarchy — root: read a patient record without authorization; branches refine into concrete attacks. Read the leaves as defenses: multi-factor auth, expiring session tokens, server-side authorization on every access, encrypted backups, identifiers kept out of logs. Each defense ties to the attack it stops — the justification a skeptical sponsor asks for.',
+        },
+        {
+          ar: 'ولإيجاد أفرع كنت ستغفلها خمسة مطالب منهجية: عُدّ الأصول الثمينة — ما يستحق السرقة أو الإفساد أو المنع: السجلات والاعتمادات وتوافر النظام ذاته، وكل أصل جذر شجرة؛ وامشِ حدود الثقة — كل موضع تعبر فيه البيانات من أقل ثقةً إلى أكثر: المتصفح إلى API، تكامل طرف ثالث، لوحة إدارة — اسأل ماذا يعبر هذا الحد ولا يجب؛ واستخدم قائمة التهديدات STRIDE — انتحال الشخصية Spoofing، العبث Tampering، الإنكار Repudiation، كشف المعلومات Information disclosure، حجب الخدمة Denial of service، ترقية الامتياز Elevation of privilege — مرّ كل صنف على كل أصل فيظهر ما يفوته العصف؛ وأدرج الضعف الاجتماعي والإجرائي لا عيوب الشيفرة وحدها — أرخص هجوم غالبًا مكالمة مقنعة لأمين الاستقبال؛ ثم قلّم بالجدوى ودافع عن الباقي — قدّر كلفة الهجوم على المهاجم وضرره عليك واستثمر حيث تلتقي الهجمات الرخيصة بالضرر الكبير أولًا.',
+          en: 'Five systematic prompts find branches you would otherwise miss: enumerate the assets worth stealing, corrupting or denying — patient records, credentials, availability itself; each valuable asset roots a tree. Walk the trust boundaries — every place data crosses from less-trusted to more-trusted: browser to API, third-party integration, admin console — ask what could cross that should not. Use the STRIDE threat checklist — Spoofing, Tampering, Repudiation, Information disclosure, Denial of service, Elevation of privilege — walking each category against each asset surfaces what brainstorming misses. Include social and procedural weaknesses, not only code flaws — the cheapest attack is often a convincing phone call to the front desk. Then prune by feasibility and defend the rest — estimate each attack\u2019s cost to the attacker and damage to you, and invest first where cheap attacks meet high damage.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'سلّم الأهداف: من الميزة إلى الغاية ثم للأسفل', en: 'The goal ladder: feature to value, then back down' },
+      code: "WHY = {\n    'send SMS reminders': 'reduce no-shows',\n    'open a waitlist': 'reduce no-shows',\n    'reduce no-shows': 'keep every slot full',\n}\nHOW = {'reduce no-shows': ['send SMS reminders', 'open a waitlist']}\n\ndef ladder_up(feature):\n    chain = [feature]\n    while chain[-1] in WHY:\n        chain.append(WHY[chain[-1]])\n    return chain\n\nfor f in ['send SMS reminders', 'open a waitlist']:\n    print(' -> '.join(ladder_up(f)))\nprint('down: %s' % ', '.join(HOW['reduce no-shows']))",
+      explanation: {
+        ar: 'قراءة الخرج سطرًا سطرًا: صعود الميزتين يقف عند الجذر نفسه — send SMS reminders -> reduce no-shows -> keep every slot full، وكذلك open a waitlist. ميزتان تصعدان إلى هدف واحد: هذه مساهمة، فالميزتان تتنافسان على الأولوية عادلةً لأن كلتيهما تخدم الغاية ذاتها. وسطر down يطبق السؤال الثاني: كيف نحقق reduce no-shows؟ فترجع الميزتان مرشحتين — والغاية لم تُغلق على إحداهما. لاحظ أيضًا ما لا يظهر في الشيفرة: الغاية keep every slot full قابلة للقياس (نسبة الشواغر) ولها مالك (مدير العيادة) — من يعرف القصة كاملة يستطيع أن يقتطع ميزةً ويبقي الغاية حية.',
+        en: 'Read the output line by line: both features climb to the same root — send SMS reminders -> reduce no-shows -> keep every slot full, and so does open a waitlist. Two features climbing to one goal is contribution: they compete for priority fairly because both serve the same end. The down line applies the second question: how would we reduce no-shows? — returning both features as candidates, with the goal still open on either. Note what the code does not show: the root keep every slot full is measurable (vacancy rate) and owned (the clinic manager) — whoever knows the whole ladder can cut a feature and keep the goal alive.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.trace-ladder',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرجه بالضبط — دون تشغيله. تذكّر: ladder_up تصعد ما دام آخر عنصر مفتاحًا في WHY، والسطر الأخير يمر على القصة المكونة من ثلاث كلمات بكل كلماتها.',
+        en: 'Read the code and predict its exact output — without running it. Remember: ladder_up climbs while the last element is a key in WHY, and the last line joins every word of the three-word phrase.',
+      },
+      code: "WHY = {\n    'SMS reminders': 'fewer missed appointments',\n    'fewer missed appointments': 'keep every slot full',\n}\n\ndef ladder_up(feature):\n    chain = [feature]\n    while chain[-1] in WHY:\n        chain.append(WHY[chain[-1]])\n    return ' -> '.join(chain)\n\nprint(ladder_up('SMS reminders'))\nprint(ladder_up('keep every slot full'))",
+      solution: "SMS reminders -> fewer missed appointments -> keep every slot full\nkeep every slot full",
+      answer: "SMS reminders -> fewer missed appointments -> keep every slot full\nkeep every slot full",
+      hints: [
+        { ar: 'الصعود الأول: SMS reminders ليس مفتاحًا بعد... بل هو كذلك: يُضاف fewer missed appointments ثم keep every slot full ثم يتوقف — لا مفتاح بعده.', en: 'The first climb: SMS reminders is a key, so fewer missed appointments is appended, then keep every slot full — then it stops, no key beyond.' },
+        { ar: 'الانضمام بفواصل -> بين العناصر الثلاثة بالترتيب نفسه.', en: 'The join uses -> between the three elements in the same order.' },
+        { ar: 'النداء الثاني يبدأ من الغاية ذاتها: keep every slot full ليس مفتاحًا في WHY فلا يُضاف شيء — السلسلة عنصر واحد.', en: 'The second call starts at the end state itself: keep every slot full is not a key in WHY, so nothing is appended — a one-element chain.' },
+        { ar: 'الخرج:\nSMS reminders -> fewer missed appointments -> keep every slot full\nkeep every slot full', en: 'The output:\nSMS reminders -> fewer missed appointments -> keep every slot full\nkeep every slot full' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.write-abuse',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'ابنِ لاصق حالات الإساءة بنفسك: أكمل classify(sc) فترجع abuse إذا كان actor من مجموعة MISUSERS وnormal غير ذلك، ثم مرّ على SCENARIOS واطبع case %d %s — وللإساءة ألحق (STRIDE) من مفتاح sc stride مثل (Spoofing) — ثم سطر الحصيلة normal: %d abuse: %d. المتوقع: normal: 2 abuse: 2.',
+        en: 'Build the abuse-case lister yourself: complete classify(sc) so it returns abuse when the actor is in MISUSERS and normal otherwise, then walk SCENARIOS printing case %d %s — for abuse cases append the STRIDE tag from the sc stride key, like (Spoofing) — then the tally line normal: %d abuse: %d. Expected: normal: 2 abuse: 2.',
+      },
+      starterCode: "SCENARIOS = [\n    {'actor': 'front-desk clerk', 'action': 'check in an arriving patient'},\n    {'actor': 'impostor', 'action': 'reset another users password', 'stride': 'Spoofing'},\n    {'actor': 'clinician', 'action': 'open the day visit list'},\n    {'actor': 'ex-employee', 'action': 'read records with revoked rights', 'stride': 'Elevation of privilege'},\n]\nMISUSERS = {'impostor', 'ex-employee', 'stranger'}\n\ndef classify(sc):\n    # TODO: abuse إذا كان الفاعل misuser وإلا normal\n    # TODO: abuse if the actor is a misuser, else normal\n    ...\n\nnormal = 0\nabuse = 0\nfor i, sc in enumerate(SCENARIOS, 1):\n    kind = classify(sc)\n    # TODO: حدّث العدّين واطبع case %d %s مع (STRIDE) للإساءة\n    # TODO: update both counters and print case %d %s, with (STRIDE) for abuse\nprint('normal: %d abuse: %d' % (normal, abuse))",
+      solution: "SCENARIOS = [\n    {'actor': 'front-desk clerk', 'action': 'check in an arriving patient'},\n    {'actor': 'impostor', 'action': 'reset another users password', 'stride': 'Spoofing'},\n    {'actor': 'clinician', 'action': 'open the day visit list'},\n    {'actor': 'ex-employee', 'action': 'read records with revoked rights', 'stride': 'Elevation of privilege'},\n]\nMISUSERS = {'impostor', 'ex-employee', 'stranger'}\n\ndef classify(sc):\n    return 'abuse' if sc['actor'] in MISUSERS else 'normal'\n\nnormal = 0\nabuse = 0\nfor i, sc in enumerate(SCENARIOS, 1):\n    kind = classify(sc)\n    if kind == 'abuse':\n        abuse += 1\n        print('case %d abuse (%s)' % (i, sc['stride']))\n    else:\n        normal += 1\n        print('case %d normal' % i)\nprint('normal: %d abuse: %d' % (normal, abuse))",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'الحصيلة والوسمان معًا', en: 'Tally and both STRIDE verdicts together' },
+          code: "assert 'normal: 2 abuse: 2' in __learner_output__ and 'case 2 abuse (Spoofing)' in __learner_output__ and 'case 4 abuse (Elevation of privilege)' in __learner_output__, 'expected: normal: 2 abuse: 2 + case 2 abuse (Spoofing) + case 4 abuse (Elevation of privilege) | actual: %r' % __learner_output__",
+          expected: 'normal: 2 abuse: 2 + case 2 abuse (Spoofing) + case 4 abuse (Elevation of privilege)',
+        },
+        {
+          id: 't2',
+          name: { ar: 'حالة الاستخدام الطبيعية تبقى normal', en: 'A normal use case stays normal' },
+          code: "assert classify({'actor': 'front-desk clerk', 'action': 'check in an arriving patient'}) == 'normal', 'expected: normal | actual: %r' % classify({'actor': 'front-desk clerk', 'action': 'check in an arriving patient'})",
+          expected: 'normal',
+        },
+        {
+          id: 't3',
+          name: { ar: 'الغريب يُصنّف إساءة وإن غاب عن البيانات الأصلية', en: 'A stranger classifies as abuse even though absent from the original data' },
+          code: "assert classify({'actor': 'stranger', 'action': 'guess passwords'}) == 'abuse', 'expected: abuse | actual: %r' % classify({'actor': 'stranger', 'action': 'guess passwords'})",
+          expected: 'abuse',
+        },
+      ],
+      hints: [
+        { ar: 'التصنيف قرار عضوية في مجموعة: sc[\'actor\'] in MISUSERS — لا شروط نصية على جملة الفعل.', en: "Classification is a set-membership decision: sc['actor'] in MISUSERS — no text conditions on the action sentence." },
+        { ar: 'للإساءة ألحق الوسم من sc[\'stride\'] بين قوسين: case %d abuse (%s).', en: "For abuse append the tag from sc['stride'] in parentheses: case %d abuse (%s)." },
+        { ar: 'الهيكل:\nfor i, sc in enumerate(SCENARIOS, 1):\n    kind = classify(sc)\n    if kind == \'abuse\':\n        abuse += 1\n        print(\'case %d abuse (%s)\' % (i, sc[\'stride\']))\n    else:\n        normal += 1\n        print(\'case %d normal\' % i)\nprint(\'normal: %d abuse: %d\' % (normal, abuse))', en: "The skeleton:\nfor i, sc in enumerate(SCENARIOS, 1):\n    kind = classify(sc)\n    if kind == 'abuse':\n        abuse += 1\n        print('case %d abuse (%s)' % (i, sc['stride']))\n    else:\n        normal += 1\n        print('case %d normal' % i)\nprint('normal: %d abuse: %d' % (normal, abuse))" },
+        { ar: 'قاعدة الكتابة الأوسع من الدرس: حالة الإساءة حالة استخدام فاعلها خصم — لذا فالمجموعة MISUSERS هي القاعدة والبقية استعمال نظامي.', en: 'The broader writing rule from the lesson: an abuse case is a use case whose actor is an adversary — so MISUSERS is the rule and everything else is routine use.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-conflict',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'في مراجعة الخطة تصادم هدفان: تسريع التسجيل مقابل تفادي الاختلاط بمريض آخر. ما القرار المهني الصحيح؟',
+        en: 'In plan review two goals collide: faster check-in versus avoiding mis-identification. What is the correct professional move?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'اختيار الأسرع بصمت — المستخدمون يعفون الأخطاء النادرة', en: 'Silently choose speed — users forgive rare errors' } },
+        { id: 'b', text: { ar: 'تسمية التعارض صراحةً وحسمه مع مالك المقايضة وسجلّه بمنطق: تأكيد تاريخ الميلاد رغم ثلاث ثوانٍ لأن الاختلاط حادثة سلامة', en: 'Name the conflict explicitly and resolve it with the owner of the trade-off, on record with a rationale: date-of-birth confirmation despite three extra seconds, because mis-identification is a safety event' } },
+        { id: 'c', text: { ar: 'ترك القرار للمطور — سيوازن بينهما أثناء الكتابة', en: 'Leave it to the developer — they will balance both while coding' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'تذكّر الثمن الذي قرأته في الافتتاح: تعارض لم يُسمّ حُلّ في الشيفرة واختلط مريض بمريض.', en: 'Recall the price from the opening: an unnamed conflict resolved in code, and a patient got mixed with another.' },
+        { ar: 'التعارض حقيقي لا يذوب بصياغة ذكية: لا يمكن تعظيم السرعة والتحقق معًا — فالمطلوب قرار صريح لا صياغة.', en: 'The conflict is real and no phrasing dissolves it: speed and verification cannot both be maximized — so it needs an explicit decision, not clever wording.' },
+        { ar: 'من يملك المقايضة؟ الراعي أو مالك الخدمة — ليس من يكتب السطر الأخير من الشيفرة.', en: 'Who owns the trade-off? The sponsor or service owner — not whoever happens to write the last line of code.' },
+        { ar: 'الجواب: b — تعارض حُسم عمدًا بمالك ومنطق هو قرار؛ وما حُسم بالغياب ثغرة لها قصة.', en: 'Answer: b — a conflict resolved on purpose with an owner is a decision; one resolved by absence is a bug with a backstory.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.numeric-leaves',
+      exKind: 'numeric',
+      required: true,
+      prompt: {
+        ar: 'شجرة هجوم جذرها: اقرأ سجل مريض بلا تصريح. ثلاثة أفرع رئيسية: B قناعة أمين الاستقبال (ورقتان)، C تخمين كلمة سر الطبيب (ورقتان)، D نسخة احتياطية غير مشفرة (ثلاث أوراق). كم ورقة دفاعًا يجب أن تخطط لها؟',
+        en: 'An attack tree rooted at: read a patient record without authorization. Three main branches: B convince the front desk (2 leaves), C guess the clinician password (2 leaves), D unencrypted backup (3 leaves). How many leaves — defenses — must you plan?',
+      },
+      answer: '7',
+      solution: '7',
+      hints: [
+        { ar: 'الأوراق هي الطرف الملموس للشجرة: كل ورقة هجوم محدد يصير دفاعًا.', en: 'Leaves are the concrete tips of the tree: each leaf is a specific attack that becomes a defense.' },
+        { ar: 'اجمع أوراق الأفرع الثلاثة: لا حاجة لبناء تفريعات أعمق — العدد معطى لكل فرع.', en: 'Sum the leaves across the three branches: no deeper refinement needed — each branch gives its count.' },
+        { ar: 'ورقتان زائد ورقتين زائد ثلاث أوراق.', en: 'Two leaves plus two leaves plus three leaves.' },
+        { ar: 'الجواب: 7', en: 'Answer: 7' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "WHY = {\n    'send SMS reminders': 'reduce no-shows',\n    'open a waitlist': 'reduce no-shows',\n    'reduce no-shows': 'keep every slot full',\n}\n\ndef ladder_up(feature):\n    chain = [feature]\n    while chain[-1] in WHY:\n        chain.append(WHY[chain[-1]])\n    return ' -> '.join(chain)\n\nprint(ladder_up('send SMS reminders'))\nprint(ladder_up('open a waitlist'))\n\n# جرّب: أضف ميزة ثالثة تصعد إلى الهدف نفسه — ماذا يغير ذلك في أولويتها؟\n# try: add a third feature climbing to the same goal — what does that do to its priority?\n# جرّب: أضف هدفًا متعارضًا: protect patient privacy يقيد reminders — اكتب جملة المقايضة\n# try: add a conflicting goal: protect patient privacy constrains reminders — write the trade-off sentence\n# جرّب: ابنِ شجرة هجوم من ورقتين لهدف: اقرأ سجلًا بلا تصريح\n# try: build a two-leaf attack tree for the goal: read a record without authorization",
+      prompt: {
+        ar: 'الملعب يجعل الهرم ملموسًا: أضف ميزة ثالثة تصعد إلى الهدف نفسه وشاهد كيف تصير المساهمة معيار أولوية، ثم أدخل هدفًا متعارضًا واكتب جملة المقايضة بمالكها — هذه الجملة أثمن سطر يُكتب في المراجعة. وأخيرًا ابنِ شجرة هجوم صغيرة واقرأ أوراقها دفاعات. لا اختبار هنا — فضولك فقط.',
+        en: 'The sandbox makes the hierarchy tangible: add a third feature climbing to the same goal and watch contribution become a priority criterion; then introduce a conflicting goal and write the trade-off sentence with its owner — that sentence is the most valuable line written in review. Finally build a small attack tree and read its leaves as defenses. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'من الفصل 2: الحلزون يجعل كل دورة تبدأ بتحليل المخاطر قبل أي بناء. أي أداة من هذا الدرس تُطبّق الفعل نفسه على المخاطر الأمنية تحديدًا؟',
+            en: 'From chapter 2: the spiral makes every loop start with risk analysis before any building. Which tool from this lesson applies that same move to security risks specifically?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'مخطط الاحتراق — يعرض ما تبقى من العمل لا ما يهدد النظام', en: 'The burndown chart — it shows remaining work, not what threatens the system' } },
+            { id: 'b', text: { ar: 'شجرة الهجوم — هرمٌ لأهداف الخصم أوراقه قائمة دفاعات، كلٌّ يوقف الهجوم الذي ينزله', en: 'The attack tree — the adversary\u2019s goal hierarchy whose leaves read as defenses, each stopping the attack it hangs from' } },
+            { id: 'c', text: { ar: 'قائمة الأعمال المتراكمة — ترتّب القيمة للمستخدم لا الخطر على الأصل', en: 'The backlog — it ranks user value, not risk to the asset' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'الحلزون رتّب البناء حول المخاطر، وشجرة الهجوم تحليل مخاطر الأمن مصغّرًا: عُدّ الأصول، فكّك هدف الخصم أفرعًا وأوراقًا، ثم اقرأ الأوراق دفاعات. وفي مصفوفة STRIDE (فصل 11) يظهر الصنف الأشهر: ترقية الامتياز — ويقابلها فحص التصريح على كل وصول من جهة الخادم.',
+            en: 'The spiral organized building around risk; the attack tree is that risk analysis scaled down to security: enumerate assets, decompose the adversary\u2019s goal into branches and leaves, then read the leaves as defenses. In the STRIDE matrix (chapter 11) the best-known category appears: elevation of privilege — answered by server-side authorization on every access.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'أي العبارتين صيغت كهدف بالتعريف، وأيهما وسيلة؟',
+            en: 'Which of the two is phrased as a goal by definition, and which is a means?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'أرسل تذكيرات SMS هدف؛ وقلة الفائتات وسيلة', en: 'Send SMS reminders is the goal; fewer no-shows is the means' } },
+            { id: 'b', text: { ar: 'قلة المواعيد الفائتة هدف؛ وتذكيرات SMS وسيلة من حلول كثيرة للهدف نفسه', en: 'Fewer missed appointments is the goal; SMS reminders is one of many means to it' } },
+            { id: 'c', text: { ar: 'كلتاهما هدفان متكافئان تُختار بينهما بالأولوية', en: 'Both are equivalent goals to prioritize between' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'الهدف حالة من العالم يريد صاحب المصلحة إحداثها؛ والوسيلة واحدة من طرق بلوغه. صياغة الوسيلة كهدف تُغلق الخيارات مبكرًا: ربما البريد أو الاتصال الهاتفي أو قائمة الانتظار تخدم الهدف أفضل.',
+            en: 'A goal is a state of the world a stakeholder wants; a means is one route to it. Phrasing the means as the goal closes options early: maybe email, phone calls or a waitlist serve the goal better.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'هدف لين soft goal مثل النظام مريح الاستخدام: كيف يُشبَع؟',
+            en: 'A soft goal like the system is comfortable to use: how is it satisfied?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'بمربّع منجز/غير منجز في نهاية السبرنت', en: 'With a done/not-done checkbox at the end of the sprint' } },
+            { id: 'b', text: { ar: 'بالحجة والقياس: معيار قابل للقياس (زمن إتمام المهمة، معدل الخطأ) ومالك يقبل النتيجة', en: 'By argument and measurement: a fit criterion (task completion time, error rate) and an owner who accepts the result' } },
+            { id: 'c', text: { ar: 'بتأجيله للإصدار الأخير حين يكتمل كل شيء', en: 'By deferring it to the final release when everything is complete' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'الأهداف اللينة تُشبَع بدرجات لا دفعة واحدة: حوّلها إلى معيار مُقاس — كم؟ — وأرفقها بمالك. وهدف لا يمكن قياسه ولو مبدئيًا شعار لا يقرر شيئًا.',
+            en: 'Soft goals are satisfied to a degree, not in one stroke: convert them to a measured criterion — how much? — and attach an owner. A goal unmeasurable even in principle is a slogan that decides nothing.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'بنيت شجرة هجوم لأصول عيادتك. كيف تقرأ أوراقها بعد اكتمالها؟',
+            en: 'You built an attack tree for your clinic\u2019s assets. How do you read its leaves once the tree is complete?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'قائمة تهديدات تُعرض على الراعي ثم تُنسي حتى وقوع أول حادثة', en: 'A threat list shown to the sponsor, then forgotten until the first incident' } },
+            { id: 'b', text: { ar: 'قائمة مهام دفاع: كل ورقة تصير متطلبًا أمنيًا مربوطًا بالهجوم الذي يوقفه — وهذا هو المنطق للراعي المتشكك', en: 'A to-do list of defenses: each leaf becomes a security requirement tied to the attack it stops — the justification a skeptical sponsor needs' } },
+            { id: 'c', text: { ar: 'قائمة أخطاء تُصلح كلها في أسبوع واحد قبل الإطلاق', en: 'A bug list to fix entirely in one week before launch' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'الشجرة تربط كل دفاع بالهجوم الذي يبطله: مصادقة ثنائية تُبطل التخمين، وفحص تصريح جانب الخادم يُبطل وصول السجلات المتجاوز. والترتيب بالجدوى: الهجمات الرخيصة ذات الضرر الكبير أولًا.',
+            en: 'The tree ties each defense to the attack it defeats: multi-factor auth defeats guessing; server-side authorization checks defeat record-reading. Order by feasibility: cheap attacks with high damage first.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'طلبوا تسجيلًا أسرع — هذا الهدف واضح، فلنبدأ',
+          right: 'اسأل: لماذا؟ (صعود إلى الغاية) ثم كم؟ ولمَن ومتى؟ (قياس وسياق) — أقل من خمس عشرة ثانية للمريض الجديد في ذروة الصباح',
+          note: {
+            ar: 'أسرع صفةٌ بلا حدّ ولا سياق: لأي موظف؟ في أي ساعة؟ التسلسل الهابط من الغاية يمنحك مقياسًا يقبل الاختبار، والصاعد بلماذا يمنحك حلولًا بديلة أرخص من الميزة المطلوبة.',
+            en: 'Faster has no bound and no context: for whom? at what hour? Descending from the end state gives you a testable measure; climbing with why gives you alternative solutions cheaper than the requested feature.',
+          },
+        },
+        {
+          wrong: 'التعارض بين السرعة والخصوصية سيحل نفسه أثناء التنفيذ',
+          right: 'سطّح التعارض الآن واحسمه مع مالكه على السجل: نطلب تأكيد الهوية رغم ثلاث ثوانٍ لأن الاختلاط حادثة سلامة',
+          note: {
+            ar: 'التعارض غير المحسوم لا يختفي: يُحسم بالصدفة في الشيفرة بيد من صادفه — وكنا رأينا الثمن: مريض اختُلط بسجل آخر. قرارٌ معلن بمالك ومنطق هو الوحيد الذي يمكن الرجوع إليه والدفاع عنه.',
+            en: 'An unresolved conflict does not disappear: it resolves by accident in code, by whoever is nearby — and we saw the price: a patient mixed with another record. A declared decision with an owner is the only one you can revisit and defend.',
+          },
+        },
+        {
+          wrong: 'الأمان ميزة نضيفها بعد الإطلاق حين نجد وقتًا',
+          right: 'ابنِ شجرة هجوم لكل أصل حرج وأنت تكتب القصص — فالمستخدم المتعاون لن يخبرك أبدًا بما يريده الخصم',
+          note: {
+            ar: 'الأمن متطلبات تُكتشف بسؤال معكوس لا ميزة تُركب لاحقًا. فريق يسأل المتعاونين وحدهم يشحن نظامًا يفعل بالضبط ما يريد الأناس الطيبون — وبالضبط ما يريد الخصم أيضًا. ابدأ بالأصول: كل أصل ثمنه جذر شجرة.',
+            en: 'Security is a set of requirements discovered by asking a different question, not a feature bolted on later. A team eliciting only from cooperative users ships a system doing exactly what good people want — and exactly what the adversary wants too. Start from assets: every asset worth stealing roots a tree.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'الهدف غاية لا وسيلة: لين يُشبَع بالحجة والقياس، وقابل للقياس مبدئيًا وله مالك — وإلا فشعارٌ يتيم يُباع صامتًا.', en: 'A goal is an end, not a means: soft ones are satisfied by argument and measurement, must be measurable in principle and owned — otherwise a slogan that drifts and gets traded away silently.' },
+        { ar: 'خمسة أسئلة تبني الهرم: لماذا صعودًا، كيف نزولًا، كم للقياس، لمن ومتى للسياق، وماذا لو لم نفعل لاختبار الواقعية — والمساهمة ترفع الأولوية والتعارض يُحسم صراحةً بمالكه لا بالصدفة في الشيفرة.', en: 'Five questions build the hierarchy: why up, how down, how much for measurement, for-whom/when for context, what-goes-wrong to test reality — contribution raises priority, and conflict is resolved explicitly with its owner, not by accident in code.' },
+        { ar: 'الأمان قلب السؤال: شجرة الهجوم هرمُ العدو، أوراقها قائمة دفاعات يبرر كلٌّ منها نفسه بالهجوم الذي يوقفه — وعُدّ الأصول وامشِ حدود الثقة وامشِ STRIDE وأدرج الهندسة الاجتماعية ثم قلّم بالجدوى.', en: 'Security inverts the question: an attack tree is the enemy\u2019s goal hierarchy whose leaves read as defenses, each justified by the attack it stops — enumerate assets, walk trust boundaries, walk STRIDE, include social engineering, then prune by feasibility.' },
+      ],
+      reflectPrompt: {
+        ar: 'افتح الملعب وأضف هدفًا متعارضًا واكتب جملة المقايضة. اسأل نفسك: في آخر مشروع لك — أي تعارض أهداف حُسم في الشيفرة بلا قرار، وأي جملة مالك كانت ستمنعه؟',
+        en: 'Open the sandbox, add a conflicting goal, and write the trade-off sentence. Ask yourself: in your last project — which goal conflict resolved itself in code without a decision, and what one owner sentence would have prevented it?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch3.s6', pages: 'ص79-82 / pp.79-82' },
+        { book: 'SWE', section: 'swe.ch3.s7', pages: 'ص82-85 / pp.82-85' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch3.s6', pages: 'ص79-82 / pp.79-82' },
+    { book: 'SWE', section: 'swe.ch3.s7', pages: 'ص82-85 / pp.82-85' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

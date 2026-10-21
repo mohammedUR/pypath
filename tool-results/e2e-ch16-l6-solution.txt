@@ -1,0 +1,86 @@
+import re
+
+log = [
+    'Date: Sat, 5 Jan 2008 09:14:16',
+    'From: stephen.marquard@uct.ac.za',
+    '',
+    'Date: Sat, 5 Jan 2008 09:45:20',
+    'From: zqian@umich.edu',
+    '',
+    'Date: Sat, 5 Jan 2008 09:58:03',
+    'From: stephen.marquard@uct.ac.za',
+    '',
+    'Date: Sat, 5 Jan 2008 18:44:02',
+    'From: zqian@umich.edu',
+    '',
+    'Date: Fri, 4 Jan 2008 07:02:32',
+    'From: stephen.marquard@uct.ac.za',
+    '',
+    'Date: Fri, 4 Jan 2008 16:10:39',
+    'From: csev@umich.edu',
+]
+hours = dict()
+senders = dict()
+for line in log:
+    line = line.strip()
+    if not line.startswith('Date:'):
+        continue
+    m = re.search(r'^Date: .* ([0-9][0-9]):', line)
+    if m is None:
+        continue
+    hour = m.group(1)
+    hours[hour] = hours.get(hour, 0) + 1
+for line in log:
+    line = line.strip()
+    if not line.startswith('From:'):
+        continue
+    sender = line[6:]
+    senders[sender] = senders.get(sender, 0) + 1
+
+def bar_lines(pairs, width):
+    biggest = 0
+    for name, value in pairs:
+        if value > biggest:
+            biggest = value
+    lines = []
+    for name, value in pairs:
+        ticks = int(width * value / biggest)
+        lines.append('%s | %s %d' % (name, '#' * ticks, value))
+    return lines
+
+hour_pairs = []
+for hour in sorted(hours):
+    hour_pairs.append(('hour ' + hour, hours[hour]))
+for row in bar_lines(hour_pairs, 6):
+    print(row)
+
+ranked = []
+for name, value in senders.items():
+    ranked.append((value, name))
+ranked.sort(reverse=True)
+sender_pairs = []
+for value, name in ranked:
+    sender_pairs.append((name, value))
+for row in bar_lines(sender_pairs, 6):
+    print(row)
+
+best = None
+for hour in hours:
+    if best is None or hours[hour] > hours[best]:
+        best = hour
+top = None
+for sender in senders:
+    if top is None or senders[sender] > senders[top]:
+        top = sender
+print('messages: %d' % sum(hours.values()))
+print('peak hour: %02d' % int(best))
+print('top sender: %s' % top)
+
+out = open('dashboard-l16.txt', 'w')
+out.write('\n'.join(bar_lines(hour_pairs, 6)))
+out.write('\n')
+out.close()
+fhand = open('dashboard-l16.txt')
+back = fhand.read()
+fhand.close()
+print('file lines: %d' % len(back.strip().split('\n')))

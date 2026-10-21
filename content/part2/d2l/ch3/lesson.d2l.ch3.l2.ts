@@ -1,0 +1,211 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * d2l.ch3.l2 — "Synthetic Data and Linear Regression from Scratch"
+ * بيانات اصطناعية وانحدار خطي من الصفر
+ * Aligned with D2L ch3 s3 (Synthetic Regression Data) + s4 (Linear Regression
+ * Implementation from Scratch). All expression is original — a paraphrase of
+ * the source's ideas, never a verbatim translation. Runnable design: a seeded
+ * LCG synthetic generator (y = Xw + b + eps with w=[2,-3.4], b=4.2) plus a
+ * full minibatch-SGD training loop that recovers the ground truth. Every
+ * printed literal verified under CPython 3. Deterministic only.
+ */
+const lesson = {
+  id: 'd2l.ch3.l2',
+  version: 1,
+  part: 'II',
+  track: 'A3',
+  book: 'D2L',
+  chapter: 3,
+  title: {
+    ar: 'بيانات اصطناعية وانحدار خطي من الصفر',
+    en: 'Synthetic Data and Linear Regression from Scratch',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['d2l.ch3.l1'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'كيف تعرف أن تنفيذك للنموذج صحيح قبل أن تلمس بيانات حقيقية؟ تصنع بيانات تعرف إجابتها مسبقًا: نولّد أمثلة من y = Xw + b + ε بمعاملات حقيقية معروفة، ثم نطلب من نموذجنا استرجاعها. في هذا الدرس تبني مولّدًا حتميًا بمولّد LCG مُبذَّر، ومحمل دفعات مصغر، ونموذج انحدار كامل من الصفر — معاملات وخسارة ومحسّن وحلقة تدريب — وتشاهد w وb ينعقدان نحو الحقيقة.',
+        en: 'How do you know your model implementation is correct before touching real data? You manufacture data whose answer you already know: generate examples from y = Xw + b + ε with known ground-truth parameters, then ask your model to recover them. In this lesson you build a deterministic generator around a seeded LCG, a miniature batch loader, and a complete linear regression from scratch — parameters, loss, optimizer, training loop — and watch w and b converge to the truth.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'مولّد بيانات بمعاملات معلومة ثم نموذج كامل من الصفر', en: 'A generator with known parameters, then the full scratch model' },
+      chunks: [
+        {
+          ar: 'البيانات الاصطناعية مفيدة تعليميًا لأننا نعرف القيمة الصحيحة مسبقًا فنستطيع التحقق من التنفيذ. نولّد X من توزيع ما (الكتاب يستخدم غاوسيًا؛ نستخدم هنا LCG مبذّرًا بقيم منتظمة في [−1, 1)) ونحسب y = Xw + b + ε بمعاملات حقيقية w = [2, −3.4] وb = 4.2 وضوضاء صغيرة. ثم يأتي محمّل الدفعات: يقسم الفهارس إلى دفعات بحجم batch_size — الكتاب يخلط ترتيب التدريب ويترك التحقق بترتيب ثابت لتسهيل التنقيح، لأن دفاعات مرتّبة بشكل خبيث قد تكسر الخوارزمية.',
+          en: 'Synthetic data is didactically useful because the correct answer is known in advance, so we can audit the implementation. We draw X from some distribution (the book uses a Gaussian; we use a seeded LCG giving uniform values in [−1, 1)) and compute y = Xw + b + ε with ground truth w = [2, −3.4] and b = 4.2 plus small noise. Then comes the batch loader: split indices into batches of batch_size — the book shuffles the training order while keeping validation in a fixed order for easy debugging, because a maliciously ordered dataset could break the optimizer.',
+        },
+        {
+          ar: 'التنفيذ من الصفر أربع قطع: (1) تهيئة w عشوائيًا صغيرًا (الكتاب: توزيع غاوسي بانحراف 0.01) وb صفرًا؛ (2) forward يعيد Xw + b بالبث؛ (3) الخسارة متوسط ½(ŷ − y)²؛ (4) صنف SGD فيه step تحدّث كل معامل بـ p ← p − lr·p.grad وzero_grad تُصفّر التدرجات قبل كل انتشار خلفي. حلقة التدريب تعبر كل دفعة كل عصر: خسارة ← تدرجات ← تحديث. بما أن الخسارة متوسط على الدفعة فلا حاجة لمعايرة lr مع حجم الدفعة. في الكتاب تُدار كل هذه القطع عبر `nn.Module` و`torch.normal` مع التفريق التلقائي.',
+          en: 'The from-scratch implementation has four pieces: (1) initialize w small (the book: a Gaussian with std 0.01) and b to zero; (2) a forward returning Xw + b via broadcasting; (3) the loss as mean ½(ŷ − y)²; (4) an SGD class whose step updates every parameter as p ← p − lr·p.grad and whose zero_grad clears gradients before each backward pass. The training loop walks every batch every epoch: loss, gradients, update. Since the loss is a mean over the batch, lr needs no rescaling by batch size. In the book these pieces run through `nn.Module` and `torch.normal` with autograd doing the differentiation.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: {
+        ar: 'تدريب كامل يستعيد w=[2, −3.4] وb=4.2',
+        en: 'A full training run that recovers w=[2, −3.4] and b=4.2',
+      },
+      code: "def lcg(seed):\n    state = seed\n    while True:\n        state = (1664525 * state + 1013904223) % 4294967296\n        yield state / 4294967296.0\n\ndef synth_data(n, w_true, b_true, noise, seed):\n    gen = lcg(seed)\n    def nxt():\n        return next(gen)\n    X, y = [], []\n    for _ in range(n):\n        x1 = nxt() * 2 - 1\n        x2 = nxt() * 2 - 1\n        eps = (nxt() * 2 - 1) * noise\n        X.append([x1, x2])\n        y.append(w_true[0] * x1 + w_true[1] * x2 + b_true + eps)\n    return X, y\n\nw_true, b_true = [2.0, -3.4], 4.2\nX, y = synth_data(64, w_true, b_true, 0.01, 7)\nprint('n=%d examples, first row [%.4f, %.4f] label %.4f' % (len(X), X[0][0], X[0][1], y[0]))\nbatches = [list(range(s, s + 16)) for s in range(0, len(X), 16)]\nprint('batch count:', len(batches), '| batch0 size:', len(batches[0]))\n\nw, bias, lr = [0.0, 0.0], 0.0, 0.3\nfor epoch in range(1, 21):\n    for idx in batches:\n        errs = [sum(w[j] * X[i][j] for j in range(2)) + bias - y[i] for i in idx]\n        gw = [sum(X[i][j] * errs[k] for k, i in enumerate(idx)) / len(idx) for j in range(2)]\n        gb = sum(errs) / len(idx)\n        w = [w[j] - lr * gw[j] for j in range(2)]\n        bias -= lr * gb\n    if epoch in (1, 5, 10, 20):\n        es = [sum(w[j] * X[i][j] for j in range(2)) + bias - y[i] for i in range(len(X))]\n        print('epoch %2d: mse=%.6f w=[%.6f, %.6f] b=%.6f'\n              % (epoch, sum(e * e for e in es) / len(es), w[0], w[1], bias))\nprint('error in w: [%.4f, %.4f] | error in b: %.4f'\n      % (w[0] - w_true[0], w[1] - w_true[1], bias - b_true))",
+      explanation: {
+        ar: 'المولّد ينتج 64 مثالًا بأول صف [−0.5224, 0.8270] وتسمية 0.3456، وتنقسم إلى 4 دفعات حجم كل منها 16. التدريب انطلق من الصفر: بعد العصر الأول كانت الخسارة 3.223569 وبعد العصر الخامس 0.054313، وبعد العصر العشرين وصلت 0.000033 مع w=[1.998023, −3.400420] وb=4.199689 — أي خطأ أقل من 0.002 عن الحقيقة المزروعة [2, −3.4] و4.2. هذا بالضبط ما يفعله الكتاب على 1000 مثال: استرجاع المعاملات المزروعة هو اختبار صحّة التنفيذ.',
+        en: 'The generator produces 64 examples with first row [−0.5224, 0.8270] and label 0.3456, split into 4 batches of 16. Training starts from zero: after epoch 1 the loss is 3.223569, after epoch 5 it is 0.054313, and by epoch 20 it reaches 0.000033 with w=[1.998023, −3.400420] and b=4.199689 — under 0.002 away from the planted truth [2, −3.4] and 4.2. Exactly what the book does on 1000 examples: recovering the planted parameters is the correctness test for the implementation.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.lcg-and-minibatch',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفّذ دالتين: lcg_stream(seed, n) تعيد قائمة n قيمة منتظمة في [0, 1) من المولّد الخطي state ← (1664525·state + 1013904223) mod 2³² مقسومًا على 2³²؛ وminibatch(X, y, start, size) تعيد ([صفوف X المقصوصة], [تسمياتها]) دون تجاوز نهاية القائمة.',
+        en: 'Implement two functions: lcg_stream(seed, n) returns a list of n uniform values in [0, 1) from the linear generator state ← (1664525·state + 1013904223) mod 2³² divided by 2³²; and minibatch(X, y, start, size) returns ([sliced X rows], [their labels]) without running past the end of the lists.',
+      },
+      starterCode: "def lcg_stream(seed, n):\n    ...  # TODO: iterate the LCG recurrence n times, collect state / 2**32\n\ndef minibatch(X, y, start, size):\n    ...  # TODO: slice indices [start, start+size) clamped to len(X)\n",
+      solution: "def lcg_stream(seed, n):\n    state = seed\n    out = []\n    for _ in range(n):\n        state = (1664525 * state + 1013904223) % 4294967296\n        out.append(state / 4294967296.0)\n    return out\n\ndef minibatch(X, y, start, size):\n    idx = range(start, min(start + size, len(X)))\n    return ([X[i] for i in idx], [y[i] for i in idx])",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'قيم LCG الثابتة لبذر 0', en: 'Fixed LCG values for seed 0' },
+          code: "u = lcg_stream(0, 3)\nassert abs(u[0] - 0.2360679728) < 1e-9 and abs(u[1] - 0.2785669086) < 1e-9 and abs(u[2] - 0.8195337600) < 1e-9, 'expected ~[0.2361, 0.2786, 0.8195] | actual: %r' % (u,)",
+          expected: '[0.2361, 0.2786, 0.8195]',
+        },
+        {
+          id: 't2',
+          name: { ar: 'كل القيم داخل [0, 1)', en: 'All values inside [0, 1)' },
+          code: "u = lcg_stream(7, 50)\nassert len(u) == 50 and all(0.0 <= v < 1.0 for v in u), 'expected 50 values in [0, 1)'",
+          expected: '50 values in [0, 1)',
+        },
+        {
+          id: 't3',
+          name: { ar: 'القص عند نهاية القائمة', en: 'Clamped slice at the end' },
+          code: "bx, by = minibatch([[1, 2], [3, 4], [5, 6]], [10, 20, 30], 1, 2)\nassert bx == [[3, 4], [5, 6]] and by == [20, 30], 'expected ([[3,4],[5,6]], [20,30]) | actual: %r' % ((bx, by),)",
+          expected: '([[3,4],[5,6]], [20,30])',
+        },
+      ],
+      hints: [
+        { ar: 'ثوابت LCG: المضاعف 1664525 والإزاحة 1013904223 والقاسم 4294967296 (= 2³²) — ابدأ من state=seed.', en: 'LCG constants: multiplier 1664525, increment 1013904223, modulus 4294967296 (= 2³²) — start from state=seed.' },
+        { ar: 'استخدم % (الباقي) لا / ثم اقسم على 4294967296.0 لتحصل على قيمة عشرية في [0, 1).', en: 'Use % (remainder), not /, then divide by 4294967296.0 to land in [0, 1).' },
+        { ar: 'في minibatch استخدم min(start + size, len(X)) حتى لا تتجاوز النهاية، واعبُر الفهارس بrange.', en: 'In minibatch clamp with min(start + size, len(X)) and iterate indices with range.' },
+        { ar: 'تحقق سريع: lcg_stream(0, 1) = [0.2360679728...] وminibatch يبدأ من start نفسه ضمنيًا.', en: 'Quick check: lcg_stream(0, 1) = [0.2360679728...] and minibatch starts at start itself.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.mcq-shuffle',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'لماذا يخلط الكتاب ترتيب أمثلة التدريب في كل عصر بينما يقرأ بيانات التحقق بترتيب ثابت؟',
+        en: 'Why does the book shuffle the training example order each epoch while reading validation data in a fixed order?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'لأن الخلط يقلل قيمة الخسارة النهائية دائمًا', en: 'Because shuffling always lowers the final loss' } },
+        { id: 'b', text: { ar: 'لأن افتراضات SGD تفترض دفعات شبه مستقلة — ترتيب خبيث في البيانات قد يكسر التحسين، والترتيب الثابت في التحقق يسهّل التنقيح', en: 'Because SGD assumes near-independent batches — a maliciously ordered dataset could break optimization, while fixed validation order eases debugging' } },
+        { id: 'c', text: { ar: 'لأن الخلط يغيّر قيم المعاملات الحقيقية', en: 'Because shuffling changes the true parameter values' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'تخيل مجموعة مرتبة بحيث كل دفعة من مثال فئة واحدة فقط — كيف يبدو التدرج؟', en: 'Imagine a dataset ordered so each batch holds examples of one class only — what does that gradient look like?' },
+        { ar: 'الكتاب يذكر صراحة إمكان تصميم بيانات خبيثة تُفشل التحسين بلا خلط.', en: 'The book explicitly mentions designing an adversarially ordered dataset that breaks the optimizer without shuffling.' },
+        { ar: 'بيانات التحقق تُقاس لا تُتدرب — ترتيبها لا يؤثر على قيمة الخسارة الكلية، لكن الثبات يسهل مقارنة الجولات.', en: 'Validation is measured, not trained on — its order cannot change the total loss, but keeping it fixed eases run-to-run comparison.' },
+        { ar: 'الجواب: b — الخلط يحمي افتراض شبه الاستقلال بين الدفعات.', en: 'Answer: b — shuffling protects the near-independence assumption between batches.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "def lcg(seed):\n    state = seed\n    while True:\n        state = (1664525 * state + 1013904223) % 4294967296\n        yield state / 4294967296.0\n\ndef synth_data(n, w_true, b_true, noise, seed):\n    gen = lcg(seed)\n    X, y = [], []\n    for _ in range(n):\n        x1 = next(gen) * 2 - 1\n        x2 = next(gen) * 2 - 1\n        X.append([x1, x2])\n        y.append(w_true[0] * x1 + w_true[1] * x2 + b_true + next(gen) * noise * 2 - noise)\n    return X, y\n\nX, y = synth_data(64, [2.0, -3.4], 4.2, 0.01, 7)\n\ndef train(epochs, lr, batch):\n    w, bias = [0.0, 0.0], 0.0\n    for _ in range(epochs):\n        for s in range(0, len(X), batch):\n            idx = range(s, min(s + batch, len(X)))\n            errs = [sum(w[j] * X[i][j] for j in range(2)) + bias - y[i] for i in idx]\n            gw = [sum(X[i][j] * errs[k] for k, i in enumerate(idx)) / len(idx) for j in range(2)]\n            gb = sum(errs) / len(idx)\n            w = [w[j] - lr * gw[j] for j in range(2)]\n            bias -= lr * gb\n    return w, bias\n\nfor lr in (0.05, 0.1, 0.3):\n    w, bias = train(20, lr, 16)\n    print('lr=%.2f -> w=[%.4f, %.4f] b=%.4f' % (lr, w[0], w[1], bias))\n\n# جرّب: بدّل seed ولاحظ أن التقديرات تختلف قليلًا — الضوضاء والدفعات يتغيران.\n# try: change the seed and watch the estimates move slightly — noise and batches shift.\n# جرّب: ارفع noise إلى 1.0 وشاهد كيف يتسع خطأ الاسترجاع.\n# try: raise noise to 1.0 and watch the recovery error widen.\n",
+      prompt: {
+        ar: 'الملعب يعيد تدريب النموذج من الصفر بعدة معدلات تعلم، ويسمح لك باستكشاف أثر البذرة ومستوى الضوضاء في جودة استرجاع المعاملات.',
+        en: 'The sandbox retrains the scratch model at several learning rates and lets you explore how the seed and the noise level affect parameter recovery.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'في المعادلة y = Xw + b + ε بضوضاء σ = 0.01: ما دور ε؟',
+            en: 'In y = Xw + b + ε with noise σ = 0.01: what is the role of ε?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'معامل يعاد تقديره مع w وb', en: 'A coefficient re-estimated along with w and b' } },
+            { id: 'b', text: { ar: 'ضوضاء قياس صغيرة تفسّر انحراف y عن المستوى الحقيقي — وبدونها ما كنا نحتاج تعلم أصلًا', en: 'Small measurement noise explaining why y deviates from the true plane — without it no learning would be needed' } },
+            { id: 'c', text: { ar: 'معدل التعلم المستخدم في التحديث', en: 'The learning rate used in the update' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'الضوضاء تحاكي أخطاء القياس في البيانات الحقيقية؛ تجعل استرجاع المعاملات ممكنًا لكنه ليس مثاليًا، ولهذا يبقى خطأ بسيط في التقدير. لو كانت ε صفرًا لكانت النقاط على مستوى مثالي.',
+            en: 'Noise mimics measurement error in real data; it makes parameter recovery possible but imperfect, leaving a small estimation error. With ε = 0 the points would lie exactly on a plane.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'مجموعة تدريب فيها 1000 مثال وحجم الدفعة 32: كم دفعة في العصر الواحد؟',
+            en: 'A training set of 1000 examples with batch size 32: how many minibatches per epoch?',
+          },
+          options: [
+            { id: 'a', text: { ar: '31 — لأن 1000 ÷ 32 = 31.25 نقص للجزء الكسري', en: '31 — since 1000 ÷ 32 = 31.25 truncated' } },
+            { id: 'b', text: { ar: '32 — الدفعة الأخيرة أصغر لكنها تُحسب (len المحمّل = 32 في الكتاب)', en: '32 — the last batch is smaller but still counts (len of the loader is 32 in the book)' } },
+            { id: 'c', text: { ar: '1000 — دفعة لكل مثال', en: '1000 — one batch per example' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: '31 دفعة كاملة بحجم 32 تغطي 992 مثالًا، والثمانية الباقية تشكل دفعة أخيرة أصغر — فالمحمّل ينتج 32 دفعة. هذا عدّ الكتاب نفسه عبر len(data.train_dataloader()).',
+            en: '31 full batches of 32 cover 992 examples; the remaining 8 form a smaller last batch — the loader yields 32 batches total. That is exactly the count the book prints via len(data.train_dataloader()).',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'لماذا يستدعي صنف SGD التابع zero_grad قبل حساب التدرج في كل تكرار؟',
+            en: 'Why does the SGD class call zero_grad before computing gradients in each iteration?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن التدرجات تتراكم في المخزن — بلا تصفير تُجمع مع تدرجات الدفعات السابقة', en: 'Because gradients accumulate in their buffer — without clearing they add to the previous batches gradients' } },
+            { id: 'b', text: { ar: 'لأنه يعيد ضبط قيم الأوزان نفسها', en: 'Because it resets the weight values themselves' } },
+            { id: 'c', text: { ar: 'لأنه يوازن الخسارة بين الدفعات', en: 'Because it balances the loss across batches' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'إطار التفريق التلقائي يجمع التدرجات فوق قيمها الحالية؛ zero_grad يصفّر p.grad حتى يعبر التدرج الجديد للدفعة الحالية وحدها. نسيانها أشهر حشرة في حلقات التدريب اليدوية.',
+            en: 'Autograd accumulates gradients on top of existing values; zero_grad clears p.grad so the fresh batch gradient stands alone. Forgetting it is the classic bug in hand-rolled training loops.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'بيانات اصطناعية بمعاملات مزروعة (w=[2, −3.4]، b=4.2) تمنحنا الحقيقة لاختبار التنفيذ؛ ومحمّل الدفعات يقسم الفهارس ويدرّب بترتيب مخلط (الهدف من s3 البيانات الاصطناعية).', en: 'Synthetic data with planted parameters (w=[2, −3.4], b=4.2) gives us ground truth to audit the implementation; the batch loader slices indices and trains in shuffled order (goal of s3 Synthetic Regression Data).' },
+        { ar: 'التنفيذ من الصفر أربع قطع: تهيئة صغيرة، forward بالبث، خسارة متوسط مربعات، وصنف SGD بخطوتيه step وzero_grad — وحلقة العصور تربطها وتستعيد المعاملات تقريبًا (الهدف من s4 التنفيذ من الصفر).', en: 'The from-scratch model is four pieces: small init, broadcasting forward, mean-squared loss, and an SGD class with step and zero_grad — the epoch loop stitches them and recovers the parameters approximately (goal of s4 Implementation from Scratch).' },
+      ],
+      reflectPrompt: {
+        ar: 'استرجعنا w وb بخطأ أقل من 0.002 على بيانات ضوضاؤها 0.01. لماذا لا نتوقع استرجاعًا مثاليًا مهما زادت العصور، ومتى نقطع أن الخطأ من الضوضاء لا من حشرة في كودنا؟',
+        en: 'We recovered w and b to within 0.002 on data whose noise is 0.01. Why can we never expect perfect recovery no matter the epochs — and when do we conclude the residual is noise rather than a bug?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'D2L', section: 'd2l.ch3.s3' },
+        { book: 'D2L', section: 'd2l.ch3.s4' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'D2L', section: 'd2l.ch3.s3' },
+    { book: 'D2L', section: 'd2l.ch3.s4' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

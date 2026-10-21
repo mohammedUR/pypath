@@ -1,0 +1,37 @@
+seen = []
+
+def normalize_grade(score):
+    if score < 0 or score > 100:
+        seen.append('invalid')
+        return -1
+    if score < 60:
+        seen.append('fail')
+        return 0
+    if score < 80:
+        seen.append('pass')
+        return 1
+    seen.append('high')
+    return 2
+
+cases = [
+    ('invalid low', -1, -1),
+    ('floor', 0, 0),
+    ('mid fail', 30, 0),
+    ('fail edge', 59, 0),
+    ('pass edge', 60, 1),
+    ('mid pass', 70, 1),
+    ('pass ceiling', 79, 1),
+    ('high edge', 80, 2),
+    ('ceiling', 100, 2),
+    ('invalid high', 101, -1),
+]
+
+passed = 0
+for name, arg, expected in cases:
+    if normalize_grade(arg) == expected:
+        passed = passed + 1
+    else:
+        print('FAILED:', name)
+
+print('tests: %d passed: %d' % (len(cases), passed))
+print('branches: %d of 4' % len(set(seen)))

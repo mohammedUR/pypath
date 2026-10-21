@@ -1,0 +1,1425 @@
+{
+ "code": "PY4E",
+ "title": "بايثون للجميع (Python for Everybody)",
+ "authors": [
+  "Charles Severance (تشارلز سيفيرنس)"
+ ],
+ "translators": [
+  "Electronics Go منصة الكترونكس غو"
+ ],
+ "license": "CC BY-NC-SA 3.0 (original) — Arabic edition © Electronics Go 2023, CC BY-NC-SA",
+ "page_offset": 10,
+ "chapters": [
+  {
+   "id": "py4e.ch1",
+   "number": 1,
+   "title": "لماذا نتعلّم البرمجة؟",
+   "bookPage": 2,
+   "pdfPage": 12,
+   "sections": [
+    {
+     "id": "py4e.ch1.s1",
+     "number": "1.1",
+     "title": "الإبداع والحافز",
+     "bookPage": 3,
+     "pdfPage": 13
+    },
+    {
+     "id": "py4e.ch1.s2",
+     "number": "1.2",
+     "title": "بنية الحاسوب",
+     "bookPage": 4,
+     "pdfPage": 14
+    },
+    {
+     "id": "py4e.ch1.s3",
+     "number": "1.3",
+     "title": "فهم البرمجة",
+     "bookPage": 6,
+     "pdfPage": 16
+    },
+    {
+     "id": "py4e.ch1.s4",
+     "number": "1.4",
+     "title": "مفردات بايثون وجملُها",
+     "bookPage": 6,
+     "pdfPage": 16
+    },
+    {
+     "id": "py4e.ch1.s5",
+     "number": "1.5",
+     "title": "مخاطبة بايثون",
+     "bookPage": 7,
+     "pdfPage": 17
+    },
+    {
+     "id": "py4e.ch1.s6",
+     "number": "1.6",
+     "title": "المفسِّر والمترجم",
+     "bookPage": 10,
+     "pdfPage": 20
+    },
+    {
+     "id": "py4e.ch1.s7",
+     "number": "1.7",
+     "title": "كتابة برنامج",
+     "bookPage": 12,
+     "pdfPage": 22
+    },
+    {
+     "id": "py4e.ch1.s8",
+     "number": "1.8",
+     "title": "ما هو البرنامج؟",
+     "bookPage": 12,
+     "pdfPage": 22
+    },
+    {
+     "id": "py4e.ch1.s9",
+     "number": "1.9",
+     "title": "المكوّنات الأساسية للبرامج",
+     "bookPage": 14,
+     "pdfPage": 24
+    },
+    {
+     "id": "py4e.ch1.s10",
+     "number": "1.10",
+     "title": "ما الأخطاء التي يمكن أن نواجهها؟",
+     "bookPage": 15,
+     "pdfPage": 25
+    },
+    {
+     "id": "py4e.ch1.s11",
+     "number": "1.11",
+     "title": "التنقيح",
+     "bookPage": 16,
+     "pdfPage": 26
+    },
+    {
+     "id": "py4e.ch1.s12",
+     "number": "1.12",
+     "title": "رحلة التعلّم",
+     "bookPage": 18,
+     "pdfPage": 28
+    },
+    {
+     "id": "py4e.ch1.s13",
+     "number": "1.13",
+     "title": "فهرس المصطلحات",
+     "bookPage": 18,
+     "pdfPage": 28
+    },
+    {
+     "id": "py4e.ch1.s14",
+     "number": "1.14",
+     "title": "تمارين",
+     "bookPage": 20,
+     "pdfPage": 30
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch2",
+   "number": 2,
+   "title": "المتغيّرات والتعابير والتعليمات",
+   "bookPage": 23,
+   "pdfPage": 33,
+   "sections": [
+    {
+     "id": "py4e.ch2.s1",
+     "number": "2.1",
+     "title": "القيم وأنواع البيانات",
+     "bookPage": 23,
+     "pdfPage": 33
+    },
+    {
+     "id": "py4e.ch2.s2",
+     "number": "2.2",
+     "title": "المتغيّرات",
+     "bookPage": 24,
+     "pdfPage": 34
+    },
+    {
+     "id": "py4e.ch2.s3",
+     "number": "2.3",
+     "title": "أسماء المتغيّرات والكلمات المفتاحية",
+     "bookPage": 25,
+     "pdfPage": 35
+    },
+    {
+     "id": "py4e.ch2.s4",
+     "number": "2.4",
+     "title": "التعليمات",
+     "bookPage": 26,
+     "pdfPage": 36
+    },
+    {
+     "id": "py4e.ch2.s5",
+     "number": "2.5",
+     "title": "العوامل والمعاملات",
+     "bookPage": 27,
+     "pdfPage": 37
+    },
+    {
+     "id": "py4e.ch2.s6",
+     "number": "2.6",
+     "title": "التعابير",
+     "bookPage": 28,
+     "pdfPage": 38
+    },
+    {
+     "id": "py4e.ch2.s7",
+     "number": "2.7",
+     "title": "ترتيب العمليات",
+     "bookPage": 28,
+     "pdfPage": 38
+    },
+    {
+     "id": "py4e.ch2.s8",
+     "number": "2.8",
+     "title": "عامل القسمة الصحيحة (باقي القسمة)",
+     "bookPage": 29,
+     "pdfPage": 39
+    },
+    {
+     "id": "py4e.ch2.s9",
+     "number": "2.9",
+     "title": "العمليات على السلاسل النصية",
+     "bookPage": 30,
+     "pdfPage": 40
+    },
+    {
+     "id": "py4e.ch2.s10",
+     "number": "2.10",
+     "title": "إدخال البيانات من المستخدم",
+     "bookPage": 30,
+     "pdfPage": 40
+    },
+    {
+     "id": "py4e.ch2.s11",
+     "number": "2.11",
+     "title": "التعليقات",
+     "bookPage": 31,
+     "pdfPage": 41
+    },
+    {
+     "id": "py4e.ch2.s12",
+     "number": "2.12",
+     "title": "اختيار أسماء متغيرات سهلة التذكر",
+     "bookPage": 32,
+     "pdfPage": 42
+    },
+    {
+     "id": "py4e.ch2.s13",
+     "number": "2.13",
+     "title": "التنقيح",
+     "bookPage": 34,
+     "pdfPage": 44
+    },
+    {
+     "id": "py4e.ch2.s14",
+     "number": "2.14",
+     "title": "فهرس المصطلحات",
+     "bookPage": 35,
+     "pdfPage": 45
+    },
+    {
+     "id": "py4e.ch2.s15",
+     "number": "2.15",
+     "title": "تمارين",
+     "bookPage": 37,
+     "pdfPage": 47
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch3",
+   "number": 3,
+   "title": "التنفيذ الشرطي",
+   "bookPage": 39,
+   "pdfPage": 49,
+   "sections": [
+    {
+     "id": "py4e.ch3.s1",
+     "number": "3.1",
+     "title": "التعابير المنطقية",
+     "bookPage": 39,
+     "pdfPage": 49
+    },
+    {
+     "id": "py4e.ch3.s2",
+     "number": "3.2",
+     "title": "العوامل المنطقية",
+     "bookPage": 40,
+     "pdfPage": 50
+    },
+    {
+     "id": "py4e.ch3.s3",
+     "number": "3.3",
+     "title": "التنفيذ المشروط",
+     "bookPage": 40,
+     "pdfPage": 50
+    },
+    {
+     "id": "py4e.ch3.s4",
+     "number": "3.4",
+     "title": "التنفيذ البديل",
+     "bookPage": 42,
+     "pdfPage": 52
+    },
+    {
+     "id": "py4e.ch3.s5",
+     "number": "3.5",
+     "title": "التسلسل الشرطي",
+     "bookPage": 43,
+     "pdfPage": 53
+    },
+    {
+     "id": "py4e.ch3.s6",
+     "number": "3.6",
+     "title": "الشرط المتداخل",
+     "bookPage": 45,
+     "pdfPage": 55
+    },
+    {
+     "id": "py4e.ch3.s7",
+     "number": "3.7",
+     "title": "الاستثناء باستخدام بنية TRY و EXCEPT",
+     "bookPage": 46,
+     "pdfPage": 56
+    },
+    {
+     "id": "py4e.ch3.s8",
+     "number": "3.8",
+     "title": "تجاوز حق التعبيرات المنطقية",
+     "bookPage": 49,
+     "pdfPage": 59
+    },
+    {
+     "id": "py4e.ch3.s9",
+     "number": "3.9",
+     "title": "التنقيح",
+     "bookPage": 51,
+     "pdfPage": 61
+    },
+    {
+     "id": "py4e.ch3.s10",
+     "number": "3.10",
+     "title": "فهرس المصطلحات",
+     "bookPage": 51,
+     "pdfPage": 61
+    },
+    {
+     "id": "py4e.ch3.s11",
+     "number": "3.11",
+     "title": "تمارين",
+     "bookPage": 53,
+     "pdfPage": 63
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch4",
+   "number": 4,
+   "title": "التوابع",
+   "bookPage": 56,
+   "pdfPage": 66,
+   "sections": [
+    {
+     "id": "py4e.ch4.s1",
+     "number": "4.1",
+     "title": "استدعاء التوابع",
+     "bookPage": 56,
+     "pdfPage": 66
+    },
+    {
+     "id": "py4e.ch4.s2",
+     "number": "4.2",
+     "title": "التوابع الجاهزة",
+     "bookPage": 56,
+     "pdfPage": 66
+    },
+    {
+     "id": "py4e.ch4.s3",
+     "number": "4.3",
+     "title": "توابع تحويل النوع",
+     "bookPage": 57,
+     "pdfPage": 67
+    },
+    {
+     "id": "py4e.ch4.s4",
+     "number": "4.4",
+     "title": "التوابع الرياضية",
+     "bookPage": 58,
+     "pdfPage": 68
+    },
+    {
+     "id": "py4e.ch4.s5",
+     "number": "4.5",
+     "title": "الأعداد العشوائية",
+     "bookPage": 59,
+     "pdfPage": 69
+    },
+    {
+     "id": "py4e.ch4.s6",
+     "number": "4.6",
+     "title": "إضافة توابع جديدة",
+     "bookPage": 61,
+     "pdfPage": 71
+    },
+    {
+     "id": "py4e.ch4.s7",
+     "number": "4.7",
+     "title": "التعاريف واستخداماتها",
+     "bookPage": 63,
+     "pdfPage": 73
+    },
+    {
+     "id": "py4e.ch4.s8",
+     "number": "4.8",
+     "title": "تسلسل التنفيذ",
+     "bookPage": 64,
+     "pdfPage": 74
+    },
+    {
+     "id": "py4e.ch4.s9",
+     "number": "4.9",
+     "title": "المعاملات والوسائط",
+     "bookPage": 64,
+     "pdfPage": 74
+    },
+    {
+     "id": "py4e.ch4.s10",
+     "number": "4.10",
+     "title": "التوابع المُنتجة والتوابع الخالية",
+     "bookPage": 66,
+     "pdfPage": 76
+    },
+    {
+     "id": "py4e.ch4.s11",
+     "number": "4.11",
+     "title": "لماذا نستخدم التوابع؟",
+     "bookPage": 67,
+     "pdfPage": 77
+    },
+    {
+     "id": "py4e.ch4.s12",
+     "number": "4.12",
+     "title": "التنقيح",
+     "bookPage": 68,
+     "pdfPage": 78
+    },
+    {
+     "id": "py4e.ch4.s13",
+     "number": "4.13",
+     "title": "فهرس المصطلحات",
+     "bookPage": 69,
+     "pdfPage": 79
+    },
+    {
+     "id": "py4e.ch4.s14",
+     "number": "4.14",
+     "title": "تمارين",
+     "bookPage": 70,
+     "pdfPage": 80
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch5",
+   "number": 5,
+   "title": "التكرار",
+   "bookPage": 74,
+   "pdfPage": 84,
+   "sections": [
+    {
+     "id": "py4e.ch5.s1",
+     "number": "5.1",
+     "title": "تحديث قيم المتغيرات",
+     "bookPage": 74,
+     "pdfPage": 84
+    },
+    {
+     "id": "py4e.ch5.s2",
+     "number": "5.2",
+     "title": "حلقة WHILE",
+     "bookPage": 74,
+     "pdfPage": 84
+    },
+    {
+     "id": "py4e.ch5.s3",
+     "number": "5.3",
+     "title": "الحلقات اللانهائية",
+     "bookPage": 75,
+     "pdfPage": 85
+    },
+    {
+     "id": "py4e.ch5.s4",
+     "number": "5.4",
+     "title": "إنهاء التكرار باستخدام تعليمة CONTINUE",
+     "bookPage": 77,
+     "pdfPage": 87
+    },
+    {
+     "id": "py4e.ch5.s5",
+     "number": "5.5",
+     "title": "الحلقات المحددة باستخدام FOR",
+     "bookPage": 78,
+     "pdfPage": 88
+    },
+    {
+     "id": "py4e.ch5.s6",
+     "number": "5.6",
+     "title": "أنماط كتابة الحلقات",
+     "bookPage": 79,
+     "pdfPage": 89
+    },
+    {
+     "id": "py4e.ch5.s7",
+     "number": "5.7",
+     "title": "التنقيح",
+     "bookPage": 83,
+     "pdfPage": 93
+    },
+    {
+     "id": "py4e.ch5.s8",
+     "number": "5.8",
+     "title": "فهرس المصطلحات",
+     "bookPage": 83,
+     "pdfPage": 93
+    },
+    {
+     "id": "py4e.ch5.s9",
+     "number": "5.9",
+     "title": "تمارين",
+     "bookPage": 84,
+     "pdfPage": 94
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch6",
+   "number": 6,
+   "title": "السلاسل النصية",
+   "bookPage": 86,
+   "pdfPage": 96,
+   "sections": [
+    {
+     "id": "py4e.ch6.s1",
+     "number": "6.1",
+     "title": "السلسلة النصية سلسلة من المحارف",
+     "bookPage": 86,
+     "pdfPage": 96
+    },
+    {
+     "id": "py4e.ch6.s2",
+     "number": "6.2",
+     "title": "الحصول على طول السلسلة النصية باستخدام LEN",
+     "bookPage": 87,
+     "pdfPage": 97
+    },
+    {
+     "id": "py4e.ch6.s3",
+     "number": "6.3",
+     "title": "التعامل مع محارف السلسلة النصية باستخدام الحلقات",
+     "bookPage": 88,
+     "pdfPage": 98
+    },
+    {
+     "id": "py4e.ch6.s4",
+     "number": "6.4",
+     "title": "تجزئة السلاسل النصية",
+     "bookPage": 89,
+     "pdfPage": 99
+    },
+    {
+     "id": "py4e.ch6.s5",
+     "number": "6.5",
+     "title": "السلاسل النصية غير قابلة للتعديل",
+     "bookPage": 90,
+     "pdfPage": 100
+    },
+    {
+     "id": "py4e.ch6.s6",
+     "number": "6.6",
+     "title": "استخدام الحلقات والعدّ",
+     "bookPage": 90,
+     "pdfPage": 100
+    },
+    {
+     "id": "py4e.ch6.s7",
+     "number": "6.7",
+     "title": "العامل IN",
+     "bookPage": 91,
+     "pdfPage": 101
+    },
+    {
+     "id": "py4e.ch6.s8",
+     "number": "6.8",
+     "title": "مقارنة السلاسل النصية",
+     "bookPage": 91,
+     "pdfPage": 101
+    },
+    {
+     "id": "py4e.ch6.s9",
+     "number": "6.9",
+     "title": "توابع السلاسل النصية",
+     "bookPage": 92,
+     "pdfPage": 102
+    },
+    {
+     "id": "py4e.ch6.s10",
+     "number": "6.10",
+     "title": "تحليل السلاسل النصية",
+     "bookPage": 95,
+     "pdfPage": 105
+    },
+    {
+     "id": "py4e.ch6.s11",
+     "number": "6.11",
+     "title": "عامل التنسيق",
+     "bookPage": 96,
+     "pdfPage": 106
+    },
+    {
+     "id": "py4e.ch6.s12",
+     "number": "6.12",
+     "title": "التنقيح",
+     "bookPage": 97,
+     "pdfPage": 107
+    },
+    {
+     "id": "py4e.ch6.s13",
+     "number": "6.13",
+     "title": "فهرس المصطلحات",
+     "bookPage": 99,
+     "pdfPage": 109
+    },
+    {
+     "id": "py4e.ch6.s14",
+     "number": "6.14",
+     "title": "تمارين",
+     "bookPage": 100,
+     "pdfPage": 110
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch7",
+   "number": 7,
+   "title": "الملفات",
+   "bookPage": 102,
+   "pdfPage": 112,
+   "sections": [
+    {
+     "id": "py4e.ch7.s1",
+     "number": "7.1",
+     "title": "الإصرار على التعلم",
+     "bookPage": 102,
+     "pdfPage": 112
+    },
+    {
+     "id": "py4e.ch7.s2",
+     "number": "7.2",
+     "title": "فتح الملفات",
+     "bookPage": 103,
+     "pdfPage": 113
+    },
+    {
+     "id": "py4e.ch7.s3",
+     "number": "7.3",
+     "title": "ملفات النصوص والأسطر",
+     "bookPage": 104,
+     "pdfPage": 114
+    },
+    {
+     "id": "py4e.ch7.s4",
+     "number": "7.4",
+     "title": "قراءة الملفات",
+     "bookPage": 105,
+     "pdfPage": 115
+    },
+    {
+     "id": "py4e.ch7.s5",
+     "number": "7.5",
+     "title": "البحث خلال ملف",
+     "bookPage": 107,
+     "pdfPage": 117
+    },
+    {
+     "id": "py4e.ch7.s6",
+     "number": "7.6",
+     "title": "السماح للمستخدم باختيار الملف",
+     "bookPage": 110,
+     "pdfPage": 120
+    },
+    {
+     "id": "py4e.ch7.s7",
+     "number": "7.7",
+     "title": "استخدام TRY و EXCEPT و OPEN",
+     "bookPage": 111,
+     "pdfPage": 121
+    },
+    {
+     "id": "py4e.ch7.s8",
+     "number": "7.8",
+     "title": "كتابة الملفات",
+     "bookPage": 113,
+     "pdfPage": 123
+    },
+    {
+     "id": "py4e.ch7.s9",
+     "number": "7.9",
+     "title": "التنقيح",
+     "bookPage": 114,
+     "pdfPage": 124
+    },
+    {
+     "id": "py4e.ch7.s10",
+     "number": "7.10",
+     "title": "فهرس المصطلحات",
+     "bookPage": 115,
+     "pdfPage": 125
+    },
+    {
+     "id": "py4e.ch7.s11",
+     "number": "7.11",
+     "title": "تمارين",
+     "bookPage": 116,
+     "pdfPage": 126
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch8",
+   "number": 8,
+   "title": "القوائم",
+   "bookPage": 119,
+   "pdfPage": 129,
+   "sections": [
+    {
+     "id": "py4e.ch8.s1",
+     "number": "8.1",
+     "title": "القائمة سلسلة من العناصر",
+     "bookPage": 119,
+     "pdfPage": 129
+    },
+    {
+     "id": "py4e.ch8.s2",
+     "number": "8.2",
+     "title": "القوائم قابلة للتعديل",
+     "bookPage": 119,
+     "pdfPage": 129
+    },
+    {
+     "id": "py4e.ch8.s3",
+     "number": "8.3",
+     "title": "المرور على عناصر قائمة",
+     "bookPage": 121,
+     "pdfPage": 131
+    },
+    {
+     "id": "py4e.ch8.s4",
+     "number": "8.4",
+     "title": "العمليات على القوائم",
+     "bookPage": 122,
+     "pdfPage": 132
+    },
+    {
+     "id": "py4e.ch8.s5",
+     "number": "8.5",
+     "title": "تجزئة القوائم",
+     "bookPage": 122,
+     "pdfPage": 132
+    },
+    {
+     "id": "py4e.ch8.s6",
+     "number": "8.6",
+     "title": "توابع خاصة بالقوائم",
+     "bookPage": 123,
+     "pdfPage": 133
+    },
+    {
+     "id": "py4e.ch8.s7",
+     "number": "8.7",
+     "title": "حذف العناصر",
+     "bookPage": 124,
+     "pdfPage": 134
+    },
+    {
+     "id": "py4e.ch8.s8",
+     "number": "8.8",
+     "title": "القوائم والتوابع",
+     "bookPage": 125,
+     "pdfPage": 135
+    },
+    {
+     "id": "py4e.ch8.s9",
+     "number": "8.9",
+     "title": "القوائم والسلاسل النصية",
+     "bookPage": 127,
+     "pdfPage": 137
+    },
+    {
+     "id": "py4e.ch8.s10",
+     "number": "8.10",
+     "title": "التعامل مع الأسطر وملفات القوائم",
+     "bookPage": 128,
+     "pdfPage": 138
+    },
+    {
+     "id": "py4e.ch8.s11",
+     "number": "8.11",
+     "title": "الكائنات والقيَم",
+     "bookPage": 129,
+     "pdfPage": 139
+    },
+    {
+     "id": "py4e.ch8.s12",
+     "number": "8.12",
+     "title": "التسمية البديلة",
+     "bookPage": 131,
+     "pdfPage": 141
+    },
+    {
+     "id": "py4e.ch8.s13",
+     "number": "8.13",
+     "title": "وسائط القائمة",
+     "bookPage": 131,
+     "pdfPage": 141
+    },
+    {
+     "id": "py4e.ch8.s14",
+     "number": "8.14",
+     "title": "التنقيح",
+     "bookPage": 133,
+     "pdfPage": 143
+    },
+    {
+     "id": "py4e.ch8.s15",
+     "number": "8.15",
+     "title": "فهرس المصطلحات",
+     "bookPage": 138,
+     "pdfPage": 148
+    },
+    {
+     "id": "py4e.ch8.s16",
+     "number": "8.16",
+     "title": "تمارين",
+     "bookPage": 139,
+     "pdfPage": 149
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch9",
+   "number": 9,
+   "title": "القواميس",
+   "bookPage": 143,
+   "pdfPage": 153,
+   "sections": [
+    {
+     "id": "py4e.ch9.s1",
+     "number": "9.1",
+     "title": "استخدام القواميس",
+     "bookPage": 143,
+     "pdfPage": 153
+    },
+    {
+     "id": "py4e.ch9.s2",
+     "number": "9.2",
+     "title": "العدّ",
+     "bookPage": 145,
+     "pdfPage": 155
+    },
+    {
+     "id": "py4e.ch9.s3",
+     "number": "9.3",
+     "title": "القواميس والملفات",
+     "bookPage": 147,
+     "pdfPage": 157
+    },
+    {
+     "id": "py4e.ch9.s4",
+     "number": "9.4",
+     "title": "الحلقات والقواميس",
+     "bookPage": 149,
+     "pdfPage": 159
+    },
+    {
+     "id": "py4e.ch9.s5",
+     "number": "9.5",
+     "title": "التعامل مع النصوص",
+     "bookPage": 150,
+     "pdfPage": 160
+    },
+    {
+     "id": "py4e.ch9.s6",
+     "number": "9.6",
+     "title": "التنقيح",
+     "bookPage": 152,
+     "pdfPage": 162
+    },
+    {
+     "id": "py4e.ch9.s7",
+     "number": "9.7",
+     "title": "فهرس المصطلحات",
+     "bookPage": 153,
+     "pdfPage": 163
+    },
+    {
+     "id": "py4e.ch9.s8",
+     "number": "9.8",
+     "title": "تمارين",
+     "bookPage": 154,
+     "pdfPage": 164
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch10",
+   "number": 10,
+   "title": "الصفوف",
+   "bookPage": 157,
+   "pdfPage": 167,
+   "sections": [
+    {
+     "id": "py4e.ch10.s1",
+     "number": "10.1",
+     "title": "الصفوف غير قابلة للتعديل",
+     "bookPage": 157,
+     "pdfPage": 167
+    },
+    {
+     "id": "py4e.ch10.s2",
+     "number": "10.2",
+     "title": "مقارنة الصفوف",
+     "bookPage": 159,
+     "pdfPage": 169
+    },
+    {
+     "id": "py4e.ch10.s3",
+     "number": "10.3",
+     "title": "إسناد الصفوف",
+     "bookPage": 160,
+     "pdfPage": 170
+    },
+    {
+     "id": "py4e.ch10.s4",
+     "number": "10.4",
+     "title": "القواميس والصفوف",
+     "bookPage": 162,
+     "pdfPage": 172
+    },
+    {
+     "id": "py4e.ch10.s5",
+     "number": "10.5",
+     "title": "الإسناد المتعدد مع القواميس",
+     "bookPage": 163,
+     "pdfPage": 173
+    },
+    {
+     "id": "py4e.ch10.s6",
+     "number": "10.6",
+     "title": "الكلمات الأكثر تكرارًا",
+     "bookPage": 164,
+     "pdfPage": 174
+    },
+    {
+     "id": "py4e.ch10.s7",
+     "number": "10.7",
+     "title": "استخدام الصفوف كمفاتيح ضمن القواميس",
+     "bookPage": 166,
+     "pdfPage": 176
+    },
+    {
+     "id": "py4e.ch10.s8",
+     "number": "10.8",
+     "title": "السلاسل النصية والقوائم والصفوف",
+     "bookPage": 166,
+     "pdfPage": 176
+    },
+    {
+     "id": "py4e.ch10.s9",
+     "number": "10.9",
+     "title": "التنقيح",
+     "bookPage": 167,
+     "pdfPage": 177
+    },
+    {
+     "id": "py4e.ch10.s10",
+     "number": "10.10",
+     "title": "فهرس المصطلحات",
+     "bookPage": 167,
+     "pdfPage": 177
+    },
+    {
+     "id": "py4e.ch10.s11",
+     "number": "10.11",
+     "title": "تمارين",
+     "bookPage": 168,
+     "pdfPage": 178
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch11",
+   "number": 11,
+   "title": "التعابير النمطية",
+   "bookPage": 172,
+   "pdfPage": 182,
+   "sections": [
+    {
+     "id": "py4e.ch11.s1",
+     "number": "11.1",
+     "title": "مطابقة المحارف",
+     "bookPage": 173,
+     "pdfPage": 183
+    },
+    {
+     "id": "py4e.ch11.s2",
+     "number": "11.2",
+     "title": "استخراج البيانات باستخدام التعابير النمطية",
+     "bookPage": 175,
+     "pdfPage": 185
+    },
+    {
+     "id": "py4e.ch11.s3",
+     "number": "11.3",
+     "title": "تنفيذ عمليتي البحث والاستخراج معًا",
+     "bookPage": 178,
+     "pdfPage": 188
+    },
+    {
+     "id": "py4e.ch11.s4",
+     "number": "11.4",
+     "title": "محرف الهروب",
+     "bookPage": 183,
+     "pdfPage": 193
+    },
+    {
+     "id": "py4e.ch11.s5",
+     "number": "11.5",
+     "title": "ملخص",
+     "bookPage": 184,
+     "pdfPage": 194
+    },
+    {
+     "id": "py4e.ch11.s6",
+     "number": "11.6",
+     "title": "معلومات إضافية لمستخدمي نظام UNIX و LINUX",
+     "bookPage": 185,
+     "pdfPage": 195
+    },
+    {
+     "id": "py4e.ch11.s7",
+     "number": "11.7",
+     "title": "التنقيح",
+     "bookPage": 186,
+     "pdfPage": 196
+    },
+    {
+     "id": "py4e.ch11.s8",
+     "number": "11.8",
+     "title": "فهرس المصطلحات",
+     "bookPage": 187,
+     "pdfPage": 197
+    },
+    {
+     "id": "py4e.ch11.s9",
+     "number": "11.9",
+     "title": "تمارين",
+     "bookPage": 187,
+     "pdfPage": 197
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch12",
+   "number": 12,
+   "title": "البرامج المرتبطة بالشبكات",
+   "bookPage": 190,
+   "pdfPage": 200,
+   "sections": [
+    {
+     "id": "py4e.ch12.s1",
+     "number": "12.1",
+     "title": "بروتوكول نقل النص التشعبي HTTP",
+     "bookPage": 190,
+     "pdfPage": 200
+    },
+    {
+     "id": "py4e.ch12.s2",
+     "number": "12.2",
+     "title": "أبسط متصفح ويب في العالم",
+     "bookPage": 191,
+     "pdfPage": 201
+    },
+    {
+     "id": "py4e.ch12.s3",
+     "number": "12.3",
+     "title": "استعادة صورة عن طريق بروتوكول HTTP",
+     "bookPage": 194,
+     "pdfPage": 204
+    },
+    {
+     "id": "py4e.ch12.s4",
+     "number": "12.4",
+     "title": "استعادة صفحات الويب باستخدام مكتبة URLLIB",
+     "bookPage": 198,
+     "pdfPage": 208
+    },
+    {
+     "id": "py4e.ch12.s5",
+     "number": "12.5",
+     "title": "قراءة الملفات المُشفّرة ثنائيًا باستخدام URLLIB",
+     "bookPage": 199,
+     "pdfPage": 209
+    },
+    {
+     "id": "py4e.ch12.s6",
+     "number": "12.6",
+     "title": "تحليل واستخراج البيانات من صفحات HTML",
+     "bookPage": 201,
+     "pdfPage": 211
+    },
+    {
+     "id": "py4e.ch12.s7",
+     "number": "12.7",
+     "title": "تحليل صفحات HTML باستخدام التعابير النمطية",
+     "bookPage": 201,
+     "pdfPage": 211
+    },
+    {
+     "id": "py4e.ch12.s8",
+     "number": "12.8",
+     "title": "تحليل صفحات HTML باستخدام مكتبة BEAUTIFULSOUP",
+     "bookPage": 204,
+     "pdfPage": 214
+    },
+    {
+     "id": "py4e.ch12.s9",
+     "number": "12.9",
+     "title": "ملاحظات خاصة لمستخدمي أنظمة UNIX أو لينكس",
+     "bookPage": 209,
+     "pdfPage": 219
+    },
+    {
+     "id": "py4e.ch12.s10",
+     "number": "12.10",
+     "title": "فهرس المصطلحات",
+     "bookPage": 209,
+     "pdfPage": 219
+    },
+    {
+     "id": "py4e.ch12.s11",
+     "number": "12.11",
+     "title": "تمارين",
+     "bookPage": 210,
+     "pdfPage": 220
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch13",
+   "number": 13,
+   "title": "استخدام خدمات الويب",
+   "bookPage": 213,
+   "pdfPage": 223,
+   "sections": [
+    {
+     "id": "py4e.ch13.s1",
+     "number": "13.1",
+     "title": "لغة التوصيف الموسعة XML",
+     "bookPage": 213,
+     "pdfPage": 223
+    },
+    {
+     "id": "py4e.ch13.s2",
+     "number": "13.2",
+     "title": "تحليل نصوص XML",
+     "bookPage": 214,
+     "pdfPage": 224
+    },
+    {
+     "id": "py4e.ch13.s3",
+     "number": "13.3",
+     "title": "استخدام الحلقات للمرور على العقد",
+     "bookPage": 215,
+     "pdfPage": 225
+    },
+    {
+     "id": "py4e.ch13.s4",
+     "number": "13.4",
+     "title": "JSON",
+     "bookPage": 217,
+     "pdfPage": 227
+    },
+    {
+     "id": "py4e.ch13.s5",
+     "number": "13.5",
+     "title": "تحليل نصوص JSON",
+     "bookPage": 218,
+     "pdfPage": 228
+    },
+    {
+     "id": "py4e.ch13.s6",
+     "number": "13.6",
+     "title": "واجهات برمجة التطبيقات",
+     "bookPage": 219,
+     "pdfPage": 229
+    },
+    {
+     "id": "py4e.ch13.s7",
+     "number": "13.7",
+     "title": "الأمان واستخدام واجهات برمجة التطبيقات",
+     "bookPage": 221,
+     "pdfPage": 231
+    },
+    {
+     "id": "py4e.ch13.s8",
+     "number": "13.8",
+     "title": "فهرس المصطلحات",
+     "bookPage": 221,
+     "pdfPage": 231
+    },
+    {
+     "id": "py4e.ch13.s9",
+     "number": "13.9",
+     "title": "التطبيق الأول: خدمة جوغل للجغرافيا",
+     "bookPage": 222,
+     "pdfPage": 232
+    },
+    {
+     "id": "py4e.ch13.s10",
+     "number": "13.10",
+     "title": "التطبيق الثاني: تويتر",
+     "bookPage": 227,
+     "pdfPage": 237
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch14",
+   "number": 14,
+   "title": "البرمجة الكائنية التوجه",
+   "bookPage": 235,
+   "pdfPage": 245,
+   "sections": [
+    {
+     "id": "py4e.ch14.s1",
+     "number": "14.1",
+     "title": "إدارة البرامج الكبيرة",
+     "bookPage": 235,
+     "pdfPage": 245
+    },
+    {
+     "id": "py4e.ch14.s2",
+     "number": "14.2",
+     "title": "مقدمة",
+     "bookPage": 235,
+     "pdfPage": 245
+    },
+    {
+     "id": "py4e.ch14.s3",
+     "number": "14.3",
+     "title": "استخدام الكائنات",
+     "bookPage": 236,
+     "pdfPage": 246
+    },
+    {
+     "id": "py4e.ch14.s4",
+     "number": "14.4",
+     "title": "البدء مع البرامج",
+     "bookPage": 237,
+     "pdfPage": 247
+    },
+    {
+     "id": "py4e.ch14.s5",
+     "number": "14.5",
+     "title": "تقسيم المشكلة",
+     "bookPage": 239,
+     "pdfPage": 249
+    },
+    {
+     "id": "py4e.ch14.s6",
+     "number": "14.6",
+     "title": "إنشاء كائن بلغة بايثون",
+     "bookPage": 240,
+     "pdfPage": 250
+    },
+    {
+     "id": "py4e.ch14.s7",
+     "number": "14.7",
+     "title": "الصنف كنوع بيانات",
+     "bookPage": 243,
+     "pdfPage": 253
+    },
+    {
+     "id": "py4e.ch14.s8",
+     "number": "14.8",
+     "title": "دورة حياة الكائن",
+     "bookPage": 244,
+     "pdfPage": 254
+    },
+    {
+     "id": "py4e.ch14.s9",
+     "number": "14.9",
+     "title": "تعدد الكائنات",
+     "bookPage": 245,
+     "pdfPage": 255
+    },
+    {
+     "id": "py4e.ch14.s10",
+     "number": "14.10",
+     "title": "الوراثة",
+     "bookPage": 247,
+     "pdfPage": 257
+    },
+    {
+     "id": "py4e.ch14.s11",
+     "number": "14.11",
+     "title": "ملخص",
+     "bookPage": 248,
+     "pdfPage": 258
+    },
+    {
+     "id": "py4e.ch14.s12",
+     "number": "14.12",
+     "title": "فهرس المصطلحات",
+     "bookPage": 249,
+     "pdfPage": 259
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch15",
+   "number": 15,
+   "title": "قواعد البيانات ولغة SQL",
+   "bookPage": 252,
+   "pdfPage": 262,
+   "sections": [
+    {
+     "id": "py4e.ch15.s1",
+     "number": "15.1",
+     "title": "ما هي قاعدة البيانات؟",
+     "bookPage": 252,
+     "pdfPage": 262
+    },
+    {
+     "id": "py4e.ch15.s2",
+     "number": "15.2",
+     "title": "مفاهيم قواعد البيانات",
+     "bookPage": 252,
+     "pdfPage": 262
+    },
+    {
+     "id": "py4e.ch15.s3",
+     "number": "15.3",
+     "title": "متصفح قاعدة البيانات SQLITE",
+     "bookPage": 253,
+     "pdfPage": 263
+    },
+    {
+     "id": "py4e.ch15.s4",
+     "number": "15.4",
+     "title": "إنشاء جدول لقاعدة بيانات",
+     "bookPage": 253,
+     "pdfPage": 263
+    },
+    {
+     "id": "py4e.ch15.s5",
+     "number": "15.5",
+     "title": "ملخص عن لغة الاستعلام البنيوية SQL",
+     "bookPage": 257,
+     "pdfPage": 267
+    },
+    {
+     "id": "py4e.ch15.s6",
+     "number": "15.6",
+     "title": "استكشاف تويتر باستخدام قواعد البيانات",
+     "bookPage": 258,
+     "pdfPage": 268
+    },
+    {
+     "id": "py4e.ch15.s7",
+     "number": "15.7",
+     "title": "نمذجة البيانات",
+     "bookPage": 266,
+     "pdfPage": 276
+    },
+    {
+     "id": "py4e.ch15.s8",
+     "number": "15.8",
+     "title": "برمجة قاعدة بيانات ذات الجداول المتعددة",
+     "bookPage": 268,
+     "pdfPage": 278
+    },
+    {
+     "id": "py4e.ch15.s9",
+     "number": "15.9",
+     "title": "أنواع المفاتيح الثلاثة",
+     "bookPage": 273,
+     "pdfPage": 283
+    },
+    {
+     "id": "py4e.ch15.s10",
+     "number": "15.10",
+     "title": "استخدام عبارة JOIN لاستعادة البيانات",
+     "bookPage": 277,
+     "pdfPage": 287
+    },
+    {
+     "id": "py4e.ch15.s11",
+     "number": "15.11",
+     "title": "الملخص",
+     "bookPage": 281,
+     "pdfPage": 291
+    },
+    {
+     "id": "py4e.ch15.s12",
+     "number": "15.12",
+     "title": "التنقيح",
+     "bookPage": 281,
+     "pdfPage": 291
+    },
+    {
+     "id": "py4e.ch15.s13",
+     "number": "15.13",
+     "title": "فهرس المصطلحات",
+     "bookPage": 282,
+     "pdfPage": 292
+    }
+   ]
+  },
+  {
+   "id": "py4e.ch16",
+   "number": 16,
+   "title": "العرض المرئي للبيانات",
+   "bookPage": 285,
+   "pdfPage": 295,
+   "sections": [
+    {
+     "id": "py4e.ch16.s1",
+     "number": "16.1",
+     "title": "عرض خريطة باستخدام بيانات جغرافية من غوغل",
+     "bookPage": 285,
+     "pdfPage": 295
+    },
+    {
+     "id": "py4e.ch16.s2",
+     "number": "16.2",
+     "title": "العرض المرئي للشبكات والارتباطات",
+     "bookPage": 288,
+     "pdfPage": 298
+    },
+    {
+     "id": "py4e.ch16.s3",
+     "number": "16.3",
+     "title": "تحليل وعرض البيانات الواردة بريديًا",
+     "bookPage": 293,
+     "pdfPage": 303
+    }
+   ]
+  }
+ ]
+}

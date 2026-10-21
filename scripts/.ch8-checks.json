@@ -1,0 +1,217 @@
+{
+ "traces": [
+  {
+   "lesson": "py4e.ch8.l1",
+   "id": "ex2.trace-indexing",
+   "code": "cheeses = ['x', 'y', 'z']\nprint(cheeses[0])\nprint(cheeses[-1])\nprint(len(cheeses))",
+   "answer": "x\nz\n3"
+  },
+  {
+   "lesson": "py4e.ch8.l2",
+   "id": "ex2.trace-slice-membership",
+   "code": "t = ['a', 'b', 'c', 'd', 'e', 'f']\nu = t[1:3]\nprint(len(u))\nprint(u[0])\nprint('c' in t)\nprint('z' in t)",
+   "answer": "2\nb\nTrue\nFalse"
+  },
+  {
+   "lesson": "py4e.ch8.l3",
+   "id": "ex2.trace-delete",
+   "code": "t = ['a', 'b', 'c', 'd']\nx = t.pop(1)\nprint(x)\nprint(len(t))\nt.remove('d')\nprint(t[0])",
+   "answer": "b\n3\na"
+  },
+  {
+   "lesson": "py4e.ch8.l4",
+   "id": "ex2.trace-list-split",
+   "code": "s = 'spam'\nt = list(s)\nprint(len(t))\nprint(t[0])\nprint('pining for the fjords'.split()[2])",
+   "answer": "4\ns\nthe"
+  },
+  {
+   "lesson": "py4e.ch8.l5",
+   "id": "ex2.trace-aliasing",
+   "code": "a = [1, 2, 3]\nb = a\nb[0] = 99\nprint(a[0])\nprint(a is b)",
+   "answer": "99\nTrue"
+  },
+  {
+   "lesson": "py4e.ch8.l6",
+   "id": "ex1.trace-delete-extend",
+   "code": "t = [1, 2, 3, 4, 5]\ndel t[1:3]\nprint(len(t))\nprint(t[0])\nprint(t[-1])",
+   "answer": "3\n1\n5"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "py4e.ch8.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "numbers = [17, 123]\nnumbers[1] = 5\nprint(numbers)"
+  },
+  {
+   "lesson": "py4e.ch8.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "mixed = ['spam', 2.0, 5, [10, 20]]\nprint(mixed[0])\nprint(mixed[3])\nprint(len(mixed))\n\ncheeses = ['Cheddar', 'Edam', 'Gouda']\nprint(cheeses[-1])\ncheeses[0] = 'Brie'\nprint(cheeses)\n\nempty = []\nprint(len(empty))"
+  },
+  {
+   "lesson": "py4e.ch8.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — اصنع قوائمك\n# Your playground — build your lists\n\nmovies = ['Inception', 2010, 8.8]\nprint(movies)\nprint(movies[0], movies[-1])\nmovies[2] = 9.0\nprint(movies)\n\nempty = []\nprint(len(empty))"
+  },
+  {
+   "lesson": "py4e.ch8.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "t = ['a', 'b', 'c', 'd']\nprint(t[1:3])"
+  },
+  {
+   "lesson": "py4e.ch8.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "numbers = [1, 2, 3]\nfor i in range(len(numbers)):\n    numbers[i] = numbers[i] * 2\nprint(numbers)\n\nc = [1, 2, 3] + [4, 5, 6]\nprint(c)\nprint([0] * 4)\nprint('Edam' in ['Cheddar', 'Edam'])\n\nt = ['a', 'b', 'c', 'd', 'e', 'f']\nprint(t[1:3])\nprint(t[:4])\nprint(t[3:])\nt[1:3] = ['x', 'y']\nprint(t)"
+  },
+  {
+   "lesson": "py4e.ch8.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — امشِ واجمع واقطع\n# Your playground — walk, join and cut\n\nletters = ['a', 'b', 'c', 'd', 'e']\nfor ch in letters:\n    print(ch)\n\nprint(letters + letters)\nprint(letters * 2)\nprint('d' in letters)\n\nprint(letters[1:4])\nprint(letters[:2])\nprint(letters[2:])\nprint(letters[:])"
+  },
+  {
+   "lesson": "py4e.ch8.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "t = ['d', 'c', 'e']\nresult = t.sort()\nprint(t)\nprint(result)"
+  },
+  {
+   "lesson": "py4e.ch8.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "word = 'banana'\nprint(word.upper())\nprint(word)\n\nt = ['d', 'c', 'e']\nresult = t.sort()\nprint(t)\nprint(result)\n\nt.append('x')\nt.remove('d')\nprint(t)\nprint(len(t))"
+  },
+  {
+   "lesson": "py4e.ch8.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — جرّب التوابع الأربعة\n# Your playground — try the four roads\n\nt = ['p', 'q', 'r', 's']\nx = t.pop(2)\nprint('popped:', x, '| list:', t)\n\ndel t[0]\nprint(t)\n\nt.remove('s')\nprint(t)\n\nt.extend(['m', 'n'])\nt.sort()\nprint(t)"
+  },
+  {
+   "lesson": "py4e.ch8.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "nums = [3, 41, 12, 9, 74, 15]\nprint(len(nums))\nprint(max(nums))\nprint(sum(nums))"
+  },
+  {
+   "lesson": "py4e.ch8.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "def delete_head(t):\n    del t[0]\n\nletters = ['a', 'b', 'c']\ndelete_head(letters)\nprint(letters)\n\nline = 'From stephen.marquard@uct.ac.za Sat Jan 5 09:14:16 2008'\nwords = line.split()\nprint(len(words))\nprint(words[0])\nprint(words[2])"
+  },
+  {
+   "lesson": "py4e.ch8.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — تحليل سطور بريد\n# Your playground — parsing mail lines\n\nline1 = 'From zarah@media.berkeley.edu Fri Jan 4 18:10:48 2008'\nline2 = 'spam-spam-spam'\n\nwords = line1.split()\nprint(words)\nprint('day:', words[2])\n\nemail = words[1]\nprint('email:', email)\n\nprint(line2.split('-'))\nprint(line2.split('-')[1])\nprint(' '.join(['pypath', 'rocks']))"
+  },
+  {
+   "lesson": "py4e.ch8.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "a = [1, 2, 3]\nb = a\nb[0] = 99\nprint(a)"
+  },
+  {
+   "lesson": "py4e.ch8.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "lines = [\n    'From stephen.marquard@uct.ac.za Sat Jan 5 09:14:16 2008',\n    '',\n    'From zarah@media.berkeley.edu Fri Jan 4 18:10:48 2008',\n    'Subject: hello',\n]\nfor line in lines:\n    words = line.split()\n    if len(words) < 1:\n        continue\n    if words[0] != 'From':\n        continue\n    parts = words[5].split(':')\n    print(words[2], parts[0])"
+  },
+  {
+   "lesson": "py4e.ch8.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — اختراق الإحالات\n# Your playground — probing references\n\nfirst = ['x', 'y']\nsecond = first\nsecond.append('z')\nprint(first)\nprint(second is first)\n\ncopy = first[:]\ncopy.remove('x')\nprint(first)\nprint(copy is first)\n\ndef add_item(t):\n    t.append('NEW')\n\nbag = ['a']\nadd_item(bag)\nprint(bag)"
+  },
+  {
+   "lesson": "py4e.ch8.l6",
+   "kind": "predict",
+   "id": "predict",
+   "code": "words = ['fig', 'Apple', 'date']\nwords.sort()\nprint(words[0])\nprint(words[-1])"
+  },
+  {
+   "lesson": "py4e.ch8.l6",
+   "kind": "worked",
+   "id": "worked",
+   "code": "sentence = 'Lists hold many values in order. Python lists are mutable and handy.'\nwords = sentence.split()\nclean = []\nfor w in words:\n    clean.append(w.strip('.,').lower())\nclean.sort()\nunique = []\nfor w in clean:\n    if w not in unique:\n        unique.append(w)\nprint('words: %d' % len(clean))\nprint('unique: %d' % len(unique))\nprint('first: %s' % clean[0])\nprint('last: %s' % clean[-1])"
+  },
+  {
+   "lesson": "py4e.ch8.l6",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — نظّم كلماتك أنت\n# Your playground — organize your very own words\n\ntext = \"py4e made lists easy; lists made python fun.\"\nwords = text.split()\nclean = []\nfor w in words:\n    clean.append(w.strip(\".,;\").lower())\nclean.sort()\nprint(clean)\n\nunique = []\nfor w in clean:\n    if w not in unique:\n        unique.append(w)\nprint(unique)\nprint(\"unique: %d\" % len(unique))"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "py4e.ch8.l1",
+   "id": "ex3.mcq-indexerror",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch8.l2",
+   "id": "ex3.mcq-repeat",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch8.l3",
+   "id": "ex3.mcq-sort-returns",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch8.l4",
+   "id": "ex3.mcq-reference",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch8.l5",
+   "id": "ex3.mcq-equivalent",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch8.l6",
+   "id": "ex4.mcq-safe-copy",
+   "answer": "a",
+   "solution": "a"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "py4e.ch8.l2",
+   "id": "ex4.fill-repeat-op",
+   "answer": "*"
+  },
+  {
+   "lesson": "py4e.ch8.l3",
+   "id": "ex4.fill-remove",
+   "answer": "remove"
+  },
+  {
+   "lesson": "py4e.ch8.l4",
+   "id": "ex4.fill-split",
+   "answer": "split"
+  },
+  {
+   "lesson": "py4e.ch8.l5",
+   "id": "ex4.fill-is-op",
+   "answer": "is"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "py4e.ch8.l6",
+   "id": "ex6.debug-alias-backup",
+   "brokenCode": "original = ['banana', 'apple', 'cherry']\nbackup = original\n# أردت نسخة احتياطية ثم رتبتها / wanted a backup, then sorted it\nbackup.sort()\nprint('backup: %s' % backup)\nprint('original: %s' % original)"
+  }
+ ]
+}

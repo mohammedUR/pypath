@@ -1,0 +1,369 @@
+     1→import type { Lesson } from '@/lib/content/schema';
+     2→
+     3→/**
+     4→ * swe.ch15.l1 — "What Makes Code Legacy and Characterization Tests
+     5→ * الشيفرة العتيقة واختبارات التوصيف"
+     6→ * Aligned with SWE ch15 s1 (What Makes Code Legacy, pp.414–415) +
+     7→ * s2 (Characterization Tests, pp.415–416).
+     8→ * All expression is original — a paraphrase of the CC BY-SA 4.0 source, never
+     9→ * a verbatim translation (the tiny fee-code/zone snippets follow the book's
+    10→ * example shapes with original framing).
+    11→ * Runnable design: a deliberately-legacy deterministic function with
+    12→ * surprising edges + a characterization suite built by observation
+    13→ * (unittest TextTestRunner + StringIO, golden dict, plain asserts). The
+    14→ * debug block is a stale-oracle suite fixed by the promote loop.
+    15→ * Deterministic only: no input(), no exit(), no unittest.main.
+    16→ */
+    17→const lesson = {
+    18→  id: 'swe.ch15.l1',
+    19→  version: 1,
+    20→  part: 'I',
+    21→  track: 'P3',
+    22→  book: 'SWE',
+    23→  chapter: 15,
+    24→  title: { ar: 'الشيفرة العتيقة واختبارات التوصيف', en: 'What Makes Code Legacy and Characterization Tests' },
+    25→  estimatedMinutes: 30,
+    26→  prerequisites: ['swe.ch14.l5'],
+    27→  blocks: [
+    28→    {
+    29→      kind: 'hook',
+    30→      text: {
+    31→        ar: 'أربعة عشر فصلًا بنينا وسلّمنا — وهذا الفصل عن ما بعد الاحتفال: السنوات التي يقضيها النظام الناجح يُصلَّح ويُكيَّف ويُوسَّع، غالبًا بأيدي أشخاص لم يكتبوه. الأرقام صادمة: الصيانة — بأصنافها كلها — تستهلك نحو ستين بالمئة من كلفة النظام عبر عمره، فالشيفرة التي سترثها هي الحدث الرئيس لمسيرتك لا تنظيفًا بعده. والتعريف العملي للشيفرة العتيقة لا علاقة له بالعمر: هي شيفرة بلا اختبارات — أو بصيغة أقسى، شيفرة تخاف أن تغيّرها. لهذا الفصل طريقتان فقط للتغيير، وأول سلاحه اختبارات التوصيف التي تنقلب بها على كل ما تعلمته في الفصل العاشر: بدل اشتقاق المتوقع من مواصفة، ترصد ما تفعله الشيفرة فعلًا وتثبّته، فيصير النظام العامل نفسه أوراكل. بنهاية الدرس ستكون قادرًا على: تعريف الشيفرة العتيقة بدقة والتمييز بين طريقتي التغيير، وبناء حزمة توصيف بحلقة الترويج promote، وتثبيت الأركان الغريبة كأصول ثم توثيق العيوب لا إصلاحها في النفس.',
+    32→        en: 'Fourteen chapters of building and shipping — this chapter is about everything after the celebration: the years a successful system spends being fixed, adapted and extended, usually by people who did not write it. The numbers sting: maintenance, in all its kinds, consumes roughly sixty percent of a system\u2019s lifetime cost, so the code you will inherit is the main event of a career, not cleanup after it. The working definition of legacy code has nothing to do with age: it is code without tests — or, more viscerally, code you are afraid to change. There are only two ways to change it, and the first weapon is the characterization test, which flips everything chapter ten taught: instead of deriving the expected value from a specification, you observe what the code actually does and pin it, so the running system itself becomes the oracle. By the end you will be able to: define legacy code precisely and tell the two ways to change it apart, build a characterization suite with the promote loop, and pin the surprising corners as assets — recording bugs instead of fixing them in the same breath.',
+    33→      },
+    34→    },
+    35→    {
+    36→      kind: 'predict',
+    37→      code: "def legacy_fee_code(visit_type):\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type, 'E10')\n\nprint(legacy_fee_code('lab'))\nprint(legacy_fee_code('phone'))",
+    38→      question: {
+    39→        ar: 'دالة ورثتها بلا توثيق ولا اختبارات. السطر الأول مفهوم: فحص المخبر يفوتر L20. لكن ماذا يطبع السطر الثاني لنوع زائر غريب مثل phone؟ وهل هذا سلوك مقصود أم صدفة لغة؟',
+    40→        en: 'A function you inherited with no docs and no tests. The first line is clear: a lab visit bills L20. But what does the second line print for a strange visit type like phone? And is that behavior intended or a language accident?',
+    41→      },
+    42→      reveal: {
+    43→        ar: 'الطباعة: L20 ثم E10 — النوع المجهول يُفوتر فاتورة الفحص بصمت، لأن get تنزل على البديل E10. قد يكون هذا مقصودًا (كل غير معروف يعامل كفحص) وقد يكون ثغرة فواتير حقيقية — ولا سبيل لمعرفة ذلك من الوثائق الغائبة. ومن هنا فكرة الدرس: قبل أن تلمس شيئًا، ترصد هذا السلوك الغريب وتكتبه في اختبار توصيف، فيصير مُثبَّتًا مكشوفًا: أي تعديل قادم ينقلبه سيرخض فورًا.',
+    44→        en: 'It prints L20 then E10 — an unknown type silently bills as an exam, because get falls back to the E10 default. This may be intended (everything unrecognized is treated as an exam) or a real billing defect — and the missing documentation cannot tell you which. Hence today\u2019s idea: before touching anything, you observe that odd behavior and write it into a characterization test, so it becomes pinned — and any upcoming change that flips it screams immediately.',
+    45→      },
+    46→    },
+    47→    {
+    48→      kind: 'concept',
+    49→      heading: { ar: 'ما الذي يجعل الشيفرة عتيقة', en: 'What makes code legacy' },
+    50→      chunks: [
+    51→        {
+    52→          ar: 'الشيفرة العتيقة شيفرة بلا اختبارات — أو بصيغة أقسى: شيفرة تخاف تغييرها. العمر عرضيّ: وحدة كُتبت الشهر الماضي بلا اختبارات ولا توثيق ومؤلفها رحل، هي عتيقة؛ ووحدة عمرها خمسة عشر عامًا بحزمة شاملة ليست كذلك، لأن الحزمة تجعل التغيير آمنًا. الخاصية الحاسمة أن السلوك الفعلي غير مُثبَّت في أي مكان سوى الشيفرة ذاتها، فأي تعديل قد يكسر شيئًا لا تعرفه ولا تعرف رخيصًا كيف تكتشفه. ومن هنا الحلزون: الخوف يولّد التجنّب، والتجنّب يعني أن التغييرات تُبرشم بأقل طريقة توغّل — أي الأقل نظافة — فتسوء الشيفرة بالضبط لأن الجميع حذرين. وكسر هذا الحلزون مهارة تبدأ بانعكاس لمنطق الاختبار الذي تعرفه.',
+    53→          en: 'Legacy code is code without tests — or, more viscerally, code you are afraid to change. Age is incidental: a module written last month with no tests, no documentation and one departed author is legacy; a fifteen-year-old module with a thorough suite is not, because the suite makes change safe. The defining property is that actual behavior is pinned down nowhere except the code itself, so any change might break something you cannot name and cannot cheaply discover. Hence the spiral: fear breeds avoidance, avoidance means changes are bolted on in the least invasive — least clean — way possible, and the code gets worse precisely because everyone is being careful. Breaking that spiral is a skill, and it starts by inverting the testing logic you already know.',
+    54→        },
+    55→        {
+    56→          ar: 'مايكل فيذرز سمّى الطريقتين الوحيدتين لتغيير الشيفرة العتيقة. الأولى edit and pray: ادرس الكود، عدّل، تجوّل يدويًا بحثًا عما كسرته، انشر، وتمنّى. الثانية cover and modify: أولًا ابنِ اختبارات تغطي الكود الذي ستلمسه، ثم عدّل ودع الحزمة تكشف أي سلوك غيّرته بلا قصد — وهذا ما كان هذا الكتاب يعلّمه من أول فصل، وها صار له اسم. تبدأ الطريقة الثانية ببحث لا بتحرير: حدّد نقاط التغيير change points، المواضع التي يجب أن تهبط فيها تعديلاتك فعلًا، لأن هناك بالضبط يجب أن تمسك الشبكة قبل لمس أي شيء. والشيفرة العتيقة بلا مواصفة موثوقة: التعليقات تكذب، والتوثيق يصف نسخة قديمة، والمتطلبات الأصلية تخلف عدة تحولات.',
+    57→          en: 'Michael Feathers named the only two ways to change legacy code. Edit and pray: study the code, edit, walk the app manually hunting for breakage, deploy, and hope. Cover and modify: first build tests covering the code you must touch, then change it and let the suite detect any behavior you altered without meaning to — what this book has taught since chapter one, now finally with a name. Cover-and-modify begins with a search, not an edit: locate your change points, the specific places the change must actually land, because that is exactly where the net has to grip before you touch anything. And legacy code has no trustworthy spec: the comments lie, the documentation describes an older version, and the original requirements are several pivots behind.',
+    58→        },
+    59→      ],
+    60→    },
+    61→    {
+    62→      kind: 'concept',
+    63→      heading: { ar: 'اختبارات التوصيف: النظام العامل هو الأوراكل', en: 'Characterization tests: the running system is the oracle' },
+    64→      chunks: [
+    65→        {
+    66→          ar: 'اختبارات الفصل العاشر اشتُقّت من المواصفة: الأوراكل قال لك ما الجواب الصحيح. هنا تنقلب اتجاه الاستدلال: اختبار التوصيف characterization test يوثّق ما تفعله الشيفرة الآن — تستدعي بمدخل، ترصد الخرج، وتكتب الرصد نفسه قيمةً متوقعة. يبدو ذلك غشًّا: أنت تؤكد أن الشيفرة تفعل ما تفعله، عيوبًا من ضمنها. لكن وظيفة الاختبار تثبيت السلوك الحالي لا التحقق من الصحة، حتى لا يُغيَّر دون علم؛ فالمستخدمون وشيفرة أخرى قد يعتمدون الأركان الغريبة ذاتها. والحلقة العملية: اكتب اختبارًا بقيمة متوقعة خاطئة عمدًا، شغّله، اقرأ القيمة الفعلية من رسالة الفشل، ثم روّج promote تلك القيمة داخل التأكيد. وتجوّل الأطراف: مدخلات فارغة، قيم حدّية، أنواع مجهولة — حتى تحيط بشبكة سلوكٍ مُثبَّتٍ كل ما قد يمسّه تعديلك.',
+    67→          en: 'Chapter ten\u2019s tests were derived from a specification: the oracle told you the right answer. Here the direction of inference flips: a characterization test documents what the code does now — call it with an input, observe the output, and write that observation down as the expected value. It feels like cheating: you are asserting the code does whatever it does, bugs included. But the test\u2019s job is pinning current behavior, not verifying correctness, so upcoming changes cannot alter it unknowingly; users and other code may well depend on those strange corners. The practical loop: write a test with a deliberately wrong expected value, run it, read the actual value from the failure message, then promote that value into the assertion. Probe the edges — empty inputs, boundaries, unknown kinds — until a net of pinned behavior surrounds everything your change might disturb.',
+    68→        },
+    69→        {
+    70→          ar: 'ومتى كشف التوصيف عيبًا واضحًا، قاوم إغراء إصلاحه في النفس: سجّله، أكمل بناء الشبكة، ثم غيّر السلوك خطوةً مستقلة تُراجع وحدها — التزامٌ واحد إما يعيد هيكلة وإما يصلح، لا الاثنان بغموض. وفهم الشيفرة الموروثة له سير عمل متعمد: اقرأ أولًا ما تركه الفريق السابق — الاختبارات فوق الجميع: الاختبار الناجح توثيق تنفيذي يبقى متزامنًا مع السلوك الذي يفحصه فعلًا — ثم الوثائق التصميمية، وميّز أن الاختبارات وسجل الالتزامات والنماذج توثيق غير رسمي حي يبقى أقرب إلى الشيفرة. شغّل التطبيق وحزمته محليًا قبل أي شيء: نظام لا تستطيع تشغيله نظام لا تستطيع توصيفه. ومساعدات الذكاء الاصطناعي قوية هنا كمولّد فرضيات — لكن الفصل الثالث عشر يحكم: روايتها عن السلوك فرضية، والنظام العامل يبقى الأوراكل الوحيد.',
+    71→          en: 'When characterization exposes a plain bug, resist fixing it in the same breath: record it, finish building the net, then change behavior as its own deliberately reviewed step — one commit either refactors or fixes, never ambiguously both. Understanding an inherited codebase takes a deliberate workflow: read what the previous team left first — the tests above all: a passing test is executable documentation that stays synchronized with the behavior it actually checks — then design docs, noting that tests, commit history and mockups are living informal documentation staying closest to the code. Get the app and its suite running locally before anything: a system you cannot run is a system you cannot characterize. AI assistants are genuinely strong here as hypothesis generators — but chapter thirteen governs: their account is a hypothesis, and the running system remains the only oracle.',
+    72→        },
+    73→      ],
+    74→    },
+    75→    {
+    76→      kind: 'worked',
+    77→      title: { ar: 'حزمة توصيف: الرصد ثم الشبكة', en: 'A characterization suite: observe, then net' },
+    78→      code: "import io\nimport unittest\n\ndef legacy_fee_code(visit_type):\n    # inherited: no docs, no tests\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type, 'E10')\n\ngolden = {}\nfor probe in ['exam', 'lab', 'vaccine', 'phone', '']:\n    golden[probe] = legacy_fee_code(probe)\n\nfor key in sorted(golden):\n    print((key if key else '<empty>'), golden[key])\n\nclass Characterization(unittest.TestCase):\n    def test_known_codes(self):\n        for probe in ['exam', 'lab', 'vaccine']:\n            self.assertEqual(legacy_fee_code(probe), golden[probe])\n\n    def test_unknown_bills_as_exam(self):\n        self.assertEqual(legacy_fee_code('phone'), golden['phone'])\n\n    def test_empty_bills_as_exam(self):\n        self.assertEqual(legacy_fee_code(''), golden[''])\n\nresult = unittest.TextTestRunner(stream=io.StringIO()).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(Characterization))\nprint('run: %d failures: %d' % (result.testsRun, len(result.failures)))",
+    79→      explanation: {
+    80→        ar: 'أربعة أفعال بالترتيب: رصد — حلقة على خمسة مدخلات (بينها النوع المجهول والسلسلة الفارغة) تبني قاموس golden من قيم مرصودة لا من مواصفة؛ وطباعة الشبكة فتصير السلوك الغريب مرئيًا: phone والفارغ كلاهما E10؛ وحزمة unittest من ثلاثة اختبارات تؤكد أن الدالة تطابق الرصد — لاحظ أنه لا unittest.main بل مشغّل نصي يكتب في StringIO؛ وسطر الحصيلة run: 3 failures: 0. القاموس golden هو الأوراكل حرفًا: النظام العامل ولّده. من اليوم، أي إعادة هيكلة تغير أحد هذه الأركان تُسقط اختبارًا — وهذا بالضبط ما نريده.',
+    81→        en: 'Four moves in order: observation — a loop over five inputs (including the unknown type and the empty string) building a golden dict from observed values, not from a spec; printing the net, which makes the odd behavior visible: phone and the empty string both bill E10; a unittest suite of three tests asserting the function matches the observation — note there is no unittest.main, just a TextTestRunner writing into a StringIO; and the summary line run: 3 failures: 0. The golden dict is the oracle, literally: the running system produced it. From now on, any refactor that shifts one of these corners drops a test — exactly what we want.',
+    82→      },
+    83→    },
+    84→    {
+    85→      kind: 'exercise',
+    86→      id: 'ex1.trace-fees',
+    87→      exKind: 'trace_output',
+    88→      required: true,
+    89→      prompt: {
+    90→        ar: 'اقرأ الكود وتوقّع خرجه بالضبط — سطرًا لكل طباعة — دون تشغيله. تذكّر من الدرس: ماذا تفعل get عندما يغيب المفتاح، وكيف يُطبع النص الفارغ بـ repr؟',
+    91→        en: 'Read the code and predict its exact output — one line per print — without running it. Recall from the lesson: what does get do when the key is missing, and how does repr print the empty string?',
+    92→      },
+    93→      code: "def legacy_fee_code(visit_type):\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type, 'E10')\n\nfor probe in ['lab', 'phone', 'vaccine', '']:\n    print(repr(probe), legacy_fee_code(probe))",
+    94→      solution: "'lab' L20\n'phone' E10\n'vaccine' V30\n'' E10",
+    95→      answer: "'lab' L20\n'phone' E10\n'vaccine' V30\n'' E10",
+    96→      hints: [
+    97→        { ar: 'المفتاحان lab وvaccine موجودان في القاموس فتعيد get قيمتيهما مباشرة: L20 وV30.', en: 'The keys lab and vaccine exist in the dict, so get returns their values directly: L20 and V30.' },
+    98→        { ar: 'المفتاح phone غير موجود، فتنزل get على البديل E10 — هذا هو الركن الغريب الذي يثبّته التوصيف.', en: 'The key phone is missing, so get falls back to the default E10 — the odd corner characterization pins.' },
+    99→        { ar: 'النص الفارغ ليس مفتاحًا كذلك، فيمر على البديل نفسه؛ وrepr يحيط كل نص بعلامتي اقتباس، فالفارغ يُطبع \'\'.', en: "The empty string is not a key either, so it hits the same default; repr wraps every string in quotes, so the empty one prints ''." },
+   100→        { ar: 'الخرج:\n\'lab\' L20\n\'phone\' E10\n\'vaccine\' V30\n\'\' E10', en: "The output:\n'lab' L20\n'phone' E10\n'vaccine' V30\n'' E10" },
+   101→      ],
+   102→    },
+   103→    {
+   104→      kind: 'exercise',
+   105→      id: 'ex2.characterize',
+   106→      exKind: 'write_code',
+   107→      required: true,
+   108→      prompt: {
+   109→        ar: 'وظّف حلقة التوصيف على خصم عتيق ورثته: legacy_discount(total) تحسب off = total * 10 // 100 (قسمة صحيحة مقصوصة!) وتضيف 15 إلى الخصم إذا كان total أكبر من 200 حصرًا. لا تُصلح شيئًا — رصد فقط. ابنِ golden من خمسة مدخلات [5، 100، 200، 201، 300] بنداء الدالة نفسها، واطبع لكل مدخل سطرًا بصيغة total=%d discounted=%d بالترتيب نفسه، ثم أكّد في assert الأركان الغريبة: golden[5] == 5 وgolden[200] == 180 وgolden[201] == 166 وgolden[300] == 255، وأخيرًا طبّق حزمة مطابقة (كل مدخل يعيد قيمة golden) واطبع probes: %d pinned: %d. المتوقع: probes: 5 pinned: 5.',
+   110→        en: 'Apply the characterization loop to an inherited legacy discount: legacy_discount(total) computes off = total * 10 // 100 (floored integer division!) and adds 15 to the discount only when total is strictly above 200. Fix nothing — observe only. Build golden from the five inputs [5, 100, 200, 201, 300] by calling the function itself, print one line per input in the same order formatted total=%d discounted=%d, then assert the odd corners: golden[5] == 5, golden[200] == 180, golden[201] == 166, golden[300] == 255, and finally run a matching suite (every input returns its golden value) printing probes: %d pinned: %d. Expected: probes: 5 pinned: 5.',
+   111→      },
+   112→      starterCode: "def legacy_discount(total):\n    # inherited: no docs, no tests\n    off = total * 10 // 100\n    if total > 200:\n        off = off + 15\n    return total - off\n\nprobes = [5, 100, 200, 201, 300]\ngolden = {}\n\n# TODO: رصد — املأ golden من الدالة نفسها واطبع سطرًا لكل مدخل\n# TODO: observe — fill golden from the function itself and print one line per input\n\n# TODO: أكّد الأركان الغريبة بـ assert\n# TODO: assert the odd corners\n\n# TODO: حزمة المطابقة ثم سطر الحصيلة\n# TODO: the matching suite, then the summary line\n",
+   113→      solution: "def legacy_discount(total):\n    # inherited: no docs, no tests\n    off = total * 10 // 100\n    if total > 200:\n        off = off + 15\n    return total - off\n\nprobes = [5, 100, 200, 201, 300]\ngolden = {}\nfor total in probes:\n    golden[total] = legacy_discount(total)\n    print('total=%d discounted=%d' % (total, golden[total]))\n\nassert golden[5] == 5\nassert golden[200] == 180\nassert golden[201] == 166\nassert golden[300] == 255\n\npinned = 0\nfor total in probes:\n    if legacy_discount(total) == golden[total]:\n        pinned = pinned + 1\nprint('probes: %d pinned: %d' % (len(probes), pinned))",
+   114→      tests: [
+   115→        {
+   116→          id: 't1',
+   117→          name: { ar: 'خمسة مدخلات مثبّتة بالكامل', en: 'All five inputs pinned' },
+   118→          code: "assert 'probes: 5 pinned: 5' in __learner_output__, 'expected: probes: 5 pinned: 5 | actual: %r' % __learner_output__",
+   119→          expected: 'probes: 5 pinned: 5',
+   120→        },
+   121→        {
+   122→          id: 't2',
+   123→          name: { ar: 'الأركان الغريبة مرئية في الطباعة', en: 'The odd corners are visible in the output' },
+   124→          code: "assert 'total=200 discounted=180' in __learner_output__ and 'total=201 discounted=166' in __learner_output__, 'expected: pinned quirks at 200/201 | actual: %r' % __learner_output__",
+   125→          expected: 'pinned quirks at 200/201',
+   126→        },
+   127→        {
+   128→          id: 't3',
+   129→          name: { ar: 'الدالة لم تُمَس — السلوك العتيق باقٍ', en: 'The function was not touched — legacy behavior intact' },
+   130→          code: "assert legacy_discount(5) == 5 and legacy_discount(200) == 180 and legacy_discount(201) == 166 and legacy_discount(300) == 255, 'expected: 5/180/166/255 | actual: %r' % ((legacy_discount(5), legacy_discount(200), legacy_discount(201), legacy_discount(300)),)",
+   131→          expected: '5/180/166/255',
+   132→        },
+   133→        {
+   134→          id: 't4',
+   135→          name: { ar: 'شبكة صادقة بلا فشل مخفي', en: 'An honest net with no hidden failures' },
+   136→          code: "assert 'FAILED' not in __learner_output__ and len(golden) == 5, 'expected: no FAILED and 5 golden entries | actual: %r' % (__learner_output__ + ' | golden=' + str(len(golden)))",
+   137→          expected: 'no FAILED and 5 golden entries',
+   138→        },
+   139→      ],
+   140→      hints: [
+   141→        { ar: 'الرصد يعني النداء لا الحساب: golden[total] = legacy_discount(total) داخل الحلقة، والطباعة بالصيغة المطلوبة في السطر نفسه.', en: 'Observing means calling, not computing: golden[total] = legacy_discount(total) inside the loop, printing in the required format on the same line.' },
+   142→        { ar: 'القسمة الصحيحة تقص: 5 * 10 // 100 = 0 فيصير الخصم صفرًا؛ وعند 200 يكون off = 20 بلا علاوة لأن الشرط أكبر من 200 حصرًا.', en: 'Integer division floors: 5 * 10 // 100 = 0 so the discount vanishes; at 200 off = 20 with no bonus because the condition is strictly above 200.' },
+   143→        { ar: 'الهيكل:\nfor total in probes:\n    golden[total] = legacy_discount(total)\n    print(\'total=%d discounted=%d\' % (total, golden[total]))\n\nassert golden[5] == 5\nassert golden[200] == 180\nassert golden[201] == 166\nassert golden[300] == 255\n\npinned = 0\nfor total in probes:\n    if legacy_discount(total) == golden[total]:\n        pinned = pinned + 1\nprint(\'probes: %d pinned: %d\' % (len(probes), pinned))', en: "The skeleton:\nfor total in probes:\n    golden[total] = legacy_discount(total)\n    print('total=%d discounted=%d' % (total, golden[total]))\n\nassert golden[5] == 5\nassert golden[200] == 180\nassert golden[201] == 166\nassert golden[300] == 255\n\npinned = 0\nfor total in probes:\n    if legacy_discount(total) == golden[total]:\n        pinned = pinned + 1\nprint('probes: %d pinned: %d' % (len(probes), pinned))" },
+   144→        { ar: 'لو فشل أحد الـ assert فلا تعدّل الدالة — راجع حسابك: 201 * 10 // 100 = 20 ثم +15 فيصير الخصم 35 والقيمة 166. القيم المتوقعة كلها من الرصد لا من تخمين مواصفة.', en: 'If an assert fails, do not touch the function — audit your arithmetic: 201 * 10 // 100 = 20 then +15 makes the discount 35 and the value 166. Every expected value comes from observation, not a guessed spec.' },
+   145→      ],
+   146→    },
+   147→    {
+   148→      kind: 'exercise',
+   149→      id: 'ex3.mcq-two-ways',
+   150→      exKind: 'mcq',
+   151→      required: true,
+   152→      prompt: {
+   153→        ar: 'زميلك درس الدوال الموروثة ساعة كاملة، عدّل السطر الذي يظنه المسؤول، ثم تصفح التطبيق يدويًا عبر عشر شاشات بحثًا عن أي خلل، ونشر قبل العشاء متأملًا ألا أحد يشكو. بأي طريقة من طريقتي فيذرز يعمل؟',
+   154→        en: 'A teammate spends an hour studying the inherited functions, edits the line he believes is responsible, clicks through ten screens manually hunting for breakage, and deploys before dinner hoping nobody complains. Which of Feathers\u2019 two ways is he following?',
+   155→      },
+   156→      options: [
+   157→        { id: 'a', text: { ar: 'cover and modify — لأنه غطى الشاشات العشر يدويًا', en: 'cover and modify — because he covered ten screens manually' } },
+   158→        { id: 'b', text: { ar: 'edit and pray — تعديل بلا شبكة اختبارات تمسك السلوك قبل التغيير وبعده', en: 'edit and pray — an edit with no test net gripping behavior before and after' } },
+   159→        { id: 'c', text: { ar: 'لا وقد اتبع الطريقتين معًا لأنه درس ثم تصفح', en: 'neither — he actually followed both ways by studying and then browsing' } },
+   160→      ],
+   161→      answer: 'b',
+   162→      solution: 'b',
+   163→      hints: [
+   164→        { ar: 'الدراسة والتصفح اليدوي ليسا تغطية: لا شيء فيهما يعيد تشغيل نفس الفحوصات آليًا بعد التعديل.', en: 'Studying and manual clicking are not coverage: nothing in them reruns the same checks automatically after the edit.' },
+   165→        { ar: 'التغطية التي يقصدها فيذرز اختبارات — تُبنى قبل التعديل عند نقاط التغيير — والتصفح اليدوي ينسى زاوية ويغفل حافة.', en: 'The coverage Feathers means is tests — built before the edit at the change points — while manual browsing forgets a corner and skips an edge.' },
+   166→        { ar: 'أسماء الطريقتين حرفية: الأولى تغطي ثم تعدّل (الاختبار بديلٌ عن الدعاء)، والثانية تعدّل ثم تتمنى.', en: 'The two names are literal: the first covers then modifies (tests replace prayer), the second edits and hopes.' },
+   167→        { ar: 'الجواب: b — edit and pray بلا شبكة؛ وكان cover and modify سيشغّل حزمة توصيف آليًا فور التعديل.', en: 'Answer: b — edit and pray with no net; cover and modify would have rerun a characterization suite automatically right after the edit.' },
+   168→      ],
+   169→    },
+   170→    {
+   171→      kind: 'exercise',
+   172→      id: 'ex4.fill-promote',
+   173→      exKind: 'fill_blank',
+   174→      required: true,
+   175→      prompt: {
+   176→        ar: 'حلقة اختبار التوصيف: اكتب متوقعًا خاطئًا عمدًا، شغّل، اقرأ القيمة الفعلية من رسالة الفشل، ثم ____ تلك القيمة داخل التأكيد. (فعل إنجليزي واحد)',
+   177→        en: 'The characterization loop: write a deliberately wrong expected value, run it, read the actual value from the failure message, then ____ that value into the assertion. (one English verb)',
+   178→      },
+   179→      answer: 'promote',
+   180→      solution: 'promote',
+   181→      hints: [
+   182→        { ar: 'الاختبار الأول خاطئ عمدًا — وظيفته الوحيدة أن يجعل النظام يبوح بالقيمة الحقيقية في رسالة الفشل.', en: 'The first test is wrong on purpose — its only job is making the system confess the real value in the failure message.' },
+   183→        { ar: 'الفعل يعني نقل القيمة المرصودة من رسالة الفشل إلى موضع المتوقع في التأكيد.', en: 'The verb means moving the observed value from the failure message into the expected slot of the assertion.' },
+   184→        { ar: 'في مثال الدرس: كتبنا XXX فأخبرنا الفشل أن الفعلية E10، فصارت E10 هي المتوقع بعد الفعل.', en: "In the lesson\u2019s example: we wrote XXX, the failure told us the actual was E10, and E10 became the expected value after the verb." },
+   185→        { ar: 'الجواب: promote', en: 'Answer: promote' },
+   186→      ],
+   187→    },
+   188→    {
+   189→      kind: 'debug',
+   190→      id: 'ex5.debug-stale-oracle',
+   191→      required: true,
+   192→      brokenCode: "import io\nimport sys\nimport unittest\n\ndef legacy_zone(zipcode):\n    # inherited: no docs, no tests\n    zones = {'10': 'A', '20': 'B', '30': 'C'}\n    return zones.get(zipcode[:2], 'C')\n\nclass ZoneSuite(unittest.TestCase):\n    def test_known_prefixes(self):\n        self.assertEqual(legacy_zone('10001'), 'A')\n        self.assertEqual(legacy_zone('20500'), 'B')\n\n    def test_short_code_bills_as_A(self):\n        # expected copied from a stale spec, never observed\n        self.assertEqual(legacy_zone('9'), 'A')\n\n    def test_prefix_rule(self):\n        self.assertEqual(legacy_zone('30501'), 'C')\n\nresult = unittest.TextTestRunner(stream=sys.stdout).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(ZoneSuite))\nprint('run: %d failures: %d' % (result.testsRun, len(result.failures)))\nprint('probe: 9 ->', legacy_zone('9'))",
+   193→      prompt: {
+   194→        ar: 'الحزمة حمراء: run: 3 failures: 1 واختبار test_short_code_bills_as_A يسقط برسالة AssertionError: \'C\' != \'A\'. اختبار التوصيف لا يشتق متوقعه من مواصفة — وأي مواصفة هنا أصلًا قديمة تكذب! هذا المتوقع نُسخ من توصيف قديم ولم يُرصد قط. طبّق حلقة الدرس على المدخل 9: شغّل الاستقصاء، اقرأ القيمة الفعلية من رسالة الفشل (النظام هو الأوراكل)، روّجها داخل التأكيد وغيّر اسم الاختبار ليصدق، حتى تصير الحزمة خضراء صادقة: run: 3 failures: 0 مع بقاء probe: 9 -> C ظاهرًا.',
+   195→        en: 'The suite is red: run: 3 failures: 1 and test test_short_code_bills_as_A fails with AssertionError: \'C\' != \'A\'. A characterization test does not derive its expectation from a spec — and any spec here is stale and lying anyway! This expected value was copied from an old spec and never observed. Apply the lesson\u2019s loop to input 9: run the probe, read the actual value from the failure message (the system is the oracle), promote it into the assertion, and rename the test so it tells the truth, until the suite is honestly green: run: 3 failures: 0 with probe: 9 -> C still visible.',
+   196→      },
+   197→      solution: "import io\nimport sys\nimport unittest\n\ndef legacy_zone(zipcode):\n    # inherited: no docs, no tests\n    zones = {'10': 'A', '20': 'B', '30': 'C'}\n    return zones.get(zipcode[:2], 'C')\n\nclass ZoneSuite(unittest.TestCase):\n    def test_known_prefixes(self):\n        self.assertEqual(legacy_zone('10001'), 'A')\n        self.assertEqual(legacy_zone('20500'), 'B')\n\n    def test_short_code_bills_as_C(self):\n        # promoted: the actual value read from the failed probe\n        self.assertEqual(legacy_zone('9'), 'C')\n\n    def test_prefix_rule(self):\n        self.assertEqual(legacy_zone('30501'), 'C')\n\nresult = unittest.TextTestRunner(stream=sys.stdout).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(ZoneSuite))\nprint('run: %d failures: %d' % (result.testsRun, len(result.failures)))\nprint('probe: 9 ->', legacy_zone('9'))",
+   198→      tests: [
+   199→        {
+   200→          id: 't1',
+   201→          name: { ar: 'الحزمة خضراء بعد الترويج', en: 'The suite is green after promoting' },
+   202→          code: "assert 'run: 3 failures: 0' in __learner_output__, 'expected: run: 3 failures: 0 | actual: %r' % __learner_output__",
+   203→          expected: 'run: 3 failures: 0',
+   204→        },
+   205→        {
+   206→          id: 't2',
+   207→          name: { ar: 'الاستقصاء ما زال يظهر القيمة المرصودة', en: 'The probe still shows the observed value' },
+   208→          code: "assert 'probe: 9 -> C' in __learner_output__, 'expected: probe: 9 -> C | actual: %r' % __learner_output__",
+   209→          expected: 'probe: 9 -> C',
+   210→        },
+   211→        {
+   212→          id: 't3',
+   213→          name: { ar: 'تقرير المشغّل يُظهر ثلاثة اختبارات ناجحة', en: 'The runner report shows three passing tests' },
+   214→          code: "assert 'Ran 3 tests' in __learner_output__ and 'OK' in __learner_output__, 'expected: Ran 3 tests + OK | actual: %r' % __learner_output__",
+   215→          expected: 'Ran 3 tests + OK',
+   216→        },
+   217→        {
+   218→          id: 't4',
+   219→          name: { ar: 'السلوك المرصود لم يُمَس', en: 'The observed behavior was not touched' },
+   220→          code: "assert legacy_zone('9') == 'C' and legacy_zone('10001') == 'A' and legacy_zone('30501') == 'C', 'expected: C/A/C | actual: %r' % ((legacy_zone('9'), legacy_zone('10001'), legacy_zone('30501')),)",
+   221→          expected: 'C/A/C',
+   222→        },
+   223→      ],
+   224→      hints: [
+   225→        { ar: 'لا تمس الدالة إطلاقًا — إنها تتبع سلوكها الفعلي: البديل في get هو C. العيب في القيمة المتوقعة المنسوخة لا في النظام.', en: 'Do not touch the function at all — it follows its actual behavior: the get default is C. The defect is the copied expected value, not the system.' },
+   226→        { ar: 'رسالة الفشل هي الأوراكل هنا: AssertionError: \'C\' != \'A\' تقرأ لك الفعلية على اليسار — القيمة المرصودة للمدخل 9 هي C.', en: "The failure message is the oracle here: AssertionError: 'C' != 'A' reads the actual on the left — the observed value for input 9 is C." },
+   227→        { ar: 'روّج القيمة: غيّر التأكيد إلى assertEqual(legacy_zone(\'9\'), \'C\') وسمِّ الاختبار باسم صادق مثل test_short_code_bills_as_C.', en: "Promote the value: change the assertion to assertEqual(legacy_zone('9'), 'C') and rename the test to something honest like test_short_code_bills_as_C." },
+   228→        { ar: 'الإصلاح الكامل:\n    def test_short_code_bills_as_C(self):\n        # promoted: the actual value read from the failed probe\n        self.assertEqual(legacy_zone(\'9\'), \'C\')\n\nوبعدها يطبع التقرير OK ويصير السطر run: 3 failures: 0.', en: "Full fix:\n    def test_short_code_bills_as_C(self):\n        # promoted: the actual value read from the failed probe\n        self.assertEqual(legacy_zone('9'), 'C')\n\nAfterwards the report prints OK and the line reads run: 3 failures: 0." },
+   229→      ],
+   230→    },
+   231→    {
+   232→      kind: 'sandbox',
+   233→      starterCode: "def legacy_fee_code(visit_type):\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type, 'E10')\n\nprobes = ['exam', 'lab', 'vaccine', 'phone', '', 'X-RAY']\ngolden = {}\nfor p in probes:\n    golden[p] = legacy_fee_code(p)\n\nfor p in probes:\n    print(repr(p), golden[p])\n\n# جرّب: أضف مفتاحًا جديدًا للقاموس مثل 'x-ray': 'X01' — أي أسطر في golden تغيّرت؟\n# try: add a new dict key like 'x-ray': 'X01' — which lines in golden changed?\n# جرّب: هذا هو الانكشاف الذي تصونه الشبكة — سلوك اعتمده آخرون انقلب بلمسة واحدة\n# try: that is exactly the drift the net guards against — behavior others depend on flipped by one touch\n# جرّب: افسد قيمة واحدة في golden واكتب حلقة assert صغيرة تشتكي باسم المفتاح المخالف\n# try: corrupt one golden value and write a tiny assert loop that names the offending key",
+   234→      prompt: {
+   235→        ar: 'الملعب يُريك ثمن غياب الشبكة: أضف مفتاحًا واحدًا للقاموس وشاهد أي أركان في golden انقلبت — هكذا يتحول تراث لا أحد يفهمه إلى أصل مثبّت بأرقام. ثم افسد قيمة في golden واكتب حلقة تكتشف الخلاف بالاسم: هذه بذرة حزمة توصيفك الأولى. لا اختبار هنا — فضولك فقط.',
+   236→        en: 'The sandbox shows the price of having no net: add one dict key and watch which golden corners flip — that is how an incomprehensible inheritance becomes a pinned asset with numbers. Then corrupt a golden value and write a loop that names the offender: that is the seed of your first characterization suite. No tests here — just your curiosity.',
+   237→      },
+   238→    },
+   239→    {
+   240→      kind: 'quiz',
+   241→      id: 'quiz1',
+   242→      items: [
+   243→        {
+   244→          id: 'q1',
+   245→          question: {
+   246→            ar: 'ومن الفصل العاشر: الاختبارات العادية تشتق المتوقع من مواصفة عبر أوراكل. ما الذي ينقلبه في اختبار التوصيف؟',
+   247→            en: 'From chapter ten: ordinary tests derive the expected value from a specification via an oracle. What flips in a characterization test?',
+   248→          },
+   249→          options: [
+   250→            { id: 'a', text: { ar: 'الاتجاه: المتوقع يُرصد من النظام العامل نفسه، فيصير هو الأوراكل', en: 'The direction: the expected value is observed from the running system itself, which becomes the oracle' } },
+   251→            { id: 'b', text: { ar: 'لا شيء — اختبار التوصيف هو نفسه اختبار الوحدة بمواصفة أدق', en: 'Nothing — characterization is the same unit test with a sharper spec' } },
+   252→            { id: 'c', text: { ar: 'يتخلى عن المدخلات ويعتمد على التصفح اليدوي', en: 'It abandons inputs and relies on manual browsing' } },
+   253→          ],
+   254→          answer: 'a',
+   255→          explanation: {
+   256→            ar: 'لأن العتيقة بلا مواصفة موثوقة، يصير السلوك المرصود هو المرجع: تدخل، ترصد، تثبّت. وظيفة الاختبار تثبيت ما هو كائن لا حكم على ما ينبغي — ولهذا تشمل الشبكة العيوب المثبَّتة أيضًا.',
+   257→            en: 'Because legacy code has no trustworthy spec, the observed behavior becomes the reference: call, observe, pin. The test\u2019s job is capturing what is, not judging what should be — which is why the net includes pinned bugs too.',
+   258→          },
+   259→        },
+   260→        {
+   261→          id: 'q2',
+   262→          question: {
+   263→            ar: 'ومن فصل Git: أي ما يلي يُعد توثيقًا غير رسمي حيًّا يبقى متزامنًا مع الشيفرة فتثق به أكثر عند وراثة مشروع؟',
+   264→            en: 'From the Git chapter: which of these counts as living informal documentation that stays synchronized with the code, hence most trustworthy when inheriting a project?',
+   265→          },
+   266→          options: [
+   267→            { id: 'a', text: { ar: 'تقرير متطلبات كُتب قبل ثلاثة تحولات في نطاق المشروع', en: 'A requirements report written three scope pivots ago' } },
+   268→            { id: 'b', text: { ar: 'حزمة اختبارات ناجحة وسجل التزامات — توثيق تنفيذي يتقدم مع كل تغيير', en: 'A passing test suite and the commit history — executable documentation that moves with every change' } },
+   269→            { id: 'c', text: { ar: 'شريحة عرض تقديمي من يوم الإطلاق', en: 'A launch-day slide deck' } },
+   270→          ],
+   271→          answer: 'b',
+   272→          explanation: {
+   273→            ar: 'الدرس يميز التوثيق الرسمي (وصف المعمارية) عن غير الرسمي الحي: الاختبارات الناجحة أصدق ما تقرأ لأن النجاح نفسه يثبت التزامن، وسجل الالتزامات يحكي لماذا تغيّر السطر. أما الوثائق الرسمية فتُقرأ بعدها وبحذر.',
+   274→            en: 'The lesson separates formal documentation (the architecture description) from living informal documentation: passing tests are the most trustworthy read because passing itself proves synchronization, and commit history explains why a line changed. Formal docs come after, read carefully.',
+   275→          },
+   276→        },
+   277→        {
+   278→          id: 'q3',
+   279→          question: {
+   280→            ar: 'أي وحدة مما يلي هي شيفرة عتيقة بالتعريف العملي الذي صاغه فيذرز؟',
+   281→            en: 'Which module is legacy code under Feathers\u2019 working definition?',
+   282→          },
+   283→          options: [
+   284→            { id: 'a', text: { ar: 'وحدة عمرها خمسة عشر عامًا بحزمة اختبارات شاملة', en: 'A fifteen-year-old module with a thorough test suite' } },
+   285→            { id: 'b', text: { ar: 'وحدة كُتبت الشهر الماضي بلا اختبارات، ورحل مؤلفها الوحيد', en: 'A module written last month with no tests and one departed author' } },
+   286→            { id: 'c', text: { ar: 'وحدة مكتوبة بلغة قديمة لكنها موثقة ومغطاة', en: 'A module in an old language but documented and covered' } },
+   287→          ],
+   288→          answer: 'b',
+   289→          explanation: {
+   290→            ar: 'العمر عرضيّ؛ المحدِّد هو غياب التثبيت: سلوكها الفعلي لا يسكن إلا فيها، فكل تغيير مقامرة. أما الحزمة الشاملة فتجعل القديم آمن التغيير مثل الجديد تمامًا.',
+   291→            en: 'Age is incidental; the determinant is the absence of pinning: its actual behavior lives only inside itself, so every change is a gamble. A thorough suite makes old code exactly as safe to change as new.',
+   292→          },
+   293→        },
+   294→        {
+   295→          id: 'q4',
+   296→          question: {
+   297→            ar: 'كشف توصيفُك أن الأنواع المجهولة تُفوتر كفحوصات — وبدا لك ذلك عيبًا. ما الخطوة الصحيحة وفق الدرس؟',
+   298→            en: 'Your characterization suite revealed unknown types bill as exams — and it smells like a bug to you. What is the correct move per the lesson?',
+   299→          },
+   300→          options: [
+   301→            { id: 'a', text: { ar: 'صلحه فورًا في الالتزام نفسه الذي يضيف اختبارات التوصيف', en: 'Fix it right away, in the same commit that adds the characterization tests' } },
+   302→            { id: 'b', text: { ar: 'ثبّته في الشبكة أولًا، وسجّله، ثم غيّر السلوك في التزام مستقل يُراجع وحده', en: 'Pin it in the net first, record it, then change behavior in a separate reviewed commit of its own' } },
+   303→            { id: 'c', text: { ar: 'احذف الاختبار حتى لا يوثّق سلوكًا خاطئًا', en: 'Delete the test so it does not document wrong behavior' } },
+   304→          ],
+   305→          answer: 'b',
+   306→          explanation: {
+   307→            ar: 'الشبكة تُبنى على السلوك الكائن عيوبًا من ضمنها، لأن الآخرين قد يعتمدونه. الالتزام الواحد إما يعيد هيكلة وإما يصلح — خلطهما يجعل المراجعة والتراجع مستحيلي التمييز.',
+   308→            en: 'The net is built over behavior as it exists, bugs included, because others may depend on it. One commit either refactors or fixes — mixing both makes review and rollback impossible to tell apart.',
+   309→          },
+   310→        },
+   311→      ],
+   312→    },
+   313→    {
+   314→      kind: 'pitfalls',
+   315→      items: [
+   316→        {
+   317→          wrong: 'الشيفرة العتيقة هي الشيفرة القديمة — سأستبدلها لأنها كُتبت قبل سنوات',
+   318→          right: 'العتيقة هي بلا اختبارات: وحدة من الشهر الماضي بلا تثبيت أخطر من وحدة من خمسة عشر عامًا بحزمة خضراء',
+   319→          note: {
+   320→            ar: 'كتلة التصحيح كانت مثالك: عيبٌ في وحدة صغيرة عمرها أسابيع. والمعيار سؤال واحد: هل يستطيع أي شخص تغييرها دون خوف؟ إن كانت الإجابة لا فأنت أمام عتيقة مهما كان تاريخ ميلادها — وابدأ ببناء الشبكة لا بالاستبدال.',
+   321→            en: 'The debug block was your case: a defect in a module weeks old. The criterion is one question: can anyone change it without fear? If not, it is legacy whatever its birthday — start by building the net, not by replacing it.',
+   322→          },
+   323→        },
+   324→        {
+   325→          wrong: 'سأكتب الاختبارات من تخميني لما ينبغي أن تفعله الدالة',
+   326→          right: 'الرصد أولًا: اكتب متوقعًا خاطئًا، شغّل، اقرأ الفعلية من رسالة الفشل، روّجها — النظام العامل هو الأوراكل',
+   327→          note: {
+   328→            ar: 'تخمينك مواصفةٌ أخرى تكذب مثل سابقتها. قيمة كتلة التصحيح أنها أريتك القيمة الفعلية تنبثق من رسالة الفشل ذاتها — والقيم التي تروّجها تصير أصولًا موثقة مهما كانت غريبة.',
+   329→            en: 'Your guess is just another lying spec. The debug block\u2019s value was showing the actual value emerging from the failure message itself — and the values you promote become documented assets however odd.',
+   330→          },
+   331→        },
+   332→        {
+   333→          wrong: 'ما دام السلوك غبيًا فهذا عيب — سأصلحه وأنا أصفّي',
+   334→          right: 'ثبّت الغريب في الشبكة أولًا، وسجّل العيب، ثم عدّل السلوك في التزام مستقل يُراجع وحده',
+   335→          note: {
+   336→            ar: 'المستخدمون وشيفرة أخرى يعتمدون الأركان الغريبة: مفاتير مجهولة تُفوتر كفحوصات قد تكون عقدًا فعليًا. الالتزام المزدوج — هيكلة وإصلاح معًا — يُعمي المراجعة ويجعل التراجع مستحيلًا. شبكة أولًا، ثم تغيير سلوك معلن.',
+   337→            en: 'Users and other code depend on the odd corners: unknown kinds billing as exams may be a de facto contract. A dual commit — refactor and fix together — blinds review and kills rollback. Net first, then a declared behavior change.',
+   338→          },
+   339→        },
+   340→      ],
+   341→    },
+   342→    {
+   343→      kind: 'summary',
+   344→      bullets: [
+   345→        { ar: 'الشيفرة العتيقة = شيفرة بلا اختبارات تخاف تغييرها، مهما كان عمرها — والصيانة نحو 60% من كلفة النظام، فالإرث هو الحدث الرئيس. طريقتا التغيير الوحيدتان: edit and pray أو cover and modify، وتبدأ الثانية بتحديد نقاط التغيير.', en: 'Legacy = code without tests that you fear to change, whatever its age — and maintenance is roughly 60% of system cost, so inheritance is the main event. The only two ways to change it: edit and pray, or cover and modify — the second starting by locating the change points.' },
+   346→        { ar: 'اختبار التوصيف ينقلب الاستدلال: رصد ثم تثبيت — اكتب متوقعًا خاطئًا، شغّل، اقرأ الفعلية من الفشل، روّجها. النظام العامل هو الأوراكل، والقاموس الذهبي golden يجعل الشبكة ملموسة: run: 3 failures: 0 فوق سلوك مثبّت عيوبه من ضمنها.', en: 'A characterization test inverts inference: observe, then pin — write a wrong expectation, run, read the actual from the failure, promote it. The running system is the oracle, and the golden dict makes the net concrete: run: 3 failures: 0 over pinned behavior, bugs included.' },
+   347→        { ar: 'عند العيوب: سجّل ولا تصلح في النفس — الالتزام الواحد إما هيكلة وإما إصلاح. وابدأ الفهم بقراءة الاختبارات الناجحة (توثيق تنفيذي حي) ثم شغّل النظام محليًا: ما لا تشغّله لا توصّفه.', en: 'At defects: record, do not fix in the same breath — one commit either refactors or fixes. Start comprehension by reading passing tests (living executable documentation), then get the system running locally: what you cannot run you cannot characterize.' },
+   348→      ],
+   349→      reflectPrompt: {
+   350→        ar: 'افتح الملعب وأضف مفتاحًا واحدًا وشاهد أي أركان golden انقلبت. اسأل نفسك: في آخر شيفرة ورثتها — أي سطر كنت تخاف لمسه، وما أول اختبار توصيف كان سيجعله آمنًا؟',
+   351→        en: 'Open the sandbox, add one key, and watch which golden corners flip. Ask yourself: in the last code you inherited — which line did you fear to touch, and what single characterization test would have made it safe?',
+   352→      },
+   353→    },
+   354→    {
+   355→      kind: 'sources',
+   356→      items: [
+   357→        { book: 'SWE', section: 'swe.ch15.s1', pages: 'ص414-415 / pp.414-415' },
+   358→        { book: 'SWE', section: 'swe.ch15.s2', pages: 'ص415-416 / pp.415-416' },
+   359→      ],
+   360→    },
+   361→  ],
+   362→  sources: [
+   363→    { book: 'SWE', section: 'swe.ch15.s1', pages: 'ص414-415 / pp.414-415' },
+   364→    { book: 'SWE', section: 'swe.ch15.s2', pages: 'ص415-416 / pp.415-416' },
+   365→  ],
+   366→} satisfies Lesson;
+   367→
+   368→export default lesson;
+   369→

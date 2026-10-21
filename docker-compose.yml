@@ -1,0 +1,24 @@
+# PyPath local development database (PostgreSQL 16).
+# Same provider as production (Neon Postgres) — one Prisma schema for both.
+# Start:  docker compose up -d db
+# Stop:   docker compose down        (data persists in the named volume)
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: pypath-db
+    environment:
+      POSTGRES_USER: pypath
+      POSTGRES_PASSWORD: pypath
+      POSTGRES_DB: pypath
+    ports:
+      - "5433:5432"
+    volumes:
+      - pypath_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pypath -d pypath"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pypath_pgdata:

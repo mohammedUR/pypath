@@ -1,0 +1,392 @@
+     1→     1→import type { Lesson } from '@/lib/content/schema';
+     2→     2→
+     3→     3→/**
+     4→     4→ * py4e.ch14.l6 — "Chapter 14 Review and Project: The Objects Team /
+     5→     5→ * مراجعة الفصل 14 ومشروع: فريق الكائنات"
+     6→     6→ * Aligned with PY4E ch14 s11 (ملخص) + s12 (فهرس المصطلحات).
+     7→     7→ * All expression is original.
+     8→     8→ * Project: a SELF-CONTAINED Team class (__init__ storing name + a FRESH list,
+     9→     9→ * add_player growing the list, describe printing 'team: %s' / 'players: %d')
+    10→    10→ * plus a Coach(Team) subclass adding lead(). Two instances with independent
+    11→    11→ * states. Debug block: players defined as a CLASS attribute — runs fine but
+    12→    12→ * players leak between two teams (silent wrong value) → fix moves the list
+    13→    13→ * into __init__. Quiz: 6 items incl. ch4/ch6/ch8/ch9 revisits.
+    14→    14→ */
+    15→    15→const lesson = {
+    16→    16→  id: 'py4e.ch14.l6',
+    17→    17→  version: 1,
+    18→    18→  part: 'I',
+    19→    19→  track: 'P1',
+    20→    20→  book: 'PY4E',
+    21→    21→  chapter: 14,
+    22→    22→  title: { ar: 'مراجعة الفصل 14 ومشروع: فريق الكائنات', en: 'Chapter 14 Review and Project: The Objects Team' },
+    23→    23→  estimatedMinutes: 25,
+    24→    24→  prerequisites: ['py4e.ch14.l5'],
+    25→    25→  blocks: [
+    26→    26→    {
+    27→    27→      kind: 'hook',
+    28→    28→      text: {
+    29→    29→        ar: 'يغلق الفصل الرابع عشر على الأسلوب الذي بُنيت به برامج الملايين من الأسطر: الكائنات. مررنا بخمس محطات: لماذا نحتاج الكائنات في إدارة البرامج الكبيرة، وقالبنا الأول class PartyAnimal، والمنشئ __init__ وخواص self، ودورة الحياة وتعدد الكائنات، ثم الوراثة وعلاقة is-a. اليوم مراجعة شاملة وفهرس المصطلحات ومشروع الختام: فريق الكائنات — صنف Team يبني كل كائن باسمه وقائمة لاعبيه الخاصة، تنمو القائمة بكل إضافة، ثم يصف الفريق نفسه بسطرين منسقين، وصنف Coach يرثه كله ويضيف صفته. وفي قلب الدرس: خلل صامت حقيقي — قائمة تُعرَّف في المكان الخطأ فتتسرب اللاعبون بين الفرق. بنهاية الدرس ستكون قادرًا على: استرجاع مصطلحات الفصل كاملة، وبناء عائلة أصناف من أب وابن، وتنقيح تسرب الحالة بين الكائنات.',
+    30→    30→        en: 'Chapter 14 closes on the approach behind million-line programs: objects. We passed five stations: why objects for managing big programs, our first mold class PartyAnimal, the constructor __init__ and self\u2019s properties, the lifecycle and multiple objects, then inheritance and the is-a relationship. Today is a full review, the glossary, and the closing project: the Objects Team — a Team class builds each object with its own name and its own list of players, the list grows with every addition, the team describes itself in two formatted lines, and a Coach class inherits all of it and adds its own voice. At the heart of the lesson: a real silent flaw — a list defined in the wrong place lets players leak between teams. By the end of this lesson you will be able to: retrieve the chapter\u2019s full glossary, build a family of parent and child classes, and debug state leaking between objects.',
+    31→    31→      },
+    32→    32→    },
+    33→    33→    {
+    34→    34→      kind: 'predict',
+    35→    35→      code: "class Team:\n    def __init__(self, nam):\n        self.name = nam\n        self.players = list()\n\n    def add_player(self, player):\n        self.players.append(player)\n\nred = Team('red')\nred.add_player('ana')\nred.add_player('bo')\nprint('team: %s' % red.name)\nprint('players: %d' % len(red.players))",
+    36→    36→      question: {
+    37→    37→        ar: 'هذا قلب مشروع اليوم. قائمة players بُنيت في المنشئ عبر list() — ماذا سيطبع السطران الأخيران بعد إضافة لاعبين اثنين؟',
+    38→    38→        en: 'This is the heart of today\u2019s project. The players list was built in the constructor via list() — what will the last two lines print after adding two players?',
+    39→    39→      },
+    40→    40→      reveal: {
+    41→    41→        ar: 'team: red ثم players: 2. المنشئ أبقى لكل فريق اسمه وقائمة خاصة به، وappend تنمو بها في مكانها، وlen يعيد طولها في التنسيق. كل ذلك في سبعة أسطر — والدرس كله خلف هذه السبعة.',
+    42→    42→        en: 'team: red then players: 2. The constructor gave each team its name and its own list, append grew it in place, and len reported its length inside the format. All of that in seven lines — the whole lesson stands behind those seven.',
+    43→    43→      },
+    44→    44→    },
+    45→    45→    {
+    46→    46→      kind: 'concept',
+    47→    47→      heading: { ar: 'خريطة الفصل ومصطلحاته', en: 'The chapter map and its glossary' },
+    48→    48→      chunks: [
+    49→    49→        {
+    50→    50→          ar: 'خريطة الفصل بخمسة مسارات: الأول الدافع — البرامج الكبيرة تُقسم إلى قطع تركز فيها وتتجاهل ما سواها، وأنت كنت تستخدم كائنات جاهزة منذ الفصول الأولى بـ append وupper وstrip. الثاني أول صنف: class قالب والكائن كعكة منه، والتوابع دوال داخل القالب يستقبل معاملها الأول الكائن نفسه. الثالث المنشئ __init__ يخزن خواص كل كائن عليه: self.name = nam — وصنفك صار نوعًا جديدًا يجيب عن type. الرابع دورة الحياة: بناء عند أول استخدام وإهمال عند فقد الإشارة — والهادم نادر الاحتياج وتوقيته غير مضمون. الخامس الوراثة: CricketFan(PartyAnimal) يمدد ويجاوز وsuper() يستدعي الأب.',
+    51→    51→          en: 'The chapter\u2019s map has five routes: first the motive — big programs split into pieces you focus on, ignoring the rest, and you were using ready-made objects since the early chapters with append, upper and strip. Second, the first class: class is a mold and the object a cake from it, methods are functions inside the mold whose first parameter receives the object itself. Third, the constructor __init__ stores each object\u2019s properties on it: self.name = nam — and your class became a new type answering type. Fourth, the lifecycle: construction at first use and discarding when the reference is lost — the destructor rarely needed with unguaranteed timing. Fifth, inheritance: CricketFan(PartyAnimal) extends and overrides while super() summons the parent.',
+    52→    52→        },
+    53→    53→        {
+    54→    54→          ar: 'فهرس المصطلحات كما جمعه الفصل: الصنف class قالب يحدد البيانات والشيفرة لبناء الكائنات؛ والكائن object نموذج حي من الصنف يحمل بياناته وتوابعه؛ والنسخة instance كائن منبثق من صنف — an نسخة من PartyAnimal؛ والخاصية attribute عنصر بيانات جزء من الكائن مثل x وname؛ والتابع method دالة تنتمي للكائن وتستدعى بالصيغة an.party().',
+    55→    55→          en: 'The glossary as the chapter assembled it: the class is the template defining the data and code objects are built from; the object is a living instance of the class carrying its data and methods; an instance is an object sprung from a class — an is an instance of PartyAnimal; an attribute is a piece of data that is part of the object like x and name; and a method is a function belonging to the object, called in the form an.party().',
+    56→    56→        },
+    57→    57→        {
+    58→    58→          ar: 'ويكمل الفهرس: المنشئ constructor التابع الخاص __init__ الذي تستدعيه بايثون عند بناء كل كائن لضبط قيمه الابتدائية؛ والهادم destructor التابع __del__ المستدعى عند التدمير — مفهوم نعرفه ولا نعتمد عليه؛ والوراثة inheritance قدرة صنف على البناء فوق صنف آخر فيمدد سلوكه أو يجاوزه؛ وself المعامل الأول في كل تابع يشير إلى الكائن نفسه. هذه المصطلحات الثمانية قاموس الفصل كاملًا — والمشروع التالي يختبرها في العمل لا في الحفظ.',
+    59→    59→          en: 'And the glossary continues: the constructor is the special method __init__ Python calls when each object is built to set its initial values; the destructor is __del__, called at destruction — a concept we know but never depend on; inheritance is a class\u2019s ability to build on another class, extending or overriding its behavior; and self is the first parameter of every method referring to the object itself. These eight terms are the chapter\u2019s whole dictionary — and the project ahead tests them in action, not in memorization.',
+    60→    60→        },
+    61→    61→      ],
+    62→    62→    },
+    63→    63→    {
+    64→    64→      kind: 'worked',
+    65→    65→      title: { ar: 'تجاوز في العائلة: LoudTeam', en: 'An override in the family: LoudTeam' },
+    66→    66→      code: "class Team:\n    def __init__(self, nam):\n        self.name = nam\n        self.players = list()\n\n    def add_player(self, player):\n        self.players.append(player)\n\n    def describe(self):\n        print('team: %s' % self.name)\n        print('players: %d' % len(self.players))\n\n\nclass LoudTeam(Team):\n    def describe(self):\n        print('LOUD team: %s' % self.name.upper())\n        print('players: %d' % len(self.players))\n\n\ngreen = Team('green')\ngreen.add_player('ana')\ngreen.add_player('bo')\ngreen.describe()\n\ngold = LoudTeam('gold')\ngold.add_player('cy')\ngold.describe()\nprint(isinstance(gold, Team))",
+    67→    67→      explanation: {
+    68→    68→        ar: 'صنف Team يبني كل فريق باسمه وقائمة لاعبيه الخاصة في المنشئ — تذكّر هذا جيدًا، فالمشروع والتنقيح كلاهما حول هذه اللحظة. LoudTeam ورث كل شيء ثم جاز describe: نفس الاسم وسلوك أعلى صوتًا بكبّيرات الفصل السادس. النداء الأول من صنف الأب فطبع بروتوكوله، والثاني من كائن الابن فطبع نسخته هو، وisinstance أكدت أن gold فريق أيضًا. هكذا يقدم الصنفان واجهة واحدة بقلمين — والفصل الثالث عشر استخدم كائنات جاهزة بنفس العقد: واجهة بلا رؤية داخلية.',
+    69→    69→        en: "The Team class builds each object with its name and its own player list in the constructor — memorize this moment, for both the project and the debug revolve around it. LoudTeam inherited everything then overrode describe: same name, louder behavior, with chapter-6 capitals. The first call came from a parent object and printed its protocol; the second came from a child object and printed its own version; and isinstance confirmed gold is a team too. The two classes offer one interface with two pens — the same contract chapter 13 used with ready-made objects: an interface without seeing internals.",
+    70→    70→      },
+    71→    71→    },
+    72→    72→    {
+    73→    73→      kind: 'exercise',
+    74→    74→      id: 'ex1.trace-lifecycle',
+    75→    75→      exKind: 'trace_output',
+    76→    76→      required: true,
+    77→    77→      prompt: {
+    78→    78→        ar: 'اقرأ الكود وتوقّع خرْجه بالضبط — سطرًا لكل طباعة — دون تشغيله. راجع الدورة والتعدد معًا.',
+    79→    79→        en: 'Read the code and predict its exact output — one line per print — without running it. Review the lifecycle and multiplicity together.',
+    80→    80→      },
+    81→    81→      code: "class Counter:\n    def __init__(self, tag):\n        self.tag = tag\n        self.n = 0\n        print(tag, 'built')\n\n    def tick(self):\n        self.n = self.n + 1\n        print(self.tag, self.n)\n\na = Counter('x')\nb = Counter('y')\na.tick()\nb.tick()\na.tick()",
+    82→    82→      solution: 'x built\ny built\nx 1\ny 1\nx 2',
+    83→    83→      answer: 'x built\ny built\nx 1\ny 1\nx 2',
+    84→    84→      hints: [
+    85→    85→        { ar: 'كل بناء يطبع رسالته فورًا — البناء قبل أي tick.', en: 'Every construction prints its message at once — building precedes any tick.' },
+    86→    86→        { ar: 'tick يطبع العلامة والعدد معًا بعد الرفع — كل كائن عداده هو.', en: 'tick prints the tag and the count together after raising — each object owns its count.' },
+    87→    87→        { ar: 'عدّ يدويًّا: a رُفع مرتين وb مرة واحدة — الاستقلال كامل.', en: 'Count by hand: a was raised twice and b once — full independence.' },
+    88→    88→        { ar: 'الخرْج:\nx built\ny built\nx 1\ny 1\nx 2', en: 'The output:\nx built\ny built\nx 1\ny 1\nx 2' },
+    89→    89→      ],
+    90→    90→    },
+    91→    91→    {
+    92→    92→      kind: 'exercise',
+    93→    93→      id: 'ex2.objects-team',
+    94→    94→      exKind: 'write_code',
+    95→    95→      required: true,
+    96→    96→      prompt: {
+    97→    97→        ar: "المشروع: فريق الكائنات. 1) عرّف صنف Team فيه: منشئ __init__(self, nam) يخزن الاسم في self.name ويبني قائمة اللاعبين في self.players بقائمة جديدة list()؛ وتابع add_player(self, player) يضيف اللاعب إلى قائمة هذا الكائن؛ وتابع describe(self) يطبع سطرين: team: %s مع الاسم ثم players: %d مع طول القائمة بـ len. 2) عرّف صنف Coach(Team) يرثه كله ويضيف تابع lead(self) يطبع Coach of %s مع الاسم. 3) ابنِ red = Team('red') وأضف ana وbo واستدعِ red.describe()؛ ثم ابنِ blue = Coach('blue') وأضف cy واستدعِ blue.describe() ثم blue.lead(). المتوقع: team: red ثم players: 2 ثم team: blue ثم players: 1 ثم Coach of blue.",
+    98→    98→        en: "The project: the Objects Team. 1) Define a class Team with: a constructor __init__(self, nam) storing the name in self.name and building the player list in self.players as a fresh list(); a method add_player(self, player) appending the player to this object\u2019s list; and a method describe(self) printing two lines: team: %s with the name then players: %d with the list length via len. 2) Define a class Coach(Team) inheriting everything and adding a method lead(self) printing Coach of %s with the name. 3) Build red = Team('red'), add ana and bo, and call red.describe(); then build blue = Coach('blue'), add cy, and call blue.describe() then blue.lead(). Expected: team: red, then players: 2, then team: blue, then players: 1, then Coach of blue.",
+    99→    99→      },
+   100→   100→      starterCode: "class Team:\n    def __init__(self, nam):\n        # self.name ثم self.players بقائمة جديدة / self.name then self.players as a fresh list\n        pass\n\n    def add_player(self, player):\n        # أضف player إلى قائمة هذا الكائن / append player to this object's list\n        pass\n\n    def describe(self):\n        # اطبع 'team: %s' % self.name ثم 'players: %d' % len(self.players)\n        pass\n\n\nclass Coach(Team):\n    def lead(self):\n        # اطبع 'Coach of %s' % self.name\n        pass\n\n\nred = Team('red')\nred.add_player('ana')\nred.add_player('bo')\nred.describe()\n\nblue = Coach('blue')\nblue.add_player('cy')\nblue.describe()\nblue.lead()",
+   101→   101→      solution: "class Team:\n    def __init__(self, nam):\n        self.name = nam\n        self.players = list()\n\n    def add_player(self, player):\n        self.players.append(player)\n\n    def describe(self):\n        print('team: %s' % self.name)\n        print('players: %d' % len(self.players))\n\n\nclass Coach(Team):\n    def lead(self):\n        print('Coach of %s' % self.name)\n\n\nred = Team('red')\nred.add_player('ana')\nred.add_player('bo')\nred.describe()\n\nblue = Coach('blue')\nblue.add_player('cy')\nblue.describe()\nblue.lead()",
+   102→   102→      tests: [
+   103→   103→        {
+   104→   104→          id: 't1',
+   105→   105→          name: { ar: 'فريق red بحالته المستقلة: لاعبان', en: 'The red team with its independent state: two players' },
+   106→   106→          code: "assert red.name == 'red' and len(red.players) == 2, 'expected: red with 2 players | actual: %r' % ((red.name, len(red.players)),)",
+   107→   107→          expected: 'red with 2 players',
+   108→   108→        },
+   109→   109→        {
+   110→   110→          id: 't2',
+   111→   111→          name: { ar: 'فريق blue بحالته المستقلة: لاعب واحد', en: 'The blue team with its independent state: one player' },
+   112→   112→          code: "assert blue.name == 'blue' and len(blue.players) == 1, 'expected: blue with 1 player | actual: %r' % ((blue.name, len(blue.players)),)",
+   113→   113→          expected: 'blue with 1 player',
+   114→   114→        },
+   115→   115→        {
+   116→   116→          id: 't3',
+   117→   117→          name: { ar: 'Coach هو Team أيضًا — علاقة is-a', en: 'Coach is also a Team — the is-a relationship' },
+   118→   118→          code: "assert isinstance(blue, Team) and isinstance(blue, Coach), 'expected: Coach and Team | actual: %r' % (type(blue),)",
+   119→   119→          expected: 'Coach and Team',
+   120→   120→        },
+   121→   121→        {
+   122→   122→          id: 't4',
+   123→   123→          name: { ar: 'الأسطر المنسقة الأربعة مطبوعة', en: 'The four formatted lines printed' },
+   124→   124→          code: "assert 'team: red' in __learner_output__ and 'players: 2' in __learner_output__ and 'team: blue' in __learner_output__ and 'players: 1' in __learner_output__, 'expected: team: red / players: 2 / team: blue / players: 1 | actual: %r' % __learner_output__",
+   125→   125→          expected: 'team: red / players: 2 / team: blue / players: 1',
+   126→   126→        },
+   127→   127→        {
+   128→   128→          id: 't5',
+   129→   129→          name: { ar: 'صوت المدرّب مطبوع', en: 'The coach\u2019s voice printed' },
+   130→   130→          code: "assert 'Coach of blue' in __learner_output__, 'expected: Coach of blue | actual: %r' % __learner_output__",
+   131→   131→          expected: 'Coach of blue',
+   132→   132→        },
+   133→   133→      ],
+   134→   134→      hints: [
+   135→   135→        { ar: 'المنشئ يبني الحالة المستقلة: self.name = nam ثم self.players = list() — قائمة جديدة تُولد مع كل كائن.', en: 'The constructor builds the independent state: self.name = nam then self.players = list() — a fresh list born with every object.' },
+   136→   136→        { ar: 'add_player يوصل اللاعب لقائمة الكائن عبر self.players.append(player) — وdescribe يقرأ الاسم والطول من الكائن نفسه.', en: "add_player reaches the object's list via self.players.append(player) — and describe reads name and length from the object itself." },
+   137→   137→        { ar: 'Coach(Team) يرث كل شيء ويكتفي بتابع lead الجديد: print(\'Coach of %s\' % self.name).', en: "Coach(Team) inherits everything and only adds the new lead method: print('Coach of %s' % self.name)." },
+   138→   138→        { ar: 'الهيكل الكامل:\nclass Team:\n    def __init__(self, nam):\n        self.name = nam\n        self.players = list()\n\n    def add_player(self, player):\n        self.players.append(player)\n\n    def describe(self):\n        print(\'team: %s\' % self.name)\n        print(\'players: %d\' % len(self.players))\n\nclass Coach(Team):\n    def lead(self):\n        print(\'Coach of %s\' % self.name)', en: "The full skeleton:\nclass Team:\n    def __init__(self, nam):\n        self.name = nam\n        self.players = list()\n\n    def add_player(self, player):\n        self.players.append(player)\n\n    def describe(self):\n        print('team: %s' % self.name)\n        print('players: %d' % len(self.players))\n\nclass Coach(Team):\n    def lead(self):\n        print('Coach of %s' % self.name)" },
+   139→   139→      ],
+   140→   140→    },
+   141→   141→    {
+   142→   142→      kind: 'exercise',
+   143→   143→      id: 'ex3.mcq-instance-state',
+   144→   144→      exKind: 'mcq',
+   145→   145→      required: true,
+   146→   146→      prompt: {
+   147→   147→        ar: 'أين نبني حالة مستقلة لكل كائن — مثل قائمة لاعبين خاصة بكل فريق؟',
+   148→   148→        en: 'Where do we build an independent state per object — like a player list private to each team?',
+   149→   149→      },
+   150→   150→      options: [
+   151→   151→        { id: 'a', text: { ar: 'داخل __init__ عبر self.players = list() — قائمة جديدة تُولد مع كل كائن', en: 'Inside __init__ via self.players = list() — a fresh list born with every object' } },
+   152→   152→        { id: 'b', text: { ar: 'كسمة على الصنف مباشرة players = [] خارج التوابع', en: 'As a class-level attribute players = [] outside the methods' } },
+   153→   153→        { id: 'c', text: { ar: 'في دالة عامة خارج الصنف تتلقى الفرق معاملات', en: 'In a free function outside the class receiving the teams as parameters' } },
+   154→   154→      ],
+   155→   155→      answer: 'a',
+   156→   156→      solution: 'a',
+   157→   157→      hints: [
+   158→   158→        { ar: 'المنشئ يعمل مرة لكل كائن — فما يبنيه فيه يصير خاصًّا بذلك الكائن.', en: 'The constructor runs once per object — whatever it builds there becomes that object\u2019s own.' },
+   159→   159→        { ar: 'الأسماء على الصنف من غير self مشتركة بين كل الكائنات — والدرس القادم كله حول هذا الخطر.', en: 'Names on the class without self are shared across all objects — the upcoming debug is all about this danger.' },
+   160→   160→        { ar: 'استدعِ القائمة الجديدة list() لا مشاركة [] واحدة.', en: 'Call a fresh list() — do not share one [] across objects.' },
+   161→   161→        { ar: 'الجواب: أ — الحالة المستقلة تُبنى في __init__ عبر self.', en: 'Answer: a — independent state is built in __init__ via self.' },
+   162→   162→      ],
+   163→   163→    },
+   164→   164→    {
+   165→   165→      kind: 'exercise',
+   166→   166→      id: 'ex4.numeric-points',
+   167→   167→      exKind: 'numeric',
+   168→   168→      required: true,
+   169→   169→      prompt: {
+   170→   170→        ar: "بلا تشغيل: CricketFan يرث PartyAnimal وله points = 0، وsix(self) يضيف 6 إلى self.points ثم يستدعي party. بعد j = CricketFan('Jim') ثم j.six() ثم j.six() — ما قيمة j.points؟",
+   171→   171→        en: "Without running: CricketFan inherits PartyAnimal and has points = 0, and six(self) adds 6 to self.points then calls party. After j = CricketFan('Jim'), then j.six(), then j.six() — what is the value of j.points?",
+   172→   172→      },
+   173→   173→      answer: '12',
+   174→   174→      solution: '12',
+   175→   175→      tolerance: 0,
+   176→   176→      hints: [
+   177→   177→        { ar: 'كل استدعاء لـ six يضيف ستة إلى النقاط — والعدد يبدأ من صفر.', en: 'Each six call adds six to the points — and the count starts at zero.' },
+   178→   178→        { ar: 'استدعاء party داخل six يرفع العدّاد ولا يمس النقاط — لا تخلط بين الاثنين.', en: 'The party call inside six raises the counter, never the points — do not mix the two.' },
+   179→   179→        { ar: 'ستة مضاف مرتين على صفر.', en: 'Six added twice onto zero.' },
+   180→   180→        { ar: 'الجواب: 12', en: 'Answer: 12' },
+   181→   181→      ],
+   182→   182→    },
+   183→   183→    {
+   184→   184→      kind: 'debug',
+   185→   185→      id: 'ex5.debug-shared-list',
+   186→   186→      required: true,
+   187→   187→      brokenCode: "class Team:\n    players = []  # قائمة واحدة على الصنف للجميع / one list on the class for everyone\n\n    def __init__(self, nam):\n        self.name = nam\n\n    def add_player(self, player):\n        self.players.append(player)\n\n    def describe(self):\n        print('team: %s' % self.name)\n        print('players: %d' % len(self.players))\n\nred = Team('red')\nred.add_player('ana')\nblue = Team('blue')\nblue.add_player('bo')\nred.describe()\nblue.describe()",
+   188→   188→      prompt: {
+   189→   189→        ar: 'شغّل الكود المعطوب ولاحظ الفضيحة: أضفنا لاعبًا واحدًا لكل فريق — ومع ذلك يطبع الفريقان players: 2 كلاهما! لا استثناء ولا انهيار: اللاعبون يتسربون بين الكائنات بصمت. اسأل نفسك: أين يسكن players؟ تجده على الصنف نفسه خارج المنشئ — فصار قائمة واحدة يشترك فيها كل الكائنات، وappend عبر أي كائن تعدلها للجميع. أصلح الخلل بنقل بناء القائمة إلى المنشئ عبر self.players = list() حتى يولد كل كائن بقائمته الخاصة، فيصير الحساب صحيحًا: players: 1 لكل فريق.',
+   190→   190→        en: 'Run the broken code and witness the scandal: we added one player per team — yet both teams print players: 2! No exception, no crash: players leak between objects silently. Ask yourself: where does players live? You will find it on the class itself, outside the constructor — one list shared by every object, and append through any object mutates it for everyone. Fix the flaw by moving the list build into the constructor via self.players = list() so every object is born with its own list — making the arithmetic honest: players: 1 per team.',
+   191→   191→      },
+   192→   192→      solution: "class Team:\n    def __init__(self, nam):\n        self.name = nam\n        self.players = list()\n\n    def add_player(self, player):\n        self.players.append(player)\n\n    def describe(self):\n        print('team: %s' % self.name)\n        print('players: %d' % len(self.players))\n\nred = Team('red')\nred.add_player('ana')\nblue = Team('blue')\nblue.add_player('bo')\nred.describe()\nblue.describe()",
+   193→   193→      tests: [
+   194→   194→        {
+   195→   195→          id: 't1',
+   196→   196→          name: { ar: 'الفريقان كلاهما وصف نفسه', en: 'Both teams described themselves' },
+   197→   197→          code: "assert 'team: red' in __learner_output__ and 'team: blue' in __learner_output__, 'expected: team: red / team: blue | actual: %r' % __learner_output__",
+   198→   198→          expected: 'team: red / team: blue',
+   199→   199→        },
+   200→   200→        {
+   201→   201→          id: 't2',
+   202→   202→          name: { ar: 'كل فريق يرى لاعبه وحده: players: 1 مرتين', en: 'Each team sees only its own player: players: 1 twice' },
+   203→   203→          code: "assert __learner_output__.count('players: 1') == 2, 'expected: players: 1 twice | actual: %r' % __learner_output__",
+   204→   204→          expected: 'players: 1 twice',
+   205→   205→        },
+   206→   206→        {
+   207→   207→          id: 't3',
+   208→   208→          name: { ar: 'لا تسرب: لا players: 2 في الخرج', en: 'No leak: no players: 2 in the output' },
+   209→   209→          code: "assert 'players: 2' not in __learner_output__, 'expected: no leaked count | actual: %r' % __learner_output__",
+   210→   210→          expected: 'no leaked count',
+   211→   211→        },
+   212→   212→      ],
+   213→   213→      hints: [
+   214→   214→        { ar: 'لا استثناء ولا انهيار — الخلل صامت: الشيفرة تعمل والحساب مخطئ. قارن مكان players مع مكان name.', en: 'No exception, no crash — the flaw is silent: the code runs and the arithmetic is wrong. Compare where players lives with where name lives.' },
+   215→   215→        { ar: 'السمة على الصنف بلا self واحدة يشترك فيها الجميع — قائمة واحدة للفرق كلها.', en: 'A class-level attribute without self is one thing shared by everyone — a single list for all teams.' },
+   216→   216→        { ar: 'الإصلاح: انقل players إلى __init__ كـ self.players = list() — قائمة تُولد مع كل كائن.', en: 'The fix: move players into __init__ as self.players = list() — a list born with each object.' },
+   217→   217→        { ar: 'بعد الإصلاح يطبع كل فريق players: 1 — وهذا معنى الحالة المستقلة التي تدربنا عليها طوال الفصل.', en: 'After the fix each team prints players: 1 — that is the independent state the whole chapter trained you for.' },
+   218→   218→      ],
+   219→   219→    },
+   220→   220→    {
+   221→   221→      kind: 'sandbox',
+   222→   222→      starterCode: '# ملعبك الحرّ — عائلة الفرق\n# Your playground — the team family\n\nclass Team:\n    def __init__(self, nam):\n        self.name = nam\n        self.players = list()\n\n    def add_player(self, player):\n        self.players.append(player)\n\n    def describe(self):\n        print("team: %s" % self.name)\n        print("players: %d" % len(self.players))\n\nred = Team("red")\nred.add_player("ana")\nred.add_player("bo")\n\ngold = Team("gold")\ngold.add_player("cy")\n\nred.describe()\ngold.describe()\n\n# جرّب: أضف تابع remove_player(self, player) يستخدم players.remove\n# try: add a remove_player(self, player) method using players.remove\n# جرّب: ابنِ فريقًا ثالثًا بثلاثة لاعبين واطبع أطوال الفرق الثلاثة\n# try: build a third team with three players and print all three lengths',
+   223→   223→      prompt: {
+   224→   224→        ar: 'جرّب بنفسك: أضف تابع remove_player يستدعي players.remove للاسم — واحذر remove لاسم غير موجود، ماذا يرمي؟ ثم ابنِ فريقًا ثالثًا واطبع أطوال الفرق الثلاثة وتتبع يدويًّا قبل التشغيل. لا اختبار هنا — فضولك فقط.',
+   225→   225→        en: 'Try it yourself: add a remove_player method calling players.remove for the name — and beware remove on a missing name: what does it throw? Then build a third team, print all three lengths, and trace by hand before running. No tests here — just your curiosity.',
+   226→   226→      },
+   227→   227→    },
+   228→   228→    {
+   229→   229→      kind: 'quiz',
+   230→   230→      id: 'quiz1',
+   231→   231→      items: [
+   232→   232→        {
+   233→   233→          id: 'q1',
+   234→   234→          question: {
+   235→   235→            ar: 'ومن الفصل الرابع: def pack(x): return x * 2 خزنت شيفرة باسم واستدعيتها لاحقًا. كيف حيّا هذا المفهوم داخل الصنف؟',
+   236→   236→            en: 'From chapter 4: def pack(x): return x * 2 stored code under a name to call later. How does that concept come alive inside a class?',
+   237→   237→          },
+   238→   238→          options: [
+   239→   239→            { id: 'a', text: { ar: 'التابع نفس الفكرة داخل القالب: def beat(self) تخزن شيفرة باسمها — وتستدعى على كائن عبر النقطة ويصل الكائن في self', en: 'The method is the same idea inside the mold: def beat(self) stores code under a name — called on an object via the dot with the object arriving in self' } },
+   240→   240→            { id: 'b', text: { ar: 'الدوال ممنوعة داخل الأصناف', en: 'Functions are forbidden inside classes' } },
+   241→   241→            { id: 'c', text: { ar: 'التابع يُنفذ مرة واحدة عند تعريف الصنف', en: 'The method runs once when the class is defined' } },
+   242→   242→          ],
+   243→   243→          answer: 'a',
+   244→   244→          explanation: {
+   245→   245→            ar: 'التخزين وإعادة الاستخدام من الفصل الرابع هو جذر التوابع: شيفرة مسماة تُكتب مرة وتستدعى كثيرًا — والجديد أنها تسكن القالب ويصبح الكائن معاملها الأول عبر self.',
+   246→   246→            en: 'Chapter 4\u2019s store-and-reuse is the root of methods: named code written once and called many times — the new part is that it lives in the mold and the object becomes its first parameter via self.',
+   247→   247→          },
+   248→   248→        },
+   249→   249→        {
+   250→   250→          id: 'q2',
+   251→   251→          question: {
+   252→   252→            ar: 'ومن الفصل السادس: لماذا اخترنا print(\'team: %s\' % self.name) بدل print(\'team:\', self.name)؟',
+   253→   253→            en: "From chapter 6: why did we choose print('team: %s' % self.name) over print('team:', self.name)?",
+   254→   254→          },
+   255→   255→          options: [
+   256→   256→            { id: 'a', text: { ar: 'التنسيق بـ % يثبت البنية والفراغات — سطر موحد مطابق دائمًا، بينما الفواصل تدخل فراغات متقلبة', en: 'The % format fixes the structure and spaces — one uniform line that always matches, while commas inject shifting spaces' } },
+   257→   257→            { id: 'b', text: { ar: 'لأن % أسرع ألف مرة', en: 'Because % is a thousand times faster' } },
+   258→   258→            { id: 'c', text: { ar: 'لأن print لا يقبل أكثر من معامل واحد', en: 'Because print accepts only one argument' } },
+   259→   259→          ],
+   260→   260→          answer: 'a',
+   261→   261→          explanation: {
+   262→   262→            ar: 'كما في الفصل السادس والثالث عشر: التنسيق يعطي كل قيمة عنوانها الثابت — فصار سطر team: red وplayers: 2 قابلين للمطابقة حرفيًّا في الاختبارات.',
+   263→   263→            en: 'As in chapters 6 and 13: formatting gives each value its fixed label — making team: red and players: 2 literally matchable in tests.',
+   264→   264→          },
+   265→   265→        },
+   266→   266→        {
+   267→   267→          id: 'q3',
+   268→   268→          question: {
+   269→   269→            ar: 'ومن الفصل الثامن: self.players.append(player) — ماذا تفعل append للقائمة التي على الكائن؟',
+   270→   270→            en: "From chapter 8: self.players.append(player) — what does append do to the object's list?",
+   271→   271→          },
+   272→   272→          options: [
+   273→   273→            { id: 'a', text: { ar: 'تنموها في مكانها بعنصر جديد — وlen يعيد طولها الجديد عند كل describe', en: 'It grows it in place with a new element — and len returns its new length at every describe' } },
+   274→   274→            { id: 'b', text: { ar: 'تعيد قائمة جديدة وتترك الأصل كما هو', en: 'It returns a new list and leaves the original as is' } },
+   275→   275→            { id: 'c', text: { ar: 'تحذف آخر عنصر من القائمة', en: 'It removes the last element of the list' } },
+   276→   276→          ],
+   277→   277→          answer: 'a',
+   278→   278→          explanation: {
+   279→   279→            ar: 'append تعدل الكائن نفسه في مكانه كما في كل الفصل الثامن — ولهذا احتجنا قائمة جديدة لكل كائن في المنشئ: لن يعدل append قائمة غيره.',
+   280→   280→            en: 'append mutates the object in place as in all of chapter 8 — which is why we needed a fresh list per object in the constructor: no append will touch another\u2019s list.',
+   281→   281→          },
+   282→   282→        },
+   283→   283→        {
+   284→   284→          id: 'q4',
+   285→   285→          question: {
+   286→   286→            ar: 'ومن الفصل التاسع: counts = dict() بنت كائنًا من قالب جاهز وget أعطت قيمة افتراضية عند الغياب. ما الذي تعلمت صنعه هذا الفصل؟',
+   287→   287→            en: 'From chapter 9: counts = dict() built an object from a ready-made template and get gave a default on absence. What did this chapter teach you to make?',
+   288→   288→          },
+   289→   289→          options: [
+   290→   290→            { id: 'a', text: { ar: 'قالبًا من صنعك: صنفًا تبني منه كائنات بخواصها وتوابعه — وعملية البناء نفسها', en: 'A mold of your own: a class from which you build objects with their properties and methods — and the building act itself is the same' } },
+   291→   291→            { id: 'b', text: { ar: 'قاموسًا جديدًا بمفاتيح ثابتة', en: 'A new dictionary with fixed keys' } },
+   292→   292→            { id: 'c', text: { ar: 'بديلًا عن dict لا يقبل التوابع', en: 'A dict replacement that accepts no methods' } },
+   293→   293→          ],
+   294→   294→          answer: 'a',
+   295→   295→          explanation: {
+   296→   296→            ar: 'PartyAnimal() مقابل dict() كان مقارنة الكتاب نفسه: القالب الجاهز صنعته بايثون وقالبك صنعته أنت — والكائنات الناتجة تُستخدم بالطريقة نفسها: نقطة ثم تابع.',
+   297→   297→            en: 'PartyAnimal() versus dict() was the book\u2019s own comparison: Python made the ready mold, you made yours — and the resulting objects are used the same way: dot, then method.',
+   298→   298→          },
+   299→   299→        },
+   300→   300→        {
+   301→   301→          id: 'q5',
+   302→   302→          question: {
+   303→   303→            ar: 'لماذا يعد القائمة على الصنف players = [] خطرًا بينما self.players = list() في __init__ آمنة؟',
+   304→   304→            en: 'Why is a class-level list players = [] dangerous while self.players = list() inside __init__ is safe?',
+   305→   305→          },
+   306→   306→          options: [
+   307→   307→            { id: 'a', text: { ar: 'السمة على الصنف واحدة يشترك فيها كل الكائنات — وself في المنشئ تولد نسخة جديدة لكل كائن', en: 'The class-level attribute is one thing shared by all objects — self inside the constructor births a fresh copy per object' } },
+   308→   308→            { id: 'b', text: { ar: 'لأن [] أسرع من list()', en: 'Because [] is faster than list()' } },
+   309→   309→            { id: 'c', text: { ar: 'لا فرق بينهما إطلاقًا — كلاهما يبني قائمة خاصة', en: 'No difference at all — both build a private list' } },
+   310→   310→          ],
+   311→   311→          answer: 'a',
+   312→   312→          explanation: {
+   313→   313→            ar: 'هذا خلل التنقيح في مشروعنا: القائمة على الصنف واحدة، فappend عبر فريق تعدل قائمة الجميع ويتسرب اللاعبون — والقائمة في المنشئ تولد مع كل كائن فتعيش الحالة المستقلة.',
+   314→   314→            en: 'That is our debug flaw: the class-level list is one, so append through a team mutates everyone\u2019s list and players leak — while the constructor\u2019s list is born per object and independent state survives.',
+   315→   315→          },
+   316→   316→        },
+   317→   317→        {
+   318→   318→          id: 'q6',
+   319→   319→          question: {
+   320→   320→            ar: 'أي مصطلح يوصف بالجملة: «تابع خاص تستدعيه بايثون تلقائيًا عند بناء كل كائن لضبط قيمه الابتدائية»؟',
+   321→   321→            en: 'Which term does this sentence describe: a special method Python calls automatically when each object is built to set its initial values?',
+   322→   322→          },
+   323→   323→          options: [
+   324→   324→            { id: 'a', text: { ar: 'المنشئ constructor — __init__', en: 'The constructor — __init__' } },
+   325→   325→            { id: 'b', text: { ar: 'الهادم destructor — __del__', en: 'The destructor — __del__' } },
+   326→   326→            { id: 'c', text: { ar: 'الوراثة inheritance', en: 'Inheritance' } },
+   327→   327→          ],
+   328→   328→          answer: 'a',
+   329→   329→          explanation: {
+   330→   330→            ar: 'المنشئ من فهرس المصطلحات: يُستدعى لحظة بناء الكائن لضبط قيمه — وقد رأيناه يخزن الاسم والقائمة في كل مشروع الفصل. والهادم نقيضه: عند التدمير، ونادرًا ما نحتاجه.',
+   331→   331→            en: 'The constructor from the glossary: called at the object\u2019s construction to set its values — we watched it store the name and the list in every project of the chapter. The destructor is its opposite: at destruction, rarely needed.',
+   332→   332→          },
+   333→   333→        },
+   334→   334→      ],
+   335→   335→    },
+   336→   336→    {
+   337→   337→      kind: 'pitfalls',
+   338→   338→      items: [
+   339→   339→        {
+   340→   340→          wrong: 'class Team:\n    players = []  # قائمة على الصنف',
+   341→   341→          right: 'class Team:\n    def __init__(self, nam):\n        self.players = list()',
+   342→   342→          note: {
+   343→   343→            ar: 'السمة القابلة للتعديل على الصنف مشتركة بين كل الكائنات: append عبر كائن يعدل القائمة الواحدة فيتسرب اللاعبون بين الفرق — القائمة تُبنى في __init__ لكل كائن.',
+   344→   344→            en: 'A mutable class-level attribute is shared by all objects: append through one object mutates the single list and players leak between teams — the list is built in __init__ per object.',
+   345→   345→          },
+   346→   346→        },
+   347→   347→        {
+   348→   348→          wrong: 'print(red)  # ونتعجب من الرمز الغريب',
+   349→   349→          right: "print('team: %s' % red.name)\nred.describe()",
+   350→   350→          note: {
+   351→   351→            ar: 'الطباعة الافتراضية للكائن تعرض نوعه وعنوان ذاكرته — وهي غير مضمونة الشكل ولا معنى للاعتماد عليها في المقارنات. اطبع خواص الكائن أو تابع describe الذي صممته.',
+   352→   352→            en: 'An object\u2019s default print shows its type and memory address — an unguaranteed form never to be matched against. Print the object\u2019s properties or the describe method you designed.',
+   353→   353→          },
+   354→   354→        },
+   355→   355→        {
+   356→   356→          wrong: "def describe(self):\n    print('team: red')  # الاسم مجمد",
+   357→   357→          right: "def describe(self):\n    print('team: %s' % self.name)",
+   358→   358→          note: {
+   359→   359→            ar: 'الاسم المكتوب يدويًّا يطبع نفس السطر لكل الفرق — والخاصية self.name تعطي كل كائن سطره الصحيح، فهذا معنى الحالة المستقلة التي بناها المنشئ.',
+   360→   360→            en: 'A hard-coded name prints the same line for every team — the property self.name gives each object its own correct line, which is exactly the independent state the constructor built.',
+   361→   361→          },
+   362→   362→        },
+   363→   363→      ],
+   364→   364→    },
+   365→   365→    {
+   366→   366→      kind: 'summary',
+   367→   367→      bullets: [
+   368→   368→        { ar: 'خريطة الفصل: كائنات جاهزة منذ زمن → أول صنف قالب وكائن → المنشئ وخواص self → دورة الحياة وتعدد الكائنات → الوراثة is-a.', en: 'The chapter map: ready-made objects all along → first class, mold and object → the constructor and self\u2019s properties → lifecycle and multiple objects → inheritance, is-a.' },
+   369→   369→        { ar: 'المصطلحات الثمانية: class وobject وinstance وattribute وmethod وconstructor وinheritance وself — قاموس الفصل كاملًا.', en: 'The eight terms: class, object, instance, attribute, method, constructor, inheritance, self — the chapter\u2019s whole dictionary.' },
+   370→   370→        { ar: 'المشروع جمع الفصل: Team يبني حالة مستقلة في __init__ وdescribe يطبع بتنسيق %s و%d — وCoach(Team) ورث ومدد بـ lead، والتنقيح علّم مكان بناء القائمة.', en: 'The project gathered the chapter: Team builds independent state in __init__ and describe prints in %s / %d format — Coach(Team) inherited and extended with lead, and the debug taught where the list must be born.' },
+   371→   371→      ],
+   372→   372→      reflectPrompt: {
+   373→   373→        ar: 'أعد بناء المشروع في الملعب وأضف صنف Player صغيرًا بخاصيتين name وposition، ثم اجعل add_player يبني Player من الاسم ويخزنه. كيف تغير describe؟ ومتى يصبح صنف جديد أوضح من إضافة معاملات؟ اكتب جوابك قبل التجربة.',
+   374→   374→        en: 'Rebuild the project in the sandbox and add a small Player class with two properties, name and position, then make add_player build a Player from the name and store it. How does describe change? And when does a new class become clearer than adding parameters? Write your answer before experimenting.',
+   375→   375→      },
+   376→   376→    },
+   377→   377→    {
+   378→   378→      kind: 'sources',
+   379→   379→      items: [
+   380→   380→        { book: 'PY4E', section: 'py4e.ch14.s11', pages: 'ص248 / pp.248' },
+   381→   381→        { book: 'PY4E', section: 'py4e.ch14.s12', pages: 'ص249 / pp.249' },
+   382→   382→      ],
+   383→   383→    },
+   384→   384→  ],
+   385→   385→  sources: [
+   386→   386→    { book: 'PY4E', section: 'py4e.ch14.s11', pages: 'ص248 / pp.248' },
+   387→   387→    { book: 'PY4E', section: 'py4e.ch14.s12', pages: 'ص249 / pp.249' },
+   388→   388→  ],
+   389→   389→} satisfies Lesson;
+   390→   390→
+   391→   391→export default lesson;
+   392→   392→

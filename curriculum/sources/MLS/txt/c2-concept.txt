@@ -1,0 +1,376 @@
+Concept — Machine Learning from Scratch
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+  
+  
+    
+
+    
+      
+          
+
+    
+        
+
+  
+  
+  
+  
+  Machine Learning from Scratch
+
+  
+
+  
+  
+
+  
+ 
+  Introduction
+ 
+
+ 
+  
+   Table of Contents
+  
+ 
+
+ 
+  
+   Conventions and Notation
+  
+ 
+
+ 
+  1. Ordinary Linear Regression
+ 
+
+ 
+  
+   Concept
+  
+ 
+
+ 
+  
+   Construction
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  2. Linear Regression Extensions
+ 
+
+ 
+  
+   Concept
+  
+  
+   
+    
+     Regularized Regression
+    
+   
+
+   
+    
+     Bayesian Regression
+    
+   
+
+   
+    
+     GLMs
+    
+   
+
+  
+ 
+
+ 
+  
+   Construction
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  3. Discriminative Classifiers (Logistic Regression)
+ 
+
+ 
+  
+   Concept
+  
+ 
+
+ 
+  
+   Construction
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  4. Generative Classifiers (Naive Bayes)
+ 
+
+ 
+  
+   Concept
+  
+ 
+
+ 
+  
+   Construction
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  5. Decision Trees
+ 
+
+ 
+  
+   Concept
+  
+ 
+
+ 
+  
+   Construction
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  6. Tree Ensemble Methods
+ 
+
+ 
+  
+   Concept
+  
+ 
+
+ 
+  
+   Construction
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  7. Neural Networks
+ 
+
+ 
+  
+   Concept
+  
+ 
+
+ 
+  
+   Construction
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  Appendix
+ 
+
+ 
+  
+   Math
+  
+ 
+
+ 
+  
+   Probability
+  
+ 
+
+ 
+  
+   Common Methods
+  
+ 
+
+ 
+  
+   Datasets
+  
+ 
+
+ 
+
+  Powered by Jupyter Book
+
+          
+
+          
+
+    
+    
+    
+    
+
+    
+        
+        
+            
+            
+            
+        
+        
+        
+    
+
+    
+    
+        
+        
+        
+        .md
+        
+        .pdf
+    
+
+    
+
+        
+
+    
+    
+        repository
+        open issue
+        suggest edit
+    
+
+         to have style consistency -->
+        
+
+        
+
+    
+
+    
+    
+        
+             Contents
+        
+
+        
+            
+        
+    
+
+    
+        
+        
+              
+                
+  
+Concept¶
+
+Linear regression can be extended in a number of ways to fit various modeling needs. Regularized regression penalizes the magnitude of the regression coefficients to avoid overfitting, which is particularly helpful for models using a large number of predictors. Bayesian regression places a prior distribution on the regression coefficients in order to reconcile existing beliefs about these parameters with information gained from new data. Finally, generalized linear models (GLMs) expand on ordinary linear regression by changing the assumed error structure and allowing for the expected value of the target variable to be a nonlinear function of the predictors. These extensions are described, derived, and demonstrated in detail this chapter.
+
+    
+    
+
+              
+
+              
+        
+
+    
+
+    
+    
+    
+        
+    Implementation
+    Regularized Regression
+
+    
+
+    
+    
+      
+        
+          By Danny Friedman
+
+        
+            © Copyright 2020.

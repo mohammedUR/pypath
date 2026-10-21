@@ -1,0 +1,319 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * py4e.ch7.l5 — "Writing Files / كتابة الملفات"
+ * Aligned with PY4E ch7 s8 (كتابة الملفات).
+ * All expression is original.
+ * Deterministic: the write → close → re-read cycle runs in memory in one go.
+ */
+const lesson = {
+  id: 'py4e.ch7.l5',
+  version: 1,
+  part: 'I',
+  track: 'P1',
+  book: 'PY4E',
+  chapter: 7,
+  title: { ar: 'كتابة الملفات', en: 'Writing Files' },
+  estimatedMinutes: 15,
+  prerequisites: ['py4e.ch7.l4'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'حتى هذه اللحظة كان برنامجك قارئًا محترمًا: يفتح الملفات ويقرؤها ولا يغيّر حرفًا. اليوم يحصل على قلم: وضع \'w\' يفتح ملفًا للكتابة — وإن كان الملف موجودًا فسيُمسح محتواه القديم كله قبل أول حرف تكتبه. قوة وخطورة في حرف واحد. بنهاية الدرس ستكون قادرًا على: فتح ملف بوضع الكتابة، ومعرفة ماذا يعيد write()، وإنهاء الدورة بإغلاق الملف وإعادة قراءته للتحقق.',
+        en: 'Until this very moment your program was a respectful reader: it opened files, read them, and changed not a letter. Today it gets a pen: mode \'w\' opens a file for writing — and if the file already exists, its old content is wiped before the first character you write. Power and danger in one letter. By the end of this lesson you will be able to: open a file in write mode, know what write() returns, and close the cycle by closing the file and re-reading it to verify.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "out = open('letter.txt', 'w')\nn1 = out.write('Hi\\n')\nn2 = out.write('Bye\\n')\nout.close()\nprint(n1 + n2)",
+      question: {
+        ar: 'write ليست تابعًا خاليًا يعيد None — ماذا خزّن n1 وn2، وماذا سيطبع المجموع؟',
+        en: 'write is not a void function returning None — what did n1 and n2 store, and what will the sum print?',
+      },
+      reveal: {
+        ar: 'يطبع 7: write() تابع مُنتج يعيد في كل استدعاء عدد المحارف المكتوبة — ثلاثة في Hi\\n وأربعة في Bye\\n. وحتى المحرف غير المرئي يُعدّ، كما تعلمت في الدرس الأول من الفصل.',
+        en: 'It prints 7: write() is a fruitful function returning the number of characters written per call — three in Hi\\n and four in Bye\\n. Even the invisible character counts, as you learned at the start of this chapter.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: "وضع الكتابة 'w': باب جديد يمسح القديم", en: "Write mode 'w': a fresh door that wipes the old" },
+      chunks: [
+        {
+          ar: "لكتابة ملف يجب فتحه بوضع 'w' كوسيط ثانٍ: out = open('output.txt', 'w'). الوضع الافتراضي كان 'r' قراءة؛ أما 'w' كتابة فتنشئ الملف إن لم يكن موجودًا — والفخ الكبير: إذا كان الملف موجودًا فهي تمسح محتواه القديم كله وتفتح ملفًا فارغًا. برامج كاملة خسرت بياناتها بهذا الحرف الصغير.",
+          en: "To write a file you must open it in mode 'w' as the second argument: out = open('output.txt', 'w'). The default mode was reading 'r'; writing 'w' creates the file if it does not exist — and the big trap: if the file already exists, its old content is wiped entirely and an empty file opens. Whole programs have lost their data to this small letter.",
+        },
+        {
+          ar: "ومعرّف الكتابة معرّف قراءة معكوس: out.write تضع البيانات ولا يستطيع out.read القراءة منه — فمحاولة القراءة من معرّف كتابة ترفض برسالة io.UnsupportedOperation: not readable. لكل باب وظيفته: افتح بـ 'w' للكتابة وأغلق ثم افتح بلا وضع للقراءة.",
+          en: "And the writing handle is the reading handle in reverse: out.write places data while out.read refuses to work — reading from a write handle answers io.UnsupportedOperation: not readable. Each door has its job: open with 'w' to write, close, then open with no mode to read.",
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'write(): تابع مُنتج بلا سطور مجانية', en: 'write(): a fruitful function with no free newlines' },
+      chunks: [
+        {
+          ar: "استدعاء write يأخذ وسيطًا نصيًا واحدًا ويعيد عدد المحارف المكتوبة: n = out.write('Hi\\n') يعطي n قيمة 3. نعم — إنها تابع مُنتج من دروس الفصل الرابع: قيمة العودة تفيدك في عدّ ما كتبت. ولاحظ أنه يأخذ نصًا واحدًا لا أرقامًا: إن أردت كتابة عدد فحوله بـ str أولًا.",
+          en: "A write call takes exactly one text argument and returns the number of characters written: n = out.write('Hi\\n') gives n the value 3. Yes — it is a fruitful function straight from chapter 4: the return value helps you count what you wrote. Note it takes a string, not numbers: to write a number, convert it with str first.",
+        },
+        {
+          ar: "والفرق الجوهري عن print: write لا يضيف سطرًا جديدًا مجانًا. out.write('أ') ثم out.write('ب') يلصقان محرفين متجاورين، بينما كان print يفصل بينهما. أنت صاحب قرار الأسطر: ضع \\n في نهاية كل سطر تريده مستقلًا، وإلا التحقت سطورك في سطر واحد طويل.",
+          en: "And the essential difference from print: write adds no free newline. out.write('a') then out.write('b') glues two characters together where print would have separated them. You are the line decider: place \\n at the end of every line you want separate, or your lines merge into one long one.",
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'close(): ليصل البريد إلى وجهته', en: 'close(): let the mail reach its destination' },
+      chunks: [
+        {
+          ar: "المكتوب بـ write قد يبقى في المخزن المؤقت ولا يصل الملف فورًا — الكتاب يشبه الأمر بالبريد: التابع close (أو flush) هو الذي يضمن وصول البيانات إلى الملف من أول مرة إلى آخرها. اعتد على قفلة الحلقة: افتح، اكتب، أغلق — ثم إن أردت التحقق فأعد فتح الملف للقراءة واقرأ ما كتبت.",
+          en: "What you write may sit in a buffer and never reach the file immediately — the book compares it to mail: close (or flush) is what guarantees the data lands in the file from first to last. Adopt the closing habit: open, write, close — then, to verify, reopen the file for reading and read what you wrote.",
+        },
+        {
+          ar: "بهذا تكون قد أتممت دورة حياة كاملة بيدك: ملف لم يكن موجودًا وُلد بالكتابة، ثم أُغلق، ثم أُعيد فتحه للقراءة فحوى بياناتك. كل شيء في هذه الدورة محلي في الذاكرة داخل متصفحك — لكن قواعدها هي قواعد الملفات الحقيقية حرفيًا.",
+          en: 'With that you complete a whole lifecycle by hand: a file that did not exist is born by writing, then closed, then reopened for reading holding your data. Everything in this cycle lives in your browser memory — yet its rules are, to the letter, the rules of real files.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'ولّد الملف ثم تحقق منه', en: "Give birth to the file, then verify it" },
+      code: "out = open('diary.txt', 'w')\nprint(out.write('Day 1: learned files\\n'))\nprint(out.write('Day 2: wrote files\\n'))\nout.close()\n\nfhand = open('diary.txt')\ndata = fhand.read()\nfhand.close()\nprint(len(data))\nprint(data)\n\n# والآن فخ الإعادة / and now the replay trap\nout = open('diary.txt', 'w')\nout.write('overwritten!\\n')\nout.close()\nfhand = open('diary.txt')\nprint(fhand.read())\nfhand.close()",
+      explanation: {
+        ar: 'كل write أعلنت إنتاجها: 21 و19 محرفًا. ثم أغلقنا الملف وأعدنا فتحه للقراءة: len عاد بـ 40 وأعادت read سطري اليومين. ثم جاء العرض الأخير: فتحنا الملف نفسه بوضع \'w\' مرة ثانية فامُسح اليومان قبل الكتابة — وقراءة الملف بعدها لم تجد سوى overwritten!. هكذا تُختبر برامجك: اكتب، أغلق، أعد القراءة.',
+        en: 'Each write announced its yield: 21 and 19 characters. Then we closed the file and reopened it for reading: len returned 40 and read gave back the two day lines. Then came the final act: opening the same file in \'w\' mode again wiped both days before writing — and reading it afterward found only overwritten!. Test your programs this way: write, close, re-read.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.write-reread',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: "أنشئ ملفًا اسمه letter.txt بوضع 'w' واكتب فيه بالضبط سطرين: 'Dear py4e\\n' ثم 'Files rock\\n' ثم أغلقه. أعد فتحه للقراءة وخزّن كامل محتواه في المتغير data وأغلقه، ثم اطبع data واطبع len(data).",
+        en: "Create a file named letter.txt in 'w' mode and write exactly two lines: 'Dear py4e\\n' then 'Files rock\\n', then close it. Reopen it for reading, store its full content in the variable data, close it, then print data and print len(data).",
+      },
+      starterCode: "# اكتب ثم أغلق ثم تحقق / write, close, then verify\n",
+      solution: "out = open('letter.txt', 'w')\nout.write('Dear py4e\\n')\nout.write('Files rock\\n')\nout.close()\nfhand = open('letter.txt')\ndata = fhand.read()\nfhand.close()\nprint(data)\nprint(len(data))",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'data يحمل السطرين كاملين', en: 'data carries both complete lines' },
+          code: "assert data == 'Dear py4e\\nFiles rock\\n', 'expected: Dear py4e\\nFiles rock\\n | actual: %r' % data",
+          expected: 'Dear py4e / Files rock',
+        },
+        {
+          id: 't2',
+          name: { ar: 'يُطبع عدد المحارف 21', en: 'The character count 21 is printed' },
+          code: "assert '21' in __learner_output__, ('expected: 21 | actual: %r' % __learner_output__)",
+          expected: '21',
+        },
+        {
+          id: 't3',
+          name: { ar: 'إعادة قراءة الملف من الذاكرة تؤكد الكتابة', en: 'Re-reading the file from memory confirms the write' },
+          code: "chk = open('letter.txt')\ncontent = chk.read()\nchk.close()\nassert content == 'Dear py4e\\nFiles rock\\n', 'expected: file holds both lines | actual: %r' % content",
+          expected: 'file holds both lines',
+        },
+      ],
+      hints: [
+        { ar: 'أنت تتحكم بالأسطر: \\n في نهاية كل write وإلا التحقت السطران.', en: 'You control the lines: \\n at the end of each write or the two lines merge.' },
+        { ar: 'لا تقرأ من معرّف الكتابة — أغلق ثم افتح من جديد بلا وضع.', en: 'Never read from the write handle — close, then open again with no mode.' },
+        { ar: 'الهيكل:\nout = open(..., \'w\')\nout.write(...)\nout.close()\nfhand = open(...)\ndata = fhand.read()\nfhand.close()\nprint(data)\nprint(len(data))', en: "The skeleton:\nout = open(..., 'w')\nout.write(...)\nout.close()\nfhand = open(...)\ndata = fhand.read()\nfhand.close()\nprint(data)\nprint(len(data))" },
+        { ar: "out = open('letter.txt', 'w')\nout.write('Dear py4e\\n')\nout.write('Files rock\\n')\nout.close()\nfhand = open('letter.txt')\ndata = fhand.read()\nfhand.close()\nprint(data)\nprint(len(data))", en: "out = open('letter.txt', 'w')\nout.write('Dear py4e\\n')\nout.write('Files rock\\n')\nout.close()\nfhand = open('letter.txt')\ndata = fhand.read()\nfhand.close()\nprint(data)\nprint(len(data))" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-write-returns',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرْجه بالضبط — ثلاثة أسطر أرقام. تذكّر: write تعيد عدد المحارف.',
+        en: 'Read the code and predict its exact output — three lines of numbers. Remember: write returns the character count.',
+      },
+      code: "out = open('abc.txt', 'w')\nprint(out.write('AB\\n'))\nprint(out.write('CDE\\n'))\nout.close()\nfhand = open('abc.txt')\nprint(len(fhand.read()))\nfhand.close()",
+      solution: '3\n4\n7',
+      answer: '3\n4\n7',
+      hints: [
+        { ar: 'AB\\n ثلاثة محارف، وCDE\\n أربعة.', en: 'AB\\n is three characters, CDE\\n is four.' },
+        { ar: 'الملف جمع ما كُتب: 3 + 4 محرفًا.', en: 'The file gathered everything written: 3 + 4 characters.' },
+        { ar: 'len على read يعطي المحارف لا الأسطر.', en: 'len over read gives characters, not lines.' },
+        { ar: 'الخرْج:\n3\n4\n7', en: 'The output:\n3\n4\n7' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-truncate',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: "الملف data.txt فيه 100 سطر ثم فتحته بوضع 'w' وكتبت فيه سطرًا واحدًا وأغلقته. ماذا بقي في الملف؟",
+        en: "The file data.txt holds 100 lines; you then open it in 'w' mode, write one line into it and close it. What is left in the file?",
+      },
+      options: [
+        { id: 'a', text: { ar: 'السطر الجديد فقط — \'w\' مسحت القديم كله', en: "Only the new line — 'w' wiped all the old content" } },
+        { id: 'b', text: { ar: '101 سطرًا — القديم والجديد', en: '101 lines — the old and the new' } },
+        { id: 'c', text: { ar: '100 سطرًا — الجديد رُفض لأن الملف غير فارغ', en: '100 lines — the new one was refused because the file is not empty' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'تذكّر العرض الأخير في مثال الدرس: اليومان اختفيا.', en: 'Recall the last act of the worked example: the two days vanished.' },
+        { ar: '\'w\' ليست إلحاقًا بل إعادة ولادة للملف.', en: "'w' is not appending — it is a rebirth of the file." },
+        { ar: 'لكل عملية وضعها: الإلحاق له وضع آخر لم ندرسه بعد.', en: 'Each operation has its mode: appending has another mode we have not covered yet.' },
+        { ar: 'الجواب: أ — المسح يحدث لحظة الفتح نفسها.', en: 'Answer: a — the wipe happens at the very moment of opening.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-close',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'أكمل: بعد كتابة البيانات في ملف يجب استدعاء التابع ______ حتى تصل البيانات فعليًا إلى الملف قبل إعادة فتحه للقراءة.',
+        en: 'Fill in: after writing data to a file you must call the ______ method so the data actually reaches the file before reopening it for reading.',
+      },
+      answer: 'close',
+      solution: 'close',
+      hints: [
+        { ar: 'هو آخر تابع في كل دورة كتابة تعلمتها اليوم.', en: 'It is the last function in every write cycle you learned today.' },
+        { ar: 'خمسة حروف — وتعمل على المعرّف بعامل النقطة.', en: 'Five letters — and it works on the handle with the dot operator.' },
+        { ar: 'بدونه قد تبقى البيانات في المخزن المؤقت لا في الملف.', en: 'Without it the data may stay in the buffer, never in the file.' },
+        { ar: 'الجواب: close', en: 'Answer: close' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: '# ملعبك الحرّ — قلمك في يدك\n# Your playground — your pen, your rules\n\nout = open("log.txt", "w")\nfor i in [1, 2, 3]:\n    out.write("entry " + str(i) + "\\n")\nout.close()\n\nfhand = open("log.txt")\nprint(fhand.read())\nfhand.close()\n\n# جرّب القراءة من معرّف الكتابة / try reading from the write handle\nout = open("log.txt", "w")\n# print(out.read())  # أزل التعليق وشاهد الرفض / uncomment and watch the refusal\nout.close()',
+      prompt: {
+        ar: 'جرّب بنفسك: الحلقة من الفصل الخامس + str من الفصل الرابع كتبت سجلًا. ثم أزل التعليق عن out.read() وراقب رفض io.UnsupportedOperation. ثم فتح log.txt بوضع \'w\' ثانياً يمسح السجل — تحقق بنفسك ثم أعد الكتابة. لا اختبار هنا — فضولك فقط.',
+        en: 'Try it yourself: the chapter-5 loop + chapter-4 str wrote a log. Then uncomment out.read() and watch io.UnsupportedOperation refuse. And opening log.txt in \'w\' a second time wipes the log — verify it yourself, then rewrite. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ومن الفصل الرابع: write() تعيد عدد المحارف المكتوبة — فكيف نُصنّفها؟',
+            en: 'From chapter 4: write() returns the number of characters written — how do we classify it?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'تابع مُنتج — له قيمة عودة نستعملها', en: 'A fruitful function — it has a return value we use' } },
+            { id: 'b', text: { ar: 'تابع خالي يعيد None', en: 'A void function returning None' } },
+            { id: 'c', text: { ar: 'كلمة محجوزة في اللغة', en: 'A reserved word of the language' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'تعريف التابع المُنتج: قيمة العودة تصل حيث استُدعي — وهذا ما خزّنته n في المثال الافتتاحي.',
+            en: 'The fruitful definition: the return value lands where the call happened — exactly what n stored in the opening example.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: "ماذا يفعل فتح ملف موجود بوضع 'w' بمحتواه القديم؟",
+            en: "What does opening an existing file in 'w' mode do to its old content?",
+          },
+          options: [
+            { id: 'a', text: { ar: 'يمسحه كله قبل أي كتابة', en: 'Wipes it all before any writing' } },
+            { id: 'b', text: { ar: 'يحفظه ويضيف الجديد بعده', en: 'Keeps it and adds the new content after it' } },
+            { id: 'c', text: { ar: 'يتركه كما هو حتى الإغلاق', en: 'Leaves it untouched until closing' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'المسح يقع لحظة الفتح بـ \'w\' لا عند الكتابة: الملف يولد فارغًا. لهذا لا تستخدم \'w\' لفحص وجود ملف ثم تكمل عليه.',
+            en: "The wipe happens at the moment of opening with 'w', not at writing: the file is reborn empty. So never use 'w' to check whether a file exists and then build on it.",
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'لماذا يجب close (أو flush) قبل إعادة فتح الملف للقراءة؟',
+            en: 'Why must you close (or flush) before reopening the file for reading?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن البيانات قد تبقى في المخزن المؤقت ولم تصل الملف بعد', en: 'Because the data may still sit in the buffer, not yet in the file' } },
+            { id: 'b', text: { ar: 'لأن read يحذف الملف إن لم يغلق', en: 'Because read deletes the file if it is not closed' } },
+            { id: 'c', text: { ar: 'مجرد عادة جمالية لا أثر لها', en: 'A purely cosmetic habit with no effect' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الكتابة تجري في المخزن حتى يأتي الإغلاق فيودعها في الملف — قارئٌ مبكر قد يجد ملفًا فارغًا.',
+            en: 'Writing lands in a buffer until closing deposits it into the file — an early reader may find it empty.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'ومن دروس السلاسل: ما الفرق بين write(\'Line1\') ثم write(\'Line2\') وprint؟',
+            en: "From the string lessons: what is the difference between write('Line1') then write('Line2') and print?",
+          },
+          options: [
+            { id: 'a', text: { ar: 'write لا يضيف محرف سطر جديد فيلتحق السطران — وprint يفصل', en: 'write adds no newline so the lines merge — print separates' } },
+            { id: 'b', text: { ar: 'write يضيف سطرًا جديدًا وprint لا يضيف', en: 'write adds a newline and print does not' } },
+            { id: 'c', text: { ar: 'لا فرق بينهما في الملفات', en: 'There is no difference inside files' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'print تضيف \\n تلقائيًا في نهاية طباعتها، أما write فتعكس ما تعطيه حرفًا حرفًا — أنت من يضع \\n.',
+            en: 'print appends a \\n automatically at the end of its output, while write copies exactly what you hand it — placing \\n is your job.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: "out.write('first part')\nout.write('second part')",
+          right: "out.write('first part\\n')\nout.write('second part\\n')",
+          note: {
+            ar: 'بلا \\n يلتحق المحتوى في سطر واحد: first partsecond part. write لا يمنح سطورًا مجانية كـ print — ضع المحرف بنفسك.',
+            en: 'Without \\n the content glues into one line: first partsecond part. write grants no free newlines like print — place the character yourself.',
+          },
+        },
+        {
+          wrong: "out = open('log.txt', 'w')\nout.write('note\\n')\nprint(out.read())",
+          right: "out = open('log.txt', 'w')\nout.write('note\\n')\nout.close()\nfhand = open('log.txt')\nprint(fhand.read())\nfhand.close()",
+          note: {
+            ar: 'القراءة من معرّف كتابة ترفض برسالة io.UnsupportedOperation: not readable. أغلق الكاتب ثم افتح قارئًا جديدًا.',
+            en: 'Reading from a write handle refuses with io.UnsupportedOperation: not readable. Close the writer, then open a fresh reader.',
+          },
+        },
+        {
+          wrong: "out = open('data.txt', 'w')\n# كنت أظنها تضيف في النهاية / I thought this appends",
+          right: "out = open('data.txt', 'w')\nout.write('anything old is gone\\n')\nout.close()\nfhand = open('data.txt')\nprint(fhand.read())\nfhand.close()",
+          note: {
+            ar: '\'w\' ليست وضع إلحاق: لحظة فتحها تمسح الملف الموجود. للإلحاق وضع آخر (\'a\') سيصادفه لاحقًا من يبحث في التوثيق.',
+            en: "'w' is not append mode: the moment it opens, an existing file is wiped. Appending has its own mode ('a') waiting for whoever explores the docs.",
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: "وضع الكتابة 'w' كوسيط ثانٍ لـ open يخلق الملف أو يمسح موجودًا — والوضع الافتراضي قراءة.", en: "Write mode 'w' as the second argument of open creates the file or wipes an existing one — the default mode is reading." },
+        { ar: 'write() تابع مُنتج يعيد عدد المحارف المكتوبة، ويأخذ نصًا واحدًا، ولا يضيف سطرًا جديدًا تلقائيًا.', en: 'write() is a fruitful function returning the characters written, takes a single string, and adds no newline automatically.' },
+        { ar: 'close (أو flush) يودع البيانات في الملف — ثم إعادة الفتح للقراءة تحقق الدورة: اكتب، أغلق، أعد القراءة.', en: 'close (or flush) deposits the data into the file — then reopening for reading verifies the cycle: write, close, re-read.' },
+      ],
+      reflectPrompt: {
+        ar: 'أي برنامج من حياتك تكتب سجلاته في ملف؟ واكتب أول سطرين ستضع فيهما — بأعلام \\n في مكانهما.',
+        en: 'Which program in your life would write its log to a file? Draft the first two lines you would put there — with the \\n flags in place.',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [{ book: 'PY4E', section: 'py4e.ch7.s8', pages: 'ص113 / pp.113' }],
+    },
+  ],
+  sources: [{ book: 'PY4E', section: 'py4e.ch7.s8', pages: 'ص113 / pp.113' }],
+} satisfies Lesson;
+
+export default lesson;

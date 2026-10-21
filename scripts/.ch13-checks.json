@@ -1,0 +1,217 @@
+{
+ "traces": [
+  {
+   "lesson": "py4e.ch13.l1",
+   "id": "ex2.trace-locate",
+   "code": "line = '<person><name>Chuck</name></person>'\ni = line.find('<name>')\nj = line.find('</name>')\nprint(i)\nprint(j)\nprint(line[i + 6:j])",
+   "answer": "8\n19\nChuck"
+  },
+  {
+   "lesson": "py4e.ch13.l2",
+   "id": "ex2.trace-find-get",
+   "code": "import xml.etree.ElementTree as ET\ndata = '<person><name>Sally</name><email hide=\"no\" /></person>'\ntree = ET.fromstring(data)\nprint(tree.find('name').text)\nprint(tree.find('email').get('hide'))\nprint(len(tree.find('name').text))",
+   "answer": "Sally\nno\n5"
+  },
+  {
+   "lesson": "py4e.ch13.l3",
+   "id": "ex2.trace-path",
+   "code": "import xml.etree.ElementTree as ET\ndata = '<stuff><users><user x=\"2\"><id>001</id></user><user x=\"9\"><id>003</id></user></users></stuff>'\nstuff = ET.fromstring(data)\nlst = stuff.findall('users/user')\nprint(len(lst))\nprint(len(stuff.findall('user')))\nprint(lst[1].get('x'))",
+   "answer": "2\n0\n9"
+  },
+  {
+   "lesson": "py4e.ch13.l4",
+   "id": "ex2.trace-nested",
+   "code": "import json\ninfo = json.loads('{\"name\": \"Chuck\", \"x\": [1, 2, 3], \"email\": {\"hide\": \"yes\"}}')\nprint(info['name'])\nprint(info['x'][0] + info['x'][2])\nprint(info['email']['hide'])\nprint(len(info['x']))",
+   "answer": "Chuck\n4\nyes\n3"
+  },
+  {
+   "lesson": "py4e.ch13.l5",
+   "id": "ex2.trace-results",
+   "code": "import json\njs = json.loads('{\"status\": \"ok\", \"results\": [{\"lat\": 1.5}, {\"lat\": 2.5}]}')\nresults = js['results']\nprint(js['status'])\nprint(len(results))\nprint(results[1]['lat'])",
+   "answer": "ok\n2\n2.5"
+  },
+  {
+   "lesson": "py4e.ch13.l6",
+   "id": "ex1.trace-review",
+   "code": "import json\njs = json.loads('{\"status\": \"OK\", \"results\": [{\"lat\": 42.28}, {\"lat\": 48.11}]}')\nresults = js['results']\nprint(js['status'])\nprint(len(results))\nprint(results[1]['lat'])",
+   "answer": "OK\n2\n48.11"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "py4e.ch13.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "line = '<person><name>Chuck</name></person>'\nprint(line.find('<name>'))\nprint(line.find('</name>'))"
+  },
+  {
+   "lesson": "py4e.ch13.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "line = '<phone type=\"intl\">+1 734 303 4456</phone>'\n\n# السمة بين type=\" و \" التالي / the attribute sits between type=\" and the next \"\np = line.find('type=\"') + 6\nq = line.find('\"', p)\nattr = line[p:q]\n\n# النص بين نهاية وسم الافتتاح وبداية وسم الإغلاق / text between the opening tag and the closing tag\nstart = line.find('>') + 1\nend = line.find('</phone>')\ntext = line[start:end]\n\nprint(text)\nprint(attr)"
+  },
+  {
+   "lesson": "py4e.ch13.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — XML كسلسلة نصية\n# Your playground — XML as a string\n\nline = '<person><name>Chuck</name><email hide=\"yes\" /></person>'\n\nprint(line.count(\"<\"))\nprint(line.count(\"/\"))\nprint(line.find(\"<email\"))\nprint(line[line.find(\"<email\"):])\n\n# جرّب: اقتناص Chuck وشريحة الوسم بنفسك / try: harvest Chuck and the tag slice yourself\nstart = line.find(\"<name>\") + 6\nend = line.find(\"</name>\")\nprint(line[start:end])"
+  },
+  {
+   "lesson": "py4e.ch13.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import xml.etree.ElementTree as ET\ndata = '<person><name>Chuck</name></person>'\ntree = ET.fromstring(data)\nprint(tree.find('name').text)"
+  },
+  {
+   "lesson": "py4e.ch13.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import xml.etree.ElementTree as ET\n\ndata = '''\n<person>\n   <name>Chuck</name>\n   <phone type=\"intl\">\n      +1 734 303 4456\n   </phone>\n   <email hide=\"yes\" />\n</person>'''\n\ntree = ET.fromstring(data)\nprint('Name:', tree.find('name').text)\nprint('Attr:', tree.find('email').get('hide'))"
+  },
+  {
+   "lesson": "py4e.ch13.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — اسأل الشجرة\n# Your playground — interrogate the tree\n\nimport xml.etree.ElementTree as ET\n\ndata = \"\"\"\n<person>\n   <name>Chuck</name>\n   <phone type=\"intl\">\n      +1 734 303 4456\n   </phone>\n   <email hide=\"yes\" />\n</person>\"\"\"\n\ntree = ET.fromstring(data)\n\nprint(repr(tree.find(\"phone\").text))\nprint(tree.find(\"phone\").text.strip())\nprint(tree.find(\"email\").get(\"hide\"))\n\n# جرّب: أضف وسم <nickname> للبيانات واسأل عنه / try: add a <nickname> tag and ask about it"
+  },
+  {
+   "lesson": "py4e.ch13.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import xml.etree.ElementTree as ET\ndata = '<stuff><users><user x=\"2\"><id>001</id></user></users></stuff>'\nstuff = ET.fromstring(data)\nlst = stuff.findall('users/user')\nprint(len(lst))"
+  },
+  {
+   "lesson": "py4e.ch13.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import xml.etree.ElementTree as ET\n\ninput_data = '''\n<stuff>\n   <users>\n      <user x=\"2\">\n         <id>001</id>\n         <name>Chuck</name>\n      </user>\n      <user x=\"7\">\n         <id>009</id>\n         <name>Brent</name>\n      </user>\n   </users>\n</stuff>'''\n\nstuff = ET.fromstring(input_data)\nlst = stuff.findall('users/user')\nprint('User count:', len(lst))\nfor item in lst:\n    print('Name', item.find('name').text)\n    print('Id', item.find('id').text)\n    print('Attribute', item.get('x'))"
+  },
+  {
+   "lesson": "py4e.ch13.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — أضف مستخدمًا ثالثًا\n# Your playground — add a third user\n\nimport xml.etree.ElementTree as ET\n\ninput_data = \"\"\"\n<stuff>\n   <users>\n      <user x=\"2\">\n         <id>001</id>\n         <name>Chuck</name>\n      </user>\n      <user x=\"7\">\n         <id>009</id>\n         <name>Brent</name>\n      </user>\n   </users>\n</stuff>\"\"\"\n\nstuff = ET.fromstring(input_data)\n\nfor item in stuff.findall(\"users/user\"):\n    print(item.find(\"name\").text, item.get(\"x\"))\n\nprint(len(stuff.findall(\"user\")))\n\n# جرّب: أضف <user x=\"11\"> مع id وname ثم أعد العدّ / try: add <user x=\"11\"> with id and name, then recount"
+  },
+  {
+   "lesson": "py4e.ch13.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import json\ninfo = json.loads('{\"name\": \"Chuck\", \"x\": [10, 20]}')\nprint(info['x'][1])\nprint(type(info))"
+  },
+  {
+   "lesson": "py4e.ch13.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import json\n\ndata = '''\n{\n  \"name\" : \"Chuck\",\n  \"phone\" : {\n    \"type\" : \"intl\",\n    \"number\" : \"+1 734 303 4456\"\n  },\n  \"email\" : {\n    \"hide\" : \"yes\"\n  },\n  \"x\" : [1, 2, 3]\n}'''\n\ninfo = json.loads(data)\nprint('Name:', info['name'])\nprint('Hide:', info['email']['hide'])\nprint('First:', info['x'][0])\nprint(type(info))"
+  },
+  {
+   "lesson": "py4e.ch13.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — التحويل في الاتجاهين\n# Your playground — the round trip\n\nimport json\n\ntext = '{\"name\": \"Chuck\", \"x\": [1, 2, 3]}'\ninfo = json.loads(text)\nprint(type(info), info[\"x\"][1])\n\ninfo[\"x\"].append(4)\nprint(json.dumps(info))\nprint(json.dumps(info, indent=2))\n\n# جرّب: أضف مفتاح \"email\": {\"hide\": \"yes\"} لـ info ثم اطبع dumps مجددًا / try: add an \"email\": {\"hide\": \"yes\"} key and dumps again"
+  },
+  {
+   "lesson": "py4e.ch13.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import json\nresponse = '{\"status\": \"ok\", \"lat\": 42.28}'\njs = json.loads(response)\nprint(js['status'])\nprint(js['status'] == 'ok')"
+  },
+  {
+   "lesson": "py4e.ch13.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import json\n\nresponse = '''\n{\n  \"status\": \"ok\",\n  \"results\": [\n    { \"name\": \"Ann Arbor\", \"lat\": 42.2808, \"lng\": -83.7430 }\n  ]\n}'''\n\njs = json.loads(response)\n\nplace = None\nif js['status'] != 'ok':\n    place = None\nelse:\n    place = js['results'][0]\n\nif place is None:\n    print('status: error')\nelse:\n    print('status: ok')\n    print('lat:', place['lat'])\n    print('lng:', place['lng'])"
+  },
+  {
+   "lesson": "py4e.ch13.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — بدّل مصائر الرد\n# Your playground — swap the response’s fate\n\nimport json\n\nresponse = '{\"status\": \"ok\", \"results\": [{\"lat\": 42.2808, \"lng\": -83.7430}]}'\n\njs = json.loads(response)\nplace = None\nif js[\"status\"] == \"ok\":\n    place = js[\"results\"][0]\n\nif place is None:\n    print(\"status: error\")\nelse:\n    print(\"status: ok\", place[\"lat\"], place[\"lng\"])\n\n# جرّب: غير status إلى \"error\" ولاحظ الفرع الآمن / try: change status to \"error\" and watch the safe branch\n# جرّب: js.get(\"status\", \"missing\") — ماذا تعيد get الافتراضي؟ / try: js.get(\"status\", \"missing\") — what does get’s default return?"
+  },
+  {
+   "lesson": "py4e.ch13.l6",
+   "kind": "predict",
+   "id": "predict",
+   "code": "import json\npayload = '{\"status\": \"OK\", \"results\": [{\"lat\": 42.28, \"lng\": -83.74}]}'\njs = json.loads(payload)\nfirst = js['results'][0]\nprint(first['lat'], first['lng'])"
+  },
+  {
+   "lesson": "py4e.ch13.l6",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import json\n\npayload = '''\n{\n  \"status\": \"OK\",\n  \"results\": [\n    { \"formatted_address\": \"Ann Arbor, MI, USA\", \"lat\": 42.2808, \"lng\": -83.7430 },\n    { \"formatted_address\": \"Ypsilanti, MI, USA\", \"lat\": 42.2412, \"lng\": -83.6142 }\n  ]\n}'''\n\njs = json.loads(payload)\n\nif js['status'] != 'OK':\n    js = None\n\nif js is None:\n    print('status: error')\nelse:\n    print('results:', len(js['results']))\n    first = js['results'][0]\n    print('lat: %s' % first['lat'])\n    print('lng: %s' % first['lng'])"
+  },
+  {
+   "lesson": "py4e.ch13.l6",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — خدمتك الجغرافية\n# Your playground — your own geo service\n\nimport json\n\npayload = '{\"status\": \"OK\", \"results\": [{\"formatted_address\": \"Ann Arbor, MI, USA\", \"lat\": 42.2808, \"lng\": -83.7430, \"place_id\": \"ChIJMx9D1A2wPIgR4rXIhkb5Cds\"}]}'\n\njs = json.loads(payload)\nplace = None\nif js[\"status\"] == \"OK\":\n    place = js[\"results\"][0]\n\nif place is None:\n    print(\"status: error\")\nelse:\n    print(\"%s at lat: %s lng: %s\" % (place[\"formatted_address\"], place[\"lat\"], place[\"lng\"]))\n\n# جرّب: غير العنوان إلى Atlantic Ocean واجعل status ZERO_RESULTS وresults قائمة فارغة / try: change the address, set status to ZERO_RESULTS with empty results\n# جرّب: اطبع formatted_address قبل place_id / try: print formatted_address before place_id"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "py4e.ch13.l1",
+   "id": "ex3.mcq-selfclose",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch13.l2",
+   "id": "ex3.mcq-fromstring",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch13.l3",
+   "id": "ex3.mcq-path",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch13.l4",
+   "id": "ex3.mcq-array-list",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch13.l5",
+   "id": "ex3.mcq-key-secret",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch13.l6",
+   "id": "ex3.mcq-none-flag",
+   "answer": "a",
+   "solution": "a"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "py4e.ch13.l1",
+   "id": "ex4.fill-find",
+   "answer": "find"
+  },
+  {
+   "lesson": "py4e.ch13.l2",
+   "id": "ex4.fill-fromstring",
+   "answer": "fromstring"
+  },
+  {
+   "lesson": "py4e.ch13.l3",
+   "id": "ex4.fill-findall",
+   "answer": "findall"
+  },
+  {
+   "lesson": "py4e.ch13.l5",
+   "id": "ex4.fill-loads",
+   "answer": "loads"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "py4e.ch13.l6",
+   "id": "ex5.debug-guard-case",
+   "brokenCode": "import json\n\npayload_ok = '{\"status\": \"OK\", \"results\": [{\"lat\": 42.2808, \"lng\": -83.743, \"place_id\": \"ChIJMx9D1A2wPIgR4rXIhkb5Cds\"}]}'\npayload_bad = '{\"status\": \"error\", \"results\": []}'\n\nfor payload in [payload_ok, payload_bad]:\n    js = json.loads(payload)\n    place = None\n    if js['status'] == 'ok':  # فحصنا الحالة قبل القراءة / we checked the status before reading\n        place = js['results'][0]\n    if place is None:\n        print('status: error')\n    else:\n        print('lat: %s' % place['lat'])"
+  }
+ ]
+}

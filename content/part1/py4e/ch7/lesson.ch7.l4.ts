@@ -1,0 +1,347 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * py4e.ch7.l4 — "Choosing a File and Error Handling / اختيار الملف ومعالجة الأخطاء"
+ * Aligned with PY4E ch7 s6 (السماح للمستخدم باختيار الملف), s7 (استخدام try و except و open).
+ * All expression is original.
+ * input() is never executable here — the simulated `typed` variable pattern from
+ * ch2.l5 stands in for the user's typing. exit() is taught but not executed:
+ * the worker harness reports SystemExit as an error.
+ */
+const lesson = {
+  id: 'py4e.ch7.l4',
+  version: 1,
+  part: 'I',
+  track: 'P1',
+  book: 'PY4E',
+  chapter: 7,
+  title: { ar: 'اختيار الملف ومعالجة الأخطاء', en: 'Choosing a File and Error Handling' },
+  estimatedMinutes: 20,
+  prerequisites: ['py4e.ch7.l3'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'برنامجك يعرف اسم ملف واحد وهو مقيّد به: كل ملف جديد يعني تعديل الشيفرة. اليوم يتحرر: اسم الملف يصير متغيّرًا يختاره المستخدم — ثم نسأل سؤال الكتاب الشهير: ما الذي يمكن أن يفعله مستخدمنا الودود ليفشل برنامجنا؟ سيكتب اسم ملف غير موجود، وسيظهر تقرير خطأ يجعلنا نبدو مبرمجين غير محترفين — وسنرد بشيفرة الاستعادة. بنهاية الدرس ستكون قادرًا على: فتح ملف يحدده متغيّر اسم، وحماية open بـ try/except مع رسالة رشيقة.',
+        en: 'Your program knows one file name and is chained to it: every new file means editing the code. Today it breaks free: the file name becomes a variable the user picks — then we ask the book’s famous question: what could our friendly user do to fail our program? They will type a missing file name, an error traceback will make us look unprofessional — and we will answer with recovery code. By the end of this lesson you will be able to: open a file whose name lives in a variable, and guard open with try/except and a graceful message.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "# نحاكي ما يكتبه المستخدم / simulate the user's typing\ntyped = 'box.txt'\nout = open(typed, 'w')\nout.write('Subject: a\\n')\nout.write('hello\\n')\nout.write('Subject: b\\n')\nout.close()\n\nfname = typed\nfhand = open(fname)\ncount = 0\nfor line in fhand:\n    if line.startswith('Subject:'):\n        count = count + 1\nfhand.close()\nprint('There were', count, 'subject lines in', fname)",
+      question: {
+        ar: 'اسم الملف جاء من متغيّر لا من شيفرة ثابتة. كم عنوانًا عدّها البرنامج وماذا طبع؟',
+        en: 'The file name came from a variable, not from fixed code. How many subjects did the program count and what did it print?',
+      },
+      reveal: {
+        ar: 'يطبع There were 2 subject lines in box.txt. البرنامج نفسه يعمل الآن على أي ملف: غيّر قيمة typed فقط وستتغير رسائله — بلا تعديل الشيفرة. هذا هو فكرة القسم 7.6 كاملة.',
+        en: 'It prints There were 2 subject lines in box.txt. The very same program now runs on any file: change typed only and its report follows — no code editing. That is section 7.6 in full.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'اسم الملف قرار المستخدم', en: 'The file name is the user’s decision' },
+      chunks: [
+        {
+          ar: "لا نريد أبدًا تعديل شيفرة بايثون في كل مرة نريد معالجة ملف مختلف. الأفضل أن يُطلب من المستخدم اسم الملف عند كل تشغيل، فيعمل برنامجنا على ملفات مختلفة بلا تغيير الشيفرة. في بايثون الحقيقي يُقرأ الاسم بـ fname = input('Enter the file name: ') ثم يفتح الملف بـ open(fname) — والكتاب يعرض جلسات تشغيل: mbox.txt يعطي 1797 سطر Subject وmbox-short.txt يعطي 27.",
+          en: "We never want to edit Python code every time we process a different file. Better: ask the user for the file name at each run, so our program works on different files without code changes. In real Python the name is read with fname = input('Enter the file name: ') and the file opens with open(fname) — the book shows two runs: mbox.txt gives 1797 subject lines and mbox-short.txt gives 27.",
+        },
+        {
+          ar: "في منصتنا لا لوحة مفاتيح، فنحاكي كما في الفصل الثاني: typed = 'mbox.txt' يمثل ما كتبه المستخدم، وfname = typed يستلمه. القواعد كلها كما هي: الاسم نص، والمتغير fname يمرر إلى open، ويبقى البرنامج واحدًا لكل الملفات.",
+          en: "Our platform has no keyboard, so we simulate as in chapter 2: typed = 'mbox.txt' stands for what the user typed, and fname = typed receives it. All the rules stay identical: the name is text, fname travels into open, and one program serves all files.",
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'المستخدم الشرّير: تقرير الخطأ', en: 'The evil user: the traceback' },
+      chunks: [
+        {
+          ar: "سيفعل المستخدمون كل ما يمكنهم لتفشيل برامجك — عن قصد أو بنيّة سيئة، ولهذا يحتاج كل فريق تطوير فريقَ ضمان جودة يجرّب أغرب المدخلات. ماذا لو كتب المستخدم شيئًا غير اسم ملف؟ open('missing.txt') يرمي FileNotFoundError: [Errno 2] No such file or directory — تقرير خطأ طويل يواجه المستخدم بدل رسالة مهذبة.",
+          en: "Users will eventually do everything possible to break your programs — on purpose or out of bad design, and that is why every team needs a QA crew trying the wildest inputs. What if the user types something other than a file name? open('missing.txt') throws FileNotFoundError: [Errno 2] No such file or directory — a long traceback facing the user instead of a polite message.",
+        },
+        {
+          ar: 'والحكمة التي كررها الكتاب منذ الفصل الثالث: افترض أن العملية قد تفشل. استدعاء open يمكن أن يخفق — فليكن فشله متوقعًا وله شيفرة استعادة، لا صدمة تعرض التتبع كاملًا. ما الخطأ المحتمل هنا؟ الآن جاء جوابه.',
+          en: 'And the wisdom the book has repeated since chapter 3: assume the operation can fail. A call to open may flop — let its failure be expected with recovery code, not a shock dumping the whole traceback. What could possibly go wrong here? Here comes the answer.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'try / except / open: الرد الأنيق', en: 'try / except / open: the graceful reply' },
+      chunks: [
+        {
+          ar: "الإصلاح بأناقة ببنية try/except: نغلق open داخل try، وفي except نطبع 'File cannot be opened:' مع اسم الملف ثم ننهي البرنامج. الكتاب يستدعي exit() لإنهاء البرنامج فورًا بلا قيمة — وهي تعمل في المفسّر الحقيقي، لكن منصتنا تُظهر SystemExit كخطأ، فلا تستدعها هنا. بديلنا يعرفونه: عَلَم None من الفصل الخامس — عند الفشل يبقى المعرّف None فيقفز if is not None فوق المعالجة.",
+          en: "Fix it gracefully with try/except: wrap open inside try, and in except print 'File cannot be opened:' with the file name, then end the program. The book calls exit() to quit immediately with no value — it works in a real interpreter, but our platform shows SystemExit as an error, so do not call it here. Our stand-in is one you know: the None flag of chapter 5 — on failure the handle stays None and an is not None if jumps over the processing.",
+        },
+        {
+          ar: "بعد الحماية يكمل البرنامج واثقًا: الحلقة تعدّ أسطر Subject والطباعة الأخيرة تقرير. وفي شكل عام: ضع فقط الأسطر الخطرة داخل try — open هنا — لأن try الواسع يبتلع أخطاء لم تقصدها. هذا هو الحارس نفسه الذي حماى القسمة في الفصل الثالث، الآن يحمي فتح الملفات.",
+          en: 'After the guard the program continues with confidence: the loop counts subject lines and the final print reports. In general: put only the risky lines inside try — open here — because a wide try swallows errors you never meant to catch. This is the same guardian that shielded division in chapter 3, now shielding file opening.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'مستخدم مطيع ومستخدم شرّير', en: 'An obedient user and an evil one' },
+      code: "out = open('subjects.txt', 'w')\nout.write('Subject: one\\n')\nout.write('Body line\\n')\nout.close()\n\n# المستخدم المطيع / the obedient user\ntyped = 'subjects.txt'\nfhand = None\ntry:\n    fhand = open(typed)\nexcept:\n    print('File cannot be opened:', typed)\nif fhand is not None:\n    count = 0\n    for line in fhand:\n        if line.startswith('Subject:'):\n            count = count + 1\n    fhand.close()\n    print('There were', count, 'subject lines in', typed)\n\n# المستخدم الشرّير / the evil user\ntyped2 = 'na na boo boo'\nfhand2 = None\ntry:\n    fhand2 = open(typed2)\nexcept:\n    print('File cannot be opened:', typed2)\nif fhand2 is not None:\n    fhand2.close()",
+      explanation: {
+        ar: 'المستخدم الأول كتب اسمًا موجودًا فُتح الملف وبقي المعرّف بعيدًا عن None فتم عدّ عنوان واحد. الثاني كتب na na boo boo — مثل الكتاب — فقفز التنفيذ إلى except وطُبعت الرسالة دون تتبع ولا انهيار، وبقي المعرّف None فقفز if فوق المعالجة. لاحظ أننا لم نستدعِ exit(): عَلَم None فعل وظيفتها بهدوء. هكذا يبدو برنامجك محترفًا أمام أسوأ المستخدمين.',
+        en: 'The first user typed an existing name, the file opened, the handle stayed far from None, and one subject was counted. The second typed na na boo boo — exactly like the book — execution jumped to except, the message printed with no traceback and no crash, and the handle stayed None so the if skipped the processing. Notice we never called exit(): the None flag did its job quietly. That is how your program stays professional in front of the worst users.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.typed-count',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: "اصنع ملفًا اسمه inbox.txt بوضع 'w' واكتب فيه بالضبط: 'Subject: py4e\\n' ثم 'From: sara@x.com\\n' ثم 'Subject: files\\n' ثم أغلق. ثم ضع typed = 'inbox.txt' (ما «كتبه» المستخدم) وافتح الملف المكتوب اسمه في typed، وعُدّ الأسطر التي تبدأ بـ 'Subject:' في المتغير count بحلقة for، وأغلق الملف، واطبع 'There were', count, 'subject lines in', typed.",
+        en: "Make a file named inbox.txt in 'w' mode and write exactly: 'Subject: py4e\\n', then 'From: sara@x.com\\n', then 'Subject: files\\n', then close it. Then set typed = 'inbox.txt' (what the user “typed”), open the file whose name is in typed, count the lines starting with 'Subject:' into the variable count with a for loop, close the file, and print 'There were', count, 'subject lines in', typed.",
+      },
+      starterCode: "# اصنع الملف ثم خذ «اختيار» المستخدم / make the file, then take the user's pick\n",
+      solution: "out = open('inbox.txt', 'w')\nout.write('Subject: py4e\\n')\nout.write('From: sara@x.com\\n')\nout.write('Subject: files\\n')\nout.close()\ntyped = 'inbox.txt'\nfhand = open(typed)\ncount = 0\nfor line in fhand:\n    if line.startswith('Subject:'):\n        count = count + 1\nfhand.close()\nprint('There were', count, 'subject lines in', typed)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'count يساوي 2', en: 'count equals 2' },
+          code: "assert count == 2, 'expected: 2 | actual: %r' % count",
+          expected: '2',
+        },
+        {
+          id: 't2',
+          name: { ar: 'يُطبع التقرير الموقّع كاملًا', en: 'The full labeled report is printed' },
+          code: "assert 'There were 2 subject lines in inbox.txt' in __learner_output__, ('expected: There were 2 subject lines in inbox.txt | actual: %r' % __learner_output__)",
+          expected: 'There were 2 subject lines in inbox.txt',
+        },
+        {
+          id: 't3',
+          name: { ar: 'اسم الملف في متغيّر لا في شيفرة ثابتة', en: 'The file name lives in a variable, not fixed code' },
+          code: "assert typed == 'inbox.txt', 'expected: inbox.txt | actual: %r' % typed",
+          expected: 'inbox.txt',
+        },
+      ],
+      hints: [
+        { ar: 'الحلقة عدّ من الفصل الخامس بمرشّح startswith من الدرس الماضي.', en: 'The loop is chapter-5 counting wearing last lesson’s startswith filter.' },
+        { ar: 'افتح بـ open(typed) — الاسم من المتغير لا نصًا ثابتًا داخل القوسين.', en: 'Open with open(typed) — the name comes from the variable, not a literal inside the parentheses.' },
+        { ar: 'الهيكل:\nout = open(\'inbox.txt\', \'w\')\nout.write(...)\nout.close()\ntyped = \'inbox.txt\'\nfhand = open(typed)\ncount = 0\nfor line in fhand:\n    if line.startswith(\'Subject:\'):\n        count = count + 1\nfhand.close()\nprint(\'There were\', count, \'subject lines in\', typed)', en: "The skeleton:\nout = open('inbox.txt', 'w')\nout.write(...)\nout.close()\ntyped = 'inbox.txt'\nfhand = open(typed)\ncount = 0\nfor line in fhand:\n    if line.startswith('Subject:'):\n        count = count + 1\nfhand.close()\nprint('There were', count, 'subject lines in', typed)" },
+        { ar: "out = open('inbox.txt', 'w')\nout.write('Subject: py4e\\n')\nout.write('From: sara@x.com\\n')\nout.write('Subject: files\\n')\nout.close()\ntyped = 'inbox.txt'\nfhand = open(typed)\ncount = 0\nfor line in fhand:\n    if line.startswith('Subject:'):\n        count = count + 1\nfhand.close()\nprint('There were', count, 'subject lines in', typed)", en: "out = open('inbox.txt', 'w')\nout.write('Subject: py4e\\n')\nout.write('From: sara@x.com\\n')\nout.write('Subject: files\\n')\nout.close()\ntyped = 'inbox.txt'\nfhand = open(typed)\ncount = 0\nfor line in fhand:\n    if line.startswith('Subject:'):\n        count = count + 1\nfhand.close()\nprint('There were', count, 'subject lines in', typed)" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-guard',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرْجه بالضبط — سطرًا واحدًا. الملف missing.txt غير موجود.',
+        en: 'Read the code and predict its exact output — a single line. The file missing.txt does not exist.',
+      },
+      code: "fname = 'missing.txt'\ntry:\n    fhand = open(fname)\n    print('opened')\nexcept:\n    print('File cannot be opened:', fname)",
+      solution: 'File cannot be opened: missing.txt',
+      answer: 'File cannot be opened: missing.txt',
+      hints: [
+        { ar: 'الفصل الثالث: عند فشل أي سطر داخل try يقفز التنفيذ إلى except.', en: 'Chapter 3: when any line inside try fails, execution jumps to except.' },
+        { ar: 'open سترمي FileNotFoundError قبل وصولها إلى print(\'opened\').', en: "open will throw FileNotFoundError before print('opened') is ever reached." },
+        { ar: 'الرسالة تجمع النص والاسم بفاصلة طباعة.', en: 'The message glues the text and the name with a print comma.' },
+        { ar: 'الخرْج:\nFile cannot be opened: missing.txt', en: 'The output:\nFile cannot be opened: missing.txt' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-missing',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'نفذ البرنامج open(\'ghost.txt\') دون try/except وبدون أن يكون الملف موجودًا. ماذا يحدث؟',
+        en: "The program runs open('ghost.txt') with no try/except and the file does not exist. What happens?",
+      },
+      options: [
+        { id: 'a', text: { ar: 'FileNotFoundError مع تتبع كامل ويتوقف البرنامج', en: 'A FileNotFoundError with a full traceback and the program stops' } },
+        { id: 'b', text: { ar: 'يُنشأ الملف فارغًا ويُعاد معرّف', en: 'An empty file is created and a handle returned' } },
+        { id: 'c', text: { ar: 'تُعاد سلسلة فارغة هدوءًا', en: 'An empty string is quietly returned' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'الخيار ب يصف سلوك وضع \'w\' — وهو درس قادم بخطره.', en: "Option b describes the behavior of 'w' mode — a coming lesson, with its own danger." },
+        { ar: 'استدعاء القراءة لا يصنع شيئًا: يطلب ملفًا موجودًا.', en: 'A read call creates nothing: it demands an existing file.' },
+        { ar: 'هذا بالضبط تقرير الخطأ الذي حميناه اليوم.', en: 'This is exactly the traceback we guarded against today.' },
+        { ar: 'الجواب: أ.', en: 'Answer: a.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.two-files',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: "برنامج واحد لملفين: أنشئ 'good.txt' بوضع 'w' واكتب فيه 'ready\\n' وأغلقه. ثم اكتب حلقة for على القائمة ['good.txt', 'missing.txt']: داخل الحلقة ضع open داخل try — عند النجاح اطبع اسم الملف مع 'opened' وأغلق المعرّف، وعند الفشل اطبع 'File cannot be opened:' مع الاسم ثم continue. الخرْج المتوقع سطران: 'good.txt opened' و'File cannot be opened: missing.txt'.",
+        en: "One program for two files: create 'good.txt' in 'w' mode, write 'ready\\n' into it, and close it. Then write a for loop over the list ['good.txt', 'missing.txt']: inside the loop put open inside try — on success print the file name with 'opened' and close the handle; on failure print 'File cannot be opened:' with the name then continue. Expected output, two lines: 'good.txt opened' and 'File cannot be opened: missing.txt'.",
+      },
+      starterCode: "# اصنع good.txt ثم عالج الملفين / make good.txt, then process both files\n",
+      solution: "out = open('good.txt', 'w')\nout.write('ready\\n')\nout.close()\nfor fname in ['good.txt', 'missing.txt']:\n    try:\n        fhand = open(fname)\n    except:\n        print('File cannot be opened:', fname)\n        continue\n    print(fname, 'opened')\n    fhand.close()",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'الملف الجيد أُعلن مفتوحًا', en: 'The good file is announced opened' },
+          code: "assert 'good.txt opened' in __learner_output__, ('expected: good.txt opened | actual: %r' % __learner_output__)",
+          expected: 'good.txt opened',
+        },
+        {
+          id: 't2',
+          name: { ar: 'الملف الغائب رُفض برسالة أنيقة', en: 'The missing file is refused gracefully' },
+          code: "assert 'File cannot be opened: missing.txt' in __learner_output__, ('expected: File cannot be opened: missing.txt | actual: %r' % __learner_output__)",
+          expected: 'File cannot be opened: missing.txt',
+        },
+        {
+          id: 't3',
+          name: { ar: 'لا تتبع أخطاء — البرنامج اكتمل', en: 'No traceback — the program completed' },
+          code: "lines = [l for l in __learner_output__.splitlines() if l.strip()]\nassert len(lines) == 2, 'expected: exactly 2 output lines | actual: %r' % __learner_output__",
+          expected: 'exactly 2 output lines',
+        },
+      ],
+      hints: [
+        { ar: 'try/except لا يحتاج else هنا: ما بعد except هو طريق النجاح.', en: 'try/except needs no else here: what follows except is the success path.' },
+        { ar: 'continue في نهاية except يمنع طباعة opened عن الملف الفاشل.', en: 'continue at the end of except stops opened from printing for the failed file.' },
+        { ar: 'الهيكل:\nfor fname in [...]:\n    try:\n        fhand = open(fname)\n    except:\n        print(\'File cannot be opened:\', fname)\n        continue\n    print(fname, \'opened\')\n    fhand.close()', en: "The skeleton:\nfor fname in [...]:\n    try:\n        fhand = open(fname)\n    except:\n        print('File cannot be opened:', fname)\n        continue\n    print(fname, 'opened')\n    fhand.close()" },
+        { ar: "out = open('good.txt', 'w')\nout.write('ready\\n')\nout.close()\nfor fname in ['good.txt', 'missing.txt']:\n    try:\n        fhand = open(fname)\n    except:\n        print('File cannot be opened:', fname)\n        continue\n    print(fname, 'opened')\n    fhand.close()", en: "out = open('good.txt', 'w')\nout.write('ready\\n')\nout.close()\nfor fname in ['good.txt', 'missing.txt']:\n    try:\n        fhand = open(fname)\n    except:\n        print('File cannot be opened:', fname)\n        continue\n    print(fname, 'opened')\n    fhand.close()" },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: '# ملعبك الحرّ — بواب أرشيف\n# Your playground — the archive gatekeeper\n\nout = open("archive.txt", "w")\nout.write("Subject: meeting\\n")\nout.write("note\\n")\nout.close()\n\ntyped = "archive.txt"   # غيّرها وجرّب / change it and experiment\n# في برنامج حقيقي: التابع input يقرأ اسم الملف إلى typed\ntry:\n    fhand = open(typed)\nexcept:\n    print("File cannot be opened:", typed)\nif fhand is not None:\n    for line in fhand:\n        print(line.rstrip())\n    fhand.close()',
+      prompt: {
+        ar: 'جرّب بنفسك: بدّل typed بين ملف موجود وآخر غير موجود ولاحظ المسارين. ثم غيّر الرسالة إلى نصك الخاص. (تعليق input يذكّرك بالشكل الحقيقي — لا تنفذها هنا فلا لوحة مفاتيح.) لا اختبار هنا — فضولك فقط.',
+        en: 'Try it yourself: flip typed between an existing and a missing file and watch both paths. Then customize the message. (The input comment reminds you of the real shape — do not run it here, there is no keyboard.) No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'عودة إلى الفصل الثالث: ما فلسفة try/except التي نطبقها اليوم على open؟',
+            en: 'Back to chapter 3: which try/except philosophy do we apply to open today?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'شيفرة استعادة: نفترض الفشل المحتمل ونرد برسالة بدل الانهيار', en: 'Recovery code: assume possible failure and reply with a message instead of crashing' } },
+            { id: 'b', text: { ar: 'إخفاء الأخطاء كليًا عن المستخدم والمبرمج', en: 'Hide errors completely from user and programmer alike' } },
+            { id: 'c', text: { ar: 'تسريع الفتح بتخطي الفحوصات', en: 'Speed up opening by skipping checks' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'try/except وثيقة تأمين: السطر الخطر مغلّف، والاستثناء يفتح باب شيفرة الاستعادة — رسالة رشيقة ثم متابعة أو نهاية منظمة.',
+            en: 'try/except is an insurance policy: the risky line is wrapped, the exception opens the recovery door — a graceful message, then continue or a clean end.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ما اسم الاستثناء الذي يرميه فتح ملف غير موجود؟',
+            en: 'What is the name of the exception thrown when opening a missing file?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'FileNotFoundError', en: 'FileNotFoundError' } },
+            { id: 'b', text: { ar: 'ValueError', en: 'ValueError' } },
+            { id: 'c', text: { ar: 'NameError', en: 'NameError' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الاسم يقول كل شيء: خطأ في عدم وجود الملف. ValueError كان صرخة int على نص غير رقمي، وNameError صرخة اسم مجهول.',
+            en: 'The name says it all: a not-found-file error. ValueError was int screaming at non-numeric text, NameError at an unknown name.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'لماذا وضعنا اسم الملف في متغير fname بدل كتابته داخل open في كل مرة؟',
+            en: 'Why did we put the file name in a variable fname instead of writing it inside open every time?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'ليعمل البرنامج نفسه على ملفات مختلفة دون تعديل الشيفرة', en: 'So the same program works on different files without code changes' } },
+            { id: 'b', text: { ar: 'لأن open لا تقبل النصوص الثابتة', en: 'Because open refuses string literals' } },
+            { id: 'c', text: { ar: 'لأن المتغيرات تجعل الفتح أسرع', en: 'Because variables make opening faster' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'هذا جوهر القسم 7.6: الاسم قرار المستخدم عند التشغيل، والشيفرة تبقى واحدة — بلا تحرير لكل ملف.',
+            en: 'That is the heart of section 7.6: the name is the user’s run-time decision while the code stays one — no editing per file.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'ومن الفصل الثاني: في بايثون الحقيقي، ماذا يعيد input(\'Enter the file name: \') أينما كتب المستخدم؟',
+            en: "And from chapter 2: in real Python, what does input('Enter the file name: ') return, whatever the user types?",
+          },
+          options: [
+            { id: 'a', text: { ar: 'سلسلة نصية str دائمًا', en: 'A string str, always' } },
+            { id: 'b', text: { ar: 'عددًا إذا كتب المستخدم أرقامًا', en: 'A number if the user typed digits' } },
+            { id: 'c', text: { ar: 'معرّف الملف مباشرة', en: 'The file handle directly' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'input يعيد نصًا دائمًا — وهنا يحالفنا الحظ: اسم الملف نص أصلًا فيمرر إلى open كما هو بلا تحويل.',
+            en: 'input always returns text — and here luck is on our side: a file name is text anyway, so it travels straight into open with no conversion.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: "try:\n    fhand = open(fname)\nexcept:\n    print('File cannot be opened:', fname)\n    exit()",
+          right: "try:\n    fhand = open(fname)\nexcept:\n    print('File cannot be opened:', fname)",
+          note: {
+            ar: 'exit() من الكتاب تعمل في المفسّر الحقيقي، لكن منصتنا تعرض SystemExit كخطأ. هنا اكتفِ بالرسالة: نهاية الكود نهاية طبيعية للبرنامج.',
+            en: 'The book’s exit() works in a real interpreter, but our platform shows SystemExit as an error. Here the message is enough: the end of the code is the natural end of the program.',
+          },
+        },
+        {
+          wrong: "fhand = open(fname, 'w')\nfhand.close()",
+          right: "try:\n    fhand = open(fname)\n    fhand.close()\nexcept:\n    print('File cannot be opened:', fname)",
+          note: {
+            ar: 'فتح بـ \'w\' «لاختبار وجود الملف» يمسح محتواه فورًا! الفحص الآمن: open للقراءة داخل try — وسيتضح خطر \'w\' في الدرس القادم.',
+            en: "Opening with 'w' “to test whether the file exists” wipes its content on the spot! The safe check: open for reading inside try — and 'w' gets its danger lesson next.",
+          },
+        },
+        {
+          wrong: 'try:\n    fhand = open(fname)\n    count = 0\n    for line in fhand:\n        if line.startswith("Subject:"):\n            count = count + 1\n    fhand.close()\n    print(count)\nexcept:\n    print("something failed")',
+          right: 'fhand = None\ntry:\n    fhand = open(fname)\nexcept:\n    print("File cannot be opened:", fname)\nif fhand is not None:\n    count = 0\n    for line in fhand:\n        if line.startswith("Subject:"):\n            count = count + 1\n    fhand.close()\n    print(count)',
+          note: {
+            ar: 'try الواسع يبتلع أخطاء الحلقة كلها تحت رسالة واحدة مخفية. ضع فقط open الخطرة داخل try — الفصل الثالث: حمّل السطر المسؤول.',
+            en: 'A wide try swallows every loop bug under one vague message. Put only the risky open inside try — chapter 3 again: guard the line that deserves it.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'اسم الملف متغيّر يأتي من المستخدم — برنامج واحد لكل الملفات بلا تعديل الشيفرة (نحاكيه بـ typed بلا لوحة مفاتيح).', en: 'The file name is a variable from the user — one program for every file with no code edits (simulated by typed, no keyboard here).' },
+        { ar: 'فتح ملف غير موجود يرمي FileNotFoundError — افترض أن open قد تخفق.', en: 'Opening a missing file throws FileNotFoundError — assume open can fail.' },
+        { ar: 'open داخل try وexcept يطبع File cannot be opened مع الاسم — وexit() من الكتاب تُستبدل هنا بنهاية طبيعية للبرنامج.', en: 'open inside try, with except printing File cannot be opened and the name — and the book’s exit() is replaced here by the natural end of the code.' },
+      ],
+      reflectPrompt: {
+        ar: 'اقرأ برنامجك الأخير وسأل نفسك سؤال الكتاب: ما الخطأ المحتمل هنا؟ اذكر مدخلين يكسرانها، وكيف يرد عليهما try/except.',
+        en: 'Read your latest program and ask the book’s question: what could possibly go wrong here? Name two inputs that would break it and how try/except would answer.',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'PY4E', section: 'py4e.ch7.s6', pages: 'ص110 / pp.110' },
+        { book: 'PY4E', section: 'py4e.ch7.s7', pages: 'ص111 / pp.111' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'PY4E', section: 'py4e.ch7.s6', pages: 'ص110 / pp.110' },
+    { book: 'PY4E', section: 'py4e.ch7.s7', pages: 'ص111 / pp.111' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

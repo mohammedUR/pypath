@@ -1,0 +1,149 @@
+[
+ {
+  "lesson": "swe.ch6.l1",
+  "id": "ex2.coupling-report",
+  "solution": "imports = {\n    \"ui\": [\"app\", \"format\"],\n    \"app\": [\"domain\", \"store\"],\n    \"domain\": [],\n    \"store\": [\"domain\"],\n    \"format\": [],\n}\n\nfan_out = {}\nfan_in = {m: 0 for m in imports}\nfor m, deps in imports.items():\n    fan_out[m] = len(deps)\n    for d in deps:\n        fan_in[d] += 1\n\nfor m in imports:\n    print(m, \"fan-out\", fan_out[m], \"fan-in\", fan_in[m])\n\nhub = max(fan_in, key=lambda m: fan_in[m])\nprint(\"hub:\", hub)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "سطر domain صحيح",
+     "en": "domain line is right"
+    },
+    "code": "assert 'domain fan-out 0 fan-in 2' in __learner_output__, 'expected: domain fan-out 0 fan-in 2 | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "المحور هو domain",
+     "en": "hub is domain"
+    },
+    "code": "assert 'hub: domain' in __learner_output__, 'expected: hub: domain | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "ستة أسطر تقرير",
+     "en": "six report lines"
+    },
+    "code": "assert __learner_output__.strip().count(\"\\n\") == 5, 'expected: 6 report lines | actual: %r' % __learner_output__"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch6.l2",
+  "id": "ex1.diagram-to-code",
+  "solution": "from dataclasses import dataclass, field\n\n@dataclass\nclass LineItem:\n    sku: str\n    qty: int\n    price: float\n\n@dataclass\nclass Order:\n    id: str\n    items: list = field(default_factory=list)   # composition: the Order owns its LineItems\n\n    def add(self, sku, qty, price):\n        self.items.append(LineItem(sku=sku, qty=qty, price=price))\n\n    def total(self):\n        return sum(i.qty * i.price for i in self.items)\n\norder = Order(\"o1\")\norder.add(\"pen\", 3, 2.5)\norder.add(\"pad\", 1, 9.0)\nprint(order.id, \"items:\", len(order.items), \"total:\", order.total())",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "سطر الملخص صحيح",
+     "en": "summary line is right"
+    },
+    "code": "assert 'o1 items: 2 total: 16.5' in __learner_output__, 'expected: o1 items: 2 total: 16.5 | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "المجموع 16.5",
+     "en": "total is 16.5"
+    },
+    "code": "assert order.total() == 16.5, 'expected: 16.5 | actual: %r' % order.total()"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "بندان اثنان",
+     "en": "two line items"
+    },
+    "code": "assert len(order.items) == 2, 'expected: 2 | actual: %r' % len(order.items)"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch6.l3",
+  "id": "ex1.view-queries",
+  "solution": "MODULES = {\n    \"ui\": [\"router\", \"domain\"],\n    \"router\": [\"domain\", \"transport\"],\n    \"domain\": [],\n    \"storage\": [\"domain\"],\n    \"transport\": [],\n}\nTALKS = {\n    \"web_ui\": [\"gateway\"],\n    \"gateway\": [\"router\", \"store\"],\n    \"router\": [\"store\"],\n    \"store\": [],\n}\nNODES = {\n    \"client\": [\"web_ui\"],\n    \"server\": [\"gateway\", \"router\"],\n    \"backup\": [\"store\"],\n}\n\ndef components_on(node):\n    return sorted(NODES[node])\n\ndef talks_to(comp):\n    return sorted(src for src, dsts in TALKS.items() if comp in dsts)\n\nprint(\"server runs:\", \" \".join(components_on(\"server\")))\nprint(\"talks to store:\", \" \".join(talks_to(\"store\")))\nprint(\"router deps:\", \" \".join(MODULES[\"router\"]))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "سطر النشر صحيح",
+     "en": "deployment line is right"
+    },
+    "code": "assert 'server runs: gateway router' in __learner_output__, 'expected: server runs: gateway router | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "سطر التشغيل صحيح",
+     "en": "runtime line is right"
+    },
+    "code": "assert 'talks to store: gateway router' in __learner_output__, 'expected: talks to store: gateway router | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "استعلام عقدة أخرى",
+     "en": "another node query"
+    },
+    "code": "assert components_on(\"backup\") == [\"store\"], 'expected: [\"store\"] | actual: %r' % components_on(\"backup\")"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch6.l4",
+  "id": "ex1.dep-analyzer",
+  "solution": "GRAPH = {\n    \"app\":     [\"router\", \"auth\", \"notify\", \"logging\"],\n    \"router\":  [\"auth\", \"models\"],\n    \"auth\":    [\"notify\", \"models\"],\n    \"notify\":  [\"auth\"],\n    \"models\":  [],\n    \"logging\": [],\n}\nLIMIT = 3\n\ndef fan_out(graph, mod):\n    return len(graph[mod])\n\ndef fan_in(graph, mod):\n    return sum(1 for deps in graph.values() if mod in deps)\n\ndef find_cycle(graph):\n    color = {m: 0 for m in graph}   # 0 white, 1 gray, 2 black\n    path = []\n\n    def walk(node):\n        color[node] = 1\n        path.append(node)\n        for nxt in graph[node]:\n            if color[nxt] == 1:\n                return path[path.index(nxt):] + [nxt]\n            if color[nxt] == 0:\n                found = walk(nxt)\n                if found:\n                    return found\n        path.pop()\n        color[node] = 2\n        return None\n\n    for m in graph:\n        if color[m] == 0:\n            found = walk(m)\n            if found:\n                return found\n    return None\n\nedges = sum(len(deps) for deps in GRAPH.values())\nprint(\"modules: %d edges: %d\" % (len(GRAPH), edges))\nprint(\"fan-in auth: %d fan-out app: %d\" % (fan_in(GRAPH, \"auth\"), fan_out(GRAPH, \"app\")))\nfor mod in GRAPH:\n    if fan_out(GRAPH, mod) > LIMIT:\n        print(\"smell: %s fan-out %d\" % (mod, fan_out(GRAPH, mod)))\ncycle = find_cycle(GRAPH)\nif cycle:\n    print(\"cycle:\", \" -> \".join(cycle))\nelse:\n    print(\"cycle: none\")",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "سطر الحصيلة صحيح",
+     "en": "summary line is right"
+    },
+    "code": "assert 'modules: 6 edges: 9' in __learner_output__, 'expected: modules: 6 edges: 9 | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "رائحة التصميم تُرصد",
+     "en": "design smell is flagged"
+    },
+    "code": "assert 'smell: app fan-out 4' in __learner_output__, 'expected: smell: app fan-out 4 | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الأرقام والحلقة صحيحة",
+     "en": "numbers and cycle are right"
+    },
+    "code": "assert fan_in(GRAPH, \"auth\") == 3 and find_cycle(GRAPH) == [\"auth\", \"notify\", \"auth\"], 'expected: fan-in 3 and cycle auth->notify->auth | actual: %r, %r' % (fan_in(GRAPH, \"auth\"), find_cycle(GRAPH))"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch6.l4",
+  "id": "ex5.debug-blind-import",
+  "solution": "GRAPH = {\n    \"app\":     [\"router\", \"auth\", \"notify\", \"logging\"],\n    \"router\":  [\"auth\", \"models\"],\n    \"auth\":    [\"notify\", \"models\"],\n    \"notify\":  [\"auth\"],\n    \"models\":  [],\n    \"logging\": [],\n}\n\ndef reaches(graph, src, dst):\n    seen = {src}\n    stack = [src]\n    while stack:\n        node = stack.pop()\n        if node == dst:\n            return True\n        for nxt in graph[node]:\n            if nxt not in seen:\n                seen.add(nxt)\n                stack.append(nxt)\n    return False\n\ndef find_cycle(graph):\n    color = {m: 0 for m in graph}   # 0 white, 1 gray, 2 black\n    path = []\n\n    def walk(node):\n        color[node] = 1\n        path.append(node)\n        for nxt in graph[node]:\n            if color[nxt] == 1:\n                return path[path.index(nxt):] + [nxt]\n            if color[nxt] == 0:\n                found = walk(nxt)\n                if found:\n                    return found\n        path.pop()\n        color[node] = 2\n        return None\n\n    for m in graph:\n        if color[m] == 0:\n            found = walk(m)\n            if found:\n                return found\n    return None\n\nprint(\"app reaches models:\", reaches(GRAPH, \"app\", \"models\"))\ncycle = find_cycle(GRAPH)\nprint(\"cycle:\", \" -> \".join(cycle) if cycle else \"none\")",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الوصول المتعدد يُرصد",
+     "en": "transitive reach is found"
+    },
+    "code": "assert 'app reaches models: True' in __learner_output__, 'expected: app reaches models: True | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الحلقة تُكشف",
+     "en": "the cycle is detected"
+    },
+    "code": "assert 'cycle: auth -> notify -> auth' in __learner_output__, 'expected: cycle: auth -> notify -> auth | actual: %r' % __learner_output__"
+   }
+  ]
+ }
+]

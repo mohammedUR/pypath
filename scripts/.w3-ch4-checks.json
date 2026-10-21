@@ -1,0 +1,146 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch4.l1",
+   "id": "ex3.points-trace",
+   "code": "points = {\"schedule\": 2, \"booking\": 5, \"reminders\": 8}\ntotal = sum(points.values())\nprint(\"total:\", total)\nprint(\"biggest:\", max(points, key=points.get))",
+   "answer": "total: 15\nbiggest: reminders"
+  },
+  {
+   "lesson": "swe.ch4.l2",
+   "id": "ex4.weighted-trace",
+   "code": "items = [(\"conflict\", 9, 2, 5), (\"payment\", 7, 9, 8)]\nfor name, v, r, c in items:\n    print(name, (v + r) / c)",
+   "answer": "conflict 2.2\npayment 2.0"
+  },
+  {
+   "lesson": "swe.ch4.l4",
+   "id": "ex2.recap-trace",
+   "code": "ratio = 9 / 5\nprint(\"conflict ratio:\", ratio)\nprint(\"order: conflict, pdf, sms\")",
+   "answer": "conflict ratio: 1.8\norder: conflict, pdf, sms"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch4.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "hours = {\"noor\": [4, 10, 2], \"sami\": [6, 15, 3], \"layla\": [8, 20, 4]}\nfor name, h in hours.items():\n    print(f\"{name}: hours={h} B/A = {h[1]/h[0]} C/A = {h[2]/h[0]}\")"
+  },
+  {
+   "lesson": "swe.ch4.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "stories = [\n    # (id, passed the checklist?, points)\n    (\"S1\", True, 2),   # read-only schedule (reference story)\n    (\"S2\", True, 5),   # booking + conflict detection\n    (\"S3\", False, 8),  # SMS reminders: no acceptance test yet\n    (\"S4\", True, 3),   # PDF export\n]\nVELOCITY = 8  # points this team completes per iteration\n\nplan, it, used, picked = [], 1, 0, []\nfor sid, ready, pts in stories:\n    if not ready:\n        print(f\"{sid}: blocked - pass the checklist first\")\n        continue\n    if used + pts > VELOCITY:\n        plan.append((it, \" \".join(picked), used))\n        it, picked, used = it + 1, [], 0\n    picked.append(sid)\n    used += pts\nplan.append((it, \" \".join(picked), used))\nfor i, ids, pts in plan:\n    print(f\"iter{i}: {ids} ({pts} pts)\")"
+  },
+  {
+   "lesson": "swe.ch4.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# مدرج خطة التكرار — عدّل القصص والسرعة وشاهد الخطة تتغير\n# The iteration planner — edit stories and velocity, watch the plan shift\nstories = [\n    (\"S1\", True, 2), (\"S2\", True, 5),\n    (\"S3\", True, 8), (\"S4\", True, 3),\n]\nVELOCITY = 10\n\nplan, it, used, picked = [], 1, 0, []\nfor sid, ready, pts in stories:\n    if used + pts > VELOCITY:\n        plan.append((it, \" \".join(picked), used))\n        it, picked, used = it + 1, [], 0\n    picked.append(sid)\n    used += pts\nplan.append((it, \" \".join(picked), used))\nfor i, ids, pts in plan:\n    print(f\"iter{i}: {ids} ({pts} pts)\")\n\n# جرّب: اجعل VELOCITY = 8، أو اجعل قصة واحدة غير جاهزة وراقب كيف تُرحَّل"
+  },
+  {
+   "lesson": "swe.ch4.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "anchored = [3, 3, 3, 5]      # everyone heard the lead say \"3\"\nindependent = [2, 3, 5, 13]  # private estimates, revealed together\nfor label, cards in ((\"anchored\", anchored), (\"independent\", independent)):\n    print(label, \"spread:\", max(cards) - min(cards))"
+  },
+  {
+   "lesson": "swe.ch4.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "rounds = {1: [3, 5, 5, 13], 2: [8, 8, 8, 13], 3: [8, 8, 8, 8]}\nfor r, cards in rounds.items():\n    print(f\"round {r}: cards={cards} spread={max(cards) - min(cards)}\")\nprint(\"consensus:\", rounds[3][0], \"points\")"
+  },
+  {
+   "lesson": "swe.ch4.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# مجرب الأولويات: غيّر القيم والتكاليف وراقب الترتيب\n# The priority bench: change values and costs, watch the order flip\nfeatures = [\n    (\"conflict\", 9, 5),\n    (\"pdf\", 4, 3),\n    (\"sms\", 8, 8),\n    (\"multilang\", 5, 13),\n]\n\nprint(\"== value / cost ==\")\nfor i, (name, v, c) in enumerate(sorted(features, key=lambda f: f[1] / f[2], reverse=True), 1):\n    print(f\"{i}. {name} {v / c:.2f}\")\n\nprint(\"== (value + risk reduction) / cost ==\")\nrisk = {\"conflict\": 2, \"pdf\": 1, \"sms\": 5, \"multilang\": 2}\nfor i, (name, v, c) in enumerate(sorted(features, key=lambda f: (f[1] + risk[f[0]]) / f[2], reverse=True), 1):\n    print(f\"{i}. {name} {(v + risk[name]) / c:.2f}\")\n\n# جرّب: ارفع risk[\"sms\"] إلى 9 — أين تقفز SMS؟"
+  },
+  {
+   "lesson": "swe.ch4.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "survey = {\n    \"correct-date\": (\"neutral\", \"angry\"),    # feeling if present / if absent\n    \"calendar-btn\": (\"delighted\", \"neutral\"),\n    \"faster-search\": (\"like\", \"dislike\"),\n}\nfor feat, (present, absent) in survey.items():\n    print(feat, \"->\", present, \"/\", absent)"
+  },
+  {
+   "lesson": "swe.ch4.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "def effort(kloc, a=2.4, b=1.05):   # Basic COCOMO, organic\n    return a * kloc ** b\n\ndef schedule(effort_pm):           # calendar months\n    return 2.5 * effort_pm ** 0.38\n\ne20, e40 = effort(20), effort(40)\nprint(f\"20 KLOC: {e20:.1f} pm, {schedule(e20):.1f} months\")\nprint(f\"40 KLOC: {e40:.1f} pm, {schedule(e40):.1f} months\")\nprint(f\"doubling factor: {e40 / e20:.2f}\")"
+  },
+  {
+   "lesson": "swe.ch4.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعب COCOMO: غيّر الحجم والوضع وشاهد عقوبة الحجم\n# The COCOMO playground: change size and mode, watch the size penalty\nMODES = {\"organic\": (2.4, 1.05), \"semi\": (3.0, 1.12), \"embedded\": (3.6, 1.20)}\n\ndef effort(kloc, mode=\"organic\"):\n    a, b = MODES[mode]\n    return a * kloc ** b\n\nfor kloc in (10, 20, 40, 80):\n    e = effort(kloc)\n    print(f\"{kloc:>3} KLOC organic: {e:6.1f} pm, schedule {2.5 * e ** 0.38:.1f} months\")\n\nprint()\nfor mode, (a, b) in MODES.items():\n    print(f\"{mode:>9}: a={a} b={b} doubling factor at 40 KLOC: {effort(40, mode) / effort(20, mode):.2f}\")\n\n# جرّب: حجم 100 KLOC — كم شهر-شخص في كل وضع؟"
+  },
+  {
+   "lesson": "swe.ch4.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "forecasts = {\n    \"after 1 sprint\": (16, 26),\n    \"after 3 sprints\": (18, 26),\n    \"after 6 sprints\": (20, 24),\n}\nfor when, (lo, hi) in forecasts.items():\n    print(f\"{when}: {hi - lo} pt spread\")"
+  },
+  {
+   "lesson": "swe.ch4.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "stories = [\n    # (id, checklist_ok, points, value 1-10)\n    (\"A1\", True, 3, 6),\n    (\"A2\", False, 5, 9),   # no acceptance test yet\n    (\"A3\", True, 5, 9),\n]\nvelocity = 10\n\nready = sorted((s for s in stories if s[1]), key=lambda s: s[3] / s[2], reverse=True)\npicked, used = [], 0\nfor sid, ok, pts, val in ready:\n    if used + pts <= velocity:\n        picked.append(sid)\n        used += pts\nblocked = \",\".join(s[0] for s in stories if not s[1]) or \"-\"\nprint(\"blocked:\", blocked)\nprint(\"picked:\", \" \".join(picked), f\"({used}/{velocity} pts)\")"
+  },
+  {
+   "lesson": "swe.ch4.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# لوحتك — غيّر السرعة والقيم وشاهد الترتيب والاختيار يتغيران\n# Your board — change velocity and values, watch order and picks shift\nstories = [\n    # (id, checklist_ok, points, value 1-10)\n    (\"S1\", True,  2, 6), (\"S2\", True,  5, 9), (\"S3\", False, 8, 8),\n    (\"S4\", True,  3, 4), (\"S5\", True,  2, 3), (\"S6\", True,  8, 7),\n]\nVELOCITY = 12\n\nready = sorted((s for s in stories if s[1]), key=lambda s: s[3] / s[2], reverse=True)\npicked, used = [], 0\nfor sid, ok, pts, val in ready:\n    if used + pts <= VELOCITY:\n        picked.append(sid)\n        used += pts\nprint(\"picked:\", \" \".join(picked), f\"({used}/{VELOCITY} pts)\")\n\n# جرّب: VELOCITY = 8 — من يبقى ومن ينتظر؟ ثم اجعل S3 جاهزة وراقب نسبتها 1.0"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch4.l1",
+   "id": "ex2.points-vs-days",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch4.l2",
+   "id": "ex3.moscow-bucket",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "swe.ch4.l3",
+   "id": "ex3.kano-pair",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch4.l4",
+   "id": "ex3.partial-credit",
+   "answer": "c",
+   "solution": "c"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch4.l1",
+   "id": "ex4.velocity-fill",
+   "answer": "velocity"
+  },
+  {
+   "lesson": "swe.ch4.l3",
+   "id": "ex4.diseconomy-fill",
+   "answer": "scale"
+  },
+  {
+   "lesson": "swe.ch4.l4",
+   "id": "ex4.kano-question",
+   "answer": "dysfunctional"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch4.l4",
+   "id": "ex5.debug-board",
+   "brokenCode": "stories = [(\"S1\", 2), (\"S2\", 5), (\"S3\", 8)]\nvelocity = 12\n\npicked, used = [], 0\nfor sid, pts in stories:\n    picked.append(sid)   # BUG: every story is booked, capacity never checked\n    used += pts\n\nprint(\"picked:\", \" \".join(picked), f\"({used}/{velocity} pts)\")\nif used > velocity:\n    print(\"overbooked!\")"
+  }
+ ]
+}

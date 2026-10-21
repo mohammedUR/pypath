@@ -1,0 +1,445 @@
+/**
+ * Lesson mls.ch5.l3 — ابنِ شجرة الانحدار من الصفر
+ *   / Build a Regression Tree from Scratch
+ * Book: MLS — Chapter 5 'Decision Trees', §5.3 Construction (pp.54-65).
+ * The book's construction pages assemble regression/classification trees from
+ * scratch, noting the code is heavier due to their recursive nature; we build a
+ * depth-2 tree: best_split, recursive build, predict — all verified.
+ * Deterministic only: no input(), no exit(), no random, no unittest.main.
+ */
+import type { Lesson } from '../../../../src/lib/content/schema';
+
+const lesson = {
+  id: 'mls.ch5.l3',
+  version: 1,
+  part: 'II',
+  track: 'A2',
+  book: 'MLS',
+  chapter: 5,
+  title: {
+    ar: 'ابنِ شجرة الانحدار من الصفر',
+    en: 'Build a Regression Tree from Scratch',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['mls.ch5.l2'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'درساك كيف يُختار الانقسام، لكن الشجرة الحقيقية ليست سؤالًا واحدًا: إنها تكرار لا نهائي نظريًا — قسّم، ثم قسّم الطفلين، ثم أحفادهما. في هذا الدرس تركّب القطع الثلاث: دالة أفضل انقسام، بناء تكراري بحدّ عمق ثابت، ودالة تنبؤ تنزل الشجرة. وفي النهاية ستحمل في يدك شجرة عمقها اثنان تطابق بياناتنا الثماني تطابقًا تامًا، بلا أي مكتبة.',
+        en: 'You have learned how one split is chosen, but a real tree is more than a single question: it is recursion — split, then split the two children, then their grandchildren. This lesson assembles the three pieces: a best-split function, a recursive builder with a fixed depth cap, and a predict function that walks the tree. By the end you will hold a depth-2 tree that fits our eight fixed points exactly, with no library involved.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: {
+        ar: 'الوصفة التكرارية وشجرة كقاموس',
+        en: 'The recursive recipe and a tree as a dictionary',
+      },
+      chunks: [
+        {
+          ar: 'الوصفة من ثلاث خطوات. أولًا: best_split يعيد (العتبة، قيمة المعيار) بمسح يعرفانه من الدرسين الماضيين. ثانيًا: build(xs, ys, depth) يفحص شرطي التوقف — عمق صفر أو صفوف متماثلة — فإن تحقق أعلن نفسه ورقة بمتوسط ys؛ وإلا استدعى best_split، قسمّ الصفوف إلى طرفي العتبة، واستدعى نفسه على كل طرف بعمق أقل بواحد. ثالثًا: tree_predict(node, x) ينزل من الجذر: عند كل عقدة يقارن x بـ node["t"] ويختار left أو right حتى يصل قاموسًا فيه المفتاح "leaf".',
+          en: 'The recipe has three steps. First, best_split returns (threshold, criterion value) with the scan you know from the last two lessons. Second, build(xs, ys, depth) checks the two stopping conditions — zero depth or identical targets — and if either holds declares itself a leaf holding the mean of ys; otherwise it calls best_split, splits the rows at the threshold, and calls itself on each side with depth minus one. Third, tree_predict(node, x) descends from the root: at each node compare x with node["t"] and pick left or right until reaching a dictionary holding the key "leaf".',
+        },
+        {
+          ar: 'نمثل الشجرة بقواميس متداخلة: العقدة الداخلية {"t": 4.5, "left": ..., "right": ...} والورقة {"leaf": 1.5}. أي شجرة انحدار — في أي مكتبة — هي بنية كهذه تحت الغطاء: سؤال، طفلان، وورق عند النهايات. حدّ العمق max_depth هو صمام الأمان: بدونه يستمر التقسيم حتى تصبح كل ورقة نقية بنقطة واحدة، وهذه ذاكرة للبيانات لا نموذجًا. الكتاب نفسه يقيّد الحجم في قسم التنفيذ بمعاملات مثل max_depth وmin_samples_split.',
+          en: 'We represent the tree as nested dictionaries: an internal node {"t": 4.5, "left": ..., "right": ...} and a leaf {"leaf": 1.5}. Every regression tree — in any library — is such a structure under the hood: a question, two children, and leaves at the ends. The depth cap max_depth is the safety valve: without it the splitting continues until every leaf is a single pure point, which is memorization, not a model. The book itself caps size in its implementation section with parameters like max_depth and min_samples_split.',
+        },
+        {
+          ar: 'لماذا يكفي عمق 2 لبياناتنا؟ لأن النمط سُلّم من درجتين: قيم منخفضة [1,1,2,2] ثم مرتفعة [6,6,7,7]، وداخل كل درج درجة فرعية. الجذر يفصل الدرجتين عند 4.5، وكل طفل يفصل درجته الفرعية (2.5 يسارًا و6.5 يمينًا) فيصير الأربع أوراق نقية تمامًا وMSE = 0.0 على التدريب. البيانات الأعمق من ذلك تحتاج عمقًا أكبر — وتذكّر تحذير الدرس القادم قبل أن تحفر أعمق.',
+          en: 'Why is depth 2 enough for our data? Because the pattern is a two-step staircase: low values [1,1,2,2] then high [6,6,7,7], with a sub-step inside each stair. The root separates the stairs at 4.5, and each child separates its sub-step (2.5 on the left, 6.5 on the right), leaving four perfectly pure leaves and training MSE = 0.0. Deeper patterns need more depth — and remember the next lesson warning before digging deeper.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: {
+        ar: 'الشجرة الكاملة: بناء وتنبيؤ',
+        en: 'The whole tree: build and predict',
+      },
+      code: `def sse(ys):
+    m = sum(ys) / len(ys)
+    return sum((y - m) ** 2 for y in ys)
+
+def best_split(xs, ys):
+    sx = sorted(set(xs))
+    best_t, best_sse = None, None
+    for t in [(a + b) / 2 for a, b in zip(sx, sx[1:])]:
+        left = [y for x, y in zip(xs, ys) if x <= t]
+        right = [y for x, y in zip(xs, ys) if x > t]
+        total = sse(left) + sse(right)
+        if best_sse is None or total < best_sse:
+            best_t, best_sse = t, total
+    return best_t, best_sse
+
+def build(xs, ys, depth):
+    if depth == 0 or len(set(ys)) == 1:
+        return {"leaf": sum(ys) / len(ys)}
+    t, _ = best_split(xs, ys)
+    li = [i for i, x in enumerate(xs) if x <= t]
+    ri = [i for i, x in enumerate(xs) if x > t]
+    return {"t": t,
+            "left": build([xs[i] for i in li], [ys[i] for i in li], depth - 1),
+            "right": build([xs[i] for i in ri], [ys[i] for i in ri], depth - 1)}
+
+def tree_predict(node, x):
+    while "leaf" not in node:
+        node = node["left"] if x <= node["t"] else node["right"]
+    return node["leaf"]
+
+xs = [1, 2, 3, 4, 5, 6, 7, 8]
+ys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]
+tree = build(xs, ys, 2)
+print("root t =", tree["t"])
+print("left t  =", tree["left"]["t"], " right t =", tree["right"]["t"])
+print("leaves:", tree["left"]["left"], tree["left"]["right"],
+      tree["right"]["left"], tree["right"]["right"])
+preds = [tree_predict(tree, x) for x in xs]
+print("preds  =", preds)
+print("train MSE =", sum((p - y) ** 2 for p, y in zip(preds, ys)) / len(ys))`,
+      explanation: {
+        ar: 'تتبّع البناء: الجذر مسح كامل فاختار 4.5 (مجموع 2.0). الطفل الأيسر ورث [1,1,2,2] على x = [1,2,3,4] فأفضل انقسام له 2.5 بـ SSE = 0.0، والأيمن ورث [6,6,7,7] فاختار 6.5. عند العمق المتبقي صفر تحوّل الأحفاد أوراقًا بمتوسطات 1.0 و2.0 و6.0 و7.0. التنبؤ ينزل مرة واحدة لكل نقطة: x=3 مثلًا يسار عند 4.5 ثم يمين عند 2.5 فتقع في ورقة 2.0. النتيجة: تنبؤات مطابقة لـ ys حرفيًا وخطأ تدريب 0.0 — الشجرة الصغيرة التقطت السُلّم كاملًا بسؤالين لكل مسار.',
+        en: 'Trace the build: the root scanned everything and picked 4.5 (total 2.0). The left child inherited [1,1,2,2] over x = [1,2,3,4] so its best split is 2.5 with SSE = 0.0, and the right inherited [6,6,7,7] and chose 6.5. At zero remaining depth the grandchildren became leaves with means 1.0, 2.0, 6.0, 7.0. Prediction descends once per point: x=3 goes left at 4.5 then right at 2.5, landing in the 2.0 leaf. The result: predictions identical to ys and training MSE 0.0 — the small tree captured the whole staircase with two questions per path.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.best-split-sse',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'اكتب sse(ys) وbest_split(xs, ys) من الصفر بحيث تعيد best_split زوجًا (عتبة، مجموع_SSE) وتتتبع الأفضل بمقارنة صارمة (<). المطلوب: (4.5, 2.0) على البيانات الكاملة و(2.5, 0.0) على يسار الجذر و(6.5, 0.0) على يمينه.',
+        en: 'Write sse(ys) and best_split(xs, ys) from scratch so best_split returns the pair (threshold, total SSE) and tracks the best with a strict comparison (<). Required: (4.5, 2.0) on the full data, (2.5, 0.0) on the root left side, and (6.5, 0.0) on its right side.',
+      },
+      starterCode: `def sse(ys):
+    # TODO: sum of squared deviations from the mean
+    return 0.0
+
+def best_split(xs, ys):
+    # TODO: scan midpoints of consecutive sorted distinct xs;
+    # return (best_threshold, best_total_sse)
+    return None, None
+
+xs = [1, 2, 3, 4, 5, 6, 7, 8]
+ys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]
+print("root:", best_split(xs, ys))
+lx = [x for x in xs if x <= 4.5]
+ly = [y for x, y in zip(xs, ys) if x <= 4.5]
+rx = [x for x in xs if x > 4.5]
+ry = [y for x, y in zip(xs, ys) if x > 4.5]
+print("left:", best_split(lx, ly), " right:", best_split(rx, ry))`,
+      solution: `def sse(ys):
+    m = sum(ys) / len(ys)
+    return sum((y - m) ** 2 for y in ys)
+
+def best_split(xs, ys):
+    sx = sorted(set(xs))
+    best_t, best_sse = None, None
+    for t in [(a + b) / 2 for a, b in zip(sx, sx[1:])]:
+        left = [y for x, y in zip(xs, ys) if x <= t]
+        right = [y for x, y in zip(xs, ys) if x > t]
+        total = sse(left) + sse(right)
+        if best_sse is None or total < best_sse:
+            best_t, best_sse = t, total
+    return best_t, best_sse
+
+xs = [1, 2, 3, 4, 5, 6, 7, 8]
+ys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]
+print("root:", best_split(xs, ys))
+lx = [x for x in xs if x <= 4.5]
+ly = [y for x, y in zip(xs, ys) if x <= 4.5]
+rx = [x for x in xs if x > 4.5]
+ry = [y for x, y in zip(xs, ys) if x > 4.5]
+print("left:", best_split(lx, ly), " right:", best_split(rx, ry))`,
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'انقسام الجذر', en: 'the root split' },
+          code: `xs = [1, 2, 3, 4, 5, 6, 7, 8]\nys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]\nt, s = best_split(xs, ys)\nassert t == 4.5, 'expected 4.5 | actual: %r' % t\nassert abs(s - 2.0) < 1e-9, 'expected 2.0 | actual: %r' % s`,
+        },
+        {
+          id: 't2',
+          name: { ar: 'انقساما طفلي الجذر', en: 'the two child splits' },
+          code: `lt, ls = best_split([1, 2, 3, 4], [1.0, 1.0, 2.0, 2.0])\nrt, rs = best_split([5, 6, 7, 8], [6.0, 6.0, 7.0, 7.0])\nassert lt == 2.5 and abs(ls - 0.0) < 1e-9, 'left expected (2.5, 0.0) | actual: %r' % ((lt, ls),)\nassert rt == 6.5 and abs(rs - 0.0) < 1e-9, 'right expected (6.5, 0.0) | actual: %r' % ((rt, rs),)`,
+        },
+        {
+          id: 't3',
+          name: { ar: 'sse على عقدة غير متجانسة', en: 'sse on a mixed node' },
+          code: `assert abs(sse([1.0, 1.0, 2.0]) - 2 / 3) < 1e-9, 'expected 2/3 | actual: %r' % sse([1.0, 1.0, 2.0])\nassert abs(sse([5.0]) - 0.0) < 1e-9, 'expected 0.0 | actual: %r' % sse([5.0])`,
+        },
+      ],
+      hints: [
+        { ar: 'sse سطران: المتوسط ثم مجموع (y − m)². احمِ نفسك من القائمة الفارغة بشرط مبكر يُرجع 0.0.', en: 'sse is two lines: the mean, then the sum of (y - m) squared. Guard the empty list with an early return of 0.0.' },
+        { ar: 'المرشحون: [(a + b) / 2 for a, b in zip(sorted(set(xs)), sorted(set(xs))[1:])].', en: 'The candidates: [(a + b) / 2 for a, b in zip(sorted(set(xs)), sorted(set(xs))[1:])].' },
+        { ar: 'في الحلقة قسّم ys حول العتبة، اجمع sse الطرفين، واستبدل الزوج المحفوظ فقط حين يكون المجموع أصغر تمامًا.', en: 'In the loop split ys around the threshold, add the two side SSEs, and replace the stored pair only when the total is strictly smaller.' },
+        { ar: 'المخرجات المطلوبة: root: (4.5, 2.0)، left: (2.5, 0.0)، right: (6.5, 0.0).', en: 'Expected outputs: root (4.5, 2.0), left (2.5, 0.0), right (6.5, 0.0).' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.recursive-build',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'اكتب build(xs, ys, depth) التكرارية: إن كان depth يساوي 0 أو كانت ys متماثلة فأعد {"leaf": المتوسط}؛ وإلا فقسّم عند أفضل عتبة وأعد {"t", "left", "right"} باستدعاءين بعمق أقل. ثم ابنِ شجرة العمق 2 على بيانات الدرس وتحقق أن عتباتها 4.5 و2.5 و6.5.',
+        en: 'Write the recursive build(xs, ys, depth): when depth is 0 or ys is constant, return {"leaf": mean}; otherwise split at the best threshold and return {"t", "left", "right"} from two calls at depth minus one. Then build a depth-2 tree on the lesson data and confirm its thresholds are 4.5, 2.5, 6.5.',
+      },
+      starterCode: `def build(xs, ys, depth):
+    # TODO: stopping conditions -> leaf; otherwise recurse on both sides
+    return {"leaf": 0.0}
+
+xs = [1, 2, 3, 4, 5, 6, 7, 8]
+ys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]
+tree = build(xs, ys, 2)
+print("root t =", tree.get("t"))
+print("left t =", tree["left"].get("t"), " right t =", tree["right"].get("t"))`,
+      solution: `def sse(ys):
+    m = sum(ys) / len(ys)
+    return sum((y - m) ** 2 for y in ys)
+
+def best_split(xs, ys):
+    sx = sorted(set(xs))
+    best_t, best_sse = None, None
+    for t in [(a + b) / 2 for a, b in zip(sx, sx[1:])]:
+        left = [y for x, y in zip(xs, ys) if x <= t]
+        right = [y for x, y in zip(xs, ys) if x > t]
+        total = sse(left) + sse(right)
+        if best_sse is None or total < best_sse:
+            best_t, best_sse = t, total
+    return best_t, best_sse
+
+def build(xs, ys, depth):
+    if depth == 0 or len(set(ys)) == 1:
+        return {"leaf": sum(ys) / len(ys)}
+    t, _ = best_split(xs, ys)
+    li = [i for i, x in enumerate(xs) if x <= t]
+    ri = [i for i, x in enumerate(xs) if x > t]
+    return {"t": t,
+            "left": build([xs[i] for i in li], [ys[i] for i in li], depth - 1),
+            "right": build([xs[i] for i in ri], [ys[i] for i in ri], depth - 1)}
+
+xs = [1, 2, 3, 4, 5, 6, 7, 8]
+ys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]
+tree = build(xs, ys, 2)
+print("root t =", tree.get("t"))
+print("left t =", tree["left"].get("t"), " right t =", tree["right"].get("t"))`,
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'الجذع عمق 1: عتبة واحدة وورقتان', en: 'the depth-1 stump: one threshold, two leaves' },
+          code: `xs = [1, 2, 3, 4, 5, 6, 7, 8]\nys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]\nst = build(xs, ys, 1)\nassert st["t"] == 4.5, 'expected root t 4.5 | actual: %r' % st["t"]\nassert "leaf" in st["left"] and "leaf" in st["right"], 'depth-1 children must be leaves'\nassert abs(st["left"]["leaf"] - 1.5) < 1e-9 and abs(st["right"]["leaf"] - 6.5) < 1e-9, 'expected leaves 1.5 / 6.5 | actual: %r' % ((st["left"], st["right"]),)`,
+        },
+        {
+          id: 't2',
+          name: { ar: 'شجرة العمق 2: العتبات الثلاث', en: 'the depth-2 tree: three thresholds' },
+          code: `xs = [1, 2, 3, 4, 5, 6, 7, 8]\nys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]\ntr = build(xs, ys, 2)\nassert tr["t"] == 4.5 and tr["left"]["t"] == 2.5 and tr["right"]["t"] == 6.5, 'expected 4.5 / 2.5 / 6.5 | actual: %r' % ((tr["t"], tr["left"].get("t"), tr["right"].get("t")),)`,
+        },
+        {
+          id: 't3',
+          name: { ar: 'أوراق العمق 2 نقية بالمتوسطات الصحيحة', en: 'depth-2 leaves are pure with the right means' },
+          code: `xs = [1, 2, 3, 4, 5, 6, 7, 8]\nys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]\ntr = build(xs, ys, 2)\nleaves = [tr["left"]["left"]["leaf"], tr["left"]["right"]["leaf"], tr["right"]["left"]["leaf"], tr["right"]["right"]["leaf"]]\nassert all(abs(a - b) < 1e-9 for a, b in zip(leaves, [1.0, 2.0, 6.0, 7.0])), 'expected [1.0, 2.0, 6.0, 7.0] | actual: %r' % leaves`,
+        },
+      ],
+      hints: [
+        { ar: 'ابدأ بسطري التوقف: if depth == 0 or len(set(ys)) == 1: return {"leaf": sum(ys) / len(ys)}.', en: 'Begin with the two stopping lines: if depth == 0 or len(set(ys)) == 1: return {"leaf": sum(ys) / len(ys)}.' },
+        { ar: 'استعن بـ best_split من التمرين الأول ثم قسّم الفهارس: li وri بقاعدتي x <= t وx > t.', en: 'Reuse best_split from the first exercise, then partition the indices: li and ri by the rules x <= t and x > t.' },
+        { ar: 'الاستدعاءان: build(الجانب الأيسر, depth - 1) وbuild(الجانب الأيمن, depth - 1) داخل قاموس {"t": t, "left": ..., "right": ...}.', en: 'The two calls: build(left side, depth - 1) and build(right side, depth - 1) inside the dictionary {"t": t, "left": ..., "right": ...}.' },
+        { ar: 'الوراثة تجري تلقائيًا: كل استدعاء يرى بيانات أضيق فقط — لا تمرّر البيانات الكاملة للطفل.', en: 'Inheritance happens automatically: each call sees only its narrower slice — never pass the full data down to a child.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.tree-predict',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'اكتب tree_predict(node, x) التي تنزل من العقدة حتى ورقة وتعيد قيمتها، ثم احسب تنبؤات شجرة العمق 2 على النقاط الثماني وMSE التدريبي. المطلوب: تنبؤات مطابقة لـ ys وMSE = 0.0، وتنبيؤ x=4.9 هو 6.0.',
+        en: 'Write tree_predict(node, x) that descends from a node to a leaf and returns its value, then compute the depth-2 tree predictions on the eight points and the training MSE. Required: predictions identical to ys, MSE = 0.0, and the prediction at x=4.9 is 6.0.',
+      },
+      starterCode: `def sse(ys):
+    m = sum(ys) / len(ys)
+    return sum((y - m) ** 2 for y in ys)
+
+def best_split(xs, ys):
+    sx = sorted(set(xs))
+    best_t, best_sse = None, None
+    for t in [(a + b) / 2 for a, b in zip(sx, sx[1:])]:
+        left = [y for x, y in zip(xs, ys) if x <= t]
+        right = [y for x, y in zip(xs, ys) if x > t]
+        total = sse(left) + sse(right)
+        if best_sse is None or total < best_sse:
+            best_t, best_sse = t, total
+    return best_t, best_sse
+
+def build(xs, ys, depth):
+    if depth == 0 or len(set(ys)) == 1:
+        return {"leaf": sum(ys) / len(ys)}
+    t, _ = best_split(xs, ys)
+    li = [i for i, x in enumerate(xs) if x <= t]
+    ri = [i for i, x in enumerate(xs) if x > t]
+    return {"t": t,
+            "left": build([xs[i] for i in li], [ys[i] for i in li], depth - 1),
+            "right": build([xs[i] for i in ri], [ys[i] for i in ri], depth - 1)}
+
+def tree_predict(node, x):
+    # TODO: walk down until the dict has a "leaf" key, return its value
+    return 0.0
+
+xs = [1, 2, 3, 4, 5, 6, 7, 8]
+ys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]
+tree = build(xs, ys, 2)
+preds = [tree_predict(tree, x) for x in xs]
+print("preds =", preds)
+print("MSE =", sum((p - y) ** 2 for p, y in zip(preds, ys)) / len(ys))`,
+      solution: `def sse(ys):
+    m = sum(ys) / len(ys)
+    return sum((y - m) ** 2 for y in ys)
+
+def best_split(xs, ys):
+    sx = sorted(set(xs))
+    best_t, best_sse = None, None
+    for t in [(a + b) / 2 for a, b in zip(sx, sx[1:])]:
+        left = [y for x, y in zip(xs, ys) if x <= t]
+        right = [y for x, y in zip(xs, ys) if x > t]
+        total = sse(left) + sse(right)
+        if best_sse is None or total < best_sse:
+            best_t, best_sse = t, total
+    return best_t, best_sse
+
+def build(xs, ys, depth):
+    if depth == 0 or len(set(ys)) == 1:
+        return {"leaf": sum(ys) / len(ys)}
+    t, _ = best_split(xs, ys)
+    li = [i for i, x in enumerate(xs) if x <= t]
+    ri = [i for i, x in enumerate(xs) if x > t]
+    return {"t": t,
+            "left": build([xs[i] for i in li], [ys[i] for i in li], depth - 1),
+            "right": build([xs[i] for i in ri], [ys[i] for i in ri], depth - 1)}
+
+def tree_predict(node, x):
+    while "leaf" not in node:
+        node = node["left"] if x <= node["t"] else node["right"]
+    return node["leaf"]
+
+xs = [1, 2, 3, 4, 5, 6, 7, 8]
+ys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]
+tree = build(xs, ys, 2)
+preds = [tree_predict(tree, x) for x in xs]
+print("preds =", preds)
+print("MSE =", sum((p - y) ** 2 for p, y in zip(preds, ys)) / len(ys))`,
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'التنبؤات الثمانية مطابقة للأهداف', en: 'the eight predictions match the targets' },
+          code: `xs = [1, 2, 3, 4, 5, 6, 7, 8]\nys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]\ntree = build(xs, ys, 2)\npreds = [tree_predict(tree, x) for x in xs]\nassert preds == ys, 'expected %r | actual: %r' % (ys, preds)`,
+        },
+        {
+          id: 't2',
+          name: { ar: 'خطأ التدريب صفر والنقطة 4.9 في ورقة 6.0', en: 'zero training error and x=4.9 lands in the 6.0 leaf' },
+          code: `xs = [1, 2, 3, 4, 5, 6, 7, 8]\nys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]\ntree = build(xs, ys, 2)\nmse = sum((tree_predict(tree, x) - y) ** 2 for x, y in zip(xs, ys)) / 8\nassert abs(mse - 0.0) < 1e-9, 'expected MSE 0.0 | actual: %r' % mse\nassert abs(tree_predict(tree, 4.9) - 6.0) < 1e-9, 'expected 6.0 at x=4.9 | actual: %r' % tree_predict(tree, 4.9)`,
+        },
+        {
+          id: 't3',
+          name: { ar: 'الجذع يتنبأ بالمتوسطين فقط', en: 'the stump predicts only the two means' },
+          code: `xs = [1, 2, 3, 4, 5, 6, 7, 8]\nys = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]\nst = build(xs, ys, 1)\nstp = [tree_predict(st, x) for x in xs]\nassert stp == [1.5, 1.5, 1.5, 1.5, 6.5, 6.5, 6.5, 6.5], 'expected stump preds | actual: %r' % stp`,
+        },
+      ],
+      hints: [
+        { ar: 'حلقة while بشرط واحد: طالما لا يوجد مفتاح "leaf" في العقدة، انزل: node = node["left"] if x <= node["t"] else node["right"].', en: 'A while loop with one condition: while the node has no "leaf" key, descend: node = node["left"] if x <= node["t"] else node["right"].' },
+        { ar: 'بعد الخروج من الحلقة أعيد node["leaf"] — لا تنسَ أن العقدة تغيّرت داخل الحلقة.', en: 'After the loop return node["leaf"] — remember the node variable changed inside the loop.' },
+        { ar: 'x=4.9 أكبر من 4.5 وأصغر من 6.5 فتسقط في الورقة اليسرى للطفل الأيمن (متوسط 6.0).', en: 'x=4.9 exceeds 4.5 and stays below 6.5, so it falls into the right child left leaf (mean 6.0).' },
+        { ar: 'المخرجات المطلوبة: preds = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0] وMSE = 0.0.', en: 'Expected outputs: preds = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0] and MSE = 0.0.' },
+      ],
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ما شرطا التوقف في build الذي كتبناه؟',
+            en: 'What are the two stopping conditions in the build we wrote?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'وصول MSE إلى صفر أو تجاوز عدد الأوراق 4', en: 'reaching zero MSE or exceeding four leaves' } },
+            { id: 'b', text: { ar: 'نفاد العمق المسموح أو تجانس قيم ys في العقدة', en: 'running out of allowed depth or constant ys in the node' } },
+            { id: 'c', text: { ar: 'أن يصبح عدد النقاط فرديًا', en: 'the point count becoming odd' } },
+            { id: 'd', text: { ar: 'فشل best_split في إيجاد عتبة', en: 'best_split failing to find a threshold' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'يتوقف البناء حين depth == 0 أو حين تكون كل قيم ys واحدة (عقدة نقية أصلًا) — عندها ورقة بالمتوسط لا سؤال جديد.',
+            en: 'Building stops when depth == 0 or when all ys are equal (the node is already pure) — then it becomes a leaf holding the mean instead of asking a new question.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'شجرتنا بعمق 2 أخطأت خطأً صفرًا على التدريب. لماذا لا يعني ذلك أنها النموذج الأفضل؟',
+            en: 'Our depth-2 tree reached zero training error. Why does that not make it the best model?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن حساب MSE التدريبي غير صحيح رياضيًا', en: 'because computing training MSE is mathematically invalid' } },
+            { id: 'b', text: { ar: 'لأن العمق الأكبر قد يحفظ الضجيج فيفشل على نقاط جديدة — الحكم النهائي على بيانات لم ترها', en: 'because deeper trees can memorize noise and fail on new points — the final verdict belongs to data the tree never saw' } },
+            { id: 'c', text: { ar: 'لأن الأوراق يجب أن تحوي 3 نقاط على الأقل', en: 'because leaves must hold at least 3 points' } },
+            { id: 'd', text: { ar: 'لأن الشجرة العمق 2 أكبر من اللازم لأي بيانات', en: 'because a depth-2 tree is too large for any data' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'صفر خطأ تدريبي معنيان محتملان: نمط حقيقي أُلتقط، أو حفظ للضجيج. الفيصل هو التقييم على بيانات جديدة — وهذا موضوع الدرس التالي.',
+            en: 'Zero training error has two possible meanings: a real pattern captured, or noise memorized. The tiebreaker is evaluation on fresh data — the subject of the next lesson.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'ما دور max_depth في بنائنا؟',
+            en: 'What role does max_depth play in our builder?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'يحدد عدد الخصائص المسموح فحصها', en: 'it caps how many features may be examined' } },
+            { id: 'b', text: { ar: 'يحدد عدد مرات الاستدعاء الذاتي قبل التحوّل إلى أوراق — صمام أمان ضد الحفظ', en: 'it caps the recursion depth before nodes turn into leaves — a safety valve against memorization' } },
+            { id: 'c', text: { ar: 'يضبط دقة قيم العتبات العشرية', en: 'it sets the decimal precision of thresholds' } },
+            { id: 'd', text: { ar: 'لا دور له إلا في التصنيف', en: 'it only matters for classification' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'كل استدعاء متداخل ينقص العمق بواحد، وعند الصفر تصبح العقدة ورقة. بالكتاب نفس الفكرة عبر max_depth وmin_samples_split في مكتبة sklearn.',
+            en: 'Each recursive call decrements depth, and at zero the node becomes a leaf. The book uses the same idea via max_depth and min_samples_split in scikit-learn.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        {
+          ar: 'ثلاث قطع تصنع شجرة: best_split (عتبة + قيمة معيار)، build التكرارية بحد عمق، وtree_predict النازلة.',
+          en: 'Three pieces make a tree: best_split (threshold + criterion value), the recursive build with a depth cap, and the descending tree_predict.',
+        },
+        {
+          ar: 'الشجرة قواميس متداخلة: {"t", "left", "right"} للعقد و{"leaf"} للأوراق — كل مكتبات الأشجار تخبئ بنية كهذه.',
+          en: 'A tree is nested dictionaries: {"t", "left", "right"} for nodes and {"leaf"} for leaves — every tree library hides such a structure.',
+        },
+        {
+          ar: 'على بياناتنا: جذر 4.5 ثم 2.5 و6.5 ينتجان أربع أوراق نقية 1.0/2.0/6.0/7.0 وMSE تدريبي 0.0.',
+          en: 'On our data: a 4.5 root then 2.5 and 6.5 produce four pure leaves 1.0/2.0/6.0/7.0 and training MSE 0.0.',
+        },
+        {
+          ar: 'حد العمق صمام أمان: بدونه تكمل الشجرة حتى حفظ كل نقطة — والقياس العادل ينتظر الدرس التالي.',
+          en: 'The depth cap is a safety valve: without it the tree keeps going until it memorizes every point — fair measurement waits for the next lesson.',
+        },
+      ],
+      reflectPrompt: {
+        ar: 'ماذا يحدث لو استدعيت build(xs, ys, 8) على بياناتنا؟ تتبّع يدويًا: متى تتوقف الاستدعاءات، وكم ورقة تنشأ، ولماذا لا يتغير MSE؟',
+        en: 'What happens if you call build(xs, ys, 8) on our data? Trace by hand: when do the calls stop, how many leaves appear, and why does the MSE not change?',
+      },
+    },
+  ],
+  sources: [
+    { book: 'MLS', section: 'mls.ch5.s3', pages: 'ص54-65 / pp.54-65' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

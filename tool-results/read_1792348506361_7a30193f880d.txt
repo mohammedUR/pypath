@@ -1,0 +1,320 @@
+     1→import type { Lesson } from '@/lib/content/schema';
+     2→
+     3→/**
+     4→ * swe.ch1.l2 — "Intrinsic Complexity and Inevitable Defects"
+     5→ * التعقيد الذاتي وحتمية العيوب
+     6→ * Aligned with SWE ch1 s3 (Software Is Intrinsically Complex, pp.22-23) +
+     7→ * s4 (Defects Are Inevitable, pp.23-24).
+     8→ * All expression is original — a paraphrase of the CC BY-SA 4.0 source, never
+     9→ * a verbatim translation (the 1x..100x stage-cost table is a common industry
+    10→ * rule-of-thumb model used to illustrate the book's "catch defects early" rule).
+    11→ * Runnable design: a deterministic off-by-one chain demo (mistake -> fault ->
+    12→ * failure, latent on one input, visible on another) + a fixed stage-cost dict
+    13→ * with an accumulated cost calculation — pure fixed-data arithmetic.
+    14→ * Deterministic only: no input(), no exit(), no random, no unittest.main.
+    15→ */
+    16→const lesson = {
+    17→  id: 'swe.ch1.l2',
+    18→  version: 1,
+    19→  part: 'I',
+    20→  track: 'P3',
+    21→  book: 'SWE',
+    22→  chapter: 1,
+    23→  title: { ar: 'التعقيد الذاتي وحتمية العيوب', en: 'Intrinsic Complexity and Inevitable Defects' },
+    24→  estimatedMinutes: 30,
+    25→  prerequisites: ['swe.ch1.l1'],
+    26→  blocks: [
+    27→    {
+    28→      kind: 'hook',
+    29→      text: {
+    30→        ar: 'في الدرس السابق رأيت أين تسكن الصعوبة: في تحديد ما نبنيه. هذا الدرس عن سبب عدم انتهاء المعاناة بعده: البرمجيات معقدة بطبيعتها، والبشر يخطئون، لذا العيوب حتمية — في أي نظام، مهما كان فريقه. والاستجابة الهندسية ليست وعدًا بالكمال بل شبكات متراكبة متعددة تمسك العيب مبكرًا حين يكون إصلاحه رخيصًا. ستتعلم التفريق بين ثلاث كلمات يدمجها الحديث اليومي في bug واحدة — الخطأ البشري، والعيب في الشيفرة، والفشل المرصود — وسترى أن هذه السلسلة تحدد بالضبط أين تضرب كل شبكة: مراجعات المتطلبات، والفحص الساكن، والاختبارات. بنهاية الدرس ستقرأ أي عيب كسلسلة mistake ثم fault ثم failure، وتعرف لماذا لا تكفي تقنية واحدة أبدًا، ولماذا الامساك المبكر هو الصفقة الاقتصادية كلها.',
+    31→        en: 'Last lesson you saw where the difficulty lives: in deciding what to build. This lesson is about why the pain does not end there: software is intrinsically complex, humans make mistakes, so defects are inevitable — in any system, whatever its team. The engineering response is not a promise of perfection but multiple overlapping nets that catch defects early, while fixing them is cheap. You will learn to separate three words everyday speech merges into bug — the human mistake, the fault in the code, the observed failure — and to see how that chain dictates exactly where each net strikes: requirements reviews, static checking, testing. By the end you will read any defect as a mistake then fault then failure chain, and know why no single technique suffices and why catching early is the entire economic deal.',
+    32→      },
+    33→    },
+    34→    {
+    35→      kind: 'predict',
+    36→      code: "def total(items):\n    s = 0\n    for i in range(1, len(items)):\n        s = s + items[i]\n    return s\n\nprint(total([5, 10, 20]))",
+    37→      question: {
+    38→        ar: 'المجموع الحقيقي للأرقام 35 لكن التقرير يطبع 30. المطور كان يقصد أن تبدأ الحلقة من العنصر الأول فكتب range(1, len(items)) متعبًا. صنّف ما حدث: أين mistake وأين fault وأين failure؟',
+    39→        en: 'The true sum is 35 but the report prints 30. The developer meant the loop to start at the first item and, tired, wrote range(1, len(items)). Classify what happened: where is the mistake, where the fault, where the failure?',
+    40→      },
+    41→      reveal: {
+    42→        ar: 'الطباعة 30. الثلاثة في سلسلة واحدة: mistake هو فعل الإنسان — كتب الحد الأدنى 1 بدل 0؛ وfault هو العيب الساكن في الشيفرة نفسها — الحلقة تتخطى العنصر الأول؛ وfailure هو الحدث المرصود الآن — التشغيل أظهر الانحراف فطبع 30. والعيب كان كامنًا حتى ناداه تنفيذ: مع مدخلات أخرى قد يمر صامتًا. ولهذا نهاجم العيوب في كل مرحلة: قبل الكتابة، وقبل التشغيل، وقبل المستخدم.',
+    43→        en: 'It prints 30. The three sit in one chain: the mistake is the human act — the lower bound written as 1 instead of 0; the fault is the static flaw in the code itself — the loop skips the first item; the failure is the event observed right now — execution exposed the deviation and printed 30. The fault was latent until an execution summoned it: with other inputs it may pass silently. That is why we attack defects at every stage: before writing, before running, before the user.',
+    44→      },
+    45→    },
+    46→    {
+    47→      kind: 'concept',
+    48→      heading: { ar: 'التعقيد جوهر المشكلة: جوهري وعرضي', en: 'Complexity is intrinsic: essential and accidental' },
+    49→      chunks: [
+    50→        {
+    51→          ar: 'جزء من التعقيد جوهري — متأصل في المشكلة ذاتها: برنامج إعداد الضرائب معقد لأن قانون الضرائب معقد، ولا ذكاء يلغي ذلك. وجزء عرضي — يأتي من أدواتنا واختياراتنا وأخطائنا: تبعات متشابكة، وأسماء غامضة، ومنطق مكرر، وتجريدات مسربة. الهندسة الجيدة لا تلغي الجوهري لكنها تهاجم العرضي بلا رحمة — وهذا موضوع معظم فصول هذا الكتاب. والبرمجيات أعقد من غيرها من المصنوعات الهندسية لأسباب بنيوية: هي غير مرئية فتعتمد على نماذج ومخططات، وهي متقطعة — تغيير حرف واحد قد يقلب السلوك كليًا بلا شبكة «خطأ صغير أثر صغير» التي تتمتع بها الأنظمة الفيزيائية المتصلة، وهي تتغير باستمرار — الجسر يُصمم مرة، والبرمجية يُعاد تصميمها كل سبرنت.',
+    52→          en: 'Some complexity is essential — inherent in the problem itself: a tax-preparation program is complicated because tax law is complicated, and no cleverness removes that. Some is accidental — it comes from our tools, choices and mistakes: tangled dependencies, unclear names, duplicated logic, leaky abstractions. Good engineering cannot eliminate the essential but relentlessly attacks the accidental — the subject of most of this book. And software is unusually complex among engineered artifacts for structural reasons: it is invisible, so you rely on models and diagrams; it is discrete — a one-character change can flip behavior completely, with no small-error-small-effect safety net like the one continuous physical systems enjoy; and it is changed constantly — a bridge is designed once, software is redesigned every sprint.',
+    53→        },
+    54→        {
+    55→          ar: 'والسلاح الأول ضد التعقيد التجزئة: قسّم النظام أجزاءً صغيرة كفاية للفهم، بواجهات محددة جيدًا، بحيث تستدل عن جزء دون أن تحمل البقية في رأسك. وحين تُختار الأجزاء ووصلاتها عمدًا نسمي النتيجة المعمارية. والتقسيم الجيد له خاصيتان تحكيهما كل فصول التصميم: تماسك عالٍ — كل وحدة تفعل شيئًا واحدًا جيدًا — وتقارن منخفض — الوحدات تعتمد بعضها بأقل قدر ممكن وعبر الواجهات فقط. هاتان الفكرةتان ربما الأهم في التصميم البرمجي كله، وستتعمق فيهما في فصلي التصميم والمعمارية.',
+    56→          en: 'The primary weapon against complexity is decomposition: split the system into parts small enough to understand, with well-defined interfaces, so you can reason about one part without holding the others in your head. When the parts and their connections are chosen deliberately, we call the result the architecture. Good decomposition has two properties every design chapter keeps returning to: high cohesion — each module does one thing well — and low coupling — modules depend on each other as little as possible and only through their interfaces. These two ideas are perhaps the most important in all of software design, and the design and architecture chapters develop them fully.',
+    57→        },
+    58→      ],
+    59→    },
+    60→    {
+    61→      kind: 'concept',
+    62→      heading: { ar: 'العيوب حتمية: السلسلة والشبكات', en: 'Defects are inevitable: the chain and the nets' },
+    63→      chunks: [
+    64→        {
+    65→          ar: 'البشر يخطئون، إذن للبرمجيات عيوب — والاستجابة الهندسية قبول ذلك وبناء شبكات متعددة متداخلة تمسكها مبكرًا حين تكون رخيصة. ويفيد التفريق بين ثلاثة مفاهيم يدمجها الحديث في bug واحدة: mistake فعل بشري ينتج نتيجة خاطئة — مطور يسيء قراءة المواصفة؛ وfault هو العيب الناتج في الشيفرة — إزاحة بواحد في حلقة؛ وfailure هو الحدث المرصود حين ينحرف النظام العامل عن السلوك الصحيح — التقرير يطبع مجموعًا خاطئًا. والعيب كامن حتى يستدعيه تنفيذ فيتحول فشلًا. والسلسلة تشرح لماذا نهاجم في كل مرحلة: متطلبات ومراجعات أفضل تقلل الأخطاء، والفحص الساكن والتدقيق يجدان العيوب قبل أن تعمل، والاختبار يستفز الفشل في بيئة آمنة قبل المستخدمين — ولا تقنية واحدة تكفي، ولهذا الفصلان التاسع والعاشر متكاملان.',
+    66→          en: 'Humans make mistakes, so software has defects — the engineering response is to accept this and build multiple overlapping nets that catch them early, when fixing is cheap. It helps to separate three ideas everyday speech blurs into one bug: a mistake is a human action producing an incorrect result — a developer misreads a spec; a fault is the resulting flaw in the code — an off-by-one in a loop; a failure is the observable event when the running system deviates from correct behavior — the report prints the wrong total. A fault is latent until an execution triggers it. The chain explains why we attack at every stage: better requirements and reviews reduce mistakes, static checking and inspection find faults before they run, testing provokes failures in a safe setting before users do — no single technique suffices; hence chapters nine and ten are complementary.',
+    67→        },
+    68→        {
+    69→          ar: 'والاختبار يشغّل البرمجية على مدخلات مختارة ويفحص المخارج ضد المتوقع، لكنه لا يثبت خلو الشيفرة من العيوب — ديكسترا: الاختبار يظهر وجود العيوب لا غيابها. ما تشتريه الحزمة الجيدة: جعل بقاء عيب خطير غير مرجح، وجعل التغيير آمنًا بامتساك الانحدارات. ومن منظورين متكاملين تُختار المدخلات: الصندوق الأسود اختبار مبني على المواصفة — مدخلات صحيحة وخاطئة وحدود وأصناف تكافؤ — قوته كشف المنطق الغائب وبقاؤه صالحًا عند إعادة كتابة الشيفرة؛ والصندوق الأبيض مبني على الشيفرة — يستهدف العبارات والفروع والمسارات — قوته الوصول إلى ما لا تصل إليه مواصفة. لا يغني أحدهما الآخر، وستجمعهما مع قياس التغطية في فصل الاختبارات.',
+    70→          en: 'Testing runs the software on chosen inputs and checks outputs against expectations, but it cannot prove the absence of defects — Dijkstra: testing shows the presence of bugs, never their absence. What a good suite buys: making it unlikely that a serious fault survives, and making change safe by catching regressions. Inputs are chosen from two complementary viewpoints: black-box, specification-based — valid and invalid inputs, boundaries, equivalence classes — strong at finding missing logic and staying valid when the code is rewritten; and white-box, structure-based — aiming at statements, branches and paths — strong at reaching code the spec never touches. Neither subsumes the other; the testing chapter combines them and measures thoroughness with coverage.',
+    71→        },
+    72→      ],
+    73→    },
+    74→    {
+    75→      kind: 'worked',
+    76→      title: { ar: 'أربع شبكات على عيب واحد', en: 'Four nets over one fault' },
+    77→      code: "STAGE_COST = {'requirements': 1, 'design': 5, 'code': 10, 'testing': 20, 'production': 100}\n\ndef net_for(stage):\n    return {'requirements': 'review of the spec',\n            'design': 'design walkthrough',\n            'code': 'static checking',\n            'testing': 'a provoking test',\n            'production': 'your users'}[stage]\n\nfor stage in ['requirements', 'code', 'testing', 'production']:\n    print('%s x%d via %s' % (stage, STAGE_COST[stage], net_for(stage)))",
+    78→      explanation: {
+    79→        ar: 'جدول ضرب العيوب — نموذج تقريبي شائع في الصناعة يجسّد قاعدة الكتاب: أمسك العيب مبكرًا حين يكون إصلاحه رخيصًا. العيب الواحد — إزاحة بواحد مثل مثال التوقّع: إن أمسكته مراجعة المواصفة دفعت 1 وحدة؛ وإن عبر إلى الشيفرة وأمسكه الفحص الساكن دفعت 10؛ وإن أمسكه اختبار مستفز دفعت 20 — فشل آمن في بيئتك لا عند مستخدم؛ وإن وصل إلى الإنتاج دفعت 100 — وأحيانًا أكثر بكثير حين تكون الشيفرة في قلب طائرة أو جهاز طبي. ولاحظ بنية الشبكات: كل شبكة مختلفة عن الأخرى — المراجعة تقرأ، والفحص الساكن يحلل دون تشغيل، والاختبار يشغّل — ولهذا لا تكفي واحدة: العيب الذي تعمى عنه شبكة تمسه الأخرى.',
+    80→        en: 'A defect multiplication table — a common industry rule-of-thumb model illustrating the book\u2019s rule: catch faults early, when they are cheap to fix. One fault — the off-by-one from the predict block: caught by the spec review you pay 1 unit; escaped into code and caught by static checking you pay 10; caught by a provoking test you pay 20 — a safe failure in your environment, not at a user; reaching production you pay 100 — and often far more when the code sits inside an aircraft or a medical device. Note the nets are structurally different — the review reads, static checking analyzes without running, testing runs — which is why one is never enough: the fault one net misses, another grips.',
+    81→      },
+    82→    },
+    83→    {
+    84→      kind: 'exercise',
+    85→      id: 'ex1.cost-table',
+    86→      exKind: 'write_code',
+    87→      required: true,
+    88→      prompt: {
+    89→        ar: "ابنِ جدول الكلفة بنفسك: قاموس STAGE_COST بالمراحل الخمس (requirements: 1، design: 5، code: 10، testing: 20، production: 100) ودالة fix_cost(stage) تعيد مضاعف المرحلة. احسب كلفة 5 عيوب أُمسكت في الاختبار وكلفة 5 عيوب هربت إلى الإنتاج، واطبع الأسطر الثلاثة بالترتيب: 5 faults caught in testing: %d ثم 5 faults escaping to production: %d ثم saved: %d، وأكّد بـ assert أن fix_cost('requirements') تساوي 1 وfix_cost('production') تساوي 100. المتوقع: saved: 400.",
+    90→        en: "Build the cost table yourself: a dict STAGE_COST with the five stages (requirements: 1, design: 5, code: 10, testing: 20, production: 100) and a function fix_cost(stage) returning the stage multiplier. Compute the cost of 5 faults caught in testing and of 5 faults escaping to production, print the three lines in order: 5 faults caught in testing: %d then 5 faults escaping to production: %d then saved: %d, and assert fix_cost('requirements') == 1 and fix_cost('production') == 100. Expected: saved: 400.",
+    91→      },
+    92→      starterCode: "STAGE_COST = {\n    'requirements': 1,\n    'design': 5,\n    'code': 10,\n    'testing': 20,\n    'production': 100,\n}\n\ndef fix_cost(stage):\n    ...  # TODO: return the stage multiplier from STAGE_COST\n\n# TODO: caught = 5 * fix_cost('testing') and escaped = 5 * fix_cost('production')\n# TODO: print the three required lines, then assert the corners 1 and 100\n",
+    93→      solution: "STAGE_COST = {'requirements': 1, 'design': 5, 'code': 10, 'testing': 20, 'production': 100}\n\ndef fix_cost(stage):\n    return STAGE_COST[stage]\n\ncaught = 5 * fix_cost('testing')\nescaped = 5 * fix_cost('production')\nprint('5 faults caught in testing: %d' % caught)\nprint('5 faults escaping to production: %d' % escaped)\nprint('saved: %d' % (escaped - caught))\n\nassert fix_cost('requirements') == 1\nassert fix_cost('production') == 100",
+    94→      tests: [
+    95→        {
+    96→          id: 't1',
+    97→          name: { ar: 'سطر الهروب إلى الإنتاج صحيح', en: 'The production-escape line is correct' },
+    98→          code: "assert '5 faults escaping to production: 500' in __learner_output__, 'expected: 5 faults escaping to production: 500 | actual: %r' % __learner_output__",
+    99→          expected: '5 faults escaping to production: 500',
+   100→        },
+   101→        {
+   102→          id: 't2',
+   103→          name: { ar: 'سطر الوفر صحيح', en: 'The savings line is correct' },
+   104→          code: "assert 'saved: 400' in __learner_output__, 'expected: saved: 400 | actual: %r' % __learner_output__",
+   105→          expected: 'saved: 400',
+   106→        },
+   107→        {
+   108→          id: 't3',
+   109→          name: { ar: 'الجدول كامل بقيمه الصحيحة', en: 'The table is complete with correct values' },
+   110→          code: "assert fix_cost('design') == 5 and fix_cost('code') == 10 and len(STAGE_COST) == 5, 'expected: 5, 10, 5 stages | actual: %r' % ((fix_cost('design'), fix_cost('code'), len(STAGE_COST)),)",
+   111→          expected: '5, 10, 5 stages',
+   112→        },
+   113→      ],
+   114→      hints: [
+   115→        { ar: 'الكلفة نسبية: العيب الواحد يكلّف مضاعف مرحلته — خمسة عيوب في الاختبار تعني 5 * 20 = 100.', en: 'Cost is relative: one fault costs its stage multiplier — five faults in testing mean 5 * 20 = 100.' },
+   116→        { ar: 'والهروب إلى الإنتاج يضرب في 100: 5 * 100 = 500 — والفرق saved = 500 - 100 = 400.', en: 'And escaping to production multiplies by 100: 5 * 100 = 500 — with saved = 500 - 100 = 400.' },
+   117→        { ar: 'الهيكل:\ncaught = 5 * fix_cost(\'testing\')\nescaped = 5 * fix_cost(\'production\')\nprint(\'5 faults caught in testing: %d\' % caught)\nprint(\'5 faults escaping to production: %d\' % escaped)\nprint(\'saved: %d\' % (escaped - caught))', en: "The skeleton:\ncaught = 5 * fix_cost('testing')\nescaped = 5 * fix_cost('production')\nprint('5 faults caught in testing: %d' % caught)\nprint('5 faults escaping to production: %d' % escaped)\nprint('saved: %d' % (escaped - caught))" },
+   118→        { ar: 'لاحظ أن أرخص مسك في المتطلبات (x1) يجعل الوفر يساوي تقريبًا كل الكلفة — ولهذا الشبكات المبكرة أرخص من أي تحسين لاحق.', en: 'Note that the cheapest catch, at requirements (x1), makes the savings nearly the entire cost — which is why early nets beat any later improvement.' },
+   119→      ],
+   120→    },
+   121→    {
+   122→      kind: 'exercise',
+   123→      id: 'ex2.trace-offbyone',
+   124→      exKind: 'trace_output',
+   125→      required: true,
+   126→      prompt: {
+   127→        ar: 'اقرأ الكود وتوقع خرجه دون تشغيله: الحلقة المعيبة نفسها تُستدعى مرتين — مرة بقائمة ممتلئة ومرة بقائمة فارغة. سطر لكل طباعة، وانتبه لماذا يفعل range(1, 0) مع قائمة فارغة.',
+   128→        en: 'Read the code and predict its output without running it: the same faulty loop is called twice — once with a full list, once with an empty one. One line per print, and pay attention to what range(1, 0) does for the empty list.',
+   129→      },
+   130→      code: "def total(items):\n    s = 0\n    for i in range(1, len(items)):\n        s = s + items[i]\n    return s\n\nprint(total([5, 10, 20]))\nprint(total([]))",
+   131→      solution: "30\n0",
+   132→      answer: "30\n0",
+   133→      hints: [
+   134→        { ar: 'في القائمة الممتلئة تتخطى الحلقة العنصر الأول (index 0) وتجمع 10 + 20 = 30.', en: 'For the full list the loop skips the first item (index 0) and sums 10 + 20 = 30.' },
+   135→        { ar: 'مع قائمة فارغة len(items) تساوي 0، فrange(1, 0) فارغة — الحلقة لا تدور ولا مرة واحدة.', en: 'For the empty list len(items) is 0, so range(1, 0) is empty — the loop body never runs.' },
+   136→        { ar: 'المجموع يبقى على قيمته الابتدائية 0 — الناتج «صحيح» بالصدفة، والعيب كامن لا يظهر: هذا معنى latent.', en: 'The sum stays at its initial 0 — the output is accidentally right and the fault stays hidden: that is what latent means.' },
+   137→        { ar: 'الخرج:\n30\n0', en: 'The output:\n30\n0' },
+   138→      ],
+   139→    },
+   140→    {
+   141→      kind: 'exercise',
+   142→      id: 'ex3.mcq-chain',
+   143→      exKind: 'mcq',
+   144→      required: true,
+   145→      prompt: {
+   146→        ar: 'مطور متعب كتب range(1, len(items)) وكان يقصد البدء من 0، فطبع التقرير مجموعًا خاطئًا في أول تشغيل حقيقي. السطر الخاطئ في الشيفرة نفسه — ما تصنيفه في سلسلة الدرس؟',
+   147→        en: 'A tired developer wrote range(1, len(items)) intending to start at 0, and the report printed a wrong total on the first real run. The wrong line sits in the code itself — what is its classification in the lesson\u2019s chain?',
+   148→      },
+   149→      options: [
+   150→        { id: 'a', text: { ar: 'mistake — الخطأ البشري في الكتابة', en: 'mistake — the human error while typing' } },
+   151→        { id: 'b', text: { ar: 'fault — العيب الساكن في الشيفرة', en: 'fault — the static flaw in the code' } },
+   152→        { id: 'c', text: { ar: 'failure — الفشل المرصود في المخرجات', en: 'failure — the observed failure in the output' } },
+   153→      ],
+   154→      answer: 'b',
+   155→      solution: 'b',
+   156→      hints: [
+   157→        { ar: 'mistake هو الفعل البشري الذي أنتج نتيجة خاطئة — الكتابة المتعبة نفسها.', en: 'The mistake is the human act that produced an incorrect result — the tired typing itself.' },
+   158→        { ar: 'والسؤال عن السطر في الشيفرة: أثر ذلك الفعل الساكن فيها — هو الذي سيتحول فشلًا عند التنفيذ.', en: 'But the question asks about the line in the code: the static residue of that act — the thing that becomes a failure when executed.' },
+   159→        { ar: 'failure هو الحدث المرصود: التقرير طبع المجموع الخاطئ — وليس السطر الذي سبّبه.', en: 'The failure is the observed event: the report printed the wrong total — not the line that caused it.' },
+   160→        { ar: 'الجواب: b — fault: العيب في الشيفرة، كامنًا حتى يستدعيه تنفيذ.', en: 'Answer: b — fault: the flaw in the code, latent until an execution triggers it.' },
+   161→      ],
+   162→    },
+   163→    {
+   164→      kind: 'exercise',
+   165→      id: 'ex4.numeric-production',
+   166→      exKind: 'numeric',
+   167→      required: true,
+   168→      prompt: {
+   169→        ar: 'بلا تشغيل: عيبٌ كلفتُه وحدة واحدة لو أمسكته مراجعة المتطلبات في جدول الدرس. وصل إلى الإنتاج — كم وحدة يكلّف هناك؟',
+   170→        en: 'Without running: a fault costs 1 unit if caught by the requirements review in the lesson\u2019s table. It escaped to production — how many units does it cost there?',
+   171→      },
+   172→      answer: '100',
+   173→      solution: '100',
+   174→      tolerance: 0,
+   175→      hints: [
+   176→        { ar: 'الجدول: requirements x1، design x5، code x10، testing x20، production x100.', en: 'The table: requirements x1, design x5, code x10, testing x20, production x100.' },
+   177→        { ar: 'الإنتاج آخر المراحل وأغلاها — لا مضاعف آخر بعده.', en: 'Production is the last and most expensive stage — no multiplier lies beyond it.' },
+   178→        { ar: 'الفارق بين 1 و100 هو سبب بناء شبكات مبكرة: 100 ضعف نفس العيب.', en: 'The gap between 1 and 100 is why early nets exist: 100 times the same fault.' },
+   179→        { ar: 'الجواب: 100', en: 'Answer: 100' },
+   180→      ],
+   181→    },
+   182→    {
+   183→      kind: 'sandbox',
+   184→      starterCode: "STAGE_COST = {'requirements': 1, 'design': 5, 'code': 10, 'testing': 20, 'production': 100}\n\ndef total(items):\n    s = 0\n    for i in range(1, len(items)):\n        s = s + items[i]\n    return s\n\nprint(total([5, 10, 20]))\nprint(total([]))\nprint(total([1, 2, 3, 4]))\n\nfor stage in sorted(STAGE_COST):\n    print('%s x%d' % (stage, STAGE_COST[stage]))\n\n# جرّب: أصلح الحلقة إلى range(0, len(items)) — أي مدخل من الثلاثة كان يمر صامتًا قبل الإصلاح؟\n# try: fix the loop to range(0, len(items)) — which of the three inputs passed silently before the fix?\n# جرّب: تخيل العيب نفسه يهرب إلى الإنتاج في نظام طبي: هل يكفي x100 وصفًا للكلفة الحقيقية؟\n# try: imagine the same fault escaping to production inside a medical system: does x100 still capture the real cost?\n",
+   185→      prompt: {
+   186→        ar: 'الملعب يضع السلسلة بين يديك: ثلاثة مدخلات لعيب كامن واحد — واحد يكشفه وواحد يخفيه — وجدول الكلفة كاملًا تحت يديك. لا اختبار هنا — فضولك فقط.',
+   187→        en: 'The sandbox puts the chain in your hands: three inputs for one latent fault — one exposes it, one hides it — with the full cost table below. No tests here — just your curiosity.',
+   188→      },
+   189→    },
+   190→    {
+   191→      kind: 'quiz',
+   192→      id: 'quiz1',
+   193→      items: [
+   194→        {
+   195→          id: 'q1',
+   196→          question: {
+   197→            ar: 'ومن فصل الفحص الساكن: أدوات مثل linter تجد العيوب قبل أن تعمل الشيفرة أصلًا. أي حلقة من سلسلة الدرس تقطعها؟',
+   198→            en: 'From the static checking chapter: tools like linters find faults before the code ever runs. Which link of the lesson\u2019s chain do they cut?',
+   199→          },
+   200→          options: [
+   201→            { id: 'a', text: { ar: 'mistake — تمنع المطور من الكتابة الخاطئة', en: 'mistake — they stop the developer from writing it wrong' } },
+   202→            { id: 'b', text: { ar: 'fault — تجد العيب في الشيفرة قبل التنفيذ', en: 'fault — they find the flaw in the code before execution' } },
+   203→            { id: 'c', text: { ar: 'failure — تراقب النظام في الإنتاج', en: 'failure — they monitor the system in production' } },
+   204→          ],
+   205→          answer: 'b',
+   206→          explanation: {
+   207→            ar: 'الفحص الساكن يحلل الشيفرة دون تشغيلها فيمسك fault قبل أن يتحول failure. أما mistake فيقلّل منها المراجعة والتدقيق (فعل بشري)، والfailure في بيئة آمنة يستفزّه الاختبار لا الأداة الساكنة.',
+   208→            en: 'Static checking analyzes code without running it, gripping the fault before it becomes a failure. Mistakes are reduced by reviews and inspection (the human act); the failure in a safe setting is provoked by testing, not by the static tool.',
+   209→          },
+   210→        },
+   211→        {
+   212→          id: 'q2',
+   213→          question: {
+   214→            ar: 'ومن فصل الاختبارات: ديكسترا — الاختبار يظهر وجود العيوب لا غيابها. فماذا تشتري حزمة اختبارات جيدة فعلًا؟',
+   215→            en: 'From the testing chapter: Dijkstra — testing shows the presence of bugs, never their absence. So what does a good suite actually buy you?',
+   216→          },
+   217→          options: [
+   218→            { id: 'a', text: { ar: 'إثباتًا رسميًا أن الشيفرة خالية من العيوب', en: 'A formal proof that the code is defect-free' } },
+   219→            { id: 'b', text: { ar: 'جعل بقاء عيب خطير غير مرجح، وجعل التغيير آمنًا بامتساك الانحدارات', en: 'Making a serious surviving fault unlikely, and making change safe by catching regressions' } },
+   220→            { id: 'c', text: { ar: 'غنيًا عن الفحص الساكن والمراجعات', en: 'Freedom from static checking and reviews' } },
+   221→          ],
+   222→          answer: 'b',
+   223→          explanation: {
+   224→            ar: 'قيمة الاختبار احتمالية وتشغيلية: حزمة جيدة تجعل بقاء عيب خطير أمرًا غير مرجح وتحرس السلوك ضد الانحدار عند كل تغيير. ولأنها لا تثبت الغياب، تبقى الشبكات الأخرى — مراجعات وفحص ساكن — ضرورية: لا تقنية واحدة تكفي.',
+   225→            en: 'Testing\u2019s value is probabilistic and operational: a good suite makes a surviving serious fault unlikely and guards behavior against regressions on every change. Because it proves no absence, the other nets — reviews, static checking — remain necessary: no single technique suffices.',
+   226→          },
+   227→        },
+   228→        {
+   229→          id: 'q3',
+   230→          question: {
+   231→            ar: 'أي مما يلي تعقيد جوهري لا عرضي؟',
+   232→            en: 'Which of the following is essential complexity, not accidental?',
+   233→          },
+   234→          options: [
+   235→            { id: 'a', text: { ar: 'تبعات متشابكة بين الوحدات', en: 'Tangled dependencies between modules' } },
+   236→            { id: 'b', text: { ar: 'منطق مكرر في ثلاث وحدات', en: 'Duplicated logic across three modules' } },
+   237→            { id: 'c', text: { ar: 'قواعد ضريبية متشعبة تحكم الحساب نفسه', en: 'Sprawling tax rules governing the computation itself' } },
+   238→          ],
+   239→          answer: 'c',
+   240→          explanation: {
+   241→            ar: 'الجوهري متأصل في المشكلة: قانون الضرائب معقد فبرنامج الضرائب معقد، ولا ذكاء يلغي ذلك. أما التبعات المتشابكة والمنطق المكرر والأسماء الغامضة فعرضية — من أدواتنا واختياراتنا — وهذه تهاجمها الهندسة بلا رحمة.',
+   242→            en: 'Essential complexity is inherent in the problem: tax law is complicated, so a tax program is complicated, and no cleverness removes that. Tangled dependencies, duplicated logic and unclear names are accidental — from our tools and choices — and engineering attacks them relentlessly.',
+   243→          },
+   244→        },
+   245→        {
+   246→          id: 'q4',
+   247→          question: {
+   248→            ar: 'التقسيم الجيد في المعمارية يوصف دائمًا بـ...',
+   249→            en: 'Good decomposition in architecture is always described as...',
+   250→          },
+   251→          options: [
+   252→            { id: 'a', text: { ar: 'تماسك عالٍ وتقارن منخفض', en: 'High cohesion and low coupling' } },
+   253→            { id: 'b', text: { ar: 'تماسك منخفض وتقارن عالٍ', en: 'Low cohesion and high coupling' } },
+   254→            { id: 'c', text: { ar: 'وحدات كبيرة قليلة العدد', en: 'A few large modules' } },
+   255→          ],
+   256→          answer: 'a',
+   257→          explanation: {
+   258→            ar: 'كل وحدة تفعل شيئًا واحدًا جيدًا (تماسك عالٍ) وتعتمد غيرها بأقل قدر ممكن وعبر الواجهات فقط (تقارن منخفض) — بحيث تفهم جزءًا دون حمل البقية في رأسك. هاتان الفكرةتان من أهم ما في التصميم البرمجي كله.',
+   259→            en: 'Each module does one thing well (high cohesion) and depends on others as little as possible, only through interfaces (low coupling) — so you can reason about one part without holding the rest in your head. These are among the most important ideas in all of software design.',
+   260→          },
+   261→        },
+   262→      ],
+   263→    },
+   264→    {
+   265→      kind: 'pitfalls',
+   266→      items: [
+   267→        {
+   268→          wrong: 'سأكتب شيفرة خالية من العيوب إن كنت حذرًا كفاية',
+   269→          right: 'البشر يخطئون فالعيوب حتمية — والاستجابة شبكات متراكبة متعددة تمسكها مبكرًا حين يكون الإصلاح رخيصًا',
+   270→          note: {
+   271→            ar: 'الحذر يقلل الأخطاء ولا يلغيها، والسلسلة mistake ثم fault ثم failure تعني أن عيبًا كامنًا واحدًا يكفي لفشل مرصود. القوة في تعدد الشبكات المختلفة: مراجعة تقرأ، وفحص ساكن يحلل، واختبار يشغّل — ما تعمى عنه واحدة تمسه الأخرى.',
+   272→            en: 'Care reduces mistakes but never eliminates them, and the mistake-fault-failure chain means one latent fault suffices for an observed failure. Strength comes from multiple different nets: a review reads, static checking analyzes, testing runs — what one misses another grips.',
+   273→          },
+   274→        },
+   275→        {
+   276→          wrong: 'اختبار ناجح يثبت خلو الشيفرة من العيوب',
+   277→          right: 'الاختبار يظهر وجود العيوب لا غيابها (ديكسترا) — الحزمة الجيدة تجعل بقاء عيب خطير غير مرجح وتجعل التغيير آمنًا',
+   278→          note: {
+   279→            ar: 'النجاح على مدخلاتك لا يساوي البرهان على كل المدخلات؛ ولهذا نقيس التغطية ونجمع الصندوقين الأسود والأبيض. القيمة العملية: حارس انحدار يجعل التغيير آمنًا — وهذا وحده يبرر الحزمة.',
+   280→            en: 'Passing on your inputs is not proof over all inputs; hence coverage and combining black-box with white-box. The practical value: a regression guard that makes change safe — that alone justifies the suite.',
+   281→          },
+   282→        },
+   283→        {
+   284→          wrong: 'التعقيد كله من أدواتنا السيئة — ذكاء أكبر يلغيه',
+   285→          right: 'جزء جوهري من المشكلة ذاتها لا يُلغى (قانون الضرائب معقد) — وهندستك تهاجم العرضي: تبعات متشابكة، أسماء غامضة، منطق مكرر، تجريدات مسربة',
+   286→          note: {
+   287→            ar: 'الخلط بين النوعين يضيع الجهد: من يحاول «إصلاح» التعقيد الجوهري يبني تجريدات أعمق وأسوأ، ومن يغفر العرضي يتراكم لديه تبعات ونسخ. التشخيص أولًا: أي ضغط تقنية معينة تجيب عنه؟',
+   288→            en: 'Confusing the two wastes effort: trying to fix essential complexity builds deeper, worse abstractions, while forgiving accidental complexity accumulates tangles and duplicates. Diagnose first: which pressure is a given technique answering?',
+   289→          },
+   290→        },
+   291→      ],
+   292→    },
+   293→    {
+   294→      kind: 'summary',
+   295→      bullets: [
+   296→        { ar: 'التعقيد جوهري (قانون الضرائب) لا يُلغى، وعرضي (تبعات، أسماء، تكرار، تجريدات مسربة) يُهاجم بلا رحمة. والبرمجيات غير مرئية ومتقطعة — حرف يقلب السلوك — ومتغيرة كل سبرنت؛ فالسلاح الأول التجزئة بتماسك عالٍ وتقارن منخفض.', en: 'Complexity is essential (tax law) and cannot be removed; accidental complexity (tangles, names, duplication, leaky abstractions) is attacked relentlessly. Software is invisible, discrete — a character flips behavior — and redesigned every sprint; the primary weapon is decomposition with high cohesion and low coupling.' },
+   297→        { ar: 'سلسلة العيب: mistake فعل بشري ثم fault عيب في الشيفرة ثم failure فشل مرصود — والعيب كامن حتى يستدعيه تنفيذ. الشبكات متراكبة ومختلفة: مراجعات تقلل الأخطاء، فحص ساكن يجد العيوب قبل التشغيل، اختبار يستفز الفشل آمنًا — ولا تقنية واحدة تكفي.', en: 'The defect chain: a human mistake leaves a fault in the code that becomes a failure when an execution triggers it — faults are latent. The nets overlap and differ: reviews cut mistakes, static checking finds faults before they run, testing provokes failures safely — no single technique suffices.' },
+   298→        { ar: 'الاختبار لا يثبت الغياب (ديكسترا) — يجعل بقاء العيب الخطير غير مرجح والتغيير آمنًا. وكلفة العيب تتضاعف بالمرحلة: 1 في المتطلبات حتى 100 في الإنتاج في نموذجنا التقريبي — فالامساك المبكر هو الاقتصاد كله.', en: 'Testing proves no absence (Dijkstra) — it makes a surviving serious fault unlikely and change safe. Defect cost multiplies by stage: 1 at requirements up to 100 at production in our rule-of-thumb model — catching early is the entire economics.' },
+   299→      ],
+   300→      reflectPrompt: {
+   301→        ar: 'افتح الملعب وعدّ مدخلات total الثلاثة: كم منها كان سيكشف العيب وكم يخفيه؟ اسأل نفسك: في آخر عيب رصدته — أي شبكة كان يمكن أن تمسكه أرخص، وفي أي مرحلة؟',
+   302→        en: 'Open the sandbox and look at total\u2019s three inputs: how many expose the fault and how many hide it? Ask yourself: in the last defect you caught — which net could have gripped it cheaper, and at which stage?',
+   303→      },
+   304→    },
+   305→    {
+   306→      kind: 'sources',
+   307→      items: [
+   308→        { book: 'SWE', section: 'swe.ch1.s3', pages: 'ص22-23 / pp.22-23' },
+   309→        { book: 'SWE', section: 'swe.ch1.s4', pages: 'ص23-24 / pp.23-24' },
+   310→      ],
+   311→    },
+   312→  ],
+   313→  sources: [
+   314→    { book: 'SWE', section: 'swe.ch1.s3', pages: 'ص22-23 / pp.22-23' },
+   315→    { book: 'SWE', section: 'swe.ch1.s4', pages: 'ص23-24 / pp.23-24' },
+   316→  ],
+   317→} satisfies Lesson;
+   318→
+   319→export default lesson;
+   320→

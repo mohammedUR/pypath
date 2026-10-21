@@ -1,0 +1,85 @@
+import difflib
+
+LEGACY_PRICING_SRC = '''def price_quote(quantity, unit_price, member):
+    # inherited: no docs, no tests
+    total = quantity * unit_price
+    if member:
+        if quantity > 10:
+            total = total - total * 15 // 100
+        else:
+            total = total - total * 5 // 100
+    else:
+        if quantity > 20:
+            total = total - total * 10 // 100
+    if total > 500:
+        total = total - 25
+    return total
+'''
+
+pricing_ns = {}
+exec(compile(LEGACY_PRICING_SRC, 'legacy_pricing.py', 'exec'), pricing_ns)
+price_quote = pricing_ns['price_quote']
+
+probes = [(5, 100, True), (12, 100, True), (3, 60, False), (25, 40, False),
+          (2, 250, False), (10, 60, True), (1, 50, False), (30, 25, True)]
+
+golden = {}
+for q, p, m in probes:
+    golden[(q, p, m)] = price_quote(q, p, m)
+
+def run_suite(impl):
+    passed = 0
+    for q, p, m in probes:
+        if impl(q, p, m) == golden[(q, p, m)]:
+            passed = passed + 1
+        else:
+            print('FAILED', (q, p, m), 'got', impl(q, p, m))
+    return passed
+
+print('legacy: tests: %d passed: %d' % (len(probes), run_suite(price_quote)))
+
+REFACTORED_PRICING_SRC = '''REBATE_THRESHOLD = 500
+BULK_REBATE = 25
+
+def member_discount_percent(quantity):
+    if quantity > 10:
+        return 15
+    return 5
+
+def volume_discount_percent(quantity):
+    if quantity > 20:
+        return 10
+    return 0
+
+def apply_bulk_rebate(total):
+    if total > REBATE_THRESHOLD:
+        return total - BULK_REBATE
+    return total
+
+def price_quote(quantity, unit_price, member):
+    total = quantity * unit_price
+    if member:
+        percent = member_discount_percent(quantity)
+    else:
+        percent = volume_discount_percent(quantity)
+    total = total - total * percent // 100
+    return apply_bulk_rebate(total)
+'''
+
+revived_ns = {}
+exec(compile(REFACTORED_PRICING_SRC, 'price_quote.py', 'exec'), revived_ns)
+
+print('after: tests: %d passed: %d' % (len(probes), run_suite(revived_ns['price_quote'])))
+
+print('debt: pricing magic numbers | principal: 3 dev-days | interest: 1/mo')
+diff = list(difflib.unified_diff(
+    LEGACY_PRICING_SRC.splitlines(keepends=True),
+    REFACTORED_PRICING_SRC.splitlines(keepends=True),
+    fromfile='legacy_pricing.py', tofile='price_quote.py'))
+changed = 0
+for line in diff:
+    if line.startswith('+') and not line.startswith('+++'):
+        changed = changed + 1
+    if line.startswith('-') and not line.startswith('---'):
+        changed = changed + 1
+print('changed lines: %d / tests: %d passed: %d' % (changed, len(probes), run_suite(revived_ns['price_quote'])))

@@ -1,0 +1,212 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * d2l.ch21.l1 — "Recommender Systems: Collaborative Filtering by Matrix Factorization"
+ * أنظمة التوصية: الترشيح التعاوني بتحليل المصفوفات
+ * Aligned with D2L ch21 s1 (Overview of Recommender Systems) — the chapter
+ * head plus 21.1.1-21.1.3 (collaborative filtering, explicit vs implicit
+ * feedback, recommendation tasks). All expression is original — a paraphrase
+ * of the source's ideas, never a verbatim translation. Runnable design:
+ * matrix factorization of a fixed 4x3 ratings matrix by fixed-iteration SGD
+ * (literal init, fixed sweep order, verified losses and predictions), top-1
+ * recommendations from predicted scores, and RMSE against a global-mean
+ * baseline. Every literal verified under CPython 3. Deterministic only.
+ */
+const lesson = {
+  id: 'd2l.ch21.l1',
+  version: 1,
+  part: 'II',
+  track: 'A8',
+  book: 'D2L',
+  chapter: 21,
+  title: {
+    ar: 'أنظمة التوصية: الترشيح التعاوني بتحليل المصفوفات',
+    en: 'Recommender Systems: Collaborative Filtering by Matrix Factorization',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['d2l.ch20.l1'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'كيف تعرف Netflix الفيلم الذي ستشاهده الليلة قبل أن تبحث عنه؟ أنظمة التوصية تحوّل مصفوفة نادرة من تفاعلات المستخدمين مع الأصناف إلى توقعات: تقدير لكل فيلم لم تشاهده بعد وقائمة top-n مخصصة لك وحدك. في هذا الدرس نطبق الترشيح التعاوني في أبسط صوره — تحليل المصفوفات بـ SGD ثابت التكرارات على مصفوفة 4×3 — ونقيس النتيجة بـ RMSE مقارنة بخط أساس المتوسط العام.',
+        en: 'How does Netflix know the movie you will watch tonight before you search? Recommender systems turn a sparse matrix of user-item interactions into predictions: an estimated rating for every film you have not seen and a top-n list tailored to you alone. This lesson applies collaborative filtering in its simplest form — matrix factorization by fixed-iteration SGD on a 4x3 ratings matrix — and measures the result with RMSE against a global-mean baseline.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'ترشيح تعاوني، تغذية راجعة صريحة وضمنية، ومهام التوصية', en: 'Collaborative filtering, explicit and implicit feedback, and the tasks' },
+      chunks: [
+        {
+          ar: 'أنظمة التوصية هي محركات الترشيح المعلوماتي خلف Amazon وNetflix وYouTube: تخفف عن المستخدم إغراق المعلومات وتضيف قيمة تجارية للمزود. الفكرة المركزية هي الترشيح التعاوني الذي صاغه نظام Tapestry سنة 1992: الناس والوكلاء يتعاونون للترشيح. تنقسم التقنيات إلى ترشيح تعاوني ذاكري (أقرب الجيران على المستخدمين أو الأصناف) ونموذجي (نماذج العوامل الكامنة مثل تحليل المصفوفات) وتركيبين بينهما. الترشيح التعاوني الصرف يقرأ مصفوفة تفاعلات المستخدم-الصنف فقط؛ أما الأنظمة المحتواية والسياقية فتضيف أوصاف الأصناف أو المستخدمين وإشارات كالطوابع الزمنية والموقع.',
+          en: 'Recommender systems are the information-filtering engines behind Amazon, Netflix, and YouTube: they ease information overload for users and add business value for providers. The central idea is collaborative filtering, coined by the Tapestry system in 1992: people and agents collaborate to filter. Techniques split into memory-based CF (nearest neighbors over users or items), model-based CF (latent-factor models such as matrix factorization), and hybrids. Plain CF reads only the user-item interaction matrix; content-based and context-aware recommenders add item or user descriptions plus signals like timestamps and location.',
+        },
+        {
+          ar: 'التغذية الراجعة نوعان. الصريحة تسأل المستخدم مباشرة — تقييمات IMDb بنجوم من 1 إلى 10 أو إعجاب وعدم إعجاب — وهي دقيقة لكنها نادرة لأن الناس قليلًا ما يقيّمون. الضمنية سلوك مرصود: نقرات وسجل شراء وتصفح وحتى حركات الفأرة؛ وهي وفيرة لكنها مشوشة بطبيعتها، فمشاهدة فيلم لا تعني الإعجاب به. من هذه الإشارات تنشأ المهام: توقع التقدير من الدرجات الصريحة، والتوصية top-n (ترتيب الأصناف) من الإشارات الضمنية، والتوصية الواعية بالتسلسل حين يهم الزمن، وتوقع نسبة النقر، والانطلاقة الباردة لمستخدم أو صنف جديد.',
+          en: 'Feedback comes in two kinds. Explicit feedback asks users directly - IMDb star ratings from 1 to 10, thumbs up or down - and is precise but scarce because people rarely rate. Implicit feedback is observed behavior: clicks, purchase and browsing history, even mouse movements; it is abundant but inherently noisy, since watching a movie does not prove liking it. These signals define the tasks: rating prediction from explicit scores, top-n recommendation (item ranking) from implicit signals, sequence-aware recommendation when timestamps matter, click-through-rate prediction, and cold-start for new users or items.',
+        },
+        {
+          ar: 'عمليًا: تحليل المصفوفات، النموذج الكلاسيكي للعوامل الكامنة. مصفوفة تقديرات R (مستخدمون × أصناف، 0 = غير مقيّم) تُقرَّب بجداء P في محوّلة Q مع متجه ذوق k-بعدي لكل مستخدم وصنف. SGD على المدخلات المرصودة فقط: الخطأ e = r − P_u · Q_i، ثم P_u += lr (e Q_i − reg P_u) وبالمثل لـ Q؛ والخسارة 0.5 مجموع مربعات e زائد reg (مربع norm P + مربع norm Q) هي بالضبط ما تنزل عليه هذه التحديثات. نمسح بترتيب ثابت لعدد تكرارات ثابت على مصفوفة 4×3 — بلا خلط، حتمي تمامًا — ثم نرتّب الأصناف غير المقيّمة بالدرجة المتوقعة لقائمة top-1، ونقارن RMSE بخط أساس المتوسط العام.',
+          en: 'Hands-on: matrix factorization, the classic latent-factor model. A ratings matrix R (users x items, 0 = unrated) is approximated as P times Q-transpose with a k-dim taste vector per user and item. SGD over observed entries only: error e = r - P_u dot Q_i, then P_u += lr (e Q_i - reg P_u) and symmetrically for Q; the loss is 0.5 times the squared errors plus reg times the squared norms of P and Q — exactly what these updates descend. We sweep a fixed order for a fixed 100 iterations on a 4x3 matrix - no shuffling, fully deterministic - then rank unrated items by predicted score for a top-1 list, and compare RMSE against a global-mean baseline.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: {
+        ar: 'تحليل مصفوفة 4×3 بـ SGD ثابت التكرارات، ثم top-1 وRMSE',
+        en: 'Factorizing a 4x3 ratings matrix by fixed-iteration SGD, then top-1 and RMSE',
+      },
+      code: "import math\n\nR = [[5, 3, 0],\n     [4, 0, 1],\n     [1, 1, 5],\n     [0, 2, 4]]  # 0 marks an unrated (missing) entry\nn_users, n_items, k = 4, 3, 2\nP = [[0.4, 0.2], [0.3, 0.1], [0.2, 0.4], [0.1, 0.3]]\nQ = [[0.5, 0.1], [0.2, 0.3], [0.4, 0.2]]\nlr, reg, epochs = 0.05, 0.02, 100\n\ndef dot(a, b):\n    return sum(x * y for x, y in zip(a, b))\n\nobs = [(i, j, R[i][j]) for i in range(n_users) for j in range(n_items) if R[i][j] > 0]\n\ndef loss():\n    e_sq = sum((r - dot(P[i], Q[j])) ** 2 for i, j, r in obs)\n    norm = sum(x * x for row in P for x in row) + sum(x * x for row in Q for x in row)\n    return 0.5 * e_sq + reg * norm\n\ndef rmse():\n    se = sum((r - dot(P[i], Q[j])) ** 2 for i, j, r in obs)\n    return math.sqrt(se / len(obs))\n\nprint('observed entries:', len(obs))\nprint('initial loss %.6f rmse %.6f' % (loss(), rmse()))\nfor epoch in range(epochs):\n    for i, j, r in obs:  # fixed order, fixed iterations - no shuffling\n        e = r - dot(P[i], Q[j])\n        for f in range(k):\n            P[i][f] += lr * (e * Q[j][f] - reg * P[i][f])\n            Q[j][f] += lr * (e * P[i][f] - reg * Q[j][f])\n    if epoch == 0 or (epoch + 1) % 25 == 0:\n        print('epoch %3d loss %.6f rmse %.6f' % (epoch + 1, loss(), rmse()))\n\nprint('P =', [[round(x, 3) for x in row] for row in P])\nprint('Q =', [[round(x, 3) for x in row] for row in Q])\nprint('predicted matrix:', [[round(dot(P[i], Q[j]), 3) for j in range(n_items)]\n                            for i in range(n_users)])\nfor i in range(n_users):  # top-1 from predicted scores over unrated items\n    cand = [(dot(P[i], Q[j]), j) for j in range(n_items) if R[i][j] == 0]\n    if cand:\n        s, j = max(cand)\n        print('user %d top-1 -> item %d score %.3f' % (i, j, s))\n    else:\n        print('user %d has no unrated item' % i)\ngmean = sum(r for _, _, r in obs) / len(obs)\nbase = math.sqrt(sum((r - gmean) ** 2 for _, _, r in obs) / len(obs))\nprint('global-mean %.6f baseline rmse %.6f' % (gmean, base))",
+      explanation: {
+        ar: 'تسع مدخلات مرصودة من اثنتي عشرة، والخسارة الابتدائية 45.106850 مع RMSE ابتدائي 3.165194 — أسوأ من تخمين المتوسط. بعد 100 مسحة بترتيب ثابت تنزل الخسارة إلى 0.580385 والـ RMSE إلى 0.024809: العوامل الكامنة P=[[2.037, 0.879], [1.692, -0.331], [0.299, 1.922], [1.224, 1.108]] وQ=[[2.373, 0.153], [1.321, 0.324], [1.064, 2.416]] أعادت بناء التقديرات المرصودة بدقة عالية، فمصفوفة التوقعات [[4.969, 2.976, 4.292], [3.963, 2.127, 0.999], [1.004, 1.018, 4.962], [3.075, 1.976, 3.981]] تطابق 5 و3 و4... تقريبا حيث رُصدت. من التوقعات على المفقود: user 0 top-1 -> item 2 score 4.292 وuser 1 top-1 -> item 1 score 2.127 وuser 3 top-1 -> item 0 score 3.075 (وuser 2 has no unrated item). للمقارنة: المتوسط العام 2.888889 يعطي baseline rmse 1.594744 — نحو 64 ضعف خطأ نموذجنا.',
+        en: 'Nine of twelve entries are observed; the initial loss 45.106850 with initial RMSE 3.165194 is worse than guessing the mean. After 100 sweeps in fixed order the loss descends to 0.580385 and the RMSE to 0.024809: the latent factors P=[[2.037, 0.879], [1.692, -0.331], [0.299, 1.922], [1.224, 1.108]] and Q=[[2.373, 0.153], [1.321, 0.324], [1.064, 2.416]] reconstruct the observed ratings closely — the predicted matrix [[4.969, 2.976, 4.292], [3.963, 2.127, 0.999], [1.004, 1.018, 4.962], [3.075, 1.976, 3.981]] matches the 5, 3, 4... where ratings exist. From the missing entries: user 0 top-1 -> item 2 score 4.292, user 1 top-1 -> item 1 score 2.127, user 3 top-1 -> item 0 score 3.075 (and user 2 has no unrated item). For scale: the global mean 2.888889 yields a baseline rmse 1.594744 — about 64 times the error of our model.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.rmse-topk',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفذ دالتين للتقييم والتوصية: rmse(errors) تعيد الجذر التربيعي لمتوسط مربعات الأخطاء، وtop_k(scores, k) تعيد قائمة فهارس أكبر k درجات مرتبة تنازليا حسب الدرجة (فهارس القائمة scores نفسها).',
+        en: 'Implement two functions for evaluation and recommendation: rmse(errors) returning the square root of the mean of squared errors, and top_k(scores, k) returning the indices of the k largest scores in descending score order (indices into the scores list itself).',
+      },
+      starterCode: "import math\n\ndef rmse(errors):\n    # TODO: sqrt of the mean of squared errors\n    ...\n\ndef top_k(scores, k):\n    # TODO: indices of the k largest scores, best first\n    ...\n",
+      solution: "import math\n\ndef rmse(errors):\n    return math.sqrt(sum(e * e for e in errors) / len(errors))\n\ndef top_k(scores, k):\n    return sorted(range(len(scores)), key=lambda i: -scores[i])[:k]\n",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'RMSE على ثلاثة أخطاء ثابتة', en: 'RMSE over three fixed errors' },
+          code: "r = rmse([0.5, -1.5, 2.0])\nassert abs(r - 1.471960) < 1e-5, 'rmse of [0.5, -1.5, 2.0] is sqrt(6.5/3) ~ 1.471960 | got %r' % r",
+          expected: '1.471960',
+        },
+        {
+          id: 't2',
+          name: { ar: 'توقعات مثالية تعطي صفرا', en: 'Perfect predictions give zero' },
+          code: "r = rmse([0.0, 0.0, 0.0, 0.0])\nassert r == 0.0, 'all-zero errors must give rmse 0 | got %r' % r",
+          expected: '0.0',
+        },
+        {
+          id: 't3',
+          name: { ar: 'top_k يرتب الفهارس تنازليا', en: 'top_k orders indices by descending score' },
+          code: "r = top_k([2.1, 4.9, 3.3], 2)\nassert r == [1, 2], 'indices of 4.9 then 3.3 | got %r' % (r,)\nassert top_k([5.0, 1.0], 1) == [0], 'k=1 picks the best index | got %r' % (top_k([5.0, 1.0], 1),)",
+          expected: '[1, 2] and [0]',
+        },
+      ],
+      hints: [
+        { ar: 'الصيغة: rmse = sqrt((e1^2 + e2^2 + ...) / n) — المربعات تلغي إشارة الخطأ.', en: 'Formula: rmse = sqrt((e1^2 + e2^2 + ...) / n) — squares cancel the error sign.' },
+        { ar: 'استخدم math.sqrt من الوحدة math — لا ترفع إلى 0.5 يدويا حتى تبقى القراءة واضحة.', en: 'Use math.sqrt from the math module rather than raising to 0.5 manually, for clarity.' },
+        { ar: 'في top_k رتّب range(len(scores)) بمفتاح سالب الدرجة ثم خذ أول k: sorted(range(len(scores)), key=lambda i: -scores[i])[:k].', en: 'In top_k sort range(len(scores)) by negated score and slice the first k: sorted(range(len(scores)), key=lambda i: -scores[i])[:k].' },
+        { ar: 'قيم تحقق: rmse([0.5, -1.5, 2.0]) = sqrt(6.5/3) ≈ 1.471960، وtop_k([2.1, 4.9, 3.3], 2) = [1, 2].', en: 'Sanity values: rmse([0.5, -1.5, 2.0]) = sqrt(6.5/3) ≈ 1.471960, and top_k([2.1, 4.9, 3.3], 2) = [1, 2].' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.numeric-mf-params',
+      exKind: 'numeric',
+      required: true,
+      prompt: {
+        ar: 'في تحليل المصفوفات بعاملين كامنين (k=2) على مصفوفة من 4 مستخدمين و3 أصناف: كم معاملا قياسيا تحمل العوامل P وQ معا (بدون انحيازات)؟ أجب بعدد صحيح.',
+        en: 'In matrix factorization with 2 latent factors (k=2) over 4 users and 3 items: how many scalar parameters do the factor matrices P and Q hold together (no biases)? Answer with an integer.',
+      },
+      answer: '14',
+      tolerance: 0,
+      solution: '14',
+      hints: [
+        { ar: 'P بحجم عدد المستخدمين × k = 4 × 2، وQ بحجم عدد الأصناف × k = 3 × 2.', en: 'P is users x k = 4 x 2, and Q is items x k = 3 x 2.' },
+        { ar: 'المعاملات قياسية: 8 في P و6 في Q — اجمعهما.', en: 'The parameters are scalars: 8 in P and 6 in Q — add them.' },
+        { ar: 'قارن بعدد المدخلات المرصودة (9 هنا): على المصفوفات الكبيرة يكون 14 أضعاف أصغر بكثير من مصفوفة كثيفة — هذه فكرة العوامل الكامنة.', en: 'Compare with the observed-entry count (9 here): on big matrices that parameter count is far smaller than a dense matrix — that is the latent-factor idea.' },
+        { ar: 'الجواب: 4 × 2 + 3 × 2 = 14.', en: 'Answer: 4 x 2 + 3 x 2 = 14.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "import math\n\nR = [[5, 3, 0], [4, 0, 1], [1, 1, 5], [0, 2, 4]]\nobs = [(i, j, R[i][j]) for i in range(4) for j in range(3) if R[i][j] > 0]\n\ndef dot(a, b):\n    return sum(x * y for x, y in zip(a, b))\n\ndef train(lr, reg, epochs):\n    P = [[0.4, 0.2], [0.3, 0.1], [0.2, 0.4], [0.1, 0.3]]\n    Q = [[0.5, 0.1], [0.2, 0.3], [0.4, 0.2]]\n    for _ in range(epochs):\n        for i, j, r in obs:\n            e = r - dot(P[i], Q[j])\n            for f in range(2):\n                P[i][f] += lr * (e * Q[j][f] - reg * P[i][f])\n                Q[j][f] += lr * (e * P[i][f] - reg * Q[j][f])\n    se = sum((r - dot(P[i], Q[j])) ** 2 for i, j, r in obs)\n    return math.sqrt(se / len(obs)), P, Q\n\nfor reg in (0.0, 0.02, 0.2):\n    r, P, Q = train(0.05, reg, 100)\n    print('reg %.2f -> final rmse %.6f  pred(user0, item2) %.3f' % (reg, r, dot(P[0], Q[2])))\n\n# memory-based CF preview: cosine similarity between users on co-rated items\ndef cos_sim(a, b):\n    num = sum(x * y for x, y in zip(a, b))\n    den = math.sqrt(sum(x * x for x in a)) * math.sqrt(sum(y * y for y in b))\n    return num / den if den else 0.0\n\nprint('cos(user0, user2) on items 0-1 = %.6f' % cos_sim([5, 3], [1, 1]))\nprint('cos(user0, user1) on item 0    = %.6f' % cos_sim([5], [4]))\n\n# try: raise reg to 1.0 - do the latent factors shrink toward zero?\n# try: rank all three items for user 0 from the trained scores - does item 2 still win?",
+      prompt: {
+        ar: 'الملعب يمسح معامل التنظيم reg على التدريب نفسه: بلا تنظيم ينكمش RMSE التدريبي إلى 0.000362 (حشو كامل للملاحظات — خطر فرط التخصيص على مصفوفة أكبر)، وreg=0.02 يعطي 0.024809، وreg=0.2 يعطي 0.243097 (تقييد زائد). ثم معاينة للترشيح الذاكري: تشابه جيب التمام بين user0 وuser2 على المصنفين المشتركين 0.970143 مقابل 1.000000 مع user1 على صنف واحد مشترك — التشابه على صنف واحد لا يقول شيئا. قارن هاتين العائلتين: جيران الذاكرة مقابل عوامل النموذج.',
+        en: 'The sandbox sweeps the regularization coefficient on the same training run: with no regularization the training RMSE collapses to 0.000362 (perfectly memorizing observations — an overfitting risk on a bigger matrix), reg=0.02 gives 0.024809, and reg=0.2 gives 0.243097 (over-constrained). Then a memory-based CF preview: cosine similarity between user0 and user2 over their two co-rated items is 0.970143, versus 1.000000 with user1 on a single shared item — similarity on one item says nothing. Compare the two families: memory-based neighbors versus model-based latent factors.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'لماذا تُعد النقرات وسجل الشراء تغذية راجعة ضمنية مشوشة؟',
+            en: 'Why are clicks and purchase history considered noisy implicit feedback?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأنها سلوك مرصود يعكس التفضيل ضمنا فقط — مشاهدة فيلم لا تعني الإعجاب به', en: 'Because they are observed behavior that only hints at preference — watching a movie does not mean liking it' } },
+            { id: 'b', text: { ar: 'لأنها تأتي بنجوم من 1 إلى 10 فيتشوش مقياس التقدير', en: 'Because they arrive as 1-to-10 stars, which blurs the rating scale' } },
+            { id: 'c', text: { ar: 'لأنها نادرة جدا لأن المستخدمين قليلو الدفع', en: 'Because they are very scarce since users rarely bother' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الصريح (تقييمات IMDb بنجوم 1-10) يعبّر عن الرأي مباشرة لكنه نادر؛ والضمني وفير لكنه استنتاجي: الشراء أو المشاهدة أو التصفح إشارة سلوك لا رأي معلن، ولذلك تُبنى عليها مهام مثل top-n ونسبة النقر بحذر.',
+            en: 'Explicit feedback (IMDb 1-10 star ratings) states opinion directly but is scarce; implicit feedback is abundant but inferential: purchasing, watching, or browsing is a behavior signal, not a declared opinion — hence care with tasks like top-n and click-through-rate built on it.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'إلى أي عائلة من الترشيح التعاوني ينتمي تحليل المصفوفات ولماذا؟',
+            en: 'Which collaborative-filtering family does matrix factorization belong to, and why?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'النموذجية: يتعلم عوامل كامنة لكل مستخدم وصنف بدلا من مقارنة صفوف مباشرة', en: 'Model-based: it learns latent factors per user and item instead of comparing raw rows' } },
+            { id: 'b', text: { ar: 'الذاكرية القائمة على المستخدم: يجيب أقرب جيران التشابه', en: 'Memory-based user-based: nearest similarity neighbors answer' } },
+            { id: 'c', text: { ar: 'المحتواية: يقرأ أوصاف الأصناف والكلمات المفتاحية', en: 'Content-based: it reads item descriptions and keywords' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'تحليل المصفوفات نموذج عوامل كامنة: P وQ يتعلمان من بيانات التفاعل ويولدان توقعات لكل زوج (حتى غير المرصود) — في مصفوفتنا 14 معاملا فقط أعادت بناء التقديرات المرصودة بـ RMSE 0.024809. أقرب الجيران ذاكري يقرأ الصفوف مباشرة، والمحتواي يقرأ أوصاف الأصناف لا التفاعلات.',
+            en: 'Matrix factorization is a latent-factor model: P and Q are learned from interactions and generate a prediction for every pair (even unseen ones) — in our matrix just 14 parameters rebuilt the observed ratings at RMSE 0.024809. Nearest-neighbor CF reads raw rows; content-based reads item metadata, not interactions.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'في حلقة SGD لحللتنا، لماذا تُتخطى الخانات التي فيها R[i][j] == 0؟',
+            en: 'In our SGD loop, why are entries with R[i][j] == 0 skipped?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن 0 تعني غير مقيّم لا تقديرا صفريا — إدراجها يعلّم النموذج أن يتوقع 0', en: 'Because 0 means unrated, not a zero rating — including it would teach the model to predict 0' } },
+            { id: 'b', text: { ar: 'لأن مشتقاتها دائما صفر فلا فائدة من تحديثها', en: 'Because their gradients are always zero, so updating is useless' } },
+            { id: 'c', text: { ar: 'لأن تخطيها يجعل الخوارزمية أسرع فقط دون أي أثر دلالي', en: 'Because skipping them only makes the algorithm faster, with no semantic effect' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الصفر هنا رمز الغياب: الخسارة تُحسب على المدخلات المرصودة التسعة فقط، والتوقعات على الخانات المفقودة (مثل 4.292 للخانة user0-item2) تأتي من التعميم عبر العوامل الكامنة. تدرّج الخانة المفقودة ليس صفرا بطبيعته — إنه غير معرف لأننا لا نعرف القيمة الحقيقية.',
+            en: 'Zero here marks absence: the loss covers only the nine observed entries, and predictions on missing cells (like 4.292 for user0-item2) come from generalization through the latent factors. A missing entry has no zero gradient — it is simply undefined because the true rating is unknown.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'الترشيح التعاوني (Tapestry 1992) يقرأ تفاعلات المستخدم-الصنف فقط، وتنقسم تقنياته إلى ذاكرية (أقرب الجيران) ونموذجية (عوامل كامنة مثل تحليل المصفوفات) وتركيب (الهدف من s1).', en: 'Collaborative filtering (Tapestry 1992) reads only user-item interactions; techniques split into memory-based (nearest neighbors), model-based (latent factors such as matrix factorization), and hybrids (goal of s1).' },
+        { ar: 'التغذية الراجعة صريحة (نجوم IMDb 1-10، دقيقة ونادرة) وضمنية (نقرات وسجل شراء وتصفح، وفيرة ومشوشة)، ومنها تنشأ المهام: توقع التقدير وtop-n والواعية بالتسلسل ونسبة النقر والانطلاقة الباردة (الهدف من s1).', en: 'Feedback is explicit (IMDb 1-10 stars: precise, scarce) or implicit (clicks, purchase and browsing history: abundant, noisy), and the tasks follow: rating prediction, top-n ranking, sequence-aware, click-through-rate, and cold-start (goal of s1).' },
+        { ar: 'تحليل المصفوفات بـ SGD ثابت التكرارات على 4×3: RMSE من 3.165194 إلى 0.024809 مقابل خط أساس المتوسط العام 1.594744، و14 معاملا فقط، وtop-1 من التوقعات: user 0 -> item 2 score 4.292 (الهدف من s1).', en: 'Matrix factorization by fixed-iteration SGD on 4x3: RMSE from 3.165194 down to 0.024809 versus a 1.594744 global-mean baseline, with only 14 parameters, and top-1 from predictions: user 0 -> item 2 score 4.292 (goal of s1).' },
+      ],
+      reflectPrompt: {
+        ar: 'مع مستخدم جديد لم يقيّم شيئا تفشل مصفوفتنا P·Q لأن صفه غير موجود — أي آلية من الدرس ستستعيرها لتغطية الانطلاقة الباردة: متوسط عام كتوقع أولي، أم تشابه ذاكري مع مستخدمين مشابهين، أم إضافة محتوى الصنف كإشارة إضافية؟',
+        en: 'With a brand-new user who has rated nothing, our P x Q model fails because their row does not exist — which mechanism from this lesson would you borrow to cover cold start: a global mean as the first guess, memory-based similarity to like-minded users, or item content as an extra signal?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'D2L', section: 'd2l.ch21.s1', pages: '933-935' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'D2L', section: 'd2l.ch21.s1', pages: '933-935' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

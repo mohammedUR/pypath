@@ -1,0 +1,755 @@
+     1→
+     2→===== صفحة الكتاب 64 =====
+     3→Chapter 3 — User Requirements
+     4→Where we are. Chapter 1 argued that the hardest part of many projects is deciding which system to build,
+     5→and Chapter 2 gave you a process to build it in short, adaptive iterations. This chapter zooms in on the front
+     6→of that process: how you discover what real people need, how you write it down so a team can act on it, and
+     7→how you keep those written needs honest as understanding shifts. Everything downstream — design, tests,
+     8→metrics — inherits the quality of the requirements you produce here. Get this wrong and you will build a
+     9→beautiful, well-tested answer to the wrong question.
+    10→A requirement is the bridge between a person with a problem and a team with the skill to solve it. That bridge is
+    11→where most projects quietly succeed or fail. You can recover from a bad database choice; you refactor it. You
+    12→rarely recover cheaply from having built the wrong feature for six months, because the cost is not just the wasted
+    13→code — it is the wasted time, the eroded trust of the people who told you what they wanted and watched you miss
+    14→it. This chapter is about narrowing that gap between what people need and what you believe they need, and doing
+    15→so continuously, because the gap never fully closes.
+    16→3.1 What Is a Requirement?
+    17→A requirement is a statement of something the software must do for its users, or a quality it must have while
+    18→doing it. That sounds simple, and the trouble hides in the simplicity. Requirements are written in natural language,
+    19→by and for humans, about needs that the humans themselves often cannot articulate. They are simultaneously the
+    20→most important artifact in a project and the least precise. Learning to work skillfully in that tension — to extract
+    21→precision from ambiguity without pretending the ambiguity is gone — is the core skill of this chapter.
+    22→Definition. A requirement is an agreed statement of a need that a stakeholder has of the system: either a
+    23→behavior the system must exhibit or a property it must possess. A requirement is not a design; it says what
+    24→and why, not how.
+    25→That last sentence matters more than it looks. When a user says “add a dropdown,” they have handed you a design
+    26→dressed up as a need. Your job is to reach past it to the need underneath — “I need to pick one clinic from a short
+    27→list without typos” — because the need admits better designs than the one the user happened to imagine.
+    28→Requirements work is largely the discipline of not accepting the first solution offered as if it were the problem.
+    29→3.1.1 The Basic Requirements Cycle
+    30→Requirements are not gathered once and filed away. They move through a repeating cycle, and the health of a
+    31→project is largely the health of this loop. You elicit needs from stakeholders, analyze and organize them into
+    32→
+    33→===== صفحة الكتاب 65 =====
+    34→something coherent, specify them in a form the team can act on, and validate that what you specified is actually
+    35→what people need — which surfaces new needs and misunderstandings, sending you around again.
+    36→Notice two things about this diagram. First, the loop never terminates during an active project; it merely slows as
+    37→understanding stabilizes. Second, Build feeds back into Elicit. Users learn what they want by using something, so
+    38→the most powerful requirements-elicitation tool you own is often a working (or even fake) version of the product.
+    39→This is why Chapter 2’s iterative process and this chapter’s requirements work are the same activity viewed at two
+    40→zoom levels: each iteration is one trip around this cycle.
+    41→
+    42→===== صفحة الكتاب 66 =====
+    43→Principle. Requirements are discovered, not collected. You do not walk into a room and receive a complete
+    44→list; you co-create understanding with stakeholders over time, and the earliest versions are always partly
+    45→wrong. Plan for that, don’t resent it.
+    46→3.1.2 Requirements Challenges
+    47→Why is this hard? Because every step of the cycle fights human nature and the limits of language. A handful of
+    48→recurring challenges account for most requirements failures:
+    49→Tacit knowledge. Experts cannot fully articulate what they know. A nurse triaging patients follows rules
+    50→she has never written down and would struggle to state. Ask “how do you decide?” and you get a
+    51→simplified, partly fictional answer. The real rules live in practice, not in interviews.
+    52→The unstated obvious. Stakeholders omit what is obvious to them. “Of course the system must handle two
+    53→clinicians sharing a patient” goes unsaid — until it breaks.
+    54→Solutions masquerading as needs. As above, users hand you designs. Accept them uncritically and you
+    55→inherit everything the user overlooked.
+    56→Conflicting stakeholders. The front desk wants speed; compliance wants audit trails; the sponsor wants
+    57→low cost. These pull in different directions, and no phrasing makes the conflict disappear. Someone must
+    58→decide, and requirements work makes the conflict visible enough to decide well.
+    59→Ambiguous language. “The report should load quickly.” How quickly? For whom? Under what load?
+    60→“Quickly” is a placeholder for an argument no one has had yet.
+    61→Change. Even a perfectly captured requirement expires. Regulations update, markets move, users mature.
+    62→A frozen specification is a specification that is slowly going stale.
+    63→None of these are solved by working harder at the same technique. They are managed by combining techniques —
+    64→interviews plus observation plus prototypes plus review — so that what one misses another catches.
+    65→3.1.3 Kinds of Requirements
+    66→It helps enormously to sort requirements into two families, because they are elicited, written, and tested in
+    67→different ways.
+    68→A functional requirement describes a behavior: something the system does in response to input. “When a patient
+    69→checks in, the system marks their appointment as arrived and notifies the assigned clinician.” You can usually test
+    70→a functional requirement with a concrete example: given this input, expect this output. Most user stories (§3.4)
+    71→capture functional requirements.
+    72→A non-functional requirement — better called a quality requirement — describes a property the system must
+    73→have while it behaves: how fast, how secure, how available, how usable, how maintainable. “Check-in must
+    74→complete in under one second for 95% of requests when 200 clinics are active.” Quality requirements are the ones
+    75→
+    76→===== صفحة الكتاب 67 =====
+    77→teams most often botch, because they are easy to state vaguely (“it should be fast”) and hard to state testably (“p95
+    78→latency under 1s at 200 concurrent clinics”). The discipline is to attach a measurable fit criterion to every quality
+    79→requirement, so that “done” is a fact and not an argument.1
+    80→Pitfall. Quality requirements are frequently invisible until violated. No one writes a story titled “the app
+    81→should not leak patient data,” so no one budgets for it, and it surfaces only as an incident. Make quality
+    82→requirements explicit and measurable, or they will be discovered by your users on your worst day.
+    83→
+    84→===== صفحة الكتاب 68 =====
+    85→3.2 Developing Requirements and Software
+    86→How you handle requirements depends on how you build software, and the two dominant philosophies — agile
+    87→and plan-driven — take genuinely different stances. Neither is universally right. Understanding why each makes
+    88→sense in its context lets you choose deliberately rather than by fashion.
+    89→3.2.1 Agile Methods Validate Working Software
+    90→Agile methods treat requirements as a hypothesis to be tested by shipping. Rather than try to specify everything up
+    91→front — which the challenges in §3.1.2 say you cannot do reliably — agile teams specify a little, build it, put it in
+    92→front of users, and let their reaction correct the next round. The unit of truth is working software, not a document.
+    93→If the demo delights the clinic staff, the requirement was right; if they frown, you learn cheaply and adjust before
+    94→you have built a mountain on a bad foundation.
+    95→This is a bet, and the bet is that feedback is more reliable than foresight. In domains where users cannot tell you
+    96→what they want until they see it — which is most consumer and business software — the bet usually pays off. The
+    97→cost is that you must be genuinely willing to change: an agile team that treats its first backlog as fixed has adopted
+    98→the ceremony without the substance.
+    99→3.2.2 An Agile Emphasis on Requirements
+   100→A common misreading is that agile means “no requirements.” The opposite is true. Agile teams often do more
+   101→requirements work than plan-driven teams — they just do it in small, continuous doses rather than one large batch.
+   102→Every iteration begins with refining and selecting requirements (the backlog), and ends with validating them
+   103→against a running system. Requirements conversations happen constantly, at the moment they are needed, with the
+   104→person who has the answer in the room.
+   105→The agile move is to shift requirements from a document to a conversation plus a thin written reminder. A user
+   106→story (§3.4) is deliberately too short to be a full specification; it is a promise to have a conversation later, when
+   107→the team is about to build it and knows the most it will ever know.2 This defers the detailed decisions to the last
+   108→responsible moment, when they are cheapest and best-informed.
+   109→Principle. In agile work, the written requirement is a placeholder for a conversation, not a substitute for it.
+   110→The story reminds you what to talk about; the value is created when the developer, the customer, and the
+   111→tester talk it through together — the “three amigos.”3
+   112→3.2.3 Plan-Driven Methods Validate a Specification
+   113→Plan-driven (sometimes called “specification-first” or, historically, “waterfall”) methods invest heavily in writing
+   114→a complete, precise, agreed specification before significant building begins. Validation happens against the
+   115→
+   116→===== صفحة الكتاب 69 =====
+   117→document: reviews, sign-offs, and traceability checks confirm that the specification is complete and consistent,
+   118→and later that the built system matches it.
+   119→This looks old-fashioned next to agile, and for a scheduling app it usually is. But there are domains where it is
+   120→exactly right. When the cost of a late change is enormous or the system is safety-critical — avionics, medical
+   121→devices, spacecraft, systems bound by a regulatory certification — you cannot “ship and see.” You must reason
+   122→carefully about the requirements up front, because a failure in the field is catastrophic and a change after
+   123→certification is ruinously expensive. In those worlds, a rigorous specification is the cheapest place to catch a life-
+   124→threatening mistake.
+   125→Most real projects blend the two: a stable, carefully specified core (the things that must not be wrong) surrounded
+   126→by an agile, iterative shell (the things you will learn by trying). Choosing where to draw that line is an engineering
+   127→judgment, and the right cut depends on the cost of being wrong.
+   128→3.3 Eliciting User Needs
+   129→Elicitation is the active work of drawing out needs that stakeholders cannot simply hand you. The word is chosen
+   130→carefully: you elicit needs the way a good teacher elicits an answer — with questions, prompts, and situations that
+   131→help people discover what they know but had not stated.
+   132→3.3.1 A Classification of Needs
+   133→Not all needs are equal, and it helps to classify them by how the user relates to them. A useful three-way split:
+   134→Stated needs — what the user explicitly asks for. “I want to search appointments by patient name.” These
+   135→are the easiest to collect and the most likely to be half-solutions.
+   136→Implied needs — what the user assumes without saying, because it is obvious to them. “Of course the
+   137→search shouldn’t show patients from other clinics.” Miss these and users feel the system is broken even
+   138→though it does everything they said.
+   139→Latent needs — what the user does not know they want until they see it, but which delights them when
+   140→they do. “Oh — it can flag patients who haven’t confirmed? I didn’t know I needed that, but now I can’t
+   141→live without it.”
+   142→The gap between stated and implied needs is where most “the software technically works but everyone hates it”
+   143→failures live. The latent needs are where competitive advantage lives. A team that only satisfies stated needs builds
+   144→something adequate; a team that uncovers implied and latent needs builds something people love.
+   145→3.3.2 Accessing User Needs
+   146→There is no single technique that reaches all three kinds of needs, so skilled teams triangulate. Each of the main
+   147→methods has a characteristic strength and a matching blind spot:
+   148→
+   149→===== صفحة الكتاب 70 =====
+   150→Interviews. Direct and flexible; great for stated needs and stakeholder goals. Weakness: people rationalize
+   151→and misremember what they actually do. What people say they do and what they do often differ.
+   152→Observation (contextual inquiry).4 Watch users do the real task in their real environment. Superb for tacit
+   153→and implied needs — you see the sticky note on the monitor, the workaround, the double-entry no one
+   154→mentioned. Weakness: expensive, and observation can change behavior.
+   155→Surveys. Cheap at scale; good for prioritizing among known options and quantifying how common a need
+   156→is. Weakness: useless for discovering needs you did not already think to ask about.
+   157→Prototypes and demos. Show something concrete and watch the reaction. The single best tool for latent
+   158→needs, because a person who cannot describe what they want can almost always react to what is in front of
+   159→them. Weakness: users may fixate on the prototype’s incidental choices.
+   160→Brainstorming (blue-sky sessions). Gather many stakeholders and think big: during the session, no idea is
+   161→ruled out or criticized, and everything is captured — the goal is quantity first, judgment second, because
+   162→premature filtering kills the unusual idea that turns out to matter. Keep the focus on the core of what the
+   163→software is supposed to do, then reconvene later, with cooler heads, to filter and prioritize what the session
+   164→produced. Weakness: without that second, critical pass, a brainstorm yields a wish list, not requirements.
+   165→Role play. A developer pretends to be the software while the customer walks through using it: “I’d click
+   166→here… no, it should already show today’s schedule.” The customer’s instructions — and especially their
+   167→corrections — are requirements spoken aloud. Write everything down during the session, then split the
+   168→notes afterward into requirements and open questions. Weakness: you only exercise the workflows the
+   169→customer thinks to perform.
+   170→Studying existing systems and data. Support tickets, competitor products, and usage logs are elicitation
+   171→gold — they are records of real needs and real friction, unfiltered by anyone’s memory.
+   172→Use several elicitation methods, because each corrects a different weakness: interviews form hypotheses,
+   173→observation tests them, prototypes reveal omissions, and surveys help prioritize the findings.
+   174→Case study. A team building the clinic scheduler interviewed front-desk staff, who asked for faster search.
+   175→Only when the team watched a morning rush did they see the real problem: staff kept a paper list of
+   176→“difficult” patients beside the keyboard because the system had no way to flag them. No interview surfaced
+   177→this — it was too normal to mention. Observation found in one hour what interviews had missed for weeks.
+   178→Frame the problem before the solution. Users — and stakeholders — hand you solutions (“add a dropdown,”
+   179→“redesign the reports page”). A useful habit from Basecamp’s Shape Up is to flip every such request from “what
+   180→should we build?” back to “what’s really going wrong?” — the specific moment in the workflow where today’s
+   181→experience fails.5 Two ideas sharpen that:
+   182→The baseline is what users do today without the feature. Stated plainly (“right now they keep a paper list
+   183→beside the keyboard”), it both proves the problem is real and becomes the reference for judging any
+   184→solution: a fix only has to beat the baseline, not reach perfection.
+   185→
+   186→===== صفحة الكتاب 71 =====
+   187→A grab-bag is the anti-pattern — a vague mandate (“do something about scheduling”) with no driving
+   188→problem, so no one can tell where it starts or ends. Grab-bags are how scope explodes; the cure is to narrow
+   189→to one concrete pain point before designing.
+   190→Pitfall. A requirement phrased as a solution smuggles in an unexamined assumption about how. Trace it
+   191→back to the problem and you often find a smaller, cheaper, better answer than the one you were asked for.
+   192→Whatever mix of techniques you use, there will always be a gap between what the customer said and what you
+   193→understood — and that gap fills itself with assumptions. Every unstated assumption buried in a story is untracked
+   194→risk: you will build on it, and if it is wrong, everything on top of it is suspect.
+   195→Technique — track your assumptions. Write assumptions down explicitly, the moment you notice yourself
+   196→making one (“we assume clinicians never edit each other’s appointments”). Then convert each into a
+   197→question for the customer at the next meeting — an assumption is just a question you have not asked yet. If
+   198→an assumption cannot be clarified yet, treat that as a prioritization signal: deprioritize the work that depends
+   199→on it until it can be, and spend the iteration on stories that stand on firmer ground (see the prioritization
+   200→techniques in Chapter 4, §4.4).
+   201→3.3.3 Design for Delight
+   202→Satisfying stated needs makes a product acceptable. Delighting users — meeting latent needs they did not know to
+   203→ask for — makes a product loved, and loved products tend to win. A useful mental model here — the Kano
+   204→model,6 developed fully in §4.5 — distinguishes categories of features by how user satisfaction responds to them:
+   205→Must-be features (basic expectations). Their presence is unnoticed; their absence is a dealbreaker. A
+   206→scheduler that loses appointments has failed no matter how pretty it is. These map to implied needs. You get
+   207→no credit for them, but you cannot skip them.
+   208→Performance features (the more, the better). Satisfaction scales with how well you do them: faster search,
+   209→more report options. These map to stated needs. This is where users compare products, so doing them well
+   210→matters.
+   211→Delighters (unexpected value). Their absence is not missed, because no one expected them — but their
+   212→presence produces disproportionate delight. These map to latent needs. The patient-confirmation flag above
+   213→is a delighter.
+   214→
+   215→===== صفحة الكتاب 72 =====
+   216→Pitfall. Delighters decay into expectations. The first scheduler with automatic reminders delighted users;
+   217→today a scheduler without reminders feels broken. What was a delighter becomes a must-be. Elicitation
+   218→continues throughout development because user expectations rise as products and competitors improve.
+   219→Two practical consequences. First, spend your must-be budget ruthlessly but seek no glory there — just don’t fail.
+   220→Second, invest deliberately in one or two delighters per release, because they are where love and loyalty are
+   221→earned, and they are precisely the needs your competitors also failed to ask about.
+   222→3.4 Writing Requirements: Stories and Features
+   223→Having elicited needs, you must write them down in a form the whole team can act on. Two complementary
+   224→formats dominate modern practice: user stories (small, user-centered, conversational) and system features (larger
+   225→capabilities that group related stories).
+   226→3.4.1 Guidelines for Effective User Stories
+   227→A user story is a short statement of a need from a user’s point of view, written to provoke a conversation rather
+   228→than to settle every detail. The most widely used template, often called the Connextra format after the company
+   229→where it originated,7 is:
+   230→
+   231→===== صفحة الكتاب 73 =====
+   232→As a <role>, I want <capability>, so that <benefit>.
+   233→For example:
+   234→As a front-desk clerk, I want to flag a patient as “needs interpreter,” so that the clinician is prepared before
+   235→the visit begins.
+   236→Each clause has a job. The role keeps you honest about who benefits, and forces you to notice when a story serves
+   237→no real user. The capability states the behavior. The so that clause is the most important and most often omitted:
+   238→it captures the why, the underlying goal that §3.1 said you must reach past the solution to find. When a story’s
+   239→benefit clause is vague or circular (“…so that I can flag patients”), it is a warning that no one understands why the
+   240→feature exists — and a feature no one can justify is a feature to cut.
+   241→To judge whether a story is ready to build, teams use the INVEST checklist.8 A good story is:
+   242→I — Independent. It can be built and shipped without depending on other stories being done first.
+   243→Dependencies make planning and prioritizing brittle.
+   244→N — Negotiable. It is a starting point for a conversation, not a fixed contract. The details are worked out
+   245→with the customer, not dictated by the card.
+   246→V — Valuable. It delivers something a user or customer can perceive as valuable. “Refactor the database
+   247→layer” is real work but is not a user story — it has no user-facing value on its own.
+   248→E — Estimable. The team can roughly size it. If they can’t, the story hides too much uncertainty and needs
+   249→to be split or researched first (a spike).
+   250→S — Small. It fits comfortably within a single iteration. Big stories (“epics”) are split until each piece is
+   251→small enough to finish and demo.
+   252→T — Testable. You can state, in advance, how you will know it works. If you can’t write an acceptance test,
+   253→you don’t yet understand the story well enough to build it.
+   254→Principle. If a story fails INVEST, don’t force it into the sprint — fix the story. An unestimable story means
+   255→you need a spike; an untestable one means the requirement is still ambiguous; a huge one means you should
+   256→split it. INVEST is a diagnostic, not a bureaucratic gate.
+   257→Attach acceptance criteria to each story — concrete conditions that must hold for the story to count as done.
+   258→These are the seed of the tests you will write (Chapter 10) and the answer to “how will we know?”
+   259→
+   260→===== صفحة الكتاب 74 =====
+   261→Given / When / Then: writing acceptance criteria as scenarios
+   262→A widely used, highly readable form for acceptance criteria is Given / When / Then: you name the starting
+   263→context (Given), the action or event (When), and the expected, observable outcome (Then). Each such triple is a
+   264→scenario — one concrete example of the story working:
+   265→Given a checked-in patient flagged for an interpreter, When the clinician opens the visit, Then an
+   266→interpreter-needed banner is shown.
+   267→This structured-English format is called Gherkin,9 and it comes from Behavior-Driven Development (BDD) —
+   268→an approach that writes requirements as concrete examples of behavior, in language a customer can read.10 In a
+   269→BDD workflow the scenarios live in plain .feature files and look like this:
+   270→Feature: Interpreter alerts
+   271→So that clinicians are prepared, staff want a visible interpreter flag.
+   272→Scenario: Patient needs an interpreter
+   273→Given a checked-in patient flagged for an interpreter
+   274→When the clinician opens the visit
+   275→Then an "interpreter needed" banner is shown
+   276→Scenario: Patient does not need an interpreter
+   277→Given a checked-in patient with no interpreter flag
+   278→When the clinician opens the visit
+   279→Then no interpreter banner is shown
+   280→Why it matters. The same words that specify the requirement can run as an automated test. Every
+   281→mainstream language has a BDD framework — the Cucumber family, among others — that maps each
+   282→Given/When/Then step to code, turning the scenario into an executable specification.11 Write the scenarios
+   283→with the customer, and they double as your acceptance tests (Chapter 10, §10.2.3).
+   284→Your BDD framework binds each scenario line to a step definition — a function that calls the clinic app and
+   285→asserts what the user would see (each tab below names its framework in its imports or comments):
+   286→
+   287→===== صفحة الكتاب 75 =====
+   288→A few guidelines for good scenarios: keep them declarative (describe what, not which buttons to click); use one
+   289→When per scenario (multiple actions usually means you have multiple scenarios); cover the happy path and the
+   290→important alternatives (mirroring the alternative flows of a use case, Chapter 5); and reuse a shared Given with a
+   291→Background when several scenarios start the same way. Keep the vocabulary in the problem domain —
+   292→“interpreter needed,” not “row 7 turns yellow.”
+   293→3.4.2 Guidelines for System Features
+   294→Stories are small by design, which makes them wonderful for building and terrible for seeing the forest. A system
+   295→feature is a larger, coherent capability that a stakeholder would recognize and value as a unit — “appointment
+   296→reminders,” “insurance verification,” “waitlist management.” Features group related stories and give the product a
+   297→shape that executives, marketers, and users can talk about.
+   298→Good features share several properties:
+   299→User-meaningful. A feature names something a stakeholder cares about, not an internal component.
+   300→“Caching layer” is not a feature; “instant search” might be.
+   301→from behave import given, when, then
+   302→# behave matches each scenario line to its step by exact text
+   303→@given("a checked-in patient flagged for an interpreter")
+   304→def flagged(context):
+   305→context.patient = check_in(interpreter=True)
+   306→@given("a checked-in patient with no interpreter flag")
+   307→def not_flagged(context):
+   308→context.patient = check_in(interpreter=False)
+   309→@when("the clinician opens the visit")
+   310→def opens(context):
+   311→context.visit = open_visit(context.patient)
+   312→@then('an "interpreter needed" banner is shown')
+   313→def banner_shown(context):
+   314→assert "interpreter needed" in context.visit["banners"]
+   315→@then("no interpreter banner is shown")
+   316→def no_banner(context):
+   317→assert not context.visit["banners"]
+   318→
+   319→===== صفحة الكتاب 76 =====
+   320→Independently valuable. Shipping the feature (even partially) delivers value on its own, so it can be
+   321→prioritized against other features honestly.
+   322→Decomposable into stories. A feature that cannot be broken into small, INVEST-able stories is probably
+   323→too vague to plan.
+   324→Traceable to a goal. Every feature should map to a stakeholder goal (§3.6). A feature with no goal behind
+   325→it is a candidate for the cut list.
+   326→Features and stories form a two-level hierarchy: features answer “what capabilities does the product have?” for
+   327→planning and communication, while stories answer “what do we build this week?” for execution. Keeping both
+   328→views lets you zoom between the roadmap and the sprint without losing either.
+   329→3.4.3 Perspective on User Stories
+   330→User stories are a tool, not a religion, and it is worth being honest about their limits. A story is deliberately
+   331→incomplete — that is its virtue for conversation and its vice for anything requiring precision. Stories are excellent
+   332→for the flexible, discoverable parts of a system. They are poor at capturing:
+   333→Cross-cutting quality requirements. “The system shall never log patient identifiers” does not fit “as a…I
+   334→want…so that.” Quality requirements often need their own explicit statements with fit criteria (§3.1.3).
+   335→Complex flows. A multi-step interaction with branches and error cases overflows a story card. That is what
+   336→scenarios (§3.5) are for.
+   337→Regulatory or contractual precision. When wording is legally binding, a conversational placeholder is
+   338→not enough; you need a specification (§3.2.3).
+   339→The mature view is that stories are one instrument in an ensemble. Reach for them when the need is user-facing,
+   340→discoverable, and best refined by conversation. Reach for features when you need a roadmap, scenarios when you
+   341→need to show a flow, explicit quality requirements when you need a testable property, and a specification when the
+   342→cost of ambiguity is unacceptable. Using the right form for each need is itself a skill.
+   343→3.4.4 Tracing Requirements to Tests and Backlog Items
+   344→Every artifact this section has introduced — story, acceptance criteria, executable scenario — is a link in a chain,
+   345→and the chain has a name. Requirements traceability is the ability to follow a requirement forward to the backlog
+   346→items, code, and tests that realize it, and backward from any of those artifacts to the requirement that justifies it.12
+   347→Without it, two questions that decide releases become guesswork: is every requirement we promised actually
+   348→covered by a passing test? and when this requirement changes, what else has to change with it?
+   349→You have already built most of the chain without noticing. Give each story a stable key when it enters the backlog,
+   350→and the rest is discipline about references:
+   351→
+   352→===== صفحة الكتاب 77 =====
+   353→Link in the chain
+   354→Where it lives
+   355→How it points back
+   356→Story STORY-143
+   357→the backlog
+   358→— (the anchor)
+   359→Acceptance criteria
+   360→interpreter_alerts.feature
+   361→story key in the feature file
+   362→Step definitions and tests
+   363→the test suite (Chapter 10)
+   364→they execute the criteria
+   365→Commits and pull requests
+   366→version control
+   367→STORY-143 in the message
+   368→Each direction pays differently. Forward traceability turns “are we done?” into a checkable claim: every Must in
+   369→the release plan (§4.4) has at least one acceptance scenario, and every scenario passes in the pipeline (Chapter 14)
+   370→— a requirement with no test is a promise nobody is keeping. Backward traceability pays when things change or
+   371→break: a failing scenario names the requirement it protects, and a proposed change to a requirement leads you —
+   372→through its key — to exactly the scenarios, tests, and code that must move with it.
+   373→How heavy to make this is a judgment call. Safety-regulated industries mandate complete traceability matrices
+   374→— tables mapping every requirement to every design element, test, and verification result — and auditors read
+   375→them. For most teams, that ceremony is wasted; the lightweight chain above, maintained through artifacts that
+   376→already exist, gives you the two answers that matter.
+   377→Pitfall. A traceability matrix maintained by hand, after the fact, is fiction within a month. Trace through
+   378→artifacts that execute (scenarios that run as tests) and links that tools maintain for you (story keys in commit
+   379→messages, pull requests that close backlog items). If keeping the trace requires a separate document nobody
+   380→runs, the trace is already broken.
+   381→3.5 Writing User-Experience Scenarios
+   382→A scenario tells a concrete story of a specific person using the system to accomplish a goal, step by step, in a
+   383→specific situation. Where a user story is a one-line promise, a scenario is a narrative — and that narrative form
+   384→exposes the gaps, branches, and human realities that terse formats hide.
+   385→3.5.1 Guidelines for User-Experience Scenarios
+   386→Scenarios earn their keep because they are concrete. Abstract requirements (“the system supports check-in”) let
+   387→everyone imagine a different thing; a scenario with a named person, a real goal, and specific steps forces the
+   388→vagueness into the open, where you can argue about it productively. Good scenarios follow a few guidelines:
+   389→Use a concrete persona, not “the user.” Give them a name, a role, a level of skill, and a motivation. “Kati,
+   390→a new front-desk clerk two weeks into the job” behaves very differently from “an experienced office
+   391→manager,” and the difference drives design.
+   392→
+   393→===== صفحة الكتاب 78 =====
+   394→Start from a trigger and a goal. What situation begins the scenario, and what is the person trying to
+   395→achieve? A scenario without a goal is just a click-by-click script.
+   396→Walk the happy path first, then the exceptions. Write the smooth case, then deliberately branch: what if
+   397→the patient isn’t in the system? what if the network drops mid-check-in? Exceptions are where most
+   398→requirements are missing.
+   399→Stay in the problem, mostly. A scenario should describe the experience and the need, leaning away from
+   400→prescribing exact UI. Some interface detail is unavoidable and useful, but a scenario dictating pixel
+   401→positions has stopped being a requirement and become a design.
+   402→Include the person’s emotional and situational context. “Kati is being watched by an impatient patient
+   403→and three people in line” is a requirement in disguise: it tells you the interaction must be fast and forgiving
+   404→under stress.
+   405→Scenarios pair naturally with stories: a scenario reveals the flow and the missing steps; each step then becomes one
+   406→or more INVEST-able stories to build. Together they give you both the narrative whole and the buildable parts.
+   407→3.5.2 A Medical Scenario Example
+   408→Here is a scenario for the clinic scheduler, written to the guidelines above:
+   409→Scenario: Dorothy checks in an arriving patient during the morning rush.
+   410→Dorothy is an experienced front-desk clerk. It is 8:55 a.m., the waiting room is filling, and she has a line of
+   411→five patients. Her goal is to check each one in quickly and make sure the clinician has what they need before
+   412→the visit.
+   413→Laurel arrives for a 9:00 appointment. Dorothy greets her and searches by last name. Two patients share it;
+   414→she confirms the date of birth and selects the right one. The system shows Laurel’s appointment and a
+   415→reminder that her insurance verification is pending. With one tap Dorothy marks her arrived; the assigned
+   416→clinician’s screen updates, and the pending-insurance flag is passed along so the clinician isn’t surprised.
+   417→Total time: under fifteen seconds. Dorothy moves to the next patient.
+   418→Exception A — patient not found. The next arrival, Harper, does not appear in search. She has an
+   419→appointment but her name was misspelled at booking. Dorothy needs to find her by phone number and
+   420→correct the record without leaving the check-in flow, because the line is growing.
+   421→Exception B — patient needs an interpreter. Behind her, a patient is flagged needs-interpreter. The
+   422→system must surface this prominently at check-in and on the clinician’s screen, early enough that an
+   423→interpreter can be arranged before the visit starts, not discovered inside the exam room.
+   424→Read what this one scenario produced. The happy path yields stories about search, disambiguation by date of
+   425→birth, one-tap arrival, and clinician notification. Exception A reveals a whole missing capability — correcting a
+   426→mis-booked record inline — that no one had put in the backlog. Exception B surfaces a cross-cutting need
+   427→
+   428→===== صفحة الكتاب 79 =====
+   429→(interpreter flags that travel with the patient) and a quality requirement (surfaced early enough to act). And the
+   430→context — the growing line, the fifteen-second budget — is a performance requirement stated as human reality
+   431→rather than as a number, which you then make testable. A single well-written scenario routinely uncovers more
+   432→real requirements than a day of abstract brainstorming, because it refuses to let anything stay vague.
+   433→3.5.3 Storyboards: Drawing the Scenario
+   434→A scenario is a story told in prose; a storyboard is the same story told in pictures — a short sequence of rough
+   435→sketches, one frame per step, showing what the user sees and does at each moment. Borrowed from film,13
+   436→storyboarding earns its place in requirements work because a drawing forces decisions that a sentence lets you
+   437→dodge: what is actually on the screen when Dorothy searches? Where does the pending-insurance flag appear?
+   438→What does she tap? If you cannot draw the frame, you have not yet imagined the requirement.
+   439→Storyboards at this stage are lo-fi (low fidelity) on purpose: boxes, arrows, stick figures, and hand lettering, drawn
+   440→in minutes on paper or a whiteboard. The roughness is a feature twice over. It keeps you from sliding into visual
+   441→design when the question is still what happens, and it signals to stakeholders that everything is still changeable —
+   442→people freely correct a scribble but hesitate to criticize something that looks finished. This is the same right-
+   443→fidelity discipline as the fat-marker sketches and breadboards of §6.1.2; a storyboard is essentially a breadboard
+   444→with time running left to right.
+   445→Technique — storyboard an exception. Include failure cases and difficult paths in the storyboard alongside
+   446→the ideal demonstration path. Drawing §3.5.2’s Exception A frame by frame — Harper at the desk, the empty
+   447→search result, Dorothy switching to phone-number lookup, the inline correction, the line still moving —
+   448→immediately raises the questions that matter: where does the correction happen? does Dorothy lose her place
+   449→in check-in? what does the system show the next patient while she fixes it? Each frame you cannot draw is a
+   450→requirement you have not discovered yet.
+   451→A practical rhythm for a team: write the scenario (§3.5.1), storyboard its key flows in four to eight frames, walk
+   452→the storyboard with a real user while they narrate what they’d expect, then convert what you learned into stories
+   453→and acceptance criteria (§3.4). The storyboard itself becomes a cheap, durable artifact — teams pin them up and
+   454→check designs against them for the rest of the project.
+   455→3.6 Clarifying User Goals
+   456→Beneath every feature and story lies a goal — a state of the world a stakeholder wants to bring about. “Reduce
+   457→patient no-shows,” “protect patient privacy,” “get patients seen faster.” Goals are the why that stories’ “so that”
+   458→clauses gesture at, and working explicitly with goals is how you keep a backlog coherent, spot conflicts early, and
+   459→know what to cut. If requirements are the bridge, goals are the far bank you are trying to reach.
+   460→
+   461→===== صفحة الكتاب 80 =====
+   462→3.6.1 Properties of Goals
+   463→Good goals share properties that make them useful for reasoning:
+   464→A goal describes an end, not a means. “Send SMS reminders” is a means; “reduce no-shows” is the end.
+   465→Stating the end keeps your options open — maybe email or a phone call serves the goal better for some
+   466→patients.
+   467→A goal can be satisfied to a degree. Unlike a functional requirement (done or not), many goals —
+   468→especially quality goals like “fast” or “secure” — are matters of more or less. These are sometimes called
+   469→soft goals, and you satisfy them by argument and measurement, not by a checkbox.14
+   470→A goal is measurable, at least in principle. “Reduce no-shows to under 8%” can be checked against
+   471→reality. A goal you cannot measure even in principle is a slogan, and it will not help you decide anything.
+   472→A goal has an owner. Someone cares about it and can speak for it. Ownerless goals drift and get traded
+   473→away silently.
+   474→3.6.2 Asking Clarifying Questions
+   475→Stakeholders state goals vaguely, and your job is to sharpen them without putting words in their mouth. A few
+   476→reliable moves:
+   477→Ask “why?” to go up. “Why do you want SMS reminders?” → “So fewer patients miss appointments.”
+   478→Now you have the real goal, and reminders are just one candidate solution.
+   479→Ask “how?” to go down. “How would we reduce no-shows?” → reminders, overbooking, waitlists,
+   480→deposits. Now you have candidate sub-goals and features.
+   481→Ask “how much?” to make it measurable. “How much would count as success?” turns “faster check-in”
+   482→into “under fifteen seconds per patient.”
+   483→Ask “for whom?” and “when?” to expose hidden context. “Fast — for the experienced clerk or the new
+   484→one? During the morning rush or midday?”
+   485→Ask “what would go wrong if we didn’t?” to test whether the goal is real. If nothing bad happens without
+   486→it, it may not be a goal worth funding.
+   487→These questions do more than clarify; the “why” and “how” chains literally build the goal hierarchy of the next
+   488→section.
+   489→3.6.3 Organizing Goals into Hierarchies
+   490→Asking “why” moves you toward broader goals; asking “how” moves you toward narrower ones. Do this
+   491→systematically and goals organize into a goal hierarchy (or goal tree): a high-level goal at the top, refined
+   492→downward into sub-goals, and finally into concrete features and stories at the leaves.14 The tree makes the
+   493→rationale of your backlog visible — every leaf traces up to a goal someone owns, and every goal traces down to
+   494→work that serves it.
+   495→
+   496→===== صفحة الكتاب 81 =====
+   497→The hierarchy is a working tool, not decoration. When someone proposes a feature, you ask which goal it serves;
+   498→if it fits nowhere, either you have found a missing goal or an unjustified feature. When you must cut scope, you
+   499→cut from the least important goal, which tells you which whole cluster of stories can go — a far better
+   500→conversation than arguing story by story.
+   501→3.6.4 Contributing and Conflicting Goals
+   502→The hierarchy above is tidy, but real goals interact, and the interactions are where the hard decisions live. Two
+   503→relationships matter most:
+   504→
+   505→===== صفحة الكتاب 82 =====
+   506→Contribution. One goal helps another. A waitlist both reduces no-shows’ impact (empty slots get filled)
+   507→and speeds throughput. Features that serve multiple goals are high-value and should rise in priority — you
+   508→get more for the same cost.
+   509→Conflict. One goal works against another. “Speed up check-in” pushes toward fewer confirmation steps;
+   510→“protect patient privacy” and “avoid mis-identification” push toward more verification. You cannot
+   511→maximize both. The tension is real — the stakeholders live with it — and the analysis has done its job by
+   512→making it visible.
+   513→The value of naming conflicts is that it turns an implicit, unwinnable tug-of-war into an explicit trade-off decision
+   514→that the right person can make on the record. “We will require date-of-birth confirmation even though it adds three
+   515→seconds, because a mis-identified patient is a safety event and the sponsor accepts the speed cost.” That sentence
+   516→— a goal conflict, resolved deliberately, with an owner and a rationale — is worth more than any amount of vague
+   517→agreement. Unresolved conflicts do not disappear; they get resolved by accident, in code, by whoever happens to
+   518→write the feature, usually badly.
+   519→Principle. Surface goal conflicts before you build, and resolve them explicitly with the stakeholder who
+   520→owns the trade-off. A conflict resolved on purpose is a decision; a conflict resolved by default is a bug with a
+   521→backstory.
+   522→3.7 Identifying Security Attacks
+   523→Everything so far has asked “what do users want the system to do?” Security requirements demand the opposite
+   524→question: “what do adversaries want the system to do, and how do we stop them?” This inversion is why security
+   525→
+   526→===== صفحة الكتاب 83 =====
+   527→is so often missed — it does not show up when you ask cooperative users what they need. You have to deliberately
+   528→adopt the mindset of someone trying to break your system.
+   529→3.7.1 Attack Trees: Think Like an Attacker
+   530→An attack tree is a goal hierarchy for the enemy.15 The root is the attacker’s goal — “read a patient’s medical
+   531→record without authorization.” The branches are the ways to achieve it, refined downward into ever more concrete
+   532→attacks, exactly as a goal tree refines a user goal into stories. The power of the technique is that it forces
+   533→systematic thinking: instead of imagining a random hack, you decompose the attacker’s goal and make sure every
+   534→branch is defended.
+   535→
+   536→===== صفحة الكتاب 84 =====
+   537→Read the leaves as a to-do list of defenses. Each one becomes a security requirement: enforce multi-factor auth
+   538→(defeats B1/B2), expire and bind session tokens (B3), check authorization on every record access server-side
+   539→(C1/C2), encrypt backups (D1), and keep identifiers out of logs (D2 — which you may recognize as a quality
+   540→requirement from §3.1.3, now justified by a concrete threat). The tree connects each defense to the attack it stops,
+   541→which is exactly the justification a skeptical sponsor asks for when you request time to build security.
+   542→
+   543→===== صفحة الكتاب 85 =====
+   544→3.7.2 Finding Possible Attacks
+   545→Building the tree is a skill, and a few systematic prompts help you find branches you would otherwise miss:
+   546→Enumerate the assets. What is worth stealing, corrupting, or denying? Patient records, credentials,
+   547→availability of the system itself. Each valuable asset is the root of a tree.
+   548→Walk the trust boundaries. Every place data crosses from less-trusted to more-trusted — a browser to
+   549→your API, a third-party integration, an admin console — is a place to attack. Draw them and ask what could
+   550→cross that shouldn’t.
+   551→Use a threat checklist. A common one groups threats as STRIDE: Spoofing (pretending to be someone),
+   552→Tampering (altering data), Repudiation (denying an action), Information disclosure (leaking data), Denial
+   553→of service (blocking access), and Elevation of privilege (gaining rights you shouldn’t have).16 Walking each
+   554→category against each asset surfaces branches brainstorming misses.
+   555→Include social and procedural weaknesses, not only flaws in code. The cheapest attack is often a
+   556→convincing phone call to the front desk. Social engineering, weak password-reset flows, and over-broad
+   557→admin rights are attack branches too.
+   558→Prune by feasibility, then defend the rest. Not every leaf is worth defending equally. Estimate each
+   559→attack’s cost to the attacker and damage to you, and invest where cheap attacks meet high damage first.
+   560→Pitfall. Security is a set of requirements you discover by asking a different question, not a feature you add at
+   561→the end. A team that only elicits from cooperative users risks shipping a system that does exactly what good
+   562→people want — and exactly what bad people want, too. Build one attack tree per critical asset while you
+   563→write your user stories, not after your first breach.
+   564→Attack trees and STRIDE are where security requirements begin; Chapter 11 picks the thread back up on the
+   565→engineering side, from the OWASP Top 10 to securing the open-source supply chain your system is built from.
+   566→3.8 Conclusion
+   567→Requirements are where a project decides whether it is solving a real problem, and this chapter has been a catalog
+   568→of ways to make that decision well. You saw that a requirement is a bridge from a person’s need to a team’s action,
+   569→and that the need is rarely handed over clean: it is tacit, partial, dressed as a solution, and always changing. The
+   570→requirements cycle — elicit, analyze, specify, validate — is how you close the gap between believed and real
+   571→needs, and it never fully terminates, because working software teaches users what they actually want.
+   572→The techniques compound. You classify needs (stated, implied, latent) and elicit them by triangulating interviews,
+   573→observation, prototypes, and data — because each method reaches needs the others cannot. You write them in the
+   574→right form for each job: user stories with the as a…I want…so that template and the INVEST qualities for
+   575→discoverable, user-facing behavior; features for the roadmap; scenarios when a concrete narrative is the only thing
+   576→
+   577→===== صفحة الكتاب 86 =====
+   578→that exposes the missing steps; explicit, measurable statements for quality requirements. You clarify the why by
+   579→building goal hierarchies, and — crucially — you surface conflicting goals so the right owner resolves the trade-
+   580→off on purpose rather than by accident in the code. And you invert the whole exercise for security, using attack
+   581→trees to ask what an adversary wants, because cooperative users will never tell you.
+   582→None of this produces certainty, and it is not meant to. The purpose is to identify errors early, while correction is
+   583→inexpensive, by investing a small amount of deliberate effort before committing to the wrong solution. This
+   584→applies Chapter 1’s engineering discipline to deciding what the team should build — the most consequential
+   585→question in the project. The next chapters take these requirements and turn them into plans, designs, and tests —
+   586→but each of those inherits the quality of the understanding you build here.
+   587→Sources
+   588→1 Suzanne Robertson & James Robertson, Volere Requirements Specification Template (Atlantic Systems Guild). volere.org.
+   589→2 Ron Jeffries, Essential XP: Card, Conversation, Confirmation (2001). ronjeffries.com.
+   590→3 Agile Alliance, Three Amigos (glossary entry; term credited to George Dinwiddie). agilealliance.org.
+   591→4 Hugh Beyer & Karen Holtzblatt, Contextual Design: Defining Customer-Centered Systems (Morgan Kaufmann, 1998).
+   592→dl.acm.org.
+   593→5 Ryan Singer, Shape Up, ch. “Set Boundaries” (Basecamp, 2019). basecamp.com/shapeup.
+   594→6 Noriaki Kano, Nobuhiku Seraku, Fumio Takahashi & Shin-ichi Tsuji, “Attractive Quality and Must-Be Quality,” Journal of the
+   595→Japanese Society for Quality Control 14(2) (1984). jstage.jst.go.jp.
+   596→7 Mike Cohn, Why the Three-Part User Story Template Works So Well (Mountain Goat Software; credits the template to Rachel
+   597→Davies and the Connextra team, early 2000s). mountaingoatsoftware.com.
+   598→8 Bill Wake, INVEST in Good Stories, and SMART Tasks (2003). xp123.com.
+   599→9 Cucumber, Gherkin Reference (documentation). cucumber.io.
+   600→10 Dan North, “Introducing BDD,” Better Software (2006). dannorth.net.
+   601→11 Cucumber, Behaviour-Driven Development (documentation). cucumber.io.
+   602→12 Orlena C. Z. Gotel and Anthony C. W. Finkelstein, “An Analysis of the Requirements Traceability Problem,” Proceedings of
+   603→the First International Conference on Requirements Engineering (IEEE, 1994), pp. 94–101. doi.org.
+   604→13 Interaction Design Foundation, What are Storyboards? (traces storyboarding to Walt Disney Studios in the 1930s). interaction-
+   605→design.org.
+   606→14 Axel van Lamsweerde, “Goal-Oriented Requirements Engineering: A Guided Tour,” Proceedings of RE’01 (IEEE, 2001).
+   607→author PDF.
+   608→15 Bruce Schneier, “Attack Trees,” Dr. Dobb’s Journal (1999). schneier.com.
+   609→16 Microsoft, The STRIDE model (Microsoft Threat Modeling Tool documentation). learn.microsoft.com.
+   610→
+   611→===== صفحة الكتاب 87 =====
+   612→Key takeaways are summarized above in §3.8.
+   613→Continue to the Exercises.
+   614→Go deeper with the Open Resources for this chapter.
+   615→
+   616→===== صفحة الكتاب 88 =====
+   617→
+   618→===== صفحة الكتاب 89 =====
+   619→Chapter 3 — Exercises
+   620→Exercises are graded by depth: [warm‑up] checks understanding, [analysis] asks you to reason.
+   621→Concepts
+   622→1. [warm‑up] In your own words, distinguish a functional requirement from a quality (non-functional)
+   623→requirement. Write one of each for a photo-sharing app, and give the quality requirement a measurable fit
+   624→criterion.
+   625→2. [warm‑up] Name the four stages of the requirements cycle and, in one sentence each, say what goes wrong
+   626→if a team skips that stage.
+   627→3. [warm‑up] Classify each of the following as a stated, implied, or latent need for a food-delivery app, and
+   628→justify the label: (a) “let me track the driver on a map,” (b) “don’t show me restaurants that are closed,” (c)
+   629→“reorder my usual meal in one tap before I even open the menu.”
+   630→4. [warm‑up] Rewrite this vague requirement into a testable one: “The search should be fast.” State what
+   631→extra information you had to invent, and why each piece matters.
+   632→Analysis
+   633→5. [analysis] Take a real need you have with some app you use and write it as a Connextra user story (as a…I
+   634→want…so that). Then check it against all six INVEST letters, and for any letter it fails, describe the specific
+   635→fix (split it, add acceptance criteria, schedule a spike, etc.).
+   636→6. [analysis] A teammate says “agile means we don’t need to write requirements.” Using §3.2, write a two-
+   637→paragraph rebuttal that explains what agile teams actually do with requirements and why deferring detail to
+   638→“the last responsible moment” is a feature, not laziness.
+   639→7. [analysis] Interviews and observation reach different kinds of needs. Describe a concrete situation where
+   640→an interview would mislead you but observing the real task would reveal the truth, and explain the human
+   641→reason for the gap.
+   642→8. [analysis] Pick a feature you consider a delighter in a product you love. Argue how it will eventually decay
+   643→into a must-be expectation, and what that implies for a team that stops eliciting needs after version 1.
+   644→9. [analysis] Take the medical check-in scenario in §3.5.2 and write one new exception branch that the
+   645→chapter did not cover. Then list the specific requirement(s) — including at least one quality requirement —
+   646→that your exception uncovers.
+   647→10. [analysis] Sketch a small goal hierarchy (root goal, two sub-goals, three or four leaf features) for a bike-
+   648→share app. Then identify one pair of conflicting goals and one pair of contributing goals, and write the one-
+   649→sentence trade-off decision a stakeholder would need to record for the conflict.
+   650→
+   651→===== صفحة الكتاب 90 =====
+   652→11. [analysis] Build a three-level attack tree for the goal “post a message as another user” on a social app. Use
+   653→at least three STRIDE categories to find branches, then turn two leaves into concrete security requirements,
+   654→naming the attack each one defeats.
+   655→12. [analysis] A team’s backlog holds three Must stories (ST-4 flag interpreter, ST-9 cancel appointment, ST-
+   656→11 print day schedule). Their repo has feature files for ST-4 and ST-11, a passing scenario for a story ST-2
+   657→that no longer exists, and recent commit messages "fix cancel flow" and "ST-11 print header". Using
+   658→§3.4.4, list every traceability gap you can find (forward and backward), and state the one-line repair for
+   659→each.
+   660→
+   661→===== صفحة الكتاب 91 =====
+   662→
+   663→===== صفحة الكتاب 92 =====
+   664→Chapter 3 — Open Resources
+   665→Free, open-licensed, or freely accessible materials that reinforce this chapter. Types: 📘 open text · 🎓 course ·
+   666→📄 primary source/standard · 🎥 video. Licenses vary and are noted where known.
+   667→User stories, features, and BDD
+   668→🎓 UC Berkeley — Engineering Software as a Service (ESaaS), ch. 7 (BDD & User Stories) —
+   669→saasbook.info. Develops user stories, behavior-driven development, and the Connextra “as a…I want…so
+   670→that” template with worked examples. Course materials are freely available; the associated MOOC runs on
+   671→edX.
+   672→📄 INVEST in Good Stories — Agile Alliance glossary, agilealliance.org/glossary/invest. The canonical
+   673→short definition of Independent/Negotiable/Valuable/Estimable/Small/Testable , with links to Bill Wake’s
+   674→original 2003 article.
+   675→📄 Bill Wake — “INVEST in Good Stories, and SMART Tasks” (2003) — xp123.com. The original
+   676→article that coined the INVEST checklist (§3.4.1). Free to read on the author’s site.
+   677→📄 Ron Jeffries — “Essential XP: Card, Conversation, Confirmation” (2001) — ronjeffries.com. The
+   678→classic statement that a story card is a token for a conversation, confirmed by acceptance tests — the “three
+   679→Cs” behind §3.2.2. Free on the author’s site.
+   680→📄 Agile Alliance — “Three Amigos” (glossary) — agilealliance.org/glossary/three-amigos. Short
+   681→definition of the business/developer/tester conversation used in §3.2.2; credits the term to George
+   682→Dinwiddie. Freely accessible.
+   683→📘 Mountain Goat Software — User Stories & story writing (Mike Cohn) —
+   684→mountaingoatsoftware.com/agile/user-stories. Free articles on story structure, splitting epics, and
+   685→acceptance criteria.
+   686→📄 Mike Cohn — “Why the Three-Part User Story Template Works So Well” —
+   687→mountaingoatsoftware.com. Free article on the as a… I want… so that template; credits its origin to Rachel
+   688→Davies and the team at Connextra (§3.4.1).
+   689→Gherkin, Given/When/Then, and BDD
+   690→📄 Gherkin reference (Cucumber docs) — cucumber.io/docs/gherkin/reference. The definitive syntax for
+   691→Feature / Scenario / Given / When / Then / Background / Scenario Outline.
+   692→📘 Behavior-Driven Development (Cucumber docs) — cucumber.io/docs/bdd. What BDD is and how
+   693→scenarios become executable specifications.
+   694→📄 Dan North — “Introducing BDD” — dannorth.net/introducing-bdd. The essay that named BDD and
+   695→the Given/When/Then form.
+   696→
+   697→===== صفحة الكتاب 93 =====
+   698→🎓 Berkeley ESaaS — BDD & user stories chapter — saasbook.info. Ties Gherkin/Cucumber scenarios
+   699→to acceptance testing in a full course.
+   700→Traceability
+   701→📄 Orlena Gotel & Anthony Finkelstein — “An Analysis of the Requirements Traceability Problem”
+   702→(ICRE 1994) — doi.org. The classic statement of why traces decay and what forward/backward
+   703→traceability must answer (used in §3.4.4). Publisher page; author preprints are widely indexed.
+   704→Writing and specifying requirements
+   705→📄 Volere Requirements Specification Template — volere.org. A widely used, freely downloadable
+   706→template that organizes functional and non-functional requirements and popularized attaching a measurable
+   707→fit criterion to each requirement.
+   708→📄 Karl Wiegers — “Goodies” (free requirements resources) — processimpact.com/goodies.shtml.
+   709→Free templates, checklists, and articles on requirements elicitation, specification, and prioritization from a
+   710→leading requirements author.
+   711→📄 ISO/IEC/IEEE 29148:2018 — Requirements engineering — iso.org/standard/72089.html. The
+   712→international standard defining requirements processes and the qualities of a good requirement
+   713→(unambiguous, verifiable, traceable, etc.). The standard itself is paid, but its vocabulary and criteria are
+   714→summarized on many open university course pages — search “ISO 29148 characteristics of good
+   715→requirements.”
+   716→Eliciting and prioritizing needs
+   717→📄 Noriaki Kano — the Kano model of customer satisfaction. The origin of the must-be / performance /
+   718→delighter distinction used in §3.3.3. The original 1984 study, Kano, Seraku, Takahashi & Tsuji, “Attractive
+   719→Quality and Must-Be Quality” (Journal of the Japanese Society for Quality Control 14(2)), is archived on
+   720→J-STAGE (abstract free; article in Japanese). Openly summarized in many free write-ups.
+   721→📄 Hugh Beyer & Karen Holtzblatt — Contextual Design: Defining Customer-Centered Systems
+   722→(Morgan Kaufmann, 1998) — dl.acm.org. The book that defined contextual inquiry, the field-observation
+   723→technique behind §3.3.2. The book is commercial; the ACM listing and many summaries are freely
+   724→accessible.
+   725→🎓 Interaction Design Foundation — user research & personas (free article set) — interaction-
+   726→design.org/literature. Open articles on contextual inquiry, interviews, and persona/scenario writing that
+   727→back §3.3 and §3.5.
+   728→🎓 Interaction Design Foundation — “What are Storyboards?” — interaction-
+   729→design.org/literature/topics/storyboards. Open topic page on storyboarding in design, including its film
+   730→origins at Walt Disney Studios in the 1930s (§3.5.3).
+   731→
+   732→===== صفحة الكتاب 94 =====
+   733→Framing the problem
+   734→📘 Ryan Singer — Shape Up, ch. “Set Boundaries” (Basecamp, 2019) — basecamp.com/shapeup.
+   735→Problem-framing, the baseline, and avoiding “grab-bag” requests (used in §3.3.2). Free to read online.
+   736→Goals and goal modeling
+   737→📄 Axel van Lamsweerde — goal-oriented requirements engineering (KAOS). The academic
+   738→foundation for goal hierarchies, soft goals, and contributing/conflicting goals (§3.6). His tutorial paper
+   739→“Goal-Oriented Requirements Engineering: A Guided Tour” (RE’01, IEEE) is posted openly by the author:
+   740→webperso.info.ucl.ac.be/~avl/files/RE01.pdf.
+   741→Security requirements and attack trees
+   742→📄 Bruce Schneier — “Attack Trees” (Dr. Dobb’s Journal, 1999) —
+   743→schneier.com/academic/archives/1999/12/attack_trees.html. The original, very readable introduction to
+   744→modeling threats as trees (§3.7).
+   745→📄 Microsoft — The STRIDE threat model — Microsoft Threat Modeling Tool docs,
+   746→learn.microsoft.com. Explains the six threat categories (Spoofing, Tampering, Repudiation, Information
+   747→disclosure, Denial of service, Elevation of privilege) used in §3.7.2. Freely accessible.
+   748→📄 OWASP — Threat Modeling & Application Security Verification Standard (ASVS) —
+   749→owasp.org/www-community/Threat_Modeling. Free, community-licensed guidance and checklists for
+   750→turning threats into concrete security requirements.
+   751→License note
+   752→Linked resources remain under their own licenses; this page is CC BY-SA 4.0.
+   753→
+   754→===== صفحة الكتاب 95 =====
+   755→

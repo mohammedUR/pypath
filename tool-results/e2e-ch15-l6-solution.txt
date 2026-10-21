@@ -1,0 +1,39 @@
+import sqlite3
+
+conn = sqlite3.connect(':memory:')
+cur = conn.cursor()
+
+cur.execute('CREATE TABLE genres (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')
+cur.execute('CREATE TABLE artists (id INTEGER PRIMARY KEY, name TEXT UNIQUE)')
+cur.execute('CREATE TABLE albums (id INTEGER PRIMARY KEY, title TEXT, artist_id INTEGER, genre_id INTEGER, tracks INTEGER)')
+
+for gid, gname in [(1, 'Tarab'), (2, 'Jazz'), (3, 'Folk')]:
+    cur.execute('INSERT INTO genres (id, name) VALUES (?, ?)', (gid, gname))
+for aid, aname in [(1, 'Fairuz'), (2, 'Ziad Rahbani'), (3, 'Marcel Khalife')]:
+    cur.execute('INSERT INTO artists (id, name) VALUES (?, ?)', (aid, aname))
+for title, artist_id, genre_id, tracks in [
+    ('Ahdan', 1, 1, 8),
+    ('Kifak Inta', 1, 1, 10),
+    ('Ya Ana Ya Ana', 1, 1, 7),
+    ('Ana Mosh Kafir', 2, 2, 6),
+    ('Houdou Nisbi', 2, 2, 5),
+    ('Wahin', 3, 3, 12),
+]:
+    cur.execute('INSERT INTO albums (title, artist_id, genre_id, tracks) VALUES (?, ?, ?, ?)', (title, artist_id, genre_id, tracks))
+conn.commit()
+
+cur.execute('SELECT albums.title, artists.name FROM albums JOIN artists ON albums.artist_id = artists.id')
+for row in cur:
+    print('album: %s / artist: %s' % (row[0], row[1]))
+
+cur.execute('SELECT COUNT(*) FROM artists')
+print('artists: %d' % cur.fetchone()[0])
+
+cur.execute('SELECT COUNT(*) FROM albums')
+print('albums: %d' % cur.fetchone()[0])
+
+cur.execute('SELECT genres.name FROM albums JOIN genres ON albums.genre_id = genres.id GROUP BY genres.name ORDER BY COUNT(*) DESC LIMIT 1')
+print('top genre: %s' % cur.fetchone()[0])
+
+cur.execute('SELECT AVG(tracks) FROM albums')
+print('avg tracks: %.1f' % cur.fetchone()[0])

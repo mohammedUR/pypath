@@ -1,0 +1,539 @@
+  1171→demonstrate the application of an encoder–decoder architecture, where both the encoder
+  1172→and decoder are implemented as RNNs, to the task of machine translation (Cho et al.,
+  1173→2014, Sutskever et al., 2014).
+  1174→Here, the encoder RNN will take a variable-length sequence as input and transform it into
+  1175→a fixed-shape hidden state. Later, in Chapter 11, we will introduce attention mechanisms,
+  1176→which allow us to access encoded inputs without having to compress the entire input into a
+  1177→single fixed-length representation.
+  1178→Then to generate the output sequence, one token at a time, the decoder model, consisting
+  1179→of a separate RNN, will predict each successive target token given both the input sequence
+  1180→and the preceding tokens in the output. During training, the decoder will typically be con-
+  1181→ditioned upon the preceding tokens in the official “ground truth” label. However, at test
+  1182→time, we will want to condition each output of the decoder on the tokens already predicted.
+  1183→Note that if we ignore the encoder, the decoder in a sequence-to-sequence architecture be-
+  1184→haves just like a normal language model. Fig. 10.7.1 illustrates how to use two RNNs for
+  1185→sequence-to-sequence learning in machine translation.
+  1186→In Fig. 10.7.1, the special “<eos>” token marks the end of the sequence. Our model can
+  1187→stop making predictions once this token is generated. At the initial time step of the RNN
+  1188→decoder, there are two special design decisions to be aware of: First, we begin every input
+  1189→
+  1190→===== صفحة الكتاب 437 =====
+  1191→397
+  1192→Sequence-to-Sequence Learning for Machine Translation
+  1193→t
+  1194→Fig. 10.7.1
+  1195→Sequence-to-sequence learning with an RNN encoder and an RNN decoder.
+  1196→with a special beginning-of-sequence “<bos>” token. Second, we may feed the final hidden
+  1197→state of the encoder into the decoder at every single decoding time step (Cho et al., 2014).
+  1198→In some other designs, such as that of Sutskever et al. (2014), the final hidden state of the
+  1199→RNN encoder is used to initiate the hidden state of the decoder only at the first decoding
+  1200→step.
+  1201→import collections
+  1202→import math
+  1203→import torch
+  1204→from torch import nn
+  1205→from torch.nn import functional as F
+  1206→from d2l import torch as d2l
+  1207→10.7.1 Teacher Forcing
+  1208→While running the encoder on the input sequence is relatively straightforward, handling
+  1209→the input and output of the decoder requires more care. The most common approach is
+  1210→sometimes called teacher forcing. Here, the original target sequence (token labels) is fed
+  1211→into the decoder as input. More concretely, the special beginning-of-sequence token and
+  1212→the original target sequence, excluding the final token, are concatenated as input to the
+  1213→decoder, while the decoder output (labels for training) is the original target sequence, shifted
+  1214→by one token: “<bos>”, “Ils”, “regardent”, “.” →“Ils”, “regardent”, “.”, “<eos>” (Fig.
+  1215→10.7.1).
+  1216→Our implementation in Section 10.5.3 prepared training data for teacher forcing, where
+  1217→shifting tokens for self-supervised learning is similar to the training of language models in
+  1218→Section 9.3. An alternative approach is to feed the predicted token from the previous time
+  1219→step as the current input to the decoder.
+  1220→In the following, we explain the design depicted in Fig. 10.7.1 in greater detail. We will
+  1221→train this model for machine translation on the English–French dataset as introduced in
+  1222→Section 10.5.
+  1223→10.7.2 Encoder
+  1224→Recall that the encoder transforms an input sequence of variable length into a fixed-shape
+  1225→context variable c (see Fig. 10.7.1).
+  1226→Consider a single sequence example (batch size 1). Suppose the input sequence is 𝑥1, . . . , 𝑥𝑇,
+  1227→such that 𝑥𝑡is the 𝑡th token. At time step 𝑡, the RNN transforms the input feature vector x𝑡
+  1228→
+  1229→===== صفحة الكتاب 438 =====
+  1230→398
+  1231→Modern Recurrent Neural Networks
+  1232→for 𝑥𝑡and the hidden state h𝑡−1 from the previous time step into the current hidden state h𝑡.
+  1233→We can use a function 𝑓to express the transformation of the RNN’s recurrent layer:
+  1234→h𝑡= 𝑓(x𝑡, h𝑡−1).
+  1235→(10.7.1)
+  1236→In general, the encoder transforms the hidden states at all time steps into a context variable
+  1237→through a customized function 𝑞:
+  1238→c = 𝑞(h1, . . . , h𝑇).
+  1239→(10.7.2)
+  1240→For example, in Fig. 10.7.1, the context variable is just the hidden state h𝑇correspond-
+  1241→ing to the encoder RNN’s representation after processing the final token of the input se-
+  1242→quence.
+  1243→In this example, we have used a unidirectional RNN to design the encoder, where the hidden
+  1244→state only depends on the input subsequence at and before the time step of the hidden state.
+  1245→We can also construct encoders using bidirectional RNNs. In this case, a hidden state
+  1246→depends on the subsequence before and after the time step (including the input at the current
+  1247→time step), which encodes the information of the entire sequence.
+  1248→Now let’s implement the RNN encoder. Note that we use an embedding layer to obtain
+  1249→the feature vector for each token in the input sequence. The weight of an embedding
+  1250→layer is a matrix, where the number of rows corresponds to the size of the input vocab-
+  1251→ulary (vocab_size) and number of columns corresponds to the feature vector’s dimension
+  1252→(embed_size). For any input token index 𝑖, the embedding layer fetches the 𝑖th row (starting
+  1253→from 0) of the weight matrix to return its feature vector. Here we implement the encoder
+  1254→with a multilayer GRU.
+  1255→def init_seq2seq(module):
+  1256→#@save
+  1257→"""Initialize weights for sequence-to-sequence learning."""
+  1258→if type(module) == nn.Linear:
+  1259→nn.init.xavier_uniform_(module.weight)
+  1260→if type(module) == nn.GRU:
+  1261→for param in module._flat_weights_names:
+  1262→if "weight" in param:
+  1263→nn.init.xavier_uniform_(module._parameters[param])
+  1264→class Seq2SeqEncoder(d2l.Encoder):
+  1265→#@save
+  1266→"""The RNN encoder for sequence-to-sequence learning."""
+  1267→def __init__(self, vocab_size, embed_size, num_hiddens, num_layers,
+  1268→dropout=0):
+  1269→super().__init__()
+  1270→self.embedding = nn.Embedding(vocab_size, embed_size)
+  1271→self.rnn = d2l.GRU(embed_size, num_hiddens, num_layers, dropout)
+  1272→self.apply(init_seq2seq)
+  1273→def forward(self, X, *args):
+  1274→# X shape: (batch_size, num_steps)
+  1275→embs = self.embedding(X.t().type(torch.int64))
+  1276→# embs shape: (num_steps, batch_size, embed_size)
+  1277→outputs, state = self.rnn(embs)
+  1278→(continues on next page)
+  1279→
+  1280→===== صفحة الكتاب 439 =====
+  1281→399
+  1282→Sequence-to-Sequence Learning for Machine Translation
+  1283→(continued from previous page)
+  1284→# outputs shape: (num_steps, batch_size, num_hiddens)
+  1285→# state shape: (num_layers, batch_size, num_hiddens)
+  1286→return outputs, state
+  1287→Let’s use a concrete example to illustrate the above encoder implementation. Below, we
+  1288→instantiate a two-layer GRU encoder whose number of hidden units is 16. Given a minibatch
+  1289→of sequence inputs X (batch size = 4; number of time steps = 9), the hidden states of the
+  1290→final layer at all the time steps (enc_outputs returned by the encoder’s recurrent layers)
+  1291→are a tensor of shape (number of time steps, batch size, number of hidden units).
+  1292→vocab_size, embed_size, num_hiddens, num_layers = 10, 8, 16, 2
+  1293→batch_size, num_steps = 4, 9
+  1294→encoder = Seq2SeqEncoder(vocab_size, embed_size, num_hiddens, num_layers)
+  1295→X = torch.zeros((batch_size, num_steps))
+  1296→enc_outputs, enc_state = encoder(X)
+  1297→d2l.check_shape(enc_outputs, (num_steps, batch_size, num_hiddens))
+  1298→Since we are using a GRU here, the shape of the multilayer hidden states at the final time
+  1299→step is (number of hidden layers, batch size, number of hidden units).
+  1300→d2l.check_shape(enc_state, (num_layers, batch_size, num_hiddens))
+  1301→10.7.3 Decoder
+  1302→Given a target output sequence 𝑦1, 𝑦2, . . . , 𝑦𝑇′ for each time step 𝑡′ (we use 𝑡′ to differentiate
+  1303→from the input sequence time steps), the decoder assigns a predicted probability to each
+  1304→possible token occurring at step 𝑦𝑡′+1 conditioned upon the previous tokens in the target
+  1305→𝑦1, . . . , 𝑦𝑡′ and the context variable c, i.e., 𝑃(𝑦𝑡′+1 | 𝑦1, . . . , 𝑦𝑡′, c).
+  1306→To predict the subsequent token 𝑡′ + 1 in the target sequence, the RNN decoder takes the
+  1307→previous step’s target token 𝑦𝑡′, the hidden RNN state from the previous time step s𝑡′−1,
+  1308→and the context variable c as its input, and transforms them into the hidden state s𝑡′ at the
+  1309→current time step. We can use a function 𝑔to express the transformation of the decoder’s
+  1310→hidden layer:
+  1311→s𝑡′ = 𝑔(𝑦𝑡′−1, c, s𝑡′−1).
+  1312→(10.7.3)
+  1313→After obtaining the hidden state of the decoder, we can use an output layer and the softmax
+  1314→operation to compute the predictive distribution 𝑝(𝑦𝑡′+1 | 𝑦1, . . . , 𝑦𝑡′, c) over the subse-
+  1315→quent output token 𝑡′ + 1.
+  1316→Following Fig. 10.7.1, when implementing the decoder as follows, we directly use the hid-
+  1317→den state at the final time step of the encoder to initialize the hidden state of the decoder.
+  1318→This requires that the RNN encoder and the RNN decoder have the same number of lay-
+  1319→ers and hidden units. To further incorporate the encoded input sequence information, the
+  1320→context variable is concatenated with the decoder input at all the time steps. To predict the
+  1321→
+  1322→===== صفحة الكتاب 440 =====
+  1323→400
+  1324→Modern Recurrent Neural Networks
+  1325→probability distribution of the output token, we use a fully connected layer to transform the
+  1326→hidden state at the final layer of the RNN decoder.
+  1327→class Seq2SeqDecoder(d2l.Decoder):
+  1328→"""The RNN decoder for sequence to sequence learning."""
+  1329→def __init__(self, vocab_size, embed_size, num_hiddens, num_layers,
+  1330→dropout=0):
+  1331→super().__init__()
+  1332→self.embedding = nn.Embedding(vocab_size, embed_size)
+  1333→self.rnn = d2l.GRU(embed_size+num_hiddens, num_hiddens,
+  1334→num_layers, dropout)
+  1335→self.dense = nn.LazyLinear(vocab_size)
+  1336→self.apply(init_seq2seq)
+  1337→def init_state(self, enc_all_outputs, *args):
+  1338→return enc_all_outputs
+  1339→def forward(self, X, state):
+  1340→# X shape: (batch_size, num_steps)
+  1341→# embs shape: (num_steps, batch_size, embed_size)
+  1342→embs = self.embedding(X.t().type(torch.int32))
+  1343→enc_output, hidden_state = state
+  1344→# context shape: (batch_size, num_hiddens)
+  1345→context = enc_output[-1]
+  1346→# Broadcast context to (num_steps, batch_size, num_hiddens)
+  1347→context = context.repeat(embs.shape[0], 1, 1)
+  1348→# Concat at the feature dimension
+  1349→embs_and_context = torch.cat((embs, context), -1)
+  1350→outputs, hidden_state = self.rnn(embs_and_context, hidden_state)
+  1351→outputs = self.dense(outputs).swapaxes(0, 1)
+  1352→# outputs shape: (batch_size, num_steps, vocab_size)
+  1353→# hidden_state shape: (num_layers, batch_size, num_hiddens)
+  1354→return outputs, [enc_output, hidden_state]
+  1355→To illustrate the implemented decoder, below we instantiate it with the same hyperparam-
+  1356→eters from the aforementioned encoder. As we can see, the output shape of the decoder
+  1357→becomes (batch size, number of time steps, vocabulary size), where the final dimension of
+  1358→the tensor stores the predicted token distribution.
+  1359→decoder = Seq2SeqDecoder(vocab_size, embed_size, num_hiddens, num_layers)
+  1360→state = decoder.init_state(encoder(X))
+  1361→dec_outputs, state = decoder(X, state)
+  1362→d2l.check_shape(dec_outputs, (batch_size, num_steps, vocab_size))
+  1363→d2l.check_shape(state[1], (num_layers, batch_size, num_hiddens))
+  1364→The layers in the above RNN encoder–decoder model are summarized in Fig. 10.7.2.
+  1365→10.7.4 Encoder–Decoder for Sequence-to-Sequence Learning
+  1366→Putting it all together in code yields the following:
+  1367→
+  1368→===== صفحة الكتاب 441 =====
+  1369→401
+  1370→Sequence-to-Sequence Learning for Machine Translation
+  1371→t
+  1372→Fig. 10.7.2
+  1373→Layers in an RNN encoder–decoder model.
+  1374→class Seq2Seq(d2l.EncoderDecoder):
+  1375→#@save
+  1376→"""The RNN encoder--decoder for sequence to sequence learning."""
+  1377→def __init__(self, encoder, decoder, tgt_pad, lr):
+  1378→super().__init__(encoder, decoder)
+  1379→self.save_hyperparameters()
+  1380→def validation_step(self, batch):
+  1381→Y_hat = self(*batch[:-1])
+  1382→self.plot('loss', self.loss(Y_hat, batch[-1]), train=False)
+  1383→def configure_optimizers(self):
+  1384→# Adam optimizer is used here
+  1385→return torch.optim.Adam(self.parameters(), lr=self.lr)
+  1386→10.7.5 Loss Function with Masking
+  1387→At each time step, the decoder predicts a probability distribution for the output tokens.
+  1388→As with language modeling, we can apply softmax to obtain the distribution and calculate
+  1389→the cross-entropy loss for optimization. Recall from Section 10.5 that the special padding
+  1390→tokens are appended to the end of sequences and so sequences of varying lengths can be
+  1391→efficiently loaded in minibatches of the same shape. However, prediction of padding tokens
+  1392→should be excluded from loss calculations. To this end, we can mask irrelevant entries
+  1393→with zero values so that multiplication of any irrelevant prediction with zero equates to
+  1394→zero.
+  1395→@d2l.add_to_class(Seq2Seq)
+  1396→def loss(self, Y_hat, Y):
+  1397→l = super(Seq2Seq, self).loss(Y_hat, Y, averaged=False)
+  1398→mask = (Y.reshape(-1) != self.tgt_pad).type(torch.float32)
+  1399→return (l * mask).sum() / mask.sum()
+  1400→10.7.6 Training
+  1401→Now we can create and train an RNN encoder–decoder model for sequence-to-sequence
+  1402→learning on the machine translation dataset.
+  1403→data = d2l.MTFraEng(batch_size=128)
+  1404→embed_size, num_hiddens, num_layers, dropout = 256, 256, 2, 0.2
+  1405→(continues on next page)
+  1406→
+  1407→===== صفحة الكتاب 442 =====
+  1408→402
+  1409→Modern Recurrent Neural Networks
+  1410→(continued from previous page)
+  1411→encoder = Seq2SeqEncoder(
+  1412→len(data.src_vocab), embed_size, num_hiddens, num_layers, dropout)
+  1413→decoder = Seq2SeqDecoder(
+  1414→len(data.tgt_vocab), embed_size, num_hiddens, num_layers, dropout)
+  1415→model = Seq2Seq(encoder, decoder, tgt_pad=data.tgt_vocab['<pad>'],
+  1416→lr=0.005)
+  1417→trainer = d2l.Trainer(max_epochs=30, gradient_clip_val=1, num_gpus=1)
+  1418→trainer.fit(model, data)
+  1419→10.7.7 Prediction
+  1420→To predict the output sequence at each step, the predicted token from the previous time step
+  1421→is fed into the decoder as an input. One simple strategy is to sample whichever token that
+  1422→has been assigned by the decoder the highest probability when predicting at each step. As
+  1423→in training, at the initial time step the beginning-of-sequence (“<bos>”) token is fed into the
+  1424→decoder. This prediction process is illustrated in Fig. 10.7.3. When the end-of-sequence
+  1425→(“<eos>”) token is predicted, the prediction of the output sequence is complete.
+  1426→t
+  1427→Fig. 10.7.3
+  1428→Predicting the output sequence token by token using an RNN encoder–decoder.
+  1429→In the next section, we will introduce more sophisticated strategies based on beam search
+  1430→(Section 10.8).
+  1431→@d2l.add_to_class(d2l.EncoderDecoder)
+  1432→#@save
+  1433→def predict_step(self, batch, device, num_steps,
+  1434→save_attention_weights=False):
+  1435→batch = [a.to(device) for a in batch]
+  1436→src, tgt, src_valid_len, _ = batch
+  1437→enc_all_outputs = self.encoder(src, src_valid_len)
+  1438→dec_state = self.decoder.init_state(enc_all_outputs, src_valid_len)
+  1439→(continues on next page)
+  1440→
+  1441→===== صفحة الكتاب 443 =====
+  1442→403
+  1443→Sequence-to-Sequence Learning for Machine Translation
+  1444→(continued from previous page)
+  1445→outputs, attention_weights = [tgt[:, (0)].unsqueeze(1), ], []
+  1446→for _ in range(num_steps):
+  1447→Y, dec_state = self.decoder(outputs[-1], dec_state)
+  1448→outputs.append(Y.argmax(2))
+  1449→# Save attention weights (to be covered later)
+  1450→if save_attention_weights:
+  1451→attention_weights.append(self.decoder.attention_weights)
+  1452→return torch.cat(outputs[1:], 1), attention_weights
+  1453→10.7.8 Evaluation of Predicted Sequences
+  1454→We can evaluate a predicted sequence by comparing it with the target sequence (the ground
+  1455→truth). But what precisely is the appropriate measure for comparing similarity between two
+  1456→sequences?
+  1457→Bilingual Evaluation Understudy (BLEU), though originally proposed for evaluating ma-
+  1458→chine translation results (Papineni et al., 2002), has been extensively used in measuring the
+  1459→quality of output sequences for different applications. In principle, for any 𝑛-gram (Section
+  1460→9.3.1) in the predicted sequence, BLEU evaluates whether this 𝑛-gram appears in the target
+  1461→sequence.
+  1462→Denote by 𝑝𝑛the precision of an 𝑛-gram, defined as the ratio of the number of matched
+  1463→𝑛-grams in the predicted and target sequences to the number of 𝑛-grams in the predicted
+  1464→sequence. To explain, given a target sequence 𝐴, 𝐵, 𝐶, 𝐷, 𝐸, 𝐹, and a predicted sequence
+  1465→𝐴, 𝐵, 𝐵, 𝐶, 𝐷, we have 𝑝1 = 4/5, 𝑝2 = 3/4, 𝑝3 = 1/3, and 𝑝4 = 0. Now let lenlabel
+  1466→and lenpred be the numbers of tokens in the target sequence and the predicted sequence,
+  1467→respectively. Then, BLEU is defined as
+  1468→exp
+  1469→
+  1470→min
+  1471→
+  1472→0, 1 −lenlabel
+  1473→lenpred
+  1474→
+  1475→𝑘
+  1476→Ö
+  1477→𝑛=1
+  1478→𝑝1/2𝑛
+  1479→𝑛
+  1480→,
+  1481→(10.7.4)
+  1482→where 𝑘is the longest 𝑛-gram for matching.
+  1483→Based on the definition of BLEU in (10.7.4), whenever the predicted sequence is the same
+  1484→as the target sequence, BLEU is 1. Moreover, since matching longer 𝑛-grams is more diffi-
+  1485→cult, BLEU assigns a greater weight when a longer 𝑛-gram has high precision. Specifically,
+  1486→when 𝑝𝑛is fixed, 𝑝1/2𝑛
+  1487→𝑛
+  1488→increases as 𝑛grows (the original paper uses 𝑝1/𝑛
+  1489→𝑛). Furthermore,
+  1490→since predicting shorter sequences tends to yield a higher 𝑝𝑛value, the coefficient before
+  1491→the multiplication term in (10.7.4) penalizes shorter predicted sequences. For example,
+  1492→when 𝑘= 2, given the target sequence 𝐴, 𝐵, 𝐶, 𝐷, 𝐸, 𝐹and the predicted sequence 𝐴, 𝐵,
+  1493→although 𝑝1 = 𝑝2 = 1, the penalty factor exp(1 −6/2) ≈0.14 lowers the BLEU.
+  1494→We implement the BLEU measure as follows.
+  1495→def bleu(pred_seq, label_seq, k):
+  1496→#@save
+  1497→"""Compute the BLEU."""
+  1498→pred_tokens, label_tokens = pred_seq.split(' '), label_seq.split(' ')
+  1499→(continues on next page)
+  1500→
+  1501→===== صفحة الكتاب 444 =====
+  1502→404
+  1503→Modern Recurrent Neural Networks
+  1504→(continued from previous page)
+  1505→len_pred, len_label = len(pred_tokens), len(label_tokens)
+  1506→score = math.exp(min(0, 1 - len_label / len_pred))
+  1507→for n in range(1, min(k, len_pred) + 1):
+  1508→num_matches, label_subs = 0, collections.defaultdict(int)
+  1509→for i in range(len_label - n + 1):
+  1510→label_subs[' '.join(label_tokens[i: i + n])] += 1
+  1511→for i in range(len_pred - n + 1):
+  1512→if label_subs[' '.join(pred_tokens[i: i + n])] > 0:
+  1513→num_matches += 1
+  1514→label_subs[' '.join(pred_tokens[i: i + n])] -= 1
+  1515→score *= math.pow(num_matches / (len_pred - n + 1), math.pow(0.5, n))
+  1516→return score
+  1517→In the end, we use the trained RNN encoder–decoder to translate a few English sentences
+  1518→into French and compute the BLEU of the results.
+  1519→engs = ['go .', 'i lost .', 'he\'s calm .', 'i\'m home .']
+  1520→fras = ['va !', 'j\'ai perdu .', 'il est calme .', 'je suis chez moi .']
+  1521→preds, _ = model.predict_step(
+  1522→data.build(engs, fras), d2l.try_gpu(), data.num_steps)
+  1523→for en, fr, p in zip(engs, fras, preds):
+  1524→translation = []
+  1525→for token in data.tgt_vocab.to_tokens(p):
+  1526→if token == '<eos>':
+  1527→break
+  1528→translation.append(token)
+  1529→print(f'{en} => {translation}, bleu,'
+  1530→f'{bleu(" ".join(translation), fr, k=2):.3f}')
+  1531→go . => ['va', '!'], bleu,1.000
+  1532→i lost . => ["j'ai", 'perdu', '.'], bleu,1.000
+  1533→he's calm . => ['elle', 'court', '.'], bleu,0.000
+  1534→i'm home . => ['je', 'suis', 'chez', 'moi', '.'], bleu,1.000
+  1535→10.7.9 Summary
+  1536→Following the design of the encoder–decoder architecture, we can use two RNNs to design
+  1537→a model for sequence-to-sequence learning. In encoder–decoder training, the teacher forc-
+  1538→ing approach feeds original output sequences (in contrast to predictions) into the decoder.
+  1539→When implementing the encoder and the decoder, we can use multilayer RNNs. We can
+  1540→use masks to filter out irrelevant computations, such as when calculating the loss. For eval-
+  1541→uating output sequences, BLEU is a popular measure that matches 𝑛-grams between the
+  1542→predicted sequence and the target sequence.
+  1543→10.7.10 Exercises
+  1544→1. Can you adjust the hyperparameters to improve the translation results?
+  1545→2. Rerun the experiment without using masks in the loss calculation. What results do you
+  1546→observe? Why?
+  1547→
+  1548→===== صفحة الكتاب 445 =====
+  1549→405
+  1550→Beam Search
+  1551→152
+  1552→3. If the encoder and the decoder differ in the number of layers or the number of hidden
+  1553→units, how can we initialize the hidden state of the decoder?
+  1554→4. In training, replace teacher forcing with feeding the prediction at the previous time step
+  1555→into the decoder. How does this influence the performance?
+  1556→5. Rerun the experiment by replacing GRU with LSTM.
+  1557→6. Are there any other ways to design the output layer of the decoder?
+  1558→Discussions152.
+  1559→10.8 Beam Search
+  1560→In Section 10.7, we introduced the encoder–decoder architecture, and the standard tech-
+  1561→niques for training them end-to-end. However, when it came to test-time prediction, we
+  1562→mentioned only the greedy strategy, where we select at each time step the token given the
+  1563→highest predicted probability of coming next, until, at some time step, we find that we have
+  1564→predicted the special end-of-sequence “<eos>” token. In this section, we will begin by for-
+  1565→malizing this greedy search strategy and identifying some problems that practitioners tend
+  1566→to run into. Subsequently, we compare this strategy with two alternatives: exhaustive search
+  1567→(illustrative but not practical) and beam search (the standard method in practice).
+  1568→Let’s begin by setting up our mathematical notation, borrowing conventions from Section
+  1569→10.7. At any time step 𝑡′, the decoder outputs predictions representing the probability of
+  1570→each token in the vocabulary coming next in the sequence (the likely value of 𝑦𝑡′+1), con-
+  1571→ditioned on the previous tokens 𝑦1, . . . , 𝑦𝑡′ and the context variable c, produced by the
+  1572→encoder to represent the input sequence. To quantify computational cost, denote by Y the
+  1573→output vocabulary (including the special end-of-sequence token “<eos>”). Let’s also spec-
+  1574→ify the maximum number of tokens of an output sequence as 𝑇′. Our goal is to search for
+  1575→an ideal output from all O(|Y|𝑇′) possible output sequences. Note that this slightly over-
+  1576→estimates the number of distinct outputs because there are no subsequent tokens once the
+  1577→“<eos>” token occurs. However, for our purposes, this number roughly captures the size
+  1578→of the search space.
+  1579→10.8.1 Greedy Search
+  1580→Consider the simple greedy search strategy from Section 10.7. Here, at any time step 𝑡′,
+  1581→we simply select the token with the highest conditional probability from Y, i.e.,
+  1582→𝑦𝑡′ = argmax
+  1583→𝑦∈Y
+  1584→𝑃(𝑦| 𝑦1, . . . , 𝑦𝑡′−1, c).
+  1585→(10.8.1)
+  1586→Once our model outputs “<eos>” (or we reach the maximum length 𝑇′) the output sequence
+  1587→is completed.
+  1588→
+  1589→===== صفحة الكتاب 446 =====
+  1590→406
+  1591→Modern Recurrent Neural Networks
+  1592→This strategy might look reasonable, and in fact it is not so bad! Considering how computa-
+  1593→tionally undemanding it is, you’d be hard pressed to get more bang for your buck. However,
+  1594→if we put aside efficiency for a minute, it might seem more reasonable to search for the most
+  1595→likely sequence, not the sequence of (greedily selected) most likely tokens. It turns out that
+  1596→these two objects can be quite different. The most likely sequence is the one that maximizes
+  1597→the expression Î𝑇′
+  1598→𝑡′=1 𝑃(𝑦𝑡′ | 𝑦1, . . . , 𝑦𝑡′−1, c). In our machine translation example, if the
+  1599→decoder truly recovered the probabilities of the underlying generative process, then this
+  1600→would give us the most likely translation. Unfortunately, there is no guarantee that greedy
+  1601→search will give us this sequence.
+  1602→Let’s illustrate it with an example. Suppose that there are four tokens “A”, “B”, “C”, and
+  1603→“<eos>” in the output dictionary. In Fig. 10.8.1, the four numbers under each time step rep-
+  1604→resent the conditional probabilities of generating “A”, “B”, “C”, and “<eos>” respectively,
+  1605→at that time step.
+  1606→t
+  1607→Fig. 10.8.1
+  1608→At each time step, greedy search selects the token with the highest conditional probability.
+  1609→At each time step, greedy search selects the token with the highest conditional probability.
+  1610→Therefore, the output sequence “A”, “B”, “C”, and “<eos>” will be predicted (Fig. 10.8.1).
+  1611→The conditional probability of this output sequence is 0.5×0.4×0.4×0.6 = 0.048.
+  1612→Next, let’s look at another example in Fig. 10.8.2. Unlike in Fig. 10.8.1, at time step 2 we
+  1613→select the token “C”, which has the second highest conditional probability.
+  1614→t
+  1615→Fig. 10.8.2
+  1616→The four numbers under each time step represent the conditional probabilities of
+  1617→generating “A”, “B”, “C”, and “<eos>” at that time step. At time step 2, the token “C”,
+  1618→which has the second highest conditional probability, is selected.
+  1619→Since the output subsequences at time steps 1 and 2, on which time step 3 is based, have
+  1620→changed from “A” and “B” in Fig. 10.8.1 to “A” and “C” in Fig. 10.8.2, the conditional
+  1621→probability of each token at time step 3 has also changed in Fig. 10.8.2. Suppose that
+  1622→we choose the token “B” at time step 3. Now time step 4 is conditional on the output
+  1623→subsequence at the first three time steps “A”, “C”, and “B”, which has changed from “A”,
+  1624→“B”, and “C” in Fig. 10.8.1. Therefore, the conditional probability of generating each token
+  1625→at time step 4 in Fig. 10.8.2 is also different from that in Fig. 10.8.1. As a result, the
+  1626→conditional probability of the output sequence “A”, “C”, “B”, and “<eos>” in Fig. 10.8.2
+  1627→is 0.5 × 0.3 × 0.6 × 0.6 = 0.054, which is greater than that of greedy search in Fig. 10.8.1.
+  1628→
+  1629→===== صفحة الكتاب 447 =====
+  1630→407
+  1631→Beam Search
+  1632→In this example, the output sequence “A”, “B”, “C”, and “<eos>” obtained by the greedy
+  1633→search is not optimal.
+  1634→10.8.2 Exhaustive Search
+  1635→If the goal is to obtain the most likely sequence, we may consider using exhaustive search:
+  1636→enumerate all the possible output sequences with their conditional probabilities, and then
+  1637→output the one that scores the highest predicted probability.
+  1638→While this would certainly give us what we desire, it would come at a prohibitive com-
+  1639→putational cost of O(|Y|𝑇′), exponential in the sequence length and with an enormous
+  1640→base given by the vocabulary size. For example, when |Y| = 10000 and 𝑇′ = 10, both
+  1641→small numbers when compared with ones in real applications, we will need to evaluate
+  1642→1000010 = 1040 sequences, which is already beyond the capabilities of any foreseeable
+  1643→computers. On the other hand, the computational cost of greedy search is O(|Y| 𝑇′): mirac-
+  1644→ulously cheap but far from optimal. For example, when |Y| = 10000 and 𝑇′ = 10, we only
+  1645→need to evaluate 10000 × 10 = 105 sequences.
+  1646→10.8.3 Beam Search
+  1647→You could view sequence decoding strategies as lying on a spectrum, with beam search
+  1648→striking a compromise between the efficiency of greedy search and the optimality of ex-
+  1649→haustive search. The most straightforward version of beam search is characterized by a
+  1650→single hyperparameter, the beam size, 𝑘. Let’s explain this terminology. At time step 1,
+  1651→we select the 𝑘tokens with the highest predicted probabilities. Each of them will be the
+  1652→first token of 𝑘candidate output sequences, respectively. At each subsequent time step,
+  1653→based on the 𝑘candidate output sequences at the previous time step, we continue to select
+  1654→𝑘candidate output sequences with the highest predicted probabilities from 𝑘|Y| possible
+  1655→choices.
+  1656→t
+  1657→Fig. 10.8.3
+  1658→The process of beam search (beam size = 2; maximum length of an output sequence = 3).
+  1659→The candidate output sequences are A, C, AB, CE, ABD, and CED.
+  1660→Fig. 10.8.3 demonstrates the process of beam search with an example. Suppose that the
+  1661→output vocabulary contains only five elements: Y = {𝐴, 𝐵, 𝐶, 𝐷, 𝐸}, where one of them is
+  1662→
+  1663→===== صفحة الكتاب 448 =====
+  1664→408
+  1665→Modern Recurrent Neural Networks
+  1666→153
+  1667→“<eos>”. Let the beam size be two and the maximum length of an output sequence be three.
+  1668→At time step 1, suppose that the tokens with the highest conditional probabilities 𝑃(𝑦1 | c)
+  1669→are 𝐴and 𝐶. At time step 2, for all 𝑦2 ∈Y, we compute
+  1670→𝑃(𝐴, 𝑦2 | c) = 𝑃(𝐴| c)𝑃(𝑦2 | 𝐴, c),
+  1671→𝑃(𝐶, 𝑦2 | c) = 𝑃(𝐶| c)𝑃(𝑦2 | 𝐶, c),
+  1672→(10.8.2)
+  1673→and pick the largest two among these ten values, say 𝑃(𝐴, 𝐵| c) and 𝑃(𝐶, 𝐸| c). Then at
+  1674→time step 3, for all 𝑦3 ∈Y, we compute
+  1675→𝑃(𝐴, 𝐵, 𝑦3 | c) = 𝑃(𝐴, 𝐵| c)𝑃(𝑦3 | 𝐴, 𝐵, c),
+  1676→𝑃(𝐶, 𝐸, 𝑦3 | c) = 𝑃(𝐶, 𝐸| c)𝑃(𝑦3 | 𝐶, 𝐸, c),
+  1677→(10.8.3)
+  1678→and pick the largest two among these ten values, say 𝑃(𝐴, 𝐵, 𝐷| c) and 𝑃(𝐶, 𝐸, 𝐷| c).
+  1679→As a result, we get six candidates output sequences: (i) 𝐴; (ii) 𝐶; (iii) 𝐴, 𝐵; (iv) 𝐶, 𝐸; (v)
+  1680→𝐴, 𝐵, 𝐷; and (vi) 𝐶, 𝐸, 𝐷.
+  1681→In the end, we obtain the set of final candidate output sequences based on these six se-
+  1682→quences (e.g., discard portions including and after “<eos>”). Then we choose the output
+  1683→sequence which maximizes the following score:
+  1684→1
+  1685→𝐿𝛼log 𝑃(𝑦1, . . . , 𝑦𝐿| c) = 1
+  1686→𝐿𝛼
+  1687→𝐿
+  1688→Õ
+  1689→𝑡′=1
+  1690→log 𝑃(𝑦𝑡′ | 𝑦1, . . . , 𝑦𝑡′−1, c);
+  1691→(10.8.4)
+  1692→here 𝐿is the length of the final candidate sequence and 𝛼is usually set to 0.75. Since a
+  1693→longer sequence has more logarithmic terms in the summation of (10.8.4), the term 𝐿𝛼in
+  1694→the denominator penalizes long sequences.
+  1695→The computational cost of beam search is O(𝑘|Y| 𝑇′). This result is in between that of
+  1696→greedy search and that of exhaustive search. Greedy search can be treated as a special case
+  1697→of beam search arising when the beam size is set to 1.
+  1698→10.8.4 Summary
+  1699→Sequence searching strategies include greedy search, exhaustive search, and beam search.
+  1700→Beam search provides a trade-off between accuracy and computational cost via the flexible
+  1701→choice of the beam size.
+  1702→10.8.5 Exercises
+  1703→1. Can we treat exhaustive search as a special type of beam search? Why or why not?
+  1704→2. Apply beam search in the machine translation problem in Section 10.7. How does the
+  1705→beam size affect the translation results and the prediction speed?
+  1706→3. We used language modeling for generating text following user-provided prefixes in Sec-
+  1707→tion 9.5. Which kind of search strategy does it use? Can you improve it?
+  1708→Discussions153.
+  1709→

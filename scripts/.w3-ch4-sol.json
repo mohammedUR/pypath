@@ -1,0 +1,240 @@
+[
+ {
+  "lesson": "swe.ch4.l1",
+  "id": "ex1.velocity-forecast",
+  "solution": "import math\n\nsprints = [22, 18, 26]   # completed points in the last three sprints\nbacklog = 130            # remaining points\n\navg = sum(sprints) / len(sprints)\nfast, slow = max(sprints), min(sprints)\n\nmost = math.ceil(backlog / avg)\nopt = math.ceil(backlog / fast)\npes = math.ceil(backlog / slow)\n\nprint(f\"velocity: {avg:.0f} pts per sprint\")\nprint(f\"most likely: {most} sprints = {most * 2} weeks\")\nprint(f\"range: {opt} to {pes} sprints\")",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "السرعة 22 نقطة",
+     "en": "velocity is 22 points"
+    },
+    "code": "assert 'velocity: 22 pts per sprint' in __learner_output__, 'expected: velocity: 22 pts per sprint | actual: %r' % __learner_output__",
+    "expected": "velocity: 22 pts per sprint"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الأرجح 6 سبرنتات = 12 أسبوعًا",
+     "en": "most likely 6 sprints = 12 weeks"
+    },
+    "code": "assert 'most likely: 6 sprints = 12 weeks' in __learner_output__, 'expected: most likely: 6 sprints = 12 weeks | actual: %r' % __learner_output__",
+    "expected": "most likely: 6 sprints = 12 weeks"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "النطاق من 5 إلى 8",
+     "en": "range 5 to 8"
+    },
+    "code": "assert 'range: 5 to 8 sprints' in __learner_output__, 'expected: range: 5 to 8 sprints | actual: %r' % __learner_output__",
+    "expected": "range: 5 to 8 sprints"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch4.l2",
+  "id": "ex1.poker-spread",
+  "solution": "import statistics\n\ncards = [2, 3, 5, 13]   # round-1 cards for \"reschedule online\"\n\nlowest = min(cards)\nhighest = max(cards)\nspread = highest - lowest\nmedian = statistics.median(cards)\n\nprint(\"lowest:\", lowest)\nprint(\"highest:\", highest)\nprint(\"spread:\", spread)\nprint(\"median:\", median)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "أدنى وأعلى بطاقة",
+     "en": "lowest and highest cards"
+    },
+    "code": "assert 'lowest: 2' in __learner_output__ and 'highest: 13' in __learner_output__, 'expected: lowest: 2 / highest: 13 | actual: %r' % __learner_output__",
+    "expected": "lowest: 2 | highest: 13"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الانتشار 11",
+     "en": "spread is 11"
+    },
+    "code": "assert 'spread: 11' in __learner_output__, 'expected: spread: 11 | actual: %r' % __learner_output__",
+    "expected": "spread: 11"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الوسيط 4.0",
+     "en": "median is 4.0"
+    },
+    "code": "assert 'median: 4.0' in __learner_output__, 'expected: median: 4.0 | actual: %r' % __learner_output__",
+    "expected": "median: 4.0"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch4.l2",
+  "id": "ex2.value-cost-rank",
+  "solution": "features = [\n    # (name, value 1-10, cost in points)\n    (\"conflict\", 9, 5),\n    (\"pdf\", 4, 3),\n    (\"sms\", 8, 8),\n    (\"multilang\", 5, 13),\n]\n\nranked = sorted(features, key=lambda f: f[1] / f[2], reverse=True)\nfor i, (name, v, c) in enumerate(ranked, 1):\n    print(f\"{i}. {name} {v / c:.2f}\")",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "كشف التعارضات أولًا بـ 1.80",
+     "en": "conflict detection first at 1.80"
+    },
+    "code": "assert '1. conflict 1.80' in __learner_output__, 'expected: 1. conflict 1.80 | actual: %r' % __learner_output__",
+    "expected": "1. conflict 1.80"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "SMS ثالثة رغم قيمتها الخام 8",
+     "en": "SMS third despite raw value 8"
+    },
+    "code": "assert '3. sms 1.00' in __learner_output__, 'expected: 3. sms 1.00 | actual: %r' % __learner_output__",
+    "expected": "3. sms 1.00"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "تعدد اللغات أخيرًا بـ 0.38",
+     "en": "multilang last at 0.38"
+    },
+    "code": "assert '4. multilang 0.38' in __learner_output__, 'expected: 4. multilang 0.38 | actual: %r' % __learner_output__",
+    "expected": "4. multilang 0.38"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch4.l3",
+  "id": "ex1.kano-buckets",
+  "solution": "feats = [\n    (\"correct-date\", \"neutral\", \"dislike\"),\n    (\"login-works\", \"neutral\", \"dislike\"),\n    (\"faster-search\", \"like\", \"dislike\"),\n    (\"calendar-btn\", \"like\", \"neutral\"),\n    (\"spinner-anim\", \"neutral\", \"neutral\"),\n    (\"forced-tour\", \"dislike\", \"like\"),\n]\n\ndef kano(present, absent):\n    if present == \"dislike\":\n        return \"reverse\"\n    if absent == \"dislike\":\n        return \"performance\" if present == \"like\" else \"must_be\"\n    if present == \"like\":\n        return \"delighter\"\n    return \"indifferent\"\n\ncounts, musts = {}, []\nfor name, present, absent in feats:\n    cat = kano(present, absent)\n    counts[cat] = counts.get(cat, 0) + 1\n    if cat == \"must_be\":\n        musts.append(name)\nfor cat in (\"must_be\", \"performance\", \"delighter\", \"indifferent\", \"reverse\"):\n    print(f\"{cat}: {counts.get(cat, 0)}\")\nprint(\"fund first:\", \",\".join(musts))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "أساسيتان",
+     "en": "two must-be features"
+    },
+    "code": "assert 'must_be: 2' in __learner_output__, 'expected: must_be: 2 | actual: %r' % __learner_output__",
+    "expected": "must_be: 2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "المموَّلة أولًا: التاريخ وتسجيل الدخول",
+     "en": "fund first: correct-date and login-works"
+    },
+    "code": "assert 'fund first: correct-date,login-works' in __learner_output__, 'expected: fund first: correct-date,login-works | actual: %r' % __learner_output__",
+    "expected": "fund first: correct-date,login-works"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "مُبهجة واحدة",
+     "en": "one delighter"
+    },
+    "code": "assert 'delighter: 1' in __learner_output__, 'expected: delighter: 1 | actual: %r' % __learner_output__",
+    "expected": "delighter: 1"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch4.l3",
+  "id": "ex2.effort-model",
+  "solution": "# Basic COCOMO at 35 KLOC: organic vs embedded\nKLOC = 35\n\norganic = 2.4 * KLOC ** 1.05\nembedded = 3.6 * KLOC ** 1.20\n\nprint(f\"organic: {organic:.1f} pm\")\nprint(f\"embedded: {embedded:.1f} pm\")\nprint(f\"ratio: {embedded / organic:.2f}\")",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الجهد العضوي 100.3",
+     "en": "organic effort 100.3"
+    },
+    "code": "assert 'organic: 100.3 pm' in __learner_output__, 'expected: organic: 100.3 pm | actual: %r' % __learner_output__",
+    "expected": "organic: 100.3 pm"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الجهد المدمج 256.6",
+     "en": "embedded effort 256.6"
+    },
+    "code": "assert 'embedded: 256.6 pm' in __learner_output__, 'expected: embedded: 256.6 pm | actual: %r' % __learner_output__",
+    "expected": "embedded: 256.6 pm"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "النسبة 2.56",
+     "en": "ratio 2.56"
+    },
+    "code": "assert 'ratio: 2.56' in __learner_output__, 'expected: ratio: 2.56 | actual: %r' % __learner_output__",
+    "expected": "ratio: 2.56"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch4.l4",
+  "id": "ex1.planning-board",
+  "solution": "stories = [\n    # (id, checklist_ok, points, value 1-10)\n    (\"S1\", True,  2, 6),   # schedule view (reference story)\n    (\"S2\", True,  5, 9),   # booking + conflict detection\n    (\"S3\", False, 8, 8),   # SMS reminders: no acceptance test yet\n    (\"S4\", True,  3, 4),   # PDF export\n    (\"S5\", True,  2, 3),   # dark mode\n    (\"S6\", True,  8, 7),   # payment integration\n]\nVELOCITY = 12\n\nready = sorted((s for s in stories if s[1]), key=lambda s: s[3] / s[2], reverse=True)\n\npicked, used = [], 0\nfor sid, ok, pts, val in ready:\n    if used + pts <= VELOCITY:\n        picked.append(sid)\n        used += pts\n\nblocked = sum(1 for s in stories if not s[1])\nleft = [sid for sid, ok, pts, val in ready if sid not in picked]\n\nprint(f\"board: {len(stories)} stories, {blocked} blocked by checklist\")\nprint(\"picked:\", \" \".join(picked), f\"({used}/{VELOCITY} pts)\")\nprint(\"left:\", \" \".join(left) or \"-\")",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "ست قصص وواحدة محجوبة",
+     "en": "six stories, one blocked"
+    },
+    "code": "assert 'board: 6 stories, 1 blocked by checklist' in __learner_output__, 'expected: board: 6 stories, 1 blocked by checklist | actual: %r' % __learner_output__",
+    "expected": "board: 6 stories, 1 blocked by checklist"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "سطر الاختيار 12/12",
+     "en": "picked line 12/12"
+    },
+    "code": "assert 'picked: S1 S2 S5 S4 (12/12 pts)' in __learner_output__, 'expected: picked: S1 S2 S5 S4 (12/12 pts) | actual: %r' % __learner_output__",
+    "expected": "picked: S1 S2 S5 S4 (12/12 pts)"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "المتغيرات picked وused صحيحة",
+     "en": "picked and used variables correct"
+    },
+    "code": "assert picked == ['S1', 'S2', 'S5', 'S4'] and used == 12, 'expected: picked=[S1, S2, S5, S4] used=12 | actual: %r' % ((picked, used),)",
+    "expected": "picked=['S1', 'S2', 'S5', 'S4'], used=12"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch4.l4",
+  "id": "ex5.debug-board",
+  "solution": "stories = [(\"S1\", 2), (\"S2\", 5), (\"S3\", 8)]\nvelocity = 12\n\npicked, used = [], 0\nfor sid, pts in stories:\n    if used + pts <= velocity:\n        picked.append(sid)\n        used += pts\n\nprint(\"picked:\", \" \".join(picked), f\"({used}/{velocity} pts)\")\nif used > velocity:\n    print(\"overbooked!\")",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "السطر المصحح: S1 S2 بـ 7/12",
+     "en": "fixed line: S1 S2 at 7/12"
+    },
+    "code": "assert 'picked: S1 S2 (7/12 pts)' in __learner_output__, 'expected: picked: S1 S2 (7/12 pts) | actual: %r' % __learner_output__",
+    "expected": "picked: S1 S2 (7/12 pts)"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "لا حجز زائد بعد الإصلاح",
+     "en": "no overbooking after the fix"
+    },
+    "code": "assert 'overbooked' not in __learner_output__ and '15/12' not in __learner_output__, 'expected: no overbooking | actual: %r' % __learner_output__",
+    "expected": "no overbooked!, no 15/12"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "المتغيرات بعد الإصلاح",
+     "en": "variables after the fix"
+    },
+    "code": "assert used == 7 and picked == ['S1', 'S2'], 'expected: used=7 picked=[S1, S2] | actual: %r' % ((used, picked),)",
+    "expected": "used=7, picked=['S1', 'S2']"
+   }
+  ]
+ }
+]

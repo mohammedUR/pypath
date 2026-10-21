@@ -1,0 +1,702 @@
+     1→
+     2→===== صفحة الكتاب 632 =====
+     3→14
+     4→Computer Vision
+     5→Whether it is medical diagnosis, self-driving vehicles, camera monitoring, or smart filters,
+     6→many applications in the field of computer vision are closely related to our current and fu-
+     7→ture lives. In recent years, deep learning has been the transformative power for advancing
+     8→the performance of computer vision systems. It can be said that the most advanced com-
+     9→puter vision applications are almost inseparable from deep learning. In view of this, this
+    10→chapter will focus on the field of computer vision, and investigate methods and applications
+    11→that have recently been influential in academia and industry.
+    12→In Chapter 7 and Chapter 8, we studied various convolutional neural networks that are
+    13→commonly used in computer vision, and applied them to simple image classification tasks.
+    14→At the beginning of this chapter, we will describe two methods that may improve model
+    15→generalization, namely image augmentation and fine-tuning, and apply them to image clas-
+    16→sification. Since deep neural networks can effectively represent images in multiple lev-
+    17→els, such layerwise representations have been successfully used in various computer vision
+    18→tasks such as object detection, semantic segmentation, and style transfer. Following the key
+    19→idea of leveraging layerwise representations in computer vision, we will begin with major
+    20→components and techniques for object detection. Next, we will show how to use fully con-
+    21→volutional networks for semantic segmentation of images. Then we will explain how to use
+    22→style transfer techniques to generate images like the cover of this book. In the end, we con-
+    23→clude this chapter by applying the materials of this chapter and several previous chapters
+    24→on two popular computer vision benchmark datasets.
+    25→14.1 Image Augmentation
+    26→In Section 8.1, we mentioned that large datasets are a prerequisite for the success of deep
+    27→neural networks in various applications. Image augmentation generates similar but distinct
+    28→training examples after a series of random changes to the training images, thereby expand-
+    29→ing the size of the training set. Alternatively, image augmentation can be motivated by the
+    30→fact that random tweaks of training examples allow models to rely less on certain attributes,
+    31→thereby improving their generalization ability. For example, we can crop an image in dif-
+    32→ferent ways to make the object of interest appear in different positions, thereby reducing
+    33→the dependence of a model on the position of the object. We can also adjust factors such as
+    34→brightness and color to reduce a model’s sensitivity to color. It is probably true that image
+    35→592
+    36→
+    37→===== صفحة الكتاب 633 =====
+    38→593
+    39→Image Augmentation
+    40→augmentation was indispensable for the success of AlexNet at that time. In this section we
+    41→will discuss this widely used technique in computer vision.
+    42→%matplotlib inline
+    43→import torch
+    44→import torchvision
+    45→from torch import nn
+    46→from d2l import torch as d2l
+    47→14.1.1 Common Image Augmentation Methods
+    48→In our investigation of common image augmentation methods, we will use the following
+    49→400 × 500 image an example.
+    50→d2l.set_figsize()
+    51→img = d2l.Image.open('../img/cat1.jpg')
+    52→d2l.plt.imshow(img);
+    53→Most image augmentation methods have a certain degree of randomness. To make it easier
+    54→for us to observe the effect of image augmentation, next we define an auxiliary function
+    55→apply. This function runs the image augmentation method aug multiple times on the input
+    56→image img and shows all the results.
+    57→def apply(img, aug, num_rows=2, num_cols=4, scale=1.5):
+    58→Y = [aug(img) for _ in range(num_rows * num_cols)]
+    59→d2l.show_images(Y, num_rows, num_cols, scale=scale)
+    60→Flipping and Cropping
+    61→Flipping the image left and right usually does not change the category of the object. This is
+    62→one of the earliest and most widely used methods of image augmentation. Next, we use the
+    63→transforms module to create the RandomHorizontalFlip instance, which flips an image
+    64→left and right with a 50% chance.
+    65→apply(img, torchvision.transforms.RandomHorizontalFlip())
+    66→Flipping up and down is not as common as flipping left and right. But at least for this
+    67→
+    68→===== صفحة الكتاب 634 =====
+    69→594
+    70→Computer Vision
+    71→example image, flipping up and down does not hinder recognition. Next, we create a Ran-
+    72→domVerticalFlip instance to flip an image up and down with a 50% chance.
+    73→apply(img, torchvision.transforms.RandomVerticalFlip())
+    74→In the example image we used, the cat is in the middle of the image, but this may not be the
+    75→case in general. In Section 7.5, we explained that the pooling layer can reduce the sensitivity
+    76→of a convolutional layer to the target position. In addition, we can also randomly crop the
+    77→image to make objects appear in different positions in the image at different scales, which
+    78→can also reduce the sensitivity of a model to the target position.
+    79→In the code below, we randomly crop an area with an area of 10% ∼100% of the original
+    80→area each time, and the ratio of width to height of this area is randomly selected from 0.5 ∼
+    81→2. Then, the width and height of the region are both scaled to 200 pixels. Unless otherwise
+    82→specified, the random number between 𝑎and 𝑏in this section refers to a continuous value
+    83→obtained by random and uniform sampling from the interval [𝑎, 𝑏].
+    84→shape_aug = torchvision.transforms.RandomResizedCrop(
+    85→(200, 200), scale=(0.1, 1), ratio=(0.5, 2))
+    86→apply(img, shape_aug)
+    87→Changing Colors
+    88→Another augmentation method is changing colors. We can change four aspects of the image
+    89→color: brightness, contrast, saturation, and hue. In the example below, we randomly change
+    90→the brightness of the image to a value between 50% (1 −0.5) and 150% (1 + 0.5) of the
+    91→original image.
+    92→
+    93→===== صفحة الكتاب 635 =====
+    94→595
+    95→Image Augmentation
+    96→apply(img, torchvision.transforms.ColorJitter(
+    97→brightness=0.5, contrast=0, saturation=0, hue=0))
+    98→Similarly, we can randomly change the hue of the image.
+    99→apply(img, torchvision.transforms.ColorJitter(
+   100→brightness=0, contrast=0, saturation=0, hue=0.5))
+   101→We can also create a RandomColorJitter instance and set how to randomly change the
+   102→brightness, contrast, saturation, and hue of the image at the same time.
+   103→color_aug = torchvision.transforms.ColorJitter(
+   104→brightness=0.5, contrast=0.5, saturation=0.5, hue=0.5)
+   105→apply(img, color_aug)
+   106→
+   107→===== صفحة الكتاب 636 =====
+   108→596
+   109→Computer Vision
+   110→Combining Multiple Image Augmentation Methods
+   111→In practice, we will combine multiple image augmentation methods. For example, we can
+   112→combine the different image augmentation methods defined above and apply them to each
+   113→image via a Compose instance.
+   114→augs = torchvision.transforms.Compose([
+   115→torchvision.transforms.RandomHorizontalFlip(), color_aug, shape_aug])
+   116→apply(img, augs)
+   117→14.1.2 Training with Image Augmentation
+   118→Let’s train a model with image augmentation. Here we use the CIFAR-10 dataset instead
+   119→of the Fashion-MNIST dataset that we used before. This is because the position and size
+   120→of the objects in the Fashion-MNIST dataset have been normalized, while the color and
+   121→size of the objects in the CIFAR-10 dataset have more significant differences. The first 32
+   122→training images in the CIFAR-10 dataset are shown below.
+   123→all_images = torchvision.datasets.CIFAR10(train=True, root="../data",
+   124→download=True)
+   125→d2l.show_images([all_images[i][0] for i in range(32)], 4, 8, scale=0.8);
+   126→Downloading https://www.cs.toronto.edu/~kriz/cifar-10-python.tar.gz to ../data/
+   127→↩→cifar-10-python.tar.gz
+   128→100%|￿￿￿￿￿￿￿￿￿￿| 170498071/170498071 [00:04<00:00, 37716809.52it/s]
+   129→Extracting ../data/cifar-10-python.tar.gz to ../data
+   130→In order to obtain definitive results during prediction, we usually only apply image aug-
+   131→
+   132→===== صفحة الكتاب 637 =====
+   133→597
+   134→Image Augmentation
+   135→mentation to training examples, and do not use image augmentation with random opera-
+   136→tions during prediction. Here we only use the simplest random left-right flipping method.
+   137→In addition, we use a ToTensor instance to convert a minibatch of images into the format
+   138→required by the deep learning framework, i.e., 32-bit floating point numbers between 0 and
+   139→1 with the shape of (batch size, number of channels, height, width).
+   140→train_augs = torchvision.transforms.Compose([
+   141→torchvision.transforms.RandomHorizontalFlip(),
+   142→torchvision.transforms.ToTensor()])
+   143→test_augs = torchvision.transforms.Compose([
+   144→torchvision.transforms.ToTensor()])
+   145→Next, we define an auxiliary function to facilitate reading the image and applying image
+   146→augmentation. The transform argument provided by PyTorch’s dataset applies augmen-
+   147→tation to transform the images. For a detailed introduction to DataLoader, please refer to
+   148→Section 4.2.
+   149→def load_cifar10(is_train, augs, batch_size):
+   150→dataset = torchvision.datasets.CIFAR10(root="../data", train=is_train,
+   151→transform=augs, download=True)
+   152→dataloader = torch.utils.data.DataLoader(dataset, batch_size=batch_size,
+   153→shuffle=is_train, num_workers=d2l.get_dataloader_workers())
+   154→return dataloader
+   155→Multi-GPU Training
+   156→We train the ResNet-18 model from Section 8.6 on the CIFAR-10 dataset. Recall the in-
+   157→troduction to multi-GPU training in Section 13.6. In the following, we define a function to
+   158→train and evaluate the model using multiple GPUs.
+   159→#@save
+   160→def train_batch_ch13(net, X, y, loss, trainer, devices):
+   161→"""Train for a minibatch with multiple GPUs (defined in Chapter 13)."""
+   162→if isinstance(X, list):
+   163→# Required for BERT fine-tuning (to be covered later)
+   164→X = [x.to(devices[0]) for x in X]
+   165→(continues on next page)
+   166→
+   167→===== صفحة الكتاب 638 =====
+   168→598
+   169→Computer Vision
+   170→(continued from previous page)
+   171→else:
+   172→X = X.to(devices[0])
+   173→y = y.to(devices[0])
+   174→net.train()
+   175→trainer.zero_grad()
+   176→pred = net(X)
+   177→l = loss(pred, y)
+   178→l.sum().backward()
+   179→trainer.step()
+   180→train_loss_sum = l.sum()
+   181→train_acc_sum = d2l.accuracy(pred, y)
+   182→return train_loss_sum, train_acc_sum
+   183→#@save
+   184→def train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
+   185→devices=d2l.try_all_gpus()):
+   186→"""Train a model with multiple GPUs (defined in Chapter 13)."""
+   187→timer, num_batches = d2l.Timer(), len(train_iter)
+   188→animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs], ylim=[0, 1],
+   189→legend=['train loss', 'train acc', 'test acc'])
+   190→net = nn.DataParallel(net, device_ids=devices).to(devices[0])
+   191→for epoch in range(num_epochs):
+   192→# Sum of training loss, sum of training accuracy, no. of examples,
+   193→# no. of predictions
+   194→metric = d2l.Accumulator(4)
+   195→for i, (features, labels) in enumerate(train_iter):
+   196→timer.start()
+   197→l, acc = train_batch_ch13(
+   198→net, features, labels, loss, trainer, devices)
+   199→metric.add(l, acc, labels.shape[0], labels.numel())
+   200→timer.stop()
+   201→if (i + 1) % (num_batches // 5) == 0 or i == num_batches - 1:
+   202→animator.add(epoch + (i + 1) / num_batches,
+   203→(metric[0] / metric[2], metric[1] / metric[3],
+   204→None))
+   205→test_acc = d2l.evaluate_accuracy_gpu(net, test_iter)
+   206→animator.add(epoch + 1, (None, None, test_acc))
+   207→print(f'loss {metric[0] / metric[2]:.3f}, train acc '
+   208→f'{metric[1] / metric[3]:.3f}, test acc {test_acc:.3f}')
+   209→print(f'{metric[2] * num_epochs / timer.sum():.1f} examples/sec on '
+   210→f'{str(devices)}')
+   211→Now we can define the train_with_data_aug function to train the model with image
+   212→augmentation. This function gets all available GPUs, uses Adam as the optimization algo-
+   213→rithm, applies image augmentation to the training dataset, and finally calls the train_ch13
+   214→function just defined to train and evaluate the model.
+   215→batch_size, devices, net = 256, d2l.try_all_gpus(), d2l.resnet18(10, 3)
+   216→net.apply(d2l.init_cnn)
+   217→def train_with_data_aug(train_augs, test_augs, net, lr=0.001):
+   218→train_iter = load_cifar10(True, train_augs, batch_size)
+   219→(continues on next page)
+   220→
+   221→===== صفحة الكتاب 639 =====
+   222→599
+   223→Image Augmentation
+   224→(continued from previous page)
+   225→test_iter = load_cifar10(False, test_augs, batch_size)
+   226→loss = nn.CrossEntropyLoss(reduction="none")
+   227→trainer = torch.optim.Adam(net.parameters(), lr=lr)
+   228→net(next(iter(train_iter))[0])
+   229→train_ch13(net, train_iter, test_iter, loss, trainer, 10, devices)
+   230→Let’s train the model using image augmentation based on random left-right flipping.
+   231→train_with_data_aug(train_augs, test_augs, net)
+   232→loss 0.215, train acc 0.925, test acc 0.810
+   233→4728.8 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+   234→↩→index=1)]
+   235→14.1.3 Summary
+   236→• Image augmentation generates random images based on existing training data to improve
+   237→the generalization ability of models.
+   238→• In order to obtain definitive results during prediction, we usually only apply image aug-
+   239→mentation to training examples, and do not use image augmentation with random op-
+   240→erations during prediction.
+   241→• Deep learning frameworks provide many different image augmentation methods, which
+   242→can be applied simultaneously.
+   243→14.1.4 Exercises
+   244→1. Train the model without using image augmentation: train_with_data_aug(test_augs,
+   245→test_augs). Compare training and testing accuracy when using and not using image
+   246→augmentation. Can this comparative experiment support the argument that image aug-
+   247→mentation can mitigate overfitting? Why?
+   248→2. Combine multiple different image augmentation methods in model training on the CIFAR-
+   249→10 dataset. Does it improve test accuracy?
+   250→
+   251→===== صفحة الكتاب 640 =====
+   252→600
+   253→Computer Vision
+   254→212
+   255→3. Refer to the online documentation of the deep learning framework. What other image
+   256→augmentation methods does it also provide?
+   257→Discussions212.
+   258→14.2 Fine-Tuning
+   259→In earlier chapters, we discussed how to train models on the Fashion-MNIST training
+   260→dataset with only 60000 images. We also described ImageNet, the most widely used large-
+   261→scale image dataset in academia, which has more than 10 million images and 1000 objects.
+   262→However, the size of the dataset that we usually encounter is between those of the two
+   263→datasets.
+   264→Suppose that we want to recognize different types of chairs from images, and then recom-
+   265→mend purchase links to users. One possible method is to first identify 100 common chairs,
+   266→take 1000 images of different angles for each chair, and then train a classification model
+   267→on the collected image dataset. Although this chair dataset may be larger than the Fashion-
+   268→MNIST dataset, the number of examples is still less than one-tenth of that in ImageNet.
+   269→This may lead to overfitting of complicated models that are suitable for ImageNet on this
+   270→chair dataset. Besides, due to the limited amount of training examples, the accuracy of the
+   271→trained model may not meet practical requirements.
+   272→In order to address the above problems, an obvious solution is to collect more data. How-
+   273→ever, collecting and labeling data can take a lot of time and money. For example, in order
+   274→to collect the ImageNet dataset, researchers have spent millions of dollars from research
+   275→funding. Although the current data collection cost has been significantly reduced, this cost
+   276→still cannot be ignored.
+   277→Another solution is to apply transfer learning to transfer the knowledge learned from the
+   278→source dataset to the target dataset. For example, although most of the images in the Ima-
+   279→geNet dataset have nothing to do with chairs, the model trained on this dataset may extract
+   280→more general image features, which can help identify edges, textures, shapes, and object
+   281→composition. These similar features may also be effective for recognizing chairs.
+   282→14.2.1 Steps
+   283→In this section, we will introduce a common technique in transfer learning: fine-tuning. As
+   284→shown in Fig. 14.2.1, fine-tuning consists of the following four steps:
+   285→1. Pretrain a neural network model, i.e., the source model, on a source dataset (e.g., the
+   286→ImageNet dataset).
+   287→2. Create a new neural network model, i.e., the target model. This copies all model de-
+   288→signs and their parameters on the source model except the output layer. We assume that
+   289→these model parameters contain the knowledge learned from the source dataset and this
+   290→
+   291→===== صفحة الكتاب 641 =====
+   292→601
+   293→Fine-Tuning
+   294→knowledge will also be applicable to the target dataset. We also assume that the output
+   295→layer of the source model is closely related to the labels of the source dataset; thus it is
+   296→not used in the target model.
+   297→3. Add an output layer to the target model, whose number of outputs is the number of
+   298→categories in the target dataset. Then randomly initialize the model parameters of this
+   299→layer.
+   300→4. Train the target model on the target dataset, such as a chair dataset. The output layer
+   301→will be trained from scratch, while the parameters of all the other layers are fine-tuned
+   302→based on the parameters of the source model.
+   303→t
+   304→Fig. 14.2.1
+   305→Fine tuning.
+   306→When target datasets are much smaller than source datasets, fine-tuning helps to improve
+   307→models’ generalization ability.
+   308→14.2.2 Hot Dog Recognition
+   309→Let’s demonstrate fine-tuning via a concrete case: hot dog recognition. We will fine-tune
+   310→a ResNet model on a small dataset, which was pretrained on the ImageNet dataset. This
+   311→small dataset consists of thousands of images with and without hot dogs. We will use the
+   312→fine-tuned model to recognize hot dogs from images.
+   313→%matplotlib inline
+   314→import os
+   315→import torch
+   316→import torchvision
+   317→from torch import nn
+   318→from d2l import torch as d2l
+   319→Reading the Dataset
+   320→The hot dog dataset we use was taken from online images. This dataset consists of 1400
+   321→positive-class images containing hot dogs, and as many negative-class images containing
+   322→other foods. 1000 images of both classes are used for training and the rest are for test-
+   323→ing.
+   324→
+   325→===== صفحة الكتاب 642 =====
+   326→602
+   327→Computer Vision
+   328→After unzipping the downloaded dataset, we obtain two folders hotdog/train and hotdog/
+   329→test. Both folders have hotdog and not-hotdog subfolders, either of which contains
+   330→images of the corresponding class.
+   331→#@save
+   332→d2l.DATA_HUB['hotdog'] = (d2l.DATA_URL + 'hotdog.zip',
+   333→'fba480ffa8aa7e0febbb511d181409f899b9baa5')
+   334→data_dir = d2l.download_extract('hotdog')
+   335→Downloading ../data/hotdog.zip from http://d2l-data.s3-accelerate.amazonaws.
+   336→↩→com/hotdog.zip...
+   337→We create two instances to read all the image files in the training and testing datasets, re-
+   338→spectively.
+   339→train_imgs = torchvision.datasets.ImageFolder(os.path.join(data_dir, 'train'))
+   340→test_imgs = torchvision.datasets.ImageFolder(os.path.join(data_dir, 'test'))
+   341→The first 8 positive examples and the last 8 negative images are shown below. As you can
+   342→see, the images vary in size and aspect ratio.
+   343→hotdogs = [train_imgs[i][0] for i in range(8)]
+   344→not_hotdogs = [train_imgs[-i - 1][0] for i in range(8)]
+   345→d2l.show_images(hotdogs + not_hotdogs, 2, 8, scale=1.4);
+   346→During training, we first crop a random area of random size and random aspect ratio from
+   347→the image, and then scale this area to a 224×224 input image. During testing, we scale both
+   348→the height and width of an image to 256 pixels, and then crop a central 224 × 224 area as
+   349→input. In addition, for the three RGB (red, green, and blue) color channels we standardize
+   350→their values channel by channel. Concretely, the mean value of a channel is subtracted from
+   351→each value of that channel and then the result is divided by the standard deviation of that
+   352→channel.
+   353→# Specify the means and standard deviations of the three RGB channels to
+   354→# standardize each channel
+   355→normalize = torchvision.transforms.Normalize(
+   356→(continues on next page)
+   357→
+   358→===== صفحة الكتاب 643 =====
+   359→603
+   360→Fine-Tuning
+   361→(continued from previous page)
+   362→[0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+   363→train_augs = torchvision.transforms.Compose([
+   364→torchvision.transforms.RandomResizedCrop(224),
+   365→torchvision.transforms.RandomHorizontalFlip(),
+   366→torchvision.transforms.ToTensor(),
+   367→normalize])
+   368→test_augs = torchvision.transforms.Compose([
+   369→torchvision.transforms.Resize([256, 256]),
+   370→torchvision.transforms.CenterCrop(224),
+   371→torchvision.transforms.ToTensor(),
+   372→normalize])
+   373→Defining and Initializing the Model
+   374→We use ResNet-18, which was pretrained on the ImageNet dataset, as the source model.
+   375→Here, we specify pretrained=True to automatically download the pretrained model pa-
+   376→rameters. If this model is used for the first time, Internet connection is required for down-
+   377→load.
+   378→pretrained_net = torchvision.models.resnet18(pretrained=True)
+   379→The pretrained source model instance contains a number of feature layers and an output
+   380→layer fc. The main purpose of this division is to facilitate the fine-tuning of model param-
+   381→eters of all layers but the output layer. The member variable fc of source model is given
+   382→below.
+   383→pretrained_net.fc
+   384→Linear(in_features=512, out_features=1000, bias=True)
+   385→As a fully connected layer, it transforms ResNet’s final global average pooling outputs into
+   386→1000 class outputs of the ImageNet dataset. We then construct a new neural network as
+   387→the target model. It is defined in the same way as the pretrained source model except that
+   388→its number of outputs in the final layer is set to the number of classes in the target dataset
+   389→(rather than 1000).
+   390→In the code below, the model parameters before the output layer of the target model in-
+   391→stance finetune_net are initialized to model parameters of the corresponding layers from
+   392→the source model. Since these model parameters were obtained via pretraining on Ima-
+   393→geNet, they are effective. Therefore, we can only use a small learning rate to fine-tune such
+   394→pretrained parameters. In contrast, model parameters in the output layer are randomly ini-
+   395→tialized and generally require a larger learning rate to be learned from scratch. Letting the
+   396→base learning rate be 𝜂, a learning rate of 10𝜂will be used to iterate the model parameters
+   397→in the output layer.
+   398→
+   399→===== صفحة الكتاب 644 =====
+   400→604
+   401→Computer Vision
+   402→finetune_net = torchvision.models.resnet18(pretrained=True)
+   403→finetune_net.fc = nn.Linear(finetune_net.fc.in_features, 2)
+   404→nn.init.xavier_uniform_(finetune_net.fc.weight);
+   405→Fine-Tuning the Model
+   406→First, we define a training function train_fine_tuning that uses fine-tuning so it can be
+   407→called multiple times.
+   408→# If `param_group=True`, the model parameters in the output layer will be
+   409→# updated using a learning rate ten times greater
+   410→def train_fine_tuning(net, learning_rate, batch_size=128, num_epochs=5,
+   411→param_group=True):
+   412→train_iter = torch.utils.data.DataLoader(torchvision.datasets.ImageFolder(
+   413→os.path.join(data_dir, 'train'), transform=train_augs),
+   414→batch_size=batch_size, shuffle=True)
+   415→test_iter = torch.utils.data.DataLoader(torchvision.datasets.ImageFolder(
+   416→os.path.join(data_dir, 'test'), transform=test_augs),
+   417→batch_size=batch_size)
+   418→devices = d2l.try_all_gpus()
+   419→loss = nn.CrossEntropyLoss(reduction="none")
+   420→if param_group:
+   421→params_1x = [param for name, param in net.named_parameters()
+   422→if name not in ["fc.weight", "fc.bias"]]
+   423→trainer = torch.optim.SGD([{'params': params_1x},
+   424→{'params': net.fc.parameters(),
+   425→'lr': learning_rate * 10}],
+   426→lr=learning_rate, weight_decay=0.001)
+   427→else:
+   428→trainer = torch.optim.SGD(net.parameters(), lr=learning_rate,
+   429→weight_decay=0.001)
+   430→d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
+   431→devices)
+   432→We set the base learning rate to a small value in order to fine-tune the model parameters
+   433→obtained via pretraining. Based on the previous settings, we will train the output layer
+   434→parameters of the target model from scratch using a learning rate ten times greater.
+   435→train_fine_tuning(finetune_net, 5e-5)
+   436→loss 0.242, train acc 0.909, test acc 0.940
+   437→1062.4 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+   438→↩→index=1)]
+   439→For comparison, we define an identical model, but initialize all of its model parameters to
+   440→random values. Since the entire model needs to be trained from scratch, we can use a larger
+   441→learning rate.
+   442→
+   443→===== صفحة الكتاب 645 =====
+   444→605
+   445→Fine-Tuning
+   446→scratch_net = torchvision.models.resnet18()
+   447→scratch_net.fc = nn.Linear(scratch_net.fc.in_features, 2)
+   448→train_fine_tuning(scratch_net, 5e-4, param_group=False)
+   449→loss 0.352, train acc 0.846, test acc 0.850
+   450→1525.4 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+   451→↩→index=1)]
+   452→As we can see, the fine-tuned model tends to perform better for the same epoch because its
+   453→initial parameter values are more effective.
+   454→14.2.3 Summary
+   455→• Transfer learning transfers knowledge learned from the source dataset to the target dataset.
+   456→Fine-tuning is a common technique for transfer learning.
+   457→• The target model copies all model designs with their parameters from the source model
+   458→except the output layer, and fine-tunes these parameters based on the target dataset. In
+   459→contrast, the output layer of the target model needs to be trained from scratch.
+   460→• Generally, fine-tuning parameters uses a smaller learning rate, while training the output
+   461→layer from scratch can use a larger learning rate.
+   462→14.2.4 Exercises
+   463→
+   464→===== صفحة الكتاب 646 =====
+   465→606
+   466→Computer Vision
+   467→213
+   468→1. Keep increasing the learning rate of finetune_net. How does the accuracy of the
+   469→model change?
+   470→2. Further adjust hyperparameters of finetune_net and scratch_net in the comparative
+   471→experiment. Do they still differ in accuracy?
+   472→3. Set the parameters before the output layer of finetune_net to those of the source model
+   473→and do not update them during training. How does the accuracy of the model change?
+   474→You can use the following code.
+   475→for param in finetune_net.parameters():
+   476→param.requires_grad = False
+   477→4. In fact, there is a “hotdog” class in the ImageNet dataset. Its corresponding weight
+   478→parameter in the output layer can be obtained via the following code. How can we
+   479→leverage this weight parameter?
+   480→weight = pretrained_net.fc.weight
+   481→hotdog_w = torch.split(weight.data, 1, dim=0)[934]
+   482→hotdog_w.shape
+   483→torch.Size([1, 512])
+   484→Discussions213.
+   485→14.3 Object Detection and Bounding Boxes
+   486→In earlier sections (e.g., Section 8.1–Section 8.4), we introduced various models for image
+   487→classification. In image classification tasks, we assume that there is only one major object
+   488→in the image and we only focus on how to recognize its category. However, there are often
+   489→multiple objects in the image of interest. We not only want to know their categories, but
+   490→also their specific positions in the image. In computer vision, we refer to such tasks as
+   491→object detection (or object recognition).
+   492→Object detection has been widely applied in many fields. For example, self-driving needs to
+   493→plan traveling routes by detecting the positions of vehicles, pedestrians, roads, and obstacles
+   494→in the captured video images. Besides, robots may use this technique to detect and localize
+   495→objects of interest throughout its navigation of an environment. Moreover, security systems
+   496→may need to detect abnormal objects, such as intruders or bombs.
+   497→In the next few sections, we will introduce several deep learning methods for object detec-
+   498→tion. We will begin with an introduction to positions (or locations) of objects.
+   499→
+   500→===== صفحة الكتاب 647 =====
+   501→607
+   502→Object Detection and Bounding Boxes
+   503→%matplotlib inline
+   504→import torch
+   505→from d2l import torch as d2l
+   506→We will load the sample image to be used in this section. We can see that there is a dog
+   507→on the left side of the image and a cat on the right. They are the two major objects in this
+   508→image.
+   509→d2l.set_figsize()
+   510→img = d2l.plt.imread('../img/catdog.jpg')
+   511→d2l.plt.imshow(img);
+   512→14.3.1 Bounding Boxes
+   513→In object detection, we usually use a bounding box to describe the spatial location of an
+   514→object. The bounding box is rectangular, which is determined by the 𝑥and 𝑦coordinates
+   515→of the upper-left corner of the rectangle and the such coordinates of the lower-right corner.
+   516→Another commonly used bounding box representation is the (𝑥, 𝑦)-axis coordinates of the
+   517→bounding box center, and the width and height of the box.
+   518→Here we define functions to convert between these two representations: box_corner_to_center
+   519→converts from the two-corner representation to the center-width-height presentation, and
+   520→box_center_to_corner vice versa. The input argument boxes should be a two-dimensional
+   521→tensor of shape (𝑛, 4), where 𝑛is the number of bounding boxes.
+   522→#@save
+   523→def box_corner_to_center(boxes):
+   524→"""Convert from (upper-left, lower-right) to (center, width, height)."""
+   525→x1, y1, x2, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+   526→cx = (x1 + x2) / 2
+   527→cy = (y1 + y2) / 2
+   528→w = x2 - x1
+   529→h = y2 - y1
+   530→boxes = torch.stack((cx, cy, w, h), axis=-1)
+   531→return boxes
+   532→#@save
+   533→def box_center_to_corner(boxes):
+   534→(continues on next page)
+   535→
+   536→===== صفحة الكتاب 648 =====
+   537→608
+   538→Computer Vision
+   539→(continued from previous page)
+   540→"""Convert from (center, width, height) to (upper-left, lower-right)."""
+   541→cx, cy, w, h = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
+   542→x1 = cx - 0.5 * w
+   543→y1 = cy - 0.5 * h
+   544→x2 = cx + 0.5 * w
+   545→y2 = cy + 0.5 * h
+   546→boxes = torch.stack((x1, y1, x2, y2), axis=-1)
+   547→return boxes
+   548→We will define the bounding boxes of the dog and the cat in the image based on the co-
+   549→ordinate information. The origin of the coordinates in the image is the upper-left corner
+   550→of the image, and to the right and down are the positive directions of the 𝑥and 𝑦axes,
+   551→respectively.
+   552→# Here `bbox` is the abbreviation for bounding box
+   553→dog_bbox, cat_bbox = [60.0, 45.0, 378.0, 516.0], [400.0, 112.0, 655.0, 493.0]
+   554→We can verify the correctness of the two bounding box conversion functions by converting
+   555→twice.
+   556→boxes = torch.tensor((dog_bbox, cat_bbox))
+   557→box_center_to_corner(box_corner_to_center(boxes)) == boxes
+   558→tensor([[True, True, True, True],
+   559→[True, True, True, True]])
+   560→Let’s draw the bounding boxes in the image to check if they are accurate. Before drawing,
+   561→we will define a helper function bbox_to_rect. It represents the bounding box in the
+   562→bounding box format of the matplotlib package.
+   563→#@save
+   564→def bbox_to_rect(bbox, color):
+   565→"""Convert bounding box to matplotlib format."""
+   566→# Convert the bounding box (upper-left x, upper-left y, lower-right x,
+   567→# lower-right y) format to the matplotlib format: ((upper-left x,
+   568→# upper-left y), width, height)
+   569→return d2l.plt.Rectangle(
+   570→xy=(bbox[0], bbox[1]), width=bbox[2]-bbox[0], height=bbox[3]-bbox[1],
+   571→fill=False, edgecolor=color, linewidth=2)
+   572→After adding the bounding boxes on the image, we can see that the main outline of the two
+   573→objects are basically inside the two boxes.
+   574→fig = d2l.plt.imshow(img)
+   575→fig.axes.add_patch(bbox_to_rect(dog_bbox, 'blue'))
+   576→fig.axes.add_patch(bbox_to_rect(cat_bbox, 'red'));
+   577→
+   578→===== صفحة الكتاب 649 =====
+   579→609
+   580→Anchor Boxes
+   581→214
+   582→14.3.2 Summary
+   583→• Object detection not only recognizes all the objects of interest in the image, but also their
+   584→positions. The position is generally represented by a rectangular bounding box.
+   585→• We can convert between two commonly used bounding box representations.
+   586→14.3.3 Exercises
+   587→1. Find another image and try to label a bounding box that contains the object. Compare
+   588→labeling bounding boxes and categories: which usually takes longer?
+   589→2. Why is the innermost dimension of the input argument boxes of box_corner_to_center
+   590→and box_center_to_corner always 4?
+   591→Discussions214.
+   592→14.4 Anchor Boxes
+   593→Object detection algorithms usually sample a large number of regions in the input image,
+   594→determine whether these regions contain objects of interest, and adjust the boundaries of
+   595→the regions so as to predict the ground-truth bounding boxes of the objects more accurately.
+   596→Different models may adopt different region sampling schemes. Here we introduce one of
+   597→such methods: it generates multiple bounding boxes with varying scales and aspect ratios
+   598→centered on each pixel. These bounding boxes are called anchor boxes. We will design an
+   599→object detection model based on anchor boxes in Section 14.7.
+   600→First, let’s modify the printing accuracy just for more concise outputs.
+   601→%matplotlib inline
+   602→import torch
+   603→from d2l import torch as d2l
+   604→torch.set_printoptions(2)
+   605→# Simplify printing accuracy
+   606→
+   607→===== صفحة الكتاب 650 =====
+   608→610
+   609→Computer Vision
+   610→14.4.1 Generating Multiple Anchor Boxes
+   611→Suppose that the input image has a height of ℎand width of 𝑤. We generate anchor boxes
+   612→with different shapes centered on each pixel of the image. Let the scale be 𝑠∈(0, 1] and the
+   613→aspect ratio (ratio of width to height) is 𝑟> 0. Then the width and height of the anchor box
+   614→are 𝑤𝑠√𝑟and ℎ𝑠/√𝑟, respectively. Note that when the center position is given, an anchor
+   615→box with known width and height is determined.
+   616→To generate multiple anchor boxes with different shapes, let’s set a series of scales 𝑠1, . . . , 𝑠𝑛
+   617→and a series of aspect ratios 𝑟1, . . . , 𝑟𝑚. When using all the combinations of these scales
+   618→and aspect ratios with each pixel as the center, the input image will have a total of 𝑤ℎ𝑛𝑚
+   619→anchor boxes. Although these anchor boxes may cover all the ground-truth bounding boxes,
+   620→the computational complexity is easily too high. In practice, we can only consider those
+   621→combinations containing 𝑠1 or 𝑟1:
+   622→(𝑠1, 𝑟1), (𝑠1, 𝑟2), . . . , (𝑠1, 𝑟𝑚), (𝑠2, 𝑟1), (𝑠3, 𝑟1), . . . , (𝑠𝑛, 𝑟1).
+   623→(14.4.1)
+   624→That is to say, the number of anchor boxes centered on the same pixel is 𝑛+ 𝑚−1. For the
+   625→entire input image, we will generate a total of 𝑤ℎ(𝑛+ 𝑚−1) anchor boxes.
+   626→The above method of generating anchor boxes is implemented in the following multi-
+   627→box_prior function. We specify the input image, a list of scales, and a list of aspect ratios,
+   628→then this function will return all the anchor boxes.
+   629→#@save
+   630→def multibox_prior(data, sizes, ratios):
+   631→"""Generate anchor boxes with different shapes centered on each pixel."""
+   632→in_height, in_width = data.shape[-2:]
+   633→device, num_sizes, num_ratios = data.device, len(sizes), len(ratios)
+   634→boxes_per_pixel = (num_sizes + num_ratios - 1)
+   635→size_tensor = torch.tensor(sizes, device=device)
+   636→ratio_tensor = torch.tensor(ratios, device=device)
+   637→# Offsets are required to move the anchor to the center of a pixel. Since
+   638→# a pixel has height=1 and width=1, we choose to offset our centers by 0.5
+   639→offset_h, offset_w = 0.5, 0.5
+   640→steps_h = 1.0 / in_height
+   641→# Scaled steps in y axis
+   642→steps_w = 1.0 / in_width
+   643→# Scaled steps in x axis
+   644→# Generate all center points for the anchor boxes
+   645→center_h = (torch.arange(in_height, device=device) + offset_h) * steps_h
+   646→center_w = (torch.arange(in_width, device=device) + offset_w) * steps_w
+   647→shift_y, shift_x = torch.meshgrid(center_h, center_w, indexing='ij')
+   648→shift_y, shift_x = shift_y.reshape(-1), shift_x.reshape(-1)
+   649→# Generate `boxes_per_pixel` number of heights and widths that are later
+   650→# used to create anchor box corner coordinates (xmin, xmax, ymin, ymax)
+   651→w = torch.cat((size_tensor * torch.sqrt(ratio_tensor[0]),
+   652→sizes[0] * torch.sqrt(ratio_tensor[1:])))\
+   653→* in_height / in_width
+   654→# Handle rectangular inputs
+   655→h = torch.cat((size_tensor / torch.sqrt(ratio_tensor[0]),
+   656→sizes[0] / torch.sqrt(ratio_tensor[1:])))
+   657→# Divide by 2 to get half height and half width
+   658→anchor_manipulations = torch.stack((-w, -h, w, h)).T.repeat(
+   659→(continues on next page)
+   660→
+   661→===== صفحة الكتاب 651 =====
+   662→611
+   663→Anchor Boxes
+   664→(continued from previous page)
+   665→in_height * in_width, 1) / 2
+   666→# Each center point will have `boxes_per_pixel` number of anchor boxes, so
+   667→# generate a grid of all anchor box centers with `boxes_per_pixel` repeats
+   668→out_grid = torch.stack([shift_x, shift_y, shift_x, shift_y],
+   669→dim=1).repeat_interleave(boxes_per_pixel, dim=0)
+   670→output = out_grid + anchor_manipulations
+   671→return output.unsqueeze(0)
+   672→We can see that the shape of the returned anchor box variable Y is (batch size, number of
+   673→anchor boxes, 4).
+   674→img = d2l.plt.imread('../img/catdog.jpg')
+   675→h, w = img.shape[:2]
+   676→print(h, w)
+   677→X = torch.rand(size=(1, 3, h, w))
+   678→# Construct input data
+   679→Y = multibox_prior(X, sizes=[0.75, 0.5, 0.25], ratios=[1, 2, 0.5])
+   680→Y.shape
+   681→561 728
+   682→torch.Size([1, 2042040, 4])
+   683→After changing the shape of the anchor box variable Y to (image height, image width, num-
+   684→ber of anchor boxes centered on the same pixel, 4), we can obtain all the anchor boxes
+   685→centered on a specified pixel position. In the following, we access the first anchor box cen-
+   686→tered on (250, 250). It has four elements: the (𝑥, 𝑦)-axis coordinates at the upper-left corner
+   687→and the (𝑥, 𝑦)-axis coordinates at the lower-right corner of the anchor box. The coordinate
+   688→values of both axes are divided by the width and height of the image, respectively.
+   689→boxes = Y.reshape(h, w, 5, 4)
+   690→boxes[250, 250, 0, :]
+   691→tensor([0.06, 0.07, 0.63, 0.82])
+   692→In order to show all the anchor boxes centered on one pixel in the image, we define the
+   693→following show_bboxes function to draw multiple bounding boxes on the image.
+   694→#@save
+   695→def show_bboxes(axes, bboxes, labels=None, colors=None):
+   696→"""Show bounding boxes."""
+   697→def make_list(obj, default_values=None):
+   698→if obj is None:
+   699→obj = default_values
+   700→(continues on next page)
+
+[showing lines 1-700 of 3747; use offset=701 with limit to continue reading]

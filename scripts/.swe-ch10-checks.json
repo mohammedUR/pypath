@@ -1,0 +1,189 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch10.l1",
+   "id": "ex2.trace-last-two",
+   "code": "def last_two(s):\n    return s[-2:]\n\ncases = [\n    ('python', 'on'),\n    ('hi', 'hi'),\n]\nfor arg, expected in cases:\n    got = last_two(arg)\n    if got == expected:\n        print('ok %s' % arg)\n    else:\n        print('bad %s -> %s' % (arg, got))\n\nprint('done')",
+   "answer": "ok python\nok hi\ndone"
+  },
+  {
+   "lesson": "swe.ch10.l2",
+   "id": "ex2.trace-edges",
+   "code": "tags = []\n\ndef check(x):\n    if x > 10:\n        tags.append('T')\n    else:\n        tags.append('F')\n\nfor x in [5, 20, 10, 0]:\n    check(x)\n\nprint(tags)\nprint('false edge: %d true edge: %d' % (tags.count('F'), tags.count('T')))",
+   "answer": "['F', 'T', 'F', 'F']\nfalse edge: 3 true edge: 1"
+  },
+  {
+   "lesson": "swe.ch10.l3",
+   "id": "ex2.trace-buggy-guard",
+   "code": "def set_volume_buggy(level):\n    if level < 1 or level >= 100:\n        return 'rejected'\n    return 'accepted'\n\nfor value in [55, 99, 100, 101]:\n    print(value, set_volume_buggy(value))",
+   "answer": "55 accepted\n99 accepted\n100 rejected\n101 rejected"
+  },
+  {
+   "lesson": "swe.ch10.l4",
+   "id": "ex3.trace-independence",
+   "code": "def decision(A, B):\n    return A or B\n\ntests = [(True, False), (False, True)]\ncount_true = 0\ncount_false = 0\nfor A, B in tests:\n    if decision(A, B):\n        count_true = count_true + 1\n    else:\n        count_false = count_false + 1\n\nprint('decision T: %d' % count_true)\nprint('decision F: %d' % count_false)",
+   "answer": "decision T: 2\ndecision F: 0"
+  },
+  {
+   "lesson": "swe.ch10.l5",
+   "id": "ex1.trace-classify",
+   "code": "def classify(level):\n    if level < 1:\n        return 'low'\n    if level > 100:\n        return 'high'\n    return 'ok'\n\nfor v in [0, 55, 101]:\n    print(v, classify(v))",
+   "answer": "0 low\n55 ok\n101 high"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch10.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "def initial(name):\n    return name[0]      # defect: forgot .upper()\n\ncases = [\n    ('amy', 'A'),\n    ('bob', 'B'),\n]\npassed = 0\nfailed = 0\nfor name, expected in cases:\n    if initial(name) == expected:\n        passed = passed + 1\n    else:\n        failed = failed + 1\n        print('FAILED:', name)\n\nprint('passed: %d failed: %d' % (passed, failed))"
+  },
+  {
+   "lesson": "swe.ch10.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "def apply_discount(price, percent):\n    \"\"\"Reduce price by percent (0..100); reject bad input.\"\"\"\n    if price < 0:\n        raise ValueError('price must be non-negative')\n    if percent < 0 or percent > 100:\n        raise ValueError('percent must be in 0..100')\n    return round(price * (1 - percent / 100), 2)\n\nassert apply_discount(100.0, 0) == 100.0\nassert apply_discount(143.0, 50) == 71.5\nassert apply_discount(9.99, 10) == 8.99\nassert apply_discount(40.0, 100) == 0.0\n\nfor price, percent in [(-1.0, 10), (100.0, 150)]:\n    try:\n        apply_discount(price, percent)\n        print('missed rejection for %r' % ((price, percent),))\n    except ValueError:\n        pass\n\nprint('suite ok: 4 passed + 2 rejections')"
+  },
+  {
+   "lesson": "swe.ch10.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "def apply_discount(price, percent):\n    if price < 0:\n        raise ValueError('price must be non-negative')\n    if percent < 0 or percent > 100:\n        raise ValueError('percent must be in 0..100')\n    return round(price * (1 - percent / 100), 2)\n\nclass PriceService:\n    def __init__(self, catalog, discounts):\n        self.catalog = catalog\n        self.discounts = discounts\n\n    def quote(self, item):\n        return apply_discount(self.catalog.price_of(item), self.discounts.percent_for(item))\n\nclass StubCatalog:\n    def price_of(self, item):\n        return 12.0\n\nclass StubDiscounts:\n    def percent_for(self, item):\n        return 25\n\nsvc = PriceService(StubCatalog(), StubDiscounts())\nprint('quote: %s' % svc.quote('mug'))\n\nclass MockDiscounts:\n    def __init__(self):\n        self.calls = []\n\n    def percent_for(self, item):\n        self.calls.append(item)\n        return 25\n\nmock = MockDiscounts()\nPriceService(StubCatalog(), mock).quote('mug')\nprint('calls: %r' % (mock.calls,))\n\n# جرّب: اجعل StubDiscounts يعيد 50 بدل 25 — احسب quote يدويًّا قبل التشغيل\n# try: make StubDiscounts return 50 instead of 25 — hand-compute quote before running\n# جرّب: استدعِ quote على عنصر ناقص مثل 'cup' — أين يرتفع ValueError ولماذا؟\n# try: call quote on a missing item like 'cup' — where does ValueError rise and why?"
+  },
+  {
+   "lesson": "swe.ch10.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "edges = []\n\ndef pick(n):\n    if n % 2 == 0:\n        edges.append('even')\n    else:\n        edges.append('odd')\n\nfor n in [2, 7, 0, 9]:\n    pick(n)\n\nprint(edges)"
+  },
+  {
+   "lesson": "swe.ch10.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "hits = set()\nALL_TAGS = {'reject-price', 'reject-percent', 'compute'}\n\ndef apply_discount(price, percent):\n    if price < 0:\n        hits.add('reject-price')\n        return -1.0\n    if percent > 100:\n        hits.add('reject-percent')\n        return -1.0\n    hits.add('compute')\n    return price * (100 - percent) / 100\n\nfor price, percent in [(100.0, 25), (-5.0, 10)]:\n    print('apply_discount(%r, %r) = %r' % (price, percent, apply_discount(price, percent)))\n\nprint('covered: %r' % (sorted(hits),))\nprint('uncovered: %r' % (sorted(ALL_TAGS - hits),))"
+  },
+  {
+   "lesson": "swe.ch10.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "def classify_and_sum(n):\n    if n < 0:\n        return 'negative'\n    total = 0\n    i = 1\n    while i <= n:\n        total = total + i\n        i = i + 1\n    return 'sum=%d' % total\n\nfor n in [0, 1, 4]:\n    print(n, classify_and_sum(n))\n\n# جرّب: قاعدة الحلقات 0/1/many — أي قيم n تغطي صفر تكرار ومرة واحدة وعدة تكرارات؟\n# try: the loop rule 0/1/many — which n values cover zero, one, and many iterations?\n# جرّب: أضف بروب عدّادات (قاموسا hits وedges كما في الدرس) وتحقق أن القيم الثلاث تغطي كل الحواف\n# try: add a counter probe (hits and edges dicts as in the lesson) and verify the three values cover every edge\n"
+  },
+  {
+   "lesson": "swe.ch10.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "def band(score):\n    if score < 60:\n        return 'fail'\n    if score < 80:\n        return 'pass'\n    return 'high'\n\nfor s in [59, 60, 79, 80]:\n    print(s, band(s))"
+  },
+  {
+   "lesson": "swe.ch10.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "def set_volume(level):\n    if not isinstance(level, int):\n        return 'rejected'\n    if 1 <= level <= 100:\n        return 'accepted'\n    return 'rejected'\n\nrepresentatives = [(-3, 'rejected'), (55, 'accepted'), (250, 'rejected'), ('loud', 'rejected')]\nfor value, expected in representatives:\n    got = set_volume(value)\n    assert got == expected, 'class broken at %r' % (value,)\n    print('%r -> %s' % (value, got))\n\nprint('classes: 4 covered: 4')"
+  },
+  {
+   "lesson": "swe.ch10.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "def set_volume(level):\n    if not isinstance(level, int):\n        return 'rejected'\n    if 1 <= level <= 100:\n        return 'accepted'\n    return 'rejected'\n\ndef set_volume_buggy(level):\n    if not isinstance(level, int):\n        return 'rejected'\n    if 1 <= level < 100:\n        return 'accepted'\n    return 'rejected'\n\nfor value in [0, 1, 55, 99, 100, 101, 3.5, 'loud']:\n    a = set_volume(value)\n    b = set_volume_buggy(value)\n    line = '%r correct=%s buggy=%s' % (value, a, b)\n    if a != b:\n        line = line + ' <-- differs'\n    print(line)\n\n# جرّب: أي قيمة وحدها تكشف العيب؟ لماذا لا يستطيع ممثل الفئة 55 كشفه مهما تكرر؟\n# try: which single value exposes the bug? why can the class representative 55 never expose it?\n# جرّب: أضف 1.0 وTrue إلى القائمة — كيف يعاملهما isinstance؟\n# try: add 1.0 and True to the list — how does isinstance treat them?\n"
+  },
+  {
+   "lesson": "swe.ch10.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "def allow(age, member):\n    return age >= 18 and member\n\ntests = [(20, True), (20, False), (16, True)]\nfor age, member in tests:\n    print(age, member, allow(age, member))"
+  },
+  {
+   "lesson": "swe.ch10.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "def gate(age, has_id):\n    if age >= 18 and has_id:\n        return 'allow'\n    return 'deny'\n\ntable = [(18, True), (18, False), (17, True), (17, False)]\nfor age, has_id in table:\n    print(age, has_id, '->', gate(age, has_id))"
+  },
+  {
+   "lesson": "swe.ch10.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "def gate3(a, b, c):\n    if a and (b or c):\n        return 'go'\n    return 'stop'\n\n# جدول الحقيقة الكامل لقرار من 3 شروط = 8 صفوف\n# the full truth table of a 3-condition decision = 8 rows\nimport itertools\nfor a, b, c in itertools.product([True, False], repeat=3):\n    print(a, b, c, '->', gate3(a, b, c))\n\n# جرّب: اختر 4 صفوف (N+1 لثلاثة شروط) تجعل كل شرط له زوج معزل — اكتبها يدويًّا ثم تحقق\n# try: pick 4 rows (N+1 for three conditions) giving every condition an isolating pair — write them by hand then verify\n# جرّب: بدّل and بـ or في gate3 وأعد اشتقاق المجموعة — أي الصفوف تغيّر دورها؟\n# try: swap and for or in gate3 and re-derive the set — which rows change roles?\n# جرّب: أضف معاملًا رابعًا واحسب 2**4 — هل ما زالت الشبكة الكاملة معقولة؟\n# try: add a fourth parameter and compute 2**4 — is exhaustive still reasonable?"
+  },
+  {
+   "lesson": "swe.ch10.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "hits = ['fail', 'pass', 'high']\ntotal = 4\nprint('branches: %d/%d' % (len(hits), total))"
+  },
+  {
+   "lesson": "swe.ch10.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "seen = []\n\ndef band(score):\n    if score < 60:\n        seen.append('fail')\n        return 'fail'\n    if score < 80:\n        seen.append('pass')\n        return 'pass'\n    seen.append('high')\n    return 'high'\n\ncases = [\n    ('just below', 59, 'fail'),\n    ('on the line', 60, 'pass'),\n    ('high edge', 80, 'high'),\n    ('mid', 70, 'pass'),\n]\n\npassed = 0\nfor name, arg, expected in cases:\n    if band(arg) == expected:\n        passed = passed + 1\n    else:\n        print('FAILED:', name)\n\nprint('tests: %d passed: %d' % (len(cases), passed))\nprint('branches: %d of 3' % len(set(seen)))"
+  },
+  {
+   "lesson": "swe.ch10.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "seen = []\n\ndef normalize_grade(score):\n    if score < 0 or score > 100:\n        seen.append('invalid')\n        return -1\n    if score < 60:\n        seen.append('fail')\n        return 0\n    if score < 80:\n        seen.append('pass')\n        return 1\n    seen.append('high')\n    return 2\n\ncases = [('floor', 0, 0), ('high edge', 80, 2)]\n\npassed = 0\nfor name, arg, expected in cases:\n    if normalize_grade(arg) == expected:\n        passed = passed + 1\n    else:\n        print('FAILED:', name)\n\nprint('tests: %d passed: %d' % (len(cases), passed))\nprint('branches: %d of 4' % len(set(seen)))\n\n# جرّب: أضف حالتين فقط ترفعان التغطية من 2/4 إلى 4/4 — أي الفرعين أضفتهما؟\n# try: add just two cases lifting coverage from 2/4 to 4/4 — which two branches?\n# جرّب: غيّر متوقع حالة واحدة خطأً وشاهد FAILED يصرخ بالاسم — هذا أوراكل صادق\n# try: corrupt one expected value and watch FAILED call the name — that is an honest oracle\n# جرّب: احذف print('FAILED:', name) من الحلقة — هل ما زالت الحزمة تُخفي الفشل أم تكشفه؟\n# try: delete print('FAILED:', name) from the loop — does the suite still hide or expose the failure?"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch10.l1",
+   "id": "ex3.mcq-levels",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch10.l2",
+   "id": "ex3.mcq-subsumption",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch10.l3",
+   "id": "ex3.mcq-partitions",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch10.l3",
+   "id": "ex4.numeric-boundaries",
+   "answer": "6",
+   "solution": "6"
+  },
+  {
+   "lesson": "swe.ch10.l4",
+   "id": "ex4.mcq-pairwise",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch10.l5",
+   "id": "ex3.mcq-criterion",
+   "answer": "c",
+   "solution": "c"
+  },
+  {
+   "lesson": "swe.ch10.l5",
+   "id": "ex4.numeric-grid",
+   "answer": "8",
+   "solution": "8"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch10.l1",
+   "id": "ex4.fill-oracle",
+   "answer": "oracle"
+  },
+  {
+   "lesson": "swe.ch10.l2",
+   "id": "ex4.fill-branch",
+   "answer": "branch"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch10.l5",
+   "id": "ex5.debug-oracle",
+   "brokenCode": "seen = []\n\ndef normalize_grade(score):\n    if score < 0 or score > 100:\n        seen.append('invalid')\n        return -1\n    if score < 60:\n        seen.append('fail')\n        return 0\n    if score < 80:\n        seen.append('pass')\n        return 1\n    seen.append('high')\n    return 2\n\ncases = [\n    ('zero', 0, 0),\n    ('fail edge', 59, 0),\n    ('pass edge', 79, 0),\n    ('high edge', 80, 2),\n]\n\npassed = 0\nfor name, arg, expected in cases:\n    if normalize_grade(arg) == expected:\n        passed = passed + 1\n    else:\n        print('FAILED:', name, '-> got %s' % normalize_grade(arg))\n\nprint('tests: %d passed: %d' % (len(cases), passed))"
+  }
+ ]
+}

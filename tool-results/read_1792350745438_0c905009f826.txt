@@ -1,0 +1,622 @@
+     1→
+     2→===== صفحة الكتاب 41 =====
+     3→1
+     4→Introduction
+     5→Until recently, nearly every computer program that you might have interacted with during an
+     6→ordinary day was coded up as a rigid set of rules specifying precisely how it should behave.
+     7→Say that we wanted to write an application to manage an e-commerce platform. After
+     8→huddling around a whiteboard for a few hours to ponder the problem, we might settle on
+     9→the broad strokes of a working solution, for example: (i) users interact with the application
+    10→through an interface running in a web browser or mobile application; (ii) our application
+    11→interacts with a commercial-grade database engine to keep track of each user’s state and
+    12→maintain records of historical transactions; and (iii) at the heart of our application, the
+    13→business logic (you might say, the brains) of our application spells out a set of rules that
+    14→map every conceivable circumstance to the corresponding action that our program should
+    15→take.
+    16→To build the brains of our application, we might enumerate all the common events that our
+    17→program should handle. For example, whenever a customer clicks to add an item to their
+    18→shopping cart, our program should add an entry to the shopping cart database table, associ-
+    19→ating that user’s ID with the requested product’s ID. We might then attempt to step through
+    20→every possible corner case, testing the appropriateness of our rules and making any neces-
+    21→sary modifications. What happens if a user initiates a purchase with an empty cart? While
+    22→few developers ever get it completely right the first time (it might take some test runs to
+    23→work out the kinks), for the most part we can write such programs and confidently launch
+    24→them before ever seeing a real customer. Our ability to manually design automated sys-
+    25→tems that drive functioning products and systems, often in novel situations, is a remarkable
+    26→cognitive feat. And when you are able to devise solutions that work 100% of the time, you
+    27→typically should not be worrying about machine learning.
+    28→Fortunately for the growing community of machine learning scientists, many tasks that we
+    29→would like to automate do not bend so easily to human ingenuity. Imagine huddling around
+    30→the whiteboard with the smartest minds you know, but this time you are tackling one of the
+    31→following problems:
+    32→• Write a program that predicts tomorrow’s weather given geographic information, satellite
+    33→images, and a trailing window of past weather.
+    34→• Write a program that takes in a factoid question, expressed in free-form text, and answers
+    35→it correctly.
+    36→• Write a program that, given an image, identifies every person depicted in it and draws
+    37→outlines around each.
+    38→1
+    39→
+    40→===== صفحة الكتاب 42 =====
+    41→2
+    42→Introduction
+    43→• Write a program that presents users with products that they are likely to enjoy but un-
+    44→likely, in the natural course of browsing, to encounter.
+    45→For these problems, even elite programmers would struggle to code up solutions from
+    46→scratch. The reasons can vary. Sometimes the program that we are looking for follows
+    47→a pattern that changes over time, so there is no fixed right answer! In such cases, any
+    48→successful solution must adapt gracefully to a changing world. At other times, the rela-
+    49→tionship (say between pixels, and abstract categories) may be too complicated, requiring
+    50→thousands or millions of computations and following unknown principles. In the case of
+    51→image recognition, the precise steps required to perform the task lie beyond our conscious
+    52→understanding, even though our subconscious cognitive processes execute the task effort-
+    53→lessly.
+    54→Machine learning is the study of algorithms that can learn from experience. As a machine
+    55→learning algorithm accumulates more experience, typically in the form of observational
+    56→data or interactions with an environment, its performance improves. Contrast this with
+    57→our deterministic e-commerce platform, which follows the same business logic, no matter
+    58→how much experience accrues, until the developers themselves learn and decide that it is
+    59→time to update the software. In this book, we will teach you the fundamentals of machine
+    60→learning, focusing in particular on deep learning, a powerful set of techniques driving in-
+    61→novations in areas as diverse as computer vision, natural language processing, healthcare,
+    62→and genomics.
+    63→1.1 A Motivating Example
+    64→Before beginning writing, the authors of this book, like much of the work force, had to
+    65→become caffeinated. We hopped in the car and started driving. Using an iPhone, Alex called
+    66→out “Hey Siri”, awakening the phone’s voice recognition system. Then Mu commanded
+    67→“directions to Blue Bottle coffee shop”. The phone quickly displayed the transcription of
+    68→his command. It also recognized that we were asking for directions and launched the Maps
+    69→application (app) to fulfill our request. Once launched, the Maps app identified a number
+    70→of routes. Next to each route, the phone displayed a predicted transit time. While this story
+    71→was fabricated for pedagogical convenience, it demonstrates that in the span of just a few
+    72→seconds, our everyday interactions with a smart phone can engage several machine learning
+    73→models.
+    74→Imagine just writing a program to respond to a wake word such as “Alexa”, “OK Google”,
+    75→and “Hey Siri”. Try coding it up in a room by yourself with nothing but a computer and
+    76→a code editor, as illustrated in Fig. 1.1.1. How would you write such a program from first
+    77→principles? Think about it… the problem is hard. Every second, the microphone will col-
+    78→lect roughly 44,000 samples. Each sample is a measurement of the amplitude of the sound
+    79→wave. What rule could map reliably from a snippet of raw audio to confident predictions
+    80→{yes, no} about whether the snippet contains the wake word? If you are stuck, do not worry.
+    81→
+    82→===== صفحة الكتاب 43 =====
+    83→3
+    84→A Motivating Example
+    85→We do not know how to write such a program from scratch either. That is why we use ma-
+    86→chine learning.
+    87→t
+    88→Fig. 1.1.1
+    89→Identify a wake word.
+    90→Here is the trick. Often, even when we do not know how to tell a computer explicitly how
+    91→to map from inputs to outputs, we are nonetheless capable of performing the cognitive feat
+    92→ourselves. In other words, even if you do not know how to program a computer to rec-
+    93→ognize the word “Alexa”, you yourself are able to recognize it. Armed with this ability,
+    94→we can collect a huge dataset containing examples of audio snippets and associated labels,
+    95→indicating which snippets contain the wake word. In the currently dominant approach to
+    96→machine learning, we do not attempt to design a system explicitly to recognize wake words.
+    97→Instead, we define a flexible program whose behavior is determined by a number of pa-
+    98→rameters. Then we use the dataset to determine the best possible parameter values, i.e.,
+    99→those that improve the performance of our program with respect to a chosen performance
+   100→measure.
+   101→You can think of the parameters as knobs that we can turn, manipulating the behavior of
+   102→the program. Once the parameters are fixed, we call the program a model. The set of all
+   103→distinct programs (input–output mappings) that we can produce just by manipulating the
+   104→parameters is called a family of models. And the “meta-program” that uses our dataset to
+   105→choose the parameters is called a learning algorithm.
+   106→Before we can go ahead and engage the learning algorithm, we have to define the problem
+   107→precisely, pinning down the exact nature of the inputs and outputs, and choosing an ap-
+   108→propriate model family. In this case, our model receives a snippet of audio as input, and
+   109→the model generates a selection among {yes, no} as output. If all goes according to plan
+   110→the model’s guesses will typically be correct as to whether the snippet contains the wake
+   111→word.
+   112→If we choose the right family of models, there should exist one setting of the knobs such
+   113→that the model fires “yes” every time it hears the word “Alexa”. Because the exact choice of
+   114→the wake word is arbitrary, we will probably need a model family sufficiently rich that, via
+   115→another setting of the knobs, it could fire “yes” only upon hearing the word “Apricot”. We
+   116→expect that the same model family should be suitable for “Alexa” recognition and “Apricot”
+   117→recognition because they seem, intuitively, to be similar tasks. However, we might need a
+   118→different family of models entirely if we want to deal with fundamentally different inputs
+   119→or outputs, say if we wanted to map from images to captions, or from English sentences to
+   120→Chinese sentences.
+   121→As you might guess, if we just set all of the knobs randomly, it is unlikely that our model
+   122→will recognize “Alexa”, “Apricot”, or any other English word. In machine learning, the
+   123→learning is the process by which we discover the right setting of the knobs for coercing the
+   124→
+   125→===== صفحة الكتاب 44 =====
+   126→4
+   127→Introduction
+   128→desired behavior from our model. In other words, we train our model with data. As shown
+   129→in Fig. 1.1.2, the training process usually looks like the following:
+   130→1. Start off with a randomly initialized model that cannot do anything useful.
+   131→2. Grab some of your data (e.g., audio snippets and corresponding {yes, no} labels).
+   132→3. Tweak the knobs to make the model perform better as assessed on those examples.
+   133→4. Repeat Steps 2 and 3 until the model is awesome.
+   134→t
+   135→Fig. 1.1.2
+   136→A typical training process.
+   137→To summarize, rather than code up a wake word recognizer, we code up a program that can
+   138→learn to recognize wake words, if presented with a large labeled dataset. You can think of
+   139→this act of determining a program’s behavior by presenting it with a dataset as programming
+   140→with data. That is to say, we can “program” a cat detector by providing our machine learning
+   141→system with many examples of cats and dogs. This way the detector will eventually learn
+   142→to emit a very large positive number if it is a cat, a very large negative number if it is a
+   143→dog, and something closer to zero if it is not sure. This barely scratches the surface of what
+   144→machine learning can do. Deep learning, which we will explain in greater detail later, is
+   145→just one among many popular methods for solving machine learning problems.
+   146→1.2 Key Components
+   147→In our wake word example, we described a dataset consisting of audio snippets and binary
+   148→labels, and we gave a hand-wavy sense of how we might train a model to approximate a
+   149→mapping from snippets to classifications. This sort of problem, where we try to predict a
+   150→designated unknown label based on known inputs given a dataset consisting of examples
+   151→for which the labels are known, is called supervised learning. This is just one among many
+   152→kinds of machine learning problems. Before we explore other varieties, we would like to
+   153→shed more light on some core components that will follow us around, no matter what kind
+   154→of machine learning problem we tackle:
+   155→1. The data that we can learn from.
+   156→2. A model of how to transform the data.
+   157→3. An objective function that quantifies how well (or badly) the model is doing.
+   158→4. An algorithm to adjust the model’s parameters to optimize the objective function.
+   159→
+   160→===== صفحة الكتاب 45 =====
+   161→5
+   162→Key Components
+   163→1.2.1 Data
+   164→It might go without saying that you cannot do data science without data. We could lose
+   165→hundreds of pages pondering what precisely data is, but for now, we will focus on the key
+   166→properties of the datasets that we will be concerned with. Generally, we are concerned with
+   167→a collection of examples. In order to work with data usefully, we typically need to come
+   168→up with a suitable numerical representation. Each example (or data point, data instance,
+   169→sample) typically consists of a set of attributes called features (sometimes called covariates
+   170→or inputs), based on which the model must make its predictions. In supervised learning
+   171→problems, our goal is to predict the value of a special attribute, called the label (or target),
+   172→that is not part of the model’s input.
+   173→If we were working with image data, each example might consist of an individual photo-
+   174→graph (the features) and a number indicating the category to which the photograph belongs
+   175→(the label). The photograph would be represented numerically as three grids of numerical
+   176→values representing the brightness of red, green, and blue light at each pixel location. For
+   177→example, a 200 × 200 pixel color photograph would consist of 200 × 200 × 3 = 120000
+   178→numerical values.
+   179→Alternatively, we might work with electronic health record data and tackle the task of pre-
+   180→dicting the likelihood that a given patient will survive the next 30 days. Here, our features
+   181→might consist of a collection of readily available attributes and frequently recorded mea-
+   182→surements, including age, vital signs, comorbidities, current medications, and recent pro-
+   183→cedures. The label available for training would be a binary value indicating whether each
+   184→patient in the historical data survived within the 30-day window.
+   185→In such cases, when every example is characterized by the same number of numerical fea-
+   186→tures, we say that the inputs are fixed-length vectors and we call the (constant) length of
+   187→the vectors the dimensionality of the data. As you might imagine, fixed-length inputs can
+   188→be convenient, giving us one less complication to worry about. However, not all data can
+   189→easily be represented as fixed-length vectors. While we might expect microscope images to
+   190→come from standard equipment, we cannot expect images mined from the Internet all to have
+   191→the same resolution or shape. For images, we might consider cropping them to a standard
+   192→size, but that strategy only gets us so far. We risk losing information in the cropped-out
+   193→portions. Moreover, text data resists fixed-length representations even more stubbornly.
+   194→Consider the customer reviews left on e-commerce sites such as Amazon, IMDb, and Tri-
+   195→pAdvisor. Some are short: “it stinks!”. Others ramble for pages. One major advantage of
+   196→deep learning over traditional methods is the comparative grace with which modern models
+   197→can handle varying-length data.
+   198→Generally, the more data we have, the easier our job becomes. When we have more data, we
+   199→can train more powerful models and rely less heavily on preconceived assumptions. The
+   200→regime change from (comparatively) small to big data is a major contributor to the success
+   201→of modern deep learning. To drive the point home, many of the most exciting models in
+   202→deep learning do not work without large datasets. Some others might work in the small
+   203→data regime, but are no better than traditional approaches.
+   204→Finally, it is not enough to have lots of data and to process it cleverly. We need the right
+   205→
+   206→===== صفحة الكتاب 46 =====
+   207→6
+   208→Introduction
+   209→data. If the data is full of mistakes, or if the chosen features are not predictive of the target
+   210→quantity of interest, learning is going to fail. The situation is captured well by the cliché:
+   211→garbage in, garbage out. Moreover, poor predictive performance is not the only poten-
+   212→tial consequence. In sensitive applications of machine learning, like predictive policing,
+   213→resume screening, and risk models used for lending, we must be especially alert to the con-
+   214→sequences of garbage data. One commonly occurring failure mode concerns datasets where
+   215→some groups of people are unrepresented in the training data. Imagine applying a skin can-
+   216→cer recognition system that had never seen black skin before. Failure can also occur when
+   217→the data does not only under-represent some groups but reflects societal prejudices. For ex-
+   218→ample, if past hiring decisions are used to train a predictive model that will be used to screen
+   219→resumes then machine learning models could inadvertently capture and automate historical
+   220→injustices. Note that this can all happen without the data scientist actively conspiring, or
+   221→even being aware.
+   222→1.2.2 Models
+   223→Most machine learning involves transforming the data in some sense. We might want to
+   224→build a system that ingests photos and predicts smiley-ness. Alternatively, we might want to
+   225→ingest a set of sensor readings and predict how normal vs. anomalous the readings are. By
+   226→model, we denote the computational machinery for ingesting data of one type, and spitting
+   227→out predictions of a possibly different type. In particular, we are interested in statistical
+   228→models that can be estimated from data. While simple models are perfectly capable of ad-
+   229→dressing appropriately simple problems, the problems that we focus on in this book stretch
+   230→the limits of classical methods. Deep learning is differentiated from classical approaches
+   231→principally by the set of powerful models that it focuses on. These models consist of many
+   232→successive transformations of the data that are chained together top to bottom, thus the
+   233→name deep learning. On our way to discussing deep models, we will also discuss some
+   234→more traditional methods.
+   235→1.2.3 Objective Functions
+   236→Earlier, we introduced machine learning as learning from experience. By learning here, we
+   237→mean improving at some task over time. But who is to say what constitutes an improvement?
+   238→You might imagine that we could propose updating our model, and some people might
+   239→disagree on whether our proposal constituted an improvement or not.
+   240→In order to develop a formal mathematical system of learning machines, we need to have
+   241→formal measures of how good (or bad) our models are. In machine learning, and optimiza-
+   242→tion more generally, we call these objective functions. By convention, we usually define
+   243→objective functions so that lower is better. This is merely a convention. You can take any
+   244→function for which higher is better, and turn it into a new function that is qualitatively iden-
+   245→tical but for which lower is better by flipping the sign. Because we choose lower to be
+   246→better, these functions are sometimes called loss functions.
+   247→When trying to predict numerical values, the most common loss function is squared error,
+   248→i.e., the square of the difference between the prediction and the ground truth target. For
+   249→classification, the most common objective is to minimize error rate, i.e., the fraction of
+   250→
+   251→===== صفحة الكتاب 47 =====
+   252→7
+   253→Kinds of Machine Learning Problems
+   254→examples on which our predictions disagree with the ground truth. Some objectives (e.g.,
+   255→squared error) are easy to optimize, while others (e.g., error rate) are difficult to optimize
+   256→directly, owing to non-differentiability or other complications. In these cases, it is common
+   257→instead to optimize a surrogate objective.
+   258→During optimization, we think of the loss as a function of the model’s parameters, and treat
+   259→the training dataset as a constant. We learn the best values of our model’s parameters by
+   260→minimizing the loss incurred on a set consisting of some number of examples collected for
+   261→training. However, doing well on the training data does not guarantee that we will do well
+   262→on unseen data. So we will typically want to split the available data into two partitions:
+   263→the training dataset (or training set), for learning model parameters; and the test dataset
+   264→(or test set), which is held out for evaluation. At the end of the day, we typically report
+   265→how our models perform on both partitions. You could think of training performance as
+   266→analogous to the scores that a student achieves on the practice exams used to prepare for
+   267→some real final exam. Even if the results are encouraging, that does not guarantee success
+   268→on the final exam. Over the course of studying, the student might begin to memorize the
+   269→practice questions, appearing to master the topic but faltering when faced with previously
+   270→unseen questions on the actual final exam. When a model performs well on the training set
+   271→but fails to generalize to unseen data, we say that it is overfitting to the training data.
+   272→1.2.4 Optimization Algorithms
+   273→Once we have got some data source and representation, a model, and a well-defined objec-
+   274→tive function, we need an algorithm capable of searching for the best possible parameters
+   275→for minimizing the loss function. Popular optimization algorithms for deep learning are
+   276→based on an approach called gradient descent. In brief, at each step, this method checks
+   277→to see, for each parameter, how that training set loss would change if you perturbed that
+   278→parameter by just a small amount. It would then update the parameter in the direction that
+   279→lowers the loss.
+   280→1.3 Kinds of Machine Learning Problems
+   281→The wake word problem in our motivating example is just one among many that machine
+   282→learning can tackle. To motivate the reader further and provide us with some common
+   283→language that will follow us throughout the book, we now provide a broad overview of the
+   284→landscape of machine learning problems.
+   285→1.3.1 Supervised Learning
+   286→Supervised learning describes tasks where we are given a dataset containing both features
+   287→and labels and asked to produce a model that predicts the labels when given input features.
+   288→Each feature–label pair is called an example. Sometimes, when the context is clear, we
+   289→may use the term examples to refer to a collection of inputs, even when the corresponding
+   290→
+   291→===== صفحة الكتاب 48 =====
+   292→8
+   293→Introduction
+   294→labels are unknown. The supervision comes into play because, for choosing the parame-
+   295→ters, we (the supervisors) provide the model with a dataset consisting of labeled examples.
+   296→In probabilistic terms, we typically are interested in estimating the conditional probability
+   297→of a label given input features. While it is just one among several paradigms, supervised
+   298→learning accounts for the majority of successful applications of machine learning in indus-
+   299→try. Partly that is because many important tasks can be described crisply as estimating the
+   300→probability of something unknown given a particular set of available data:
+   301→• Predict cancer vs. not cancer, given a computer tomography image.
+   302→• Predict the correct translation in French, given a sentence in English.
+   303→• Predict the price of a stock next month based on this month’s financial reporting data.
+   304→While all supervised learning problems are captured by the simple description “predicting
+   305→the labels given input features”, supervised learning itself can take diverse forms and require
+   306→tons of modeling decisions, depending on (among other considerations) the type, size, and
+   307→quantity of the inputs and outputs. For example, we use different models for processing
+   308→sequences of arbitrary lengths and fixed-length vector representations. We will visit many
+   309→of these problems in depth throughout this book.
+   310→Informally, the learning process looks something like the following. First, grab a big col-
+   311→lection of examples for which the features are known and select from them a random subset,
+   312→acquiring the ground truth labels for each. Sometimes these labels might be available data
+   313→that have already been collected (e.g., did a patient die within the following year?) and
+   314→other times we might need to employ human annotators to label the data, (e.g., assigning
+   315→images to categories). Together, these inputs and corresponding labels comprise the train-
+   316→ing set. We feed the training dataset into a supervised learning algorithm, a function that
+   317→takes as input a dataset and outputs another function: the learned model. Finally, we can
+   318→feed previously unseen inputs to the learned model, using its outputs as predictions of the
+   319→corresponding label. The full process is drawn in Fig. 1.3.1.
+   320→t
+   321→Fig. 1.3.1
+   322→Supervised learning.
+   323→Regression
+   324→Perhaps the simplest supervised learning task to wrap your head around is regression. Con-
+   325→sider, for example, a set of data harvested from a database of home sales. We might con-
+   326→struct a table, in which each row corresponds to a different house, and each column cor-
+   327→responds to some relevant attribute, such as the square footage of a house, the number of
+   328→bedrooms, the number of bathrooms, and the number of minutes (walking) to the center
+   329→of town. In this dataset, each example would be a specific house, and the corresponding
+   330→
+   331→===== صفحة الكتاب 49 =====
+   332→9
+   333→Kinds of Machine Learning Problems
+   334→19
+   335→feature vector would be one row in the table. If you live in New York or San Francisco, and
+   336→you are not the CEO of Amazon, Google, Microsoft, or Facebook, the (sq. footage, no. of
+   337→bedrooms, no. of bathrooms, walking distance) feature vector for your home might look
+   338→something like: [600, 1, 1, 60]. However, if you live in Pittsburgh, it might look more like
+   339→[3000, 4, 3, 10]. Fixed-length feature vectors like this are essential for most classic machine
+   340→learning algorithms.
+   341→What makes a problem a regression is actually the form of the target. Say that you are in the
+   342→market for a new home. You might want to estimate the fair market value of a house, given
+   343→some features such as above. The data here might consist of historical home listings and the
+   344→labels might be the observed sales prices. When labels take on arbitrary numerical values
+   345→(even within some interval), we call this a regression problem. The goal is to produce a
+   346→model whose predictions closely approximate the actual label values.
+   347→Lots of practical problems are easily described as regression problems. Predicting the rating
+   348→that a user will assign to a movie can be thought of as a regression problem and if you
+   349→designed a great algorithm to accomplish this feat in 2009, you might have won the 1-
+   350→million-dollar Netflix prize 19 . Predicting the length of stay for patients in the hospital is
+   351→also a regression problem. A good rule of thumb is that any how much? or how many?
+   352→problem is likely to be regression. For example:
+   353→• How many hours will this surgery take?
+   354→• How much rainfall will this town have in the next six hours?
+   355→Even if you have never worked with machine learning before, you have probably worked
+   356→through a regression problem informally. Imagine, for example, that you had your drains re-
+   357→paired and that your contractor spent 3 hours removing gunk from your sewage pipes. Then
+   358→they sent you a bill of 350 dollars. Now imagine that your friend hired the same contractor
+   359→for 2 hours and received a bill of 250 dollars. If someone then asked you how much to
+   360→expect on their upcoming gunk-removal invoice you might make some reasonable assump-
+   361→tions, such as more hours worked costs more dollars. You might also assume that there is
+   362→some base charge and that the contractor then charges per hour. If these assumptions held
+   363→true, then given these two data examples, you could already identify the contractor’s pricing
+   364→structure: 100 dollars per hour plus 50 dollars to show up at your house. If you followed
+   365→that much, then you already understand the high-level idea behind linear regression.
+   366→In this case, we could produce the parameters that exactly matched the contractor’s prices.
+   367→Sometimes this is not possible, e.g., if some of the variation arises from factors beyond
+   368→your two features. In these cases, we will try to learn models that minimize the distance
+   369→between our predictions and the observed values. In most of our chapters, we will focus on
+   370→minimizing the squared error loss function. As we will see later, this loss corresponds to
+   371→the assumption that our data were corrupted by Gaussian noise.
+   372→Classification
+   373→While regression models are great for addressing how many? questions, lots of problems do
+   374→not fit comfortably in this template. Consider, for example, a bank that wants to develop a
+   375→
+   376→===== صفحة الكتاب 50 =====
+   377→10
+   378→Introduction
+   379→check scanning feature for its mobile app. Ideally, the customer would simply snap a photo
+   380→of a check and the app would automatically recognize the text from the image. Assuming
+   381→that we had some ability to segment out image patches corresponding to each handwritten
+   382→character, then the primary remaining task would be to determine which character among
+   383→some known set is depicted in each image patch. These kinds of which one? problems
+   384→are called classification and require a different set of tools from those used for regression,
+   385→although many techniques will carry over.
+   386→In classification, we want our model to look at features, e.g., the pixel values in an image,
+   387→and then predict to which category (sometimes called a class) among some discrete set
+   388→of options, an example belongs. For handwritten digits, we might have ten classes, corre-
+   389→sponding to the digits 0 through 9. The simplest form of classification is when there are
+   390→only two classes, a problem which we call binary classification. For example, our dataset
+   391→could consist of images of animals and our labels might be the classes {cat, dog}. Whereas
+   392→in regression we sought a regressor to output a numerical value, in classification we seek a
+   393→classifier, whose output is the predicted class assignment.
+   394→For reasons that we will get into as the book gets more technical, it can be difficult to opti-
+   395→mize a model that can only output a firm categorical assignment, e.g., either “cat” or “dog”.
+   396→In these cases, it is usually much easier to express our model in the language of probabili-
+   397→ties. Given features of an example, our model assigns a probability to each possible class.
+   398→Returning to our animal classification example where the classes are {cat, dog}, a classi-
+   399→fier might see an image and output the probability that the image is a cat as 0.9. We can
+   400→interpret this number by saying that the classifier is 90% sure that the image depicts a cat.
+   401→The magnitude of the probability for the predicted class conveys a notion of uncertainty.
+   402→It is not the only one available and we will discuss others in chapters dealing with more
+   403→advanced topics.
+   404→When we have more than two possible classes, we call the problem multiclass classification.
+   405→Common examples include handwritten character recognition {0, 1, 2, ... 9, a, b, c, ...}. While
+   406→we attacked regression problems by trying to minimize the squared error loss function, the
+   407→common loss function for classification problems is called cross-entropy, whose name will
+   408→be demystified when we introduce information theory in later chapters.
+   409→Note that the most likely class is not necessarily the one that you are going to use for your
+   410→decision. Assume that you find a beautiful mushroom in your backyard as shown in Fig.
+   411→1.3.2.
+   412→Now, assume that you built a classifier and trained it to predict whether a mushroom is poi-
+   413→sonous based on a photograph. Say our poison-detection classifier outputs that the proba-
+   414→bility that Fig. 1.3.2 shows a death cap is 0.2. In other words, the classifier is 80% sure that
+   415→our mushroom is not a death cap. Still, you would have to be a fool to eat it. That is because
+   416→the certain benefit of a delicious dinner is not worth a 20% risk of dying from it. In other
+   417→words, the effect of the uncertain risk outweighs the benefit by far. Thus, in order to make
+   418→a decision about whether to eat the mushroom, we need to compute the expected detriment
+   419→associated with each action which depends both on the likely outcomes and the benefits or
+   420→harms associated with each. In this case, the detriment incurred by eating the mushroom
+   421→
+   422→===== صفحة الكتاب 51 =====
+   423→11
+   424→Kinds of Machine Learning Problems
+   425→t
+   426→Fig. 1.3.2
+   427→Death cap - do not eat!
+   428→20
+   429→might be 0.2 × ∞+ 0.8 × 0 = ∞, whereas the loss of discarding it is 0.2 × 0 + 0.8 × 1 = 0.8.
+   430→Our caution was justified: as any mycologist would tell us, the mushroom in Fig. 1.3.2 is
+   431→actually a death cap.
+   432→Classification can get much more complicated than just binary or multiclass classification.
+   433→For instance, there are some variants of classification addressing hierarchically structured
+   434→classes. In such cases not all errors are equal—if we must err, we might prefer to misclassify
+   435→to a related class rather than a distant class. Usually, this is referred to as hierarchical
+   436→classification. For inspiration, you might think of Linnaeus 20 , who organized fauna in a
+   437→hierarchy.
+   438→In the case of animal classification, it might not be so bad to mistake a poodle for a schnauzer,
+   439→but our model would pay a huge penalty if it confused a poodle with a dinosaur. Which
+   440→hierarchy is relevant might depend on how you plan to use the model. For example, rat-
+   441→tlesnakes and garter snakes might be close on the phylogenetic tree, but mistaking a rattler
+   442→for a garter could have fatal consequences.
+   443→Tagging
+   444→Some classification problems fit neatly into the binary or multiclass classification setups.
+   445→For example, we could train a normal binary classifier to distinguish cats from dogs. Given
+   446→the current state of computer vision, we can do this easily, with off-the-shelf tools. Nonethe-
+   447→less, no matter how accurate our model gets, we might find ourselves in trouble when the
+   448→classifier encounters an image of the Town Musicians of Bremen, a popular German fairy
+   449→tale featuring four animals (Fig. 1.3.3).
+   450→As you can see, the photo features a cat, a rooster, a dog, and a donkey, with some trees in
+   451→the background. If we anticipate encountering such images, multiclass classification might
+   452→not be the right problem formulation. Instead, we might want to give the model the option
+   453→of saying the image depicts a cat, a dog, a donkey, and a rooster.
+   454→
+   455→===== صفحة الكتاب 52 =====
+   456→12
+   457→Introduction
+   458→t
+   459→Fig. 1.3.3
+   460→A donkey, a dog, a cat, and a rooster.
+   461→21
+   462→The problem of learning to predict classes that are not mutually exclusive is called multi-
+   463→label classification. Auto-tagging problems are typically best described in terms of multi-
+   464→label classification. Think of the tags people might apply to posts on a technical blog, e.g.,
+   465→“machine learning”, “technology”, “gadgets”, “programming languages”, “Linux”, “cloud
+   466→computing”, “AWS”. A typical article might have 5–10 tags applied. Typically, tags will
+   467→exhibit some correlation structure. Posts about “cloud computing” are likely to mention
+   468→“AWS” and posts about “machine learning” are likely to mention “GPUs”.
+   469→Sometimes such tagging problems draw on enormous label sets. The National Library of
+   470→Medicine employs many professional annotators who associate each article to be indexed in
+   471→PubMed with a set of tags drawn from the Medical Subject Headings (MeSH) ontology, a
+   472→collection of roughly 28,000 tags. Correctly tagging articles is important because it allows
+   473→researchers to conduct exhaustive reviews of the literature. This is a time-consuming pro-
+   474→cess and typically there is a one-year lag between archiving and tagging. Machine learning
+   475→can provide provisional tags until each article has a proper manual review. Indeed, for
+   476→several years, the BioASQ organization has hosted competitions21 for this task.
+   477→
+   478→===== صفحة الكتاب 53 =====
+   479→13
+   480→Kinds of Machine Learning Problems
+   481→22
+   482→Search
+   483→In the field of information retrieval, we often impose ranks on sets of items. Take web
+   484→search for example. The goal is less to determine whether a particular page is relevant for a
+   485→query, but rather which, among a set of relevant results, should be shown most prominently
+   486→to a particular user. One way of doing this might be to first assign a score to every element
+   487→in the set and then to retrieve the top-rated elements. PageRank 22 , the original secret
+   488→sauce behind the Google search engine, was an early example of such a scoring system.
+   489→Weirdly, the scoring provided by PageRank did not depend on the actual query. Instead,
+   490→they relied on a simple relevance filter to identify the set of relevant candidates and then
+   491→used PageRank to prioritize the more authoritative pages. Nowadays, search engines use
+   492→machine learning and behavioral models to obtain query-dependent relevance scores. There
+   493→are entire academic conferences devoted to this subject.
+   494→Recommender Systems
+   495→Recommender systems are another problem setting that is related to search and ranking.
+   496→The problems are similar insofar as the goal is to display a set of items relevant to the user.
+   497→The main difference is the emphasis on personalization to specific users in the context of
+   498→recommender systems. For instance, for movie recommendations, the results page for a
+   499→science fiction fan and the results page for a connoisseur of Peter Sellers comedies might
+   500→differ significantly. Similar problems pop up in other recommendation settings, e.g., for
+   501→retail products, music, and news recommendation.
+   502→In some cases, customers provide explicit feedback, communicating how much they liked a
+   503→particular product (e.g., the product ratings and reviews on Amazon, IMDb, or Goodreads).
+   504→In other cases, they provide implicit feedback, e.g., by skipping titles on a playlist, which
+   505→might indicate dissatisfaction or maybe just indicate that the song was inappropriate in
+   506→context. In the simplest formulations, these systems are trained to estimate some score,
+   507→such as an expected star rating or the probability that a given user will purchase a particular
+   508→item.
+   509→Given such a model, for any given user, we could retrieve the set of objects with the largest
+   510→scores, which could then be recommended to the user. Production systems are consider-
+   511→ably more advanced and take detailed user activity and item characteristics into account
+   512→when computing such scores. Fig. 1.3.4 displays the deep learning books recommended by
+   513→Amazon based on personalization algorithms tuned to capture Aston’s preferences.
+   514→Despite their tremendous economic value, recommender systems naively built on top of
+   515→predictive models suffer some serious conceptual flaws. To start, we only observe censored
+   516→feedback: users preferentially rate movies that they feel strongly about. For example, on
+   517→a five-point scale, you might notice that items receive many one- and five-star ratings but
+   518→that there are conspicuously few three-star ratings. Moreover, current purchase habits are
+   519→often a result of the recommendation algorithm currently in place, but learning algorithms
+   520→do not always take this detail into account. Thus it is possible for feedback loops to form
+   521→where a recommender system preferentially pushes an item that is then taken to be better
+   522→(due to greater purchases) and in turn is recommended even more frequently. Many of
+   523→
+   524→===== صفحة الكتاب 54 =====
+   525→14
+   526→Introduction
+   527→t
+   528→Fig. 1.3.4
+   529→Deep learning books recommended by Amazon.
+   530→these problems—about how to deal with censoring, incentives, and feedback loops—are
+   531→important open research questions.
+   532→Sequence Learning
+   533→So far, we have looked at problems where we have some fixed number of inputs and produce
+   534→a fixed number of outputs. For example, we considered predicting house prices given a
+   535→fixed set of features: square footage, number of bedrooms, number of bathrooms, and the
+   536→transit time to downtown. We also discussed mapping from an image (of fixed dimension)
+   537→to the predicted probabilities that it belongs to each among a fixed number of classes and
+   538→predicting star ratings associated with purchases based on the user ID and product ID alone.
+   539→In these cases, once our model is trained, after each test example is fed into our model, it
+   540→is immediately forgotten. We assumed that successive observations were independent and
+   541→thus there was no need to hold on to this context.
+   542→But how should we deal with video snippets? In this case, each snippet might consist of
+   543→a different number of frames. And our guess of what is going on in each frame might be
+   544→much stronger if we take into account the previous or succeeding frames. The same goes for
+   545→language. For example, one popular deep learning problem is machine translation: the task
+   546→of ingesting sentences in some source language and predicting their translations in another
+   547→language.
+   548→Such problems also occur in medicine. We might want a model to monitor patients in the
+   549→intensive care unit and to fire off alerts whenever their risk of dying in the next 24 hours
+   550→exceeds some threshold. Here, we would not throw away everything that we know about
+   551→
+   552→===== صفحة الكتاب 55 =====
+   553→15
+   554→Kinds of Machine Learning Problems
+   555→the patient history every hour, because we might not want to make predictions based only
+   556→on the most recent measurements.
+   557→Questions like these are among the most exciting applications of machine learning and
+   558→they are instances of sequence learning. They require a model either to ingest sequences
+   559→of inputs or to emit sequences of outputs (or both). Specifically, sequence-to-sequence
+   560→learning considers problems where both inputs and outputs consist of variable-length se-
+   561→quences. Examples include machine translation and speech-to-text transcription. While it
+   562→is impossible to consider all types of sequence transformations, the following special cases
+   563→are worth mentioning.
+   564→Tagging and Parsing. This involves annotating a text sequence with attributes. Here,
+   565→the inputs and outputs are aligned, i.e., they are of the same number and occur in a corre-
+   566→sponding order. For instance, in part-of-speech (PoS) tagging, we annotate every word in
+   567→a sentence with the corresponding part of speech, i.e., “noun” or “direct object”. Alterna-
+   568→tively, we might want to know which groups of contiguous words refer to named entities,
+   569→like people, places, or organizations. In the cartoonishly simple example below, we might
+   570→just want to indicate whether or not any word in the sentence is part of a named entity
+   571→(tagged as “Ent”).
+   572→Tom has dinner in Washington with Sally
+   573→Ent
+   574→-
+   575→-
+   576→-
+   577→Ent
+   578→-
+   579→Ent
+   580→Automatic Speech Recognition. With speech recognition, the input sequence is an audio
+   581→recording of a speaker (Fig. 1.3.5), and the output is a transcript of what the speaker said.
+   582→The challenge is that there are many more audio frames (sound is typically sampled at
+   583→8kHz or 16kHz) than text, i.e., there is no 1:1 correspondence between audio and text,
+   584→since thousands of samples may correspond to a single spoken word. These are sequence-
+   585→to-sequence learning problems, where the output is much shorter than the input. While
+   586→humans are remarkably good at recognizing speech, even from low-quality audio, getting
+   587→computers to perform the same feat is a formidable challenge.
+   588→t
+   589→Fig. 1.3.5
+   590→-D-e-e-p- L-ea-r-ni-ng- in an audio recording.
+   591→Text to Speech. This is the inverse of automatic speech recognition. Here, the input is text
+   592→and the output is an audio file. In this case, the output is much longer than the input.
+   593→Machine Translation. Unlike the case of speech recognition, where corresponding inputs
+   594→and outputs occur in the same order, in machine translation, unaligned data poses a new
+   595→challenge. Here the input and output sequences can have different lengths, and the corre-
+   596→
+   597→===== صفحة الكتاب 56 =====
+   598→16
+   599→Introduction
+   600→sponding regions of the respective sequences may appear in a different order. Consider the
+   601→following illustrative example of the peculiar tendency of Germans to place the verbs at the
+   602→end of sentences:
+   603→German:
+   604→Haben Sie sich schon dieses grossartige Lehrwerk angeschaut?
+   605→English:
+   606→Have you already looked at this excellent textbook?
+   607→Wrong alignment:
+   608→Have you yourself already this excellent textbook looked at?
+   609→Many related problems pop up in other learning tasks. For instance, determining the order
+   610→in which a user reads a webpage is a two-dimensional layout analysis problem. Dialogue
+   611→problems exhibit all kinds of additional complications, where determining what to say next
+   612→requires taking into account real-world knowledge and the prior state of the conversation
+   613→across long temporal distances. Such topics are active areas of research.
+   614→1.3.2 Unsupervised and Self-Supervised Learning
+   615→The previous examples focused on supervised learning, where we feed the model a giant
+   616→dataset containing both the features and corresponding label values. You could think of
+   617→the supervised learner as having an extremely specialized job and an extremely dictatorial
+   618→boss. The boss stands over the learner’s shoulder and tells them exactly what to do in every
+   619→situation until they learn to map from situations to actions. Working for such a boss sounds
+   620→pretty lame. On the other hand, pleasing such a boss is pretty easy. You just recognize the
+
+[showing lines 1-620 of 1208; use offset=621 with limit to continue reading]

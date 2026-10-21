@@ -1,0 +1,197 @@
+[
+ {
+  "lesson": "swe.ch3.l1",
+  "id": "swe.ch3.l1.ex2",
+  "solution": "ledger = [\n    {\"id\": \"REQ-1\", \"kind\": \"functional\",     \"status\": \"confirmed\"},\n    {\"id\": \"REQ-2\", \"kind\": \"functional\",     \"status\": \"draft\"},\n    {\"id\": \"REQ-3\", \"kind\": \"non-functional\", \"status\": \"draft\"},\n    {\"id\": \"REQ-4\", \"kind\": \"functional\",     \"status\": \"confirmed\"},\n    {\"id\": \"REQ-5\", \"kind\": \"non-functional\", \"status\": \"confirmed\"},\n    {\"id\": \"REQ-6\", \"kind\": \"functional\",     \"status\": \"draft\"},\n]\n\ndef count(records, kind=None, status=None):\n    n = 0\n    for r in records:\n        if kind is not None and r[\"kind\"] != kind:\n            continue\n        if status is not None and r[\"status\"] != status:\n            continue\n        n += 1\n    return n\n\nprint(\"total:\", count(ledger))\nprint(\"functional:\", count(ledger, kind=\"functional\"))\nprint(\"quality:\", count(ledger, kind=\"non-functional\"))\nprint(\"drafts:\", count(ledger, status=\"draft\"))\nprint(\"confirmed quality:\", count(ledger, kind=\"non-functional\", status=\"confirmed\"))",
+  "tests": [
+   {
+    "id": "t-total",
+    "name": {
+     "ar": "العدد الكلي",
+     "en": "total count"
+    },
+    "code": "assert 'total: 6' in __learner_output__, 'expected: total: 6 | actual: %r' % __learner_output__",
+    "expected": "total: 6"
+   },
+   {
+    "id": "t-quality",
+    "name": {
+     "ar": "عدد متطلبات الجودة",
+     "en": "quality count"
+    },
+    "code": "assert 'quality: 2' in __learner_output__, 'expected: quality: 2 | actual: %r' % __learner_output__",
+    "expected": "quality: 2"
+   },
+   {
+    "id": "t-filter",
+    "name": {
+     "ar": "الفلتر المزدوج",
+     "en": "combined filter"
+    },
+    "code": "assert count(ledger, status='draft') == 3, 'expected 3 drafts | got %r' % count(ledger, status='draft')",
+    "expected": "3"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch3.l2",
+  "id": "swe.ch3.l2.ex1",
+  "solution": "notes = [\n    {\"who\": \"clerk\",      \"text\": \"search by phone number\",            \"tag\": \"need\"},\n    {\"who\": \"nurse\",      \"text\": \"see today's schedule at a glance\",  \"tag\": \"need\"},\n    {\"who\": \"manager\",    \"text\": \"check-in under 15 seconds\",         \"tag\": \"goal\"},\n    {\"who\": \"compliance\", \"text\": \"log retained for 7 years\",          \"tag\": \"constraint\"},\n    {\"who\": \"manager\",    \"text\": \"zero missed handoffs per shift\",    \"tag\": \"goal\"},\n    {\"who\": \"sponsor\",    \"text\": \"budget capped at 20000 USD\",        \"tag\": \"constraint\"},\n    {\"who\": \"clerk\",      \"text\": \"flag patients needing interpreter\", \"tag\": \"need\"},\n]\n\ndef count_tags(records):\n    counts = {}\n    for n in records:\n        counts[n[\"tag\"]] = counts.get(n[\"tag\"], 0) + 1\n    return counts\n\nresult = count_tags(notes)\nprint(\"need:\", result[\"need\"])\nprint(\"goal:\", result[\"goal\"])\nprint(\"constraint:\", result[\"constraint\"])",
+  "tests": [
+   {
+    "id": "t-dict",
+    "name": {
+     "ar": "القاموس المُرجَع",
+     "en": "returned dict"
+    },
+    "code": "assert count_tags(notes) == {'need': 3, 'goal': 2, 'constraint': 2}, 'expected need 3, goal 2, constraint 2 | got %r' % count_tags(notes)",
+    "expected": "{'need': 3, 'goal': 2, 'constraint': 2}"
+   },
+   {
+    "id": "t-goal",
+    "name": {
+     "ar": "سطر goal",
+     "en": "goal line"
+    },
+    "code": "assert 'goal: 2' in __learner_output__, 'expected: goal: 2 | actual: %r' % __learner_output__",
+    "expected": "goal: 2"
+   },
+   {
+    "id": "t-constraint",
+    "name": {
+     "ar": "سطر constraint",
+     "en": "constraint line"
+    },
+    "code": "assert 'constraint: 2' in __learner_output__, 'expected: constraint: 2 | actual: %r' % __learner_output__",
+    "expected": "constraint: 2"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch3.l3",
+  "id": "swe.ch3.l3.ex2",
+  "solution": "cards = [\n    \"As a clerk, I want to flag difficult patients, so that staff handle visits calmly.\",\n    \"As a manager, I want a report.\",\n    \"As a manager, I want a report, so that decisions get better.\",\n    \"The system must use MongoDB for speed.\",\n]\n\ndef check_story(story):\n    if not story.startswith(\"As a \"):\n        return \"missing role\"\n    if \", I want \" not in story:\n        return \"missing capability\"\n    if \", so that \" not in story:\n        return \"missing goal\"\n    return \"OK\"\n\nfor i, story in enumerate(cards, 1):\n    print(\"story%d: %s\" % (i, check_story(story)))",
+  "tests": [
+   {
+    "id": "t-ok",
+    "name": {
+     "ar": "قصة سليمة",
+     "en": "well-formed story"
+    },
+    "code": "assert check_story('As a nurse, I want x, so that y.') == 'OK', 'expected OK | got %r' % check_story('As a nurse, I want x, so that y.')",
+    "expected": "OK"
+   },
+   {
+    "id": "t-goal",
+    "name": {
+     "ar": "بطاقة بلا هدف",
+     "en": "card without goal"
+    },
+    "code": "assert 'story2: missing goal' in __learner_output__, 'expected: story2: missing goal | actual: %r' % __learner_output__",
+    "expected": "story2: missing goal"
+   },
+   {
+    "id": "t-role",
+    "name": {
+     "ar": "بطاقة بلا دور",
+     "en": "card without role"
+    },
+    "code": "assert 'story4: missing role' in __learner_output__, 'expected: story4: missing role | actual: %r' % __learner_output__",
+    "expected": "story4: missing role"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch3.l4",
+  "id": "ex2.write-abuse",
+  "solution": "SCENARIOS = [\n    {'actor': 'front-desk clerk', 'action': 'check in an arriving patient'},\n    {'actor': 'impostor', 'action': 'reset another users password', 'stride': 'Spoofing'},\n    {'actor': 'clinician', 'action': 'open the day visit list'},\n    {'actor': 'ex-employee', 'action': 'read records with revoked rights', 'stride': 'Elevation of privilege'},\n]\nMISUSERS = {'impostor', 'ex-employee', 'stranger'}\n\ndef classify(sc):\n    return 'abuse' if sc['actor'] in MISUSERS else 'normal'\n\nnormal = 0\nabuse = 0\nfor i, sc in enumerate(SCENARIOS, 1):\n    kind = classify(sc)\n    if kind == 'abuse':\n        abuse += 1\n        print('case %d abuse (%s)' % (i, sc['stride']))\n    else:\n        normal += 1\n        print('case %d normal' % i)\nprint('normal: %d abuse: %d' % (normal, abuse))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الحصيلة والوسمان معًا",
+     "en": "Tally and both STRIDE verdicts together"
+    },
+    "code": "assert 'normal: 2 abuse: 2' in __learner_output__ and 'case 2 abuse (Spoofing)' in __learner_output__ and 'case 4 abuse (Elevation of privilege)' in __learner_output__, 'expected: normal: 2 abuse: 2 + case 2 abuse (Spoofing) + case 4 abuse (Elevation of privilege) | actual: %r' % __learner_output__",
+    "expected": "normal: 2 abuse: 2 + case 2 abuse (Spoofing) + case 4 abuse (Elevation of privilege)"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "حالة الاستخدام الطبيعية تبقى normal",
+     "en": "A normal use case stays normal"
+    },
+    "code": "assert classify({'actor': 'front-desk clerk', 'action': 'check in an arriving patient'}) == 'normal', 'expected: normal | actual: %r' % classify({'actor': 'front-desk clerk', 'action': 'check in an arriving patient'})",
+    "expected": "normal"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الغريب يُصنّف إساءة وإن غاب عن البيانات الأصلية",
+     "en": "A stranger classifies as abuse even though absent from the original data"
+    },
+    "code": "assert classify({'actor': 'stranger', 'action': 'guess passwords'}) == 'abuse', 'expected: abuse | actual: %r' % classify({'actor': 'stranger', 'action': 'guess passwords'})",
+    "expected": "abuse"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch3.l5",
+  "id": "ex1.requirements-pack",
+  "solution": "STORIES = [\n    {'key': 'ST-1', 'priority': 'Must', 'story': 'As a clerk, I want to flag a patient, so that the clinician prepares before the visit.'},\n    {'key': 'ST-2', 'priority': 'Must', 'story': 'As a clerk, I want to search by phone, so that I can fix misspelled records inline.'},\n    {'key': 'ST-3', 'priority': 'Should', 'story': 'As a manager, I want weekly no-show rates, so that staffing can be planned.'},\n    {'key': 'ST-4', 'priority': 'Must', 'story': 'As a clinician, I want faster charts.'},\n]\nABUSES = [\n    {'actor': 'front-desk clerk', 'action': 'check in an arriving patient'},\n    {'actor': 'impostor', 'action': 'reset another users password', 'stride': 'Spoofing'},\n    {'actor': 'clinician', 'action': 'open the day visit list'},\n    {'actor': 'ex-employee', 'action': 'read records with revoked rights', 'stride': 'Elevation of privilege'},\n]\nMISUSERS = {'impostor', 'ex-employee', 'stranger'}\n\ndef valid_story(s):\n    return s.startswith('As a ') and ', I want ' in s and ', so that ' in s\n\ndef build_pack():\n    pack = []\n    for st in STORIES:\n        ok = valid_story(st['story'])\n        pack.append((st['key'], st['priority'], ok))\n        print('%s %s %s' % (st['key'], st['priority'], 'valid' if ok else 'INVALID'))\n    valid = sum(1 for _, _, ok in pack if ok)\n    must = sum(1 for _, p, ok in pack if ok and p == 'Must')\n    print('stories: %d valid: %d must: %d' % (len(STORIES), valid, must))\n    n_abuse = 0\n    for a in ABUSES:\n        if a['actor'] in MISUSERS:\n            n_abuse += 1\n            print('abuse: %s/%s' % (a['actor'], a['action']))\n    print('abuses: %d' % n_abuse)\n    return pack\n\nbuild_pack()",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "حصيلة الحزمة وأحكام القصص معًا",
+     "en": "Pack tally and per-story verdicts together"
+    },
+    "code": "assert 'stories: 4 valid: 3 must: 2' in __learner_output__ and 'ST-4 Must INVALID' in __learner_output__ and 'ST-1 Must valid' in __learner_output__, 'expected: stories: 4 valid: 3 must: 2 + ST-4 Must INVALID + ST-1 Must valid | actual: %r' % __learner_output__",
+    "expected": "stories: 4 valid: 3 must: 2 + ST-4 Must INVALID + ST-1 Must valid"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "البنية ترجع بأربعة أحكام صحيحة",
+     "en": "The structure returns four correct verdicts"
+    },
+    "code": "pack = build_pack()\nassert pack[3] == ('ST-4', 'Must', False) and pack[0] == ('ST-1', 'Must', True), 'expected: ST-4 False + ST-1 True | actual: %r' % ((pack[0], pack[3]),)",
+    "expected": "ST-4 False + ST-1 True"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "جدول الإساءة يلخص حالتي خصم",
+     "en": "The abuse table summarizes two adversary cases"
+    },
+    "code": "assert 'abuse: impostor/reset another users password' in __learner_output__ and 'abuses: 2' in __learner_output__, 'expected: impostor case + abuses: 2 | actual: %r' % __learner_output__",
+    "expected": "impostor case + abuses: 2"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch3.l5",
+  "id": "ex5.debug-loose-validator",
+  "solution": "STORIES = [\n    {'key': 'ST-1', 'priority': 'Must', 'story': 'As a clerk, I want to flag a patient, so that the clinician prepares before the visit.'},\n    {'key': 'ST-2', 'priority': 'Must', 'story': 'As a clerk, I want to search by phone, so that I can fix misspelled records inline.'},\n    {'key': 'ST-3', 'priority': 'Should', 'story': 'As a manager, I want weekly no-show rates, so that staffing can be planned.'},\n    {'key': 'ST-4', 'priority': 'Must', 'story': 'As a clinician, I want faster charts.'},\n]\n\ndef valid_story(s):\n    return s.startswith('As a ') and ', I want ' in s and ', so that ' in s\n\npack = []\nfor st in STORIES:\n    ok = valid_story(st['story'])\n    pack.append((st['key'], st['priority'], ok))\n    print('%s %s %s' % (st['key'], st['priority'], 'valid' if ok else 'INVALID'))\nvalid = sum(1 for _, _, ok in pack if ok)\nmust = sum(1 for _, p, ok in pack if ok and p == 'Must')\nprint('stories: %d valid: %d must: %d' % (len(STORIES), valid, must))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الحقيقة تعود للحصيلة",
+     "en": "The truth returns to the tally"
+    },
+    "code": "assert 'stories: 4 valid: 3 must: 2' in __learner_output__ and 'ST-4 Must INVALID' in __learner_output__, 'expected: stories: 4 valid: 3 must: 2 + ST-4 Must INVALID | actual: %r' % __learner_output__",
+    "expected": "stories: 4 valid: 3 must: 2 + ST-4 Must INVALID"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "القاعدة الثلاثية تقبل الصالحة وترفض بلا فائدة",
+     "en": "The three-part rule accepts the sound story and rejects the benefit-less one"
+    },
+    "code": "assert valid_story('As a clerk, I want to flag a patient, so that the clinician prepares.') is True, 'expected: True | actual: %r' % valid_story('As a clerk, I want to flag a patient, so that the clinician prepares.')\nassert valid_story('As a clerk, I want to flag a patient.') is False, 'expected: False | actual: %r' % valid_story('As a clerk, I want to flag a patient.')",
+    "expected": "True + False"
+   }
+  ]
+ }
+]

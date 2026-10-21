@@ -1,0 +1,276 @@
+[
+ {
+  "lesson": "py4e.ch13.l1",
+  "id": "ex1.slice-tags",
+  "solution": "line = '<name>Chuck</name>'\ngt = line.find('>')\nend = line.find('</name>')\ntag = line[1:gt]\ntext = line[gt + 1:end]\nprint(tag)\nprint(text)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الوسم المستخرج name",
+     "en": "The extracted tag is name"
+    },
+    "code": "assert tag == 'name', 'expected: name | actual: %r' % (tag,)",
+    "expected": "name"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "النص المستخرج Chuck",
+     "en": "The extracted text is Chuck"
+    },
+    "code": "assert text == 'Chuck', 'expected: Chuck | actual: %r' % (text,)",
+    "expected": "Chuck"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الطباعتان ظهرتا بالترتيب",
+     "en": "Both prints appeared in order"
+    },
+    "code": "assert 'name' in __learner_output__ and 'Chuck' in __learner_output__, 'expected: name then Chuck | actual: %r' % __learner_output__",
+    "expected": "name then Chuck"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch13.l2",
+  "id": "ex1.parse-person",
+  "solution": "import xml.etree.ElementTree as ET\n\ndata = '''\n<person>\n   <name>Chuck</name>\n   <phone type=\"intl\">\n      +1 734 303 4456\n   </phone>\n   <email hide=\"yes\" />\n</person>'''\n\ntree = ET.fromstring(data)\nname = tree.find('name').text\nptype = tree.find('phone').get('type')\nhide = tree.find('email').get('hide')\nprint(name)\nprint(ptype)\nprint(hide)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "النص المستخرج Chuck",
+     "en": "The extracted text is Chuck"
+    },
+    "code": "assert name == 'Chuck', 'expected: Chuck | actual: %r' % (name,)",
+    "expected": "Chuck"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "سمة type هي intl",
+     "en": "The type attribute is intl"
+    },
+    "code": "assert ptype == 'intl', 'expected: intl | actual: %r' % (ptype,)",
+    "expected": "intl"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سمة hide هي yes",
+     "en": "The hide attribute is yes"
+    },
+    "code": "assert hide == 'yes', 'expected: yes | actual: %r' % (hide,)",
+    "expected": "yes"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الثلاثة مطبوعة أسطرًا",
+     "en": "All three printed as lines"
+    },
+    "code": "assert 'Chuck' in __learner_output__ and 'intl' in __learner_output__ and 'yes' in __learner_output__, 'expected: Chuck / intl / yes | actual: %r' % __learner_output__",
+    "expected": "Chuck / intl / yes"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch13.l3",
+  "id": "ex1.loop-users",
+  "solution": "import xml.etree.ElementTree as ET\n\ninput_data = '''\n<stuff>\n   <users>\n      <user x=\"2\">\n         <id>001</id>\n         <name>Chuck</name>\n      </user>\n      <user x=\"7\">\n         <id>009</id>\n         <name>Brent</name>\n      </user>\n   </users>\n</stuff>'''\n\nstuff = ET.fromstring(input_data)\nlst = stuff.findall('users/user')\nprint('User count:', len(lst))\nnames = list()\nfor item in lst:\n    names.append(item.find('name').text)\nprint(names)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "القائمة فيها عقدتان",
+     "en": "The list holds two nodes"
+    },
+    "code": "assert len(lst) == 2, 'expected: 2 nodes | actual: %r' % (len(lst),)",
+    "expected": "2 nodes"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الأسماء جمعت بالترتيب",
+     "en": "The names were collected in order"
+    },
+    "code": "assert names == ['Chuck', 'Brent'], \"expected: ['Chuck', 'Brent'] | actual: %r\" % (names,)",
+    "expected": "['Chuck', 'Brent']"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "العد مطبوع بصيغة الكتاب",
+     "en": "The count printed in the book’s format"
+    },
+    "code": "assert 'User count: 2' in __learner_output__, 'expected: User count: 2 | actual: %r' % __learner_output__",
+    "expected": "User count: 2"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "قائمة الأسماء مطبوعة",
+     "en": "The names list printed"
+    },
+    "code": "assert \"['Chuck', 'Brent']\" in __learner_output__, \"expected: ['Chuck', 'Brent'] | actual: %r\" % __learner_output__",
+    "expected": "['Chuck', 'Brent']"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch13.l4",
+  "id": "ex1.parse-users",
+  "solution": "import json\n\ndata = '''\n[\n  { \"id\" : \"001\", \"x\" : \"2\", \"name\" : \"Chuck\" },\n  { \"id\" : \"009\", \"x\" : \"7\", \"name\" : \"Brent\" }\n]'''\n\ninfo = json.loads(data)\nprint('User count:', len(info))\nfor item in info:\n    print('Name', item['name'])\n    print('Id', item['id'])\n    print('Attribute', item['x'])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "info قائمة فيها مستخدمان",
+     "en": "info is a list of two users"
+    },
+    "code": "assert len(info) == 2 and isinstance(info, list), 'expected: list of 2 | actual: %r' % (info,)",
+    "expected": "list of 2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "المستخدم الثاني Brent وx تساوي \"7\"",
+     "en": "The second user is Brent with x equal to \"7\""
+    },
+    "code": "assert info[1]['name'] == 'Brent' and info[1]['x'] == '7', 'expected: Brent with x 7 | actual: %r' % (info[1],)",
+    "expected": "Brent with x 7"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الخرج مطابق لخرج XML",
+     "en": "The output matches the XML output"
+    },
+    "code": "assert 'User count: 2' in __learner_output__ and 'Name Chuck' in __learner_output__ and 'Name Brent' in __learner_output__ and 'Attribute 7' in __learner_output__, 'expected: User count: 2 / Name Chuck / Name Brent / Attribute 7 | actual: %r' % __learner_output__",
+    "expected": "User count: 2 / Name Chuck / Name Brent / Attribute 7"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch13.l5",
+  "id": "ex1.status-guard",
+  "solution": "import json\n\nresponse = '{\"status\": \"ok\", \"results\": [{\"lat\": 10.5, \"lng\": 20.25}]}'\n\njs = json.loads(response)\n\nplace = None\nif js['status'] == 'ok':\n    place = js['results'][0]\n\nif place is None:\n    print('status: error')\nelse:\n    print('status: ok')\n    print('lat: %s' % place['lat'])\n    print('lng: %s' % place['lng'])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "العنصر الأول استُخرج في place",
+     "en": "The first element was extracted into place"
+    },
+    "code": "assert place == {'lat': 10.5, 'lng': 20.25}, 'expected: lat 10.5 lng 20.25 | actual: %r' % (place,)",
+    "expected": "lat 10.5 lng 20.25"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الحالة تطبّع النجاح",
+     "en": "The status prints success"
+    },
+    "code": "assert 'status: ok' in __learner_output__, 'expected: status: ok | actual: %r' % __learner_output__",
+    "expected": "status: ok"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الإحداثيات مطبوعة بصيغة الخدمة",
+     "en": "The coordinates printed in service format"
+    },
+    "code": "assert 'lat: 10.5' in __learner_output__ and 'lng: 20.25' in __learner_output__, 'expected: lat: 10.5 / lng: 20.25 | actual: %r' % __learner_output__",
+    "expected": "lat: 10.5 / lng: 20.25"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch13.l6",
+  "id": "ex2.geo-reader",
+  "solution": "import json\n\npayload = '''\n{\n  \"status\": \"OK\",\n  \"results\": [\n    {\n      \"formatted_address\": \"Ann Arbor, MI, USA\",\n      \"lat\": 42.2808,\n      \"lng\": -83.7430,\n      \"place_id\": \"ChIJMx9D1A2wPIgR4rXIhkb5Cds\"\n    }\n  ]\n}'''\n\njs = json.loads(payload)\n\nplace = None\nif js['status'] == 'OK':\n    place = js['results'][0]\n\nif place is None:\n    print('status: error')\nelse:\n    print('status: OK')\n    print('lat: %s' % place['lat'])\n    print('lng: %s' % place['lng'])\n    print('place id: %s' % place['place_id'])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الحالة OK كما تتهجى الخدمة",
+     "en": "The status is OK as the service spells it"
+    },
+    "code": "assert js['status'] == 'OK', 'expected: OK | actual: %r' % (js['status'],)",
+    "expected": "OK"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "place تحمل الإحداثيات الصحيحة",
+     "en": "place holds the right coordinates"
+    },
+    "code": "assert place is not None and place['lat'] == 42.2808 and place['lng'] == -83.743, 'expected: lat 42.2808 lng -83.743 | actual: %r' % (place,)",
+    "expected": "lat 42.2808 lng -83.743"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "معرّف المكان كاملًا",
+     "en": "The place id in full"
+    },
+    "code": "assert place['place_id'] == 'ChIJMx9D1A2wPIgR4rXIhkb5Cds', 'expected: ChIJMx9D1A2wPIgR4rXIhkb5Cds | actual: %r' % (place['place_id'],)",
+    "expected": "ChIJMx9D1A2wPIgR4rXIhkb5Cds"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الحالة والإحداثيات مطبوعة بصيغة الخدمة",
+     "en": "Status and coordinates printed in service format"
+    },
+    "code": "assert 'status: OK' in __learner_output__ and 'lat: 42.2808' in __learner_output__ and 'lng: -83.743' in __learner_output__, 'expected: status: OK / lat: 42.2808 / lng: -83.743 | actual: %r' % __learner_output__",
+    "expected": "status: OK / lat: 42.2808 / lng: -83.743"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "معرّف المكان مطبوع ببادئته",
+     "en": "The place id printed with its label"
+    },
+    "code": "assert 'place id: ChIJ' in __learner_output__, 'expected: place id: ChIJ... | actual: %r' % __learner_output__",
+    "expected": "place id: ChIJ..."
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch13.l6",
+  "id": "ex5.debug-guard-case",
+  "solution": "import json\n\npayload_ok = '{\"status\": \"OK\", \"results\": [{\"lat\": 42.2808, \"lng\": -83.743, \"place_id\": \"ChIJMx9D1A2wPIgR4rXIhkb5Cds\"}]}'\npayload_bad = '{\"status\": \"error\", \"results\": []}'\n\nfor payload in [payload_ok, payload_bad]:\n    js = json.loads(payload)\n    place = None\n    if js['status'] == 'OK':  # حالة الأحرف كما تتهجى الخدمة / letter case as the service spells it\n        place = js['results'][0]\n    if place is None:\n        print('status: error')\n    else:\n        print('lat: %s' % place['lat'])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الرد السليم قرأ إحداثياته",
+     "en": "The healthy reply had its coordinates read"
+    },
+    "code": "assert 'lat: 42.2808' in __learner_output__, 'expected: lat: 42.2808 | actual: %r' % __learner_output__",
+    "expected": "lat: 42.2808"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "رسالة الخطأ مرة واحدة للرد الفاسد فقط",
+     "en": "The error message appears once, for the bad reply only"
+    },
+    "code": "assert __learner_output__.count('status: error') == 1, 'expected: exactly one status: error | actual: %r' % __learner_output__",
+    "expected": "exactly one status: error"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "لا إحداثيات ملفقة من الرد الفاسد",
+     "en": "No fabricated coordinates from the bad reply"
+    },
+    "code": "assert __learner_output__.count('lat:') == 1, 'expected: exactly one lat line | actual: %r' % __learner_output__",
+    "expected": "exactly one lat line"
+   }
+  ]
+ }
+]

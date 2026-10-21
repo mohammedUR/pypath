@@ -1,0 +1,346 @@
+[
+ {
+  "lesson": "swe.ch15.l1",
+  "id": "ex2.characterize",
+  "solution": "def legacy_discount(total):\n    # inherited: no docs, no tests\n    off = total * 10 // 100\n    if total > 200:\n        off = off + 15\n    return total - off\n\nprobes = [5, 100, 200, 201, 300]\ngolden = {}\nfor total in probes:\n    golden[total] = legacy_discount(total)\n    print('total=%d discounted=%d' % (total, golden[total]))\n\nassert golden[5] == 5\nassert golden[200] == 180\nassert golden[201] == 166\nassert golden[300] == 255\n\npinned = 0\nfor total in probes:\n    if legacy_discount(total) == golden[total]:\n        pinned = pinned + 1\nprint('probes: %d pinned: %d' % (len(probes), pinned))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "خمسة مدخلات مثبّتة بالكامل",
+     "en": "All five inputs pinned"
+    },
+    "code": "assert 'probes: 5 pinned: 5' in __learner_output__, 'expected: probes: 5 pinned: 5 | actual: %r' % __learner_output__",
+    "expected": "probes: 5 pinned: 5"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الأركان الغريبة مرئية في الطباعة",
+     "en": "The odd corners are visible in the output"
+    },
+    "code": "assert 'total=200 discounted=180' in __learner_output__ and 'total=201 discounted=166' in __learner_output__, 'expected: pinned quirks at 200/201 | actual: %r' % __learner_output__",
+    "expected": "pinned quirks at 200/201"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الدالة لم تُمَس — السلوك العتيق باقٍ",
+     "en": "The function was not touched — legacy behavior intact"
+    },
+    "code": "assert legacy_discount(5) == 5 and legacy_discount(200) == 180 and legacy_discount(201) == 166 and legacy_discount(300) == 255, 'expected: 5/180/166/255 | actual: %r' % ((legacy_discount(5), legacy_discount(200), legacy_discount(201), legacy_discount(300)),)",
+    "expected": "5/180/166/255"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "شبكة صادقة بلا فشل مخفي",
+     "en": "An honest net with no hidden failures"
+    },
+    "code": "assert 'FAILED' not in __learner_output__ and len(golden) == 5, 'expected: no FAILED and 5 golden entries | actual: %r' % (__learner_output__ + ' | golden=' + str(len(golden)))",
+    "expected": "no FAILED and 5 golden entries"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch15.l1",
+  "id": "ex5.debug-stale-oracle",
+  "solution": "import io\nimport sys\nimport unittest\n\ndef legacy_zone(zipcode):\n    # inherited: no docs, no tests\n    zones = {'10': 'A', '20': 'B', '30': 'C'}\n    return zones.get(zipcode[:2], 'C')\n\nclass ZoneSuite(unittest.TestCase):\n    def test_known_prefixes(self):\n        self.assertEqual(legacy_zone('10001'), 'A')\n        self.assertEqual(legacy_zone('20500'), 'B')\n\n    def test_short_code_bills_as_C(self):\n        # promoted: the actual value read from the failed probe\n        self.assertEqual(legacy_zone('9'), 'C')\n\n    def test_prefix_rule(self):\n        self.assertEqual(legacy_zone('30501'), 'C')\n\nresult = unittest.TextTestRunner(stream=sys.stdout).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(ZoneSuite))\nprint('run: %d failures: %d' % (result.testsRun, len(result.failures)))\nprint('probe: 9 ->', legacy_zone('9'))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الحزمة خضراء بعد الترويج",
+     "en": "The suite is green after promoting"
+    },
+    "code": "assert 'run: 3 failures: 0' in __learner_output__, 'expected: run: 3 failures: 0 | actual: %r' % __learner_output__",
+    "expected": "run: 3 failures: 0"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الاستقصاء ما زال يظهر القيمة المرصودة",
+     "en": "The probe still shows the observed value"
+    },
+    "code": "assert 'probe: 9 -> C' in __learner_output__, 'expected: probe: 9 -> C | actual: %r' % __learner_output__",
+    "expected": "probe: 9 -> C"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "تقرير المشغّل يُظهر ثلاثة اختبارات ناجحة",
+     "en": "The runner report shows three passing tests"
+    },
+    "code": "assert 'Ran 3 tests' in __learner_output__ and 'OK' in __learner_output__, 'expected: Ran 3 tests + OK | actual: %r' % __learner_output__",
+    "expected": "Ran 3 tests + OK"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "السلوك المرصود لم يُمَس",
+     "en": "The observed behavior was not touched"
+    },
+    "code": "assert legacy_zone('9') == 'C' and legacy_zone('10001') == 'A' and legacy_zone('30501') == 'C', 'expected: C/A/C | actual: %r' % ((legacy_zone('9'), legacy_zone('10001'), legacy_zone('30501')),)",
+    "expected": "C/A/C"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch15.l2",
+  "id": "ex2.refactor-discount",
+  "solution": "import difflib\nimport io\nimport unittest\n\nbefore_src = \"def legacy_discount(total):\\n    # inherited: no docs, no tests\\n    off = total * 10 // 100\\n    if total > 200:\\n        off = off + 15\\n    return total - off\\n\"\n\nRATE = 10\nBONUS_THRESHOLD = 200\nBONUS = 15\n\ndef base_discount(total):\n    return total * RATE // 100\n\ndef legacy_discount(total):\n    if total > BONUS_THRESHOLD:\n        return total - base_discount(total) - BONUS\n    return total - base_discount(total)\n\nafter_src = \"RATE = 10\\nBONUS_THRESHOLD = 200\\nBONUS = 15\\n\\ndef base_discount(total):\\n    return total * RATE // 100\\n\\ndef legacy_discount(total):\\n    if total > BONUS_THRESHOLD:\\n        return total - base_discount(total) - BONUS\\n    return total - base_discount(total)\\n\"\n\nprobes = [5, 100, 200, 201, 300]\ngolden = {}\nfor total in probes:\n    golden[total] = legacy_discount(total)\n\nclass Characterization(unittest.TestCase):\n    def test_matches_pinned_net(self):\n        for total in probes:\n            self.assertEqual(legacy_discount(total), golden[total])\n\nresult = unittest.TextTestRunner(stream=io.StringIO()).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(Characterization))\nprint('run: %d failures: %d' % (result.testsRun, len(result.failures)))\n\ndiff = list(difflib.unified_diff(\n    before_src.splitlines(keepends=True),\n    after_src.splitlines(keepends=True),\n    fromfile='before.py', tofile='after.py'))\nfor line in diff:\n    print(line.rstrip())\nchanged = 0\nfor line in diff:\n    if line.startswith('+') and not line.startswith('+++'):\n        changed = changed + 1\n    if line.startswith('-') and not line.startswith('---'):\n        changed = changed + 1\nprint('changed lines: %d' % changed)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الأركان الخمسة باقية كما رُصدت",
+     "en": "All five corners survive as observed"
+    },
+    "code": "assert legacy_discount(5) == 5 and legacy_discount(100) == 90 and legacy_discount(200) == 180 and legacy_discount(201) == 166 and legacy_discount(300) == 255, 'expected: 5/90/180/166/255 | actual: %r' % ((legacy_discount(5), legacy_discount(100), legacy_discount(200), legacy_discount(201), legacy_discount(300)),)",
+    "expected": "5/90/180/166/255"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الشبكة خضراء بلا فشل مخفي",
+     "en": "The net is green with no hidden failures"
+    },
+    "code": "assert 'failures: 0' in __learner_output__ and 'FAILED' not in __learner_output__, 'expected: failures: 0 and no FAILED | actual: %r' % __learner_output__",
+    "expected": "failures: 0 and no FAILED"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الفرق الموحّد وعدّاد الأسطر مطبوعان",
+     "en": "The unified diff and line counter are printed"
+    },
+    "code": "assert '--- before.py' in __learner_output__ and '+++ after.py' in __learner_output__ and 'changed lines:' in __learner_output__, 'expected: diff headers + changed lines count | actual: %r' % __learner_output__",
+    "expected": "diff headers + changed lines count"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الشبكة تغطي المدخلات الخمسة كلها",
+     "en": "The net covers all five probes"
+    },
+    "code": "assert len(golden) == 5 and 'run:' in __learner_output__, 'expected: 5 golden entries and a run line | actual: %r' % (__learner_output__ + ' | golden=' + str(len(golden)))",
+    "expected": "5 golden entries and a run line"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch15.l2",
+  "id": "ex5.debug-slip",
+  "solution": "import io\nimport unittest\n\nRATE = 10\nBONUS_THRESHOLD = 200\nBONUS = 15\n\ndef base_discount(total):\n    return total * RATE // 100\n\ndef legacy_discount(total):\n    if total > BONUS_THRESHOLD:\n        return total - base_discount(total) - BONUS\n    return total - base_discount(total)\n\ngolden = {5: 5, 100: 90, 200: 180, 201: 166, 300: 255}\n\nclass Characterization(unittest.TestCase):\n    def test_small_totals(self):\n        self.assertEqual(legacy_discount(5), golden[5])\n        self.assertEqual(legacy_discount(100), golden[100])\n\n    def test_bonus_edge(self):\n        self.assertEqual(legacy_discount(200), golden[200])\n\n    def test_above_threshold(self):\n        self.assertEqual(legacy_discount(201), golden[201])\n        self.assertEqual(legacy_discount(300), golden[300])\n\nresult = unittest.TextTestRunner(stream=io.StringIO()).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(Characterization))\nprint('run: %d failures: %d' % (result.testsRun, len(result.failures)))\nprint('probe: 200 -> %d' % legacy_discount(200))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الشبكة عادت خضراء",
+     "en": "The net is green again"
+    },
+    "code": "assert 'run: 3 failures: 0' in __learner_output__, 'expected: run: 3 failures: 0 | actual: %r' % __learner_output__",
+    "expected": "run: 3 failures: 0"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الاستقصاء يظهر القيمة المثبّتة",
+     "en": "The probe shows the pinned value"
+    },
+    "code": "assert 'probe: 200 -> 180' in __learner_output__, 'expected: probe: 200 -> 180 | actual: %r' % __learner_output__",
+    "expected": "probe: 200 -> 180"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الأركان الخمسة كما رُصدت",
+     "en": "All five corners as observed"
+    },
+    "code": "assert legacy_discount(5) == 5 and legacy_discount(200) == 180 and legacy_discount(201) == 166 and legacy_discount(300) == 255, 'expected: 5/180/166/255 | actual: %r' % ((legacy_discount(5), legacy_discount(200), legacy_discount(201), legacy_discount(300)),)",
+    "expected": "5/180/166/255"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "البنية المعاد هيكلتها بقيت كما هي",
+     "en": "The refactored structure survived"
+    },
+    "code": "assert BONUS_THRESHOLD == 200 and callable(base_discount), 'expected: named constant + extracted helper intact | actual: %r' % ((BONUS_THRESHOLD, callable(base_discount)),)",
+    "expected": "named constant + extracted helper intact"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch15.l3",
+  "id": "ex2.debt-register",
+  "solution": "debt = [\n    {'item': 'hardcoded tax rule', 'principal': 2, 'interest_per_month': 1},\n    {'item': 'flaky deploy script', 'principal': 3, 'interest_per_month': 2},\n    {'item': 'untested billing core', 'principal': 5, 'interest_per_month': 3},\n]\nHORIZON = 6\n\ndef projected_cost(entry):\n    return entry['principal'] + entry['interest_per_month'] * HORIZON\n\ndef paydown_order(register):\n    return sorted(register, key=lambda row: row['interest_per_month'], reverse=True)\n\ntotal_interest = 0\nfor entry in paydown_order(debt):\n    total_interest = total_interest + entry['interest_per_month'] * HORIZON\n    print('%s cost=%d' % (entry['item'], projected_cost(entry)))\nprint('total interest: %d dev-days' % total_interest)\nprint('pay first: %s' % paydown_order(debt)[0]['item'])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "مجموع الفوائد على الأفق صحيح",
+     "en": "The total interest over the horizon is right"
+    },
+    "code": "assert 'total interest: 36 dev-days' in __learner_output__, 'expected: total interest: 36 dev-days | actual: %r' % __learner_output__",
+    "expected": "total interest: 36 dev-days"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "رتبة السداد تتصدّر أعلى فائدة",
+     "en": "The paydown order leads with the top interest"
+    },
+    "code": "assert 'pay first: untested billing core' in __learner_output__, 'expected: pay first: untested billing core | actual: %r' % __learner_output__",
+    "expected": "pay first: untested billing core"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الإسقاط صحيح لكل صنف",
+     "en": "The projection is right for each item"
+    },
+    "code": "assert projected_cost(debt[0]) == 8 and projected_cost(debt[1]) == 15 and projected_cost(debt[2]) == 23, 'expected: 8/15/23 | actual: %r' % ((projected_cost(debt[0]), projected_cost(debt[1]), projected_cost(debt[2])),)",
+    "expected": "8/15/23"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "أسطر الكلفة بالترتيب وبلا فشل",
+     "en": "Cost lines in order with no failures"
+    },
+    "code": "assert 'untested billing core cost=23' in __learner_output__ and 'flaky deploy script cost=15' in __learner_output__ and 'hardcoded tax rule cost=8' in __learner_output__ and 'FAILED' not in __learner_output__, 'expected: ranked cost lines, no FAILED | actual: %r' % __learner_output__",
+    "expected": "ranked cost lines, no FAILED"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch15.l3",
+  "id": "ex5.debug-router-default",
+  "solution": "ROUTES = {'/reports': 'new'}\n\ndef new_module(route):\n    return 'new:' + route\n\ndef legacy_module(route):\n    return 'legacy:' + route\n\nMODULES = {'new': new_module, 'legacy': legacy_module}\n\ndef handle(route):\n    target = ROUTES.get(route, 'legacy')\n    return MODULES[target](route)\n\nserved = {}\nfor path in ['/reports', '/payroll', '/audit-log']:\n    served[path] = handle(path)\n\nlegacy_count = 0\nfor target in served.values():\n    if target.startswith('legacy'):\n        legacy_count = legacy_count + 1\nprint('routes: %d legacy: %d' % (len(served), legacy_count))\nprint(served['/payroll'])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "عدّاد الترحيل يظهر المسارين القديمين",
+     "en": "The migration counter shows the two old routes"
+    },
+    "code": "assert 'routes: 3 legacy: 2' in __learner_output__, 'expected: routes: 3 legacy: 2 | actual: %r' % __learner_output__",
+    "expected": "routes: 3 legacy: 2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "المسار غير المنقول عاد إلى الوحدة العتيقة",
+     "en": "The unmigrated route is back on the legacy module"
+    },
+    "code": "assert 'legacy:/payroll' in __learner_output__, 'expected: legacy:/payroll | actual: %r' % __learner_output__",
+    "expected": "legacy:/payroll"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "قرار التوجيه صائب لكل مسار",
+     "en": "The routing decision is right for every route"
+    },
+    "code": "assert handle('/reports') == 'new:/reports' and handle('/audit-log') == 'legacy:/audit-log' and handle('/anything') == 'legacy:/anything', 'expected: new:/reports, legacy:/audit-log, legacy:/anything | actual: %r' % ((handle('/reports'), handle('/audit-log'), handle('/anything')),)",
+    "expected": "new:/reports, legacy:/audit-log, legacy:/anything"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "لا مسار غير مُتحقق منه يخدمه الجديد",
+     "en": "No unverified route is served by the new module"
+    },
+    "code": "assert 'legacy: 0' not in __learner_output__ and len(served) == 3, 'expected: no legacy: 0 and 3 served routes | actual: %r' % (__learner_output__ + ' | served=' + str(len(served)))",
+    "expected": "no legacy: 0 and 3 served routes"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch15.l4",
+  "id": "ex2.project-revival",
+  "solution": "import difflib\n\nLEGACY_PRICING_SRC = '''def price_quote(quantity, unit_price, member):\n    # inherited: no docs, no tests\n    total = quantity * unit_price\n    if member:\n        if quantity > 10:\n            total = total - total * 15 // 100\n        else:\n            total = total - total * 5 // 100\n    else:\n        if quantity > 20:\n            total = total - total * 10 // 100\n    if total > 500:\n        total = total - 25\n    return total\n'''\n\npricing_ns = {}\nexec(compile(LEGACY_PRICING_SRC, 'legacy_pricing.py', 'exec'), pricing_ns)\nprice_quote = pricing_ns['price_quote']\n\nprobes = [(5, 100, True), (12, 100, True), (3, 60, False), (25, 40, False),\n          (2, 250, False), (10, 60, True), (1, 50, False), (30, 25, True)]\n\ngolden = {}\nfor q, p, m in probes:\n    golden[(q, p, m)] = price_quote(q, p, m)\n\ndef run_suite(impl):\n    passed = 0\n    for q, p, m in probes:\n        if impl(q, p, m) == golden[(q, p, m)]:\n            passed = passed + 1\n        else:\n            print('FAILED', (q, p, m), 'got', impl(q, p, m))\n    return passed\n\nprint('legacy: tests: %d passed: %d' % (len(probes), run_suite(price_quote)))\n\nREFACTORED_PRICING_SRC = '''REBATE_THRESHOLD = 500\nBULK_REBATE = 25\n\ndef member_discount_percent(quantity):\n    if quantity > 10:\n        return 15\n    return 5\n\ndef volume_discount_percent(quantity):\n    if quantity > 20:\n        return 10\n    return 0\n\ndef apply_bulk_rebate(total):\n    if total > REBATE_THRESHOLD:\n        return total - BULK_REBATE\n    return total\n\ndef price_quote(quantity, unit_price, member):\n    total = quantity * unit_price\n    if member:\n        percent = member_discount_percent(quantity)\n    else:\n        percent = volume_discount_percent(quantity)\n    total = total - total * percent // 100\n    return apply_bulk_rebate(total)\n'''\n\nrevived_ns = {}\nexec(compile(REFACTORED_PRICING_SRC, 'price_quote.py', 'exec'), revived_ns)\n\nprint('after: tests: %d passed: %d' % (len(probes), run_suite(revived_ns['price_quote'])))\n\nprint('debt: pricing magic numbers | principal: 3 dev-days | interest: 1/mo')\ndiff = list(difflib.unified_diff(\n    LEGACY_PRICING_SRC.splitlines(keepends=True),\n    REFACTORED_PRICING_SRC.splitlines(keepends=True),\n    fromfile='legacy_pricing.py', tofile='price_quote.py'))\nchanged = 0\nfor line in diff:\n    if line.startswith('+') and not line.startswith('+++'):\n        changed = changed + 1\n    if line.startswith('-') and not line.startswith('---'):\n        changed = changed + 1\nprint('changed lines: %d / tests: %d passed: %d' % (changed, len(probes), run_suite(revived_ns['price_quote'])))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الورشة خضراء من الطرفين",
+     "en": "The workshop is green at both ends"
+    },
+    "code": "assert ' / tests: 8 passed: 8' in __learner_output__ and 'FAILED' not in __learner_output__, 'expected: tests: 8 passed: 8 lines and no FAILED | actual: %r' % __learner_output__",
+    "expected": "tests: 8 passed: 8 lines and no FAILED"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الوحدة المُحيَّاة تطابق القيم المثبّتة",
+     "en": "The revived module matches the pinned values"
+    },
+    "code": "assert revived_ns['price_quote'](2, 250, False) == 500 and revived_ns['price_quote'](12, 100, True) == 995 and revived_ns['price_quote'](30, 25, True) == 613 and revived_ns['price_quote'](5, 100, True) == 475, 'expected: 500/995/613/475 | actual: %r' % ((revived_ns['price_quote'](2, 250, False), revived_ns['price_quote'](12, 100, True), revived_ns['price_quote'](30, 25, True), revived_ns['price_quote'](5, 100, True)),)",
+    "expected": "500/995/613/475"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الوحدة العتيقة لم تُمَس وشبكتها خضراء",
+     "en": "The legacy module is untouched with a green net"
+    },
+    "code": "assert price_quote(2, 250, False) == 500 and price_quote(30, 25, True) == 613 and 'legacy: tests: 8 passed: 8' in __learner_output__, 'expected: legacy intact + green line | actual: %r' % __learner_output__",
+    "expected": "legacy intact + green line"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "سجل الدين وإحصاء التغيير مطبوعان",
+     "en": "The debt register line and change count are printed"
+    },
+    "code": "assert 'debt:' in __learner_output__ and 'changed lines:' in __learner_output__ and 'after: tests: 8 passed: 8' in __learner_output__, 'expected: debt line + changed lines + after line | actual: %r' % __learner_output__",
+    "expected": "debt line + changed lines + after line"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch15.l4",
+  "id": "ex5.debug-detail-test",
+  "solution": "import io\nimport unittest\n\n# the honest refactor stands: helper renamed _lookup_fee -> _fetch_fee, behavior identical\ndef _fetch_fee(visit_type):\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type)\n\ndef legacy_fee_code(visit_type):\n    known = _fetch_fee(visit_type)\n    if known is not None:\n        return known\n    return 'E10'\n\nclass DetailSuite(unittest.TestCase):\n    def test_empty_bills_as_exam(self):\n        # behavior only: the empty-string corner, promoted from observation\n        self.assertEqual(legacy_fee_code(''), 'E10')\n\n    def test_known_codes(self):\n        self.assertEqual(legacy_fee_code('lab'), 'L20')\n        self.assertEqual(legacy_fee_code('vaccine'), 'V30')\n\n    def test_unknown_bills_as_exam(self):\n        self.assertEqual(legacy_fee_code('phone'), 'E10')\n\n    def test_exam_bills_as_itself(self):\n        self.assertEqual(legacy_fee_code('exam'), 'E10')\n\nresult = unittest.TextTestRunner(stream=io.StringIO()).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(DetailSuite))\nprint('run: %d failures: %d' % (result.testsRun, len(result.failures)))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الحزمة خضراء بعد إصلاح الاختبار",
+     "en": "The suite is green after fixing the test"
+    },
+    "code": "assert 'run: 4 failures: 0' in __learner_output__, 'expected: run: 4 failures: 0 | actual: %r' % __learner_output__",
+    "expected": "run: 4 failures: 0"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "لا فشل باقٍ في التقرير",
+     "en": "No failure remains in the report"
+    },
+    "code": "assert 'failures: 1' not in __learner_output__, 'expected: no failures: 1 | actual: %r' % __learner_output__",
+    "expected": "no failures: 1"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "السلوك المرصود كامل وقائم",
+     "en": "The observed behavior is fully intact"
+    },
+    "code": "assert legacy_fee_code('lab') == 'L20' and legacy_fee_code('vaccine') == 'V30' and legacy_fee_code('phone') == 'E10' and legacy_fee_code('') == 'E10', 'expected: L20/V30/E10/E10 | actual: %r' % ((legacy_fee_code('lab'), legacy_fee_code('vaccine'), legacy_fee_code('phone'), legacy_fee_code('')),)",
+    "expected": "L20/V30/E10/E10"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "إعادة التسمية الصادقة بقيت والاختبار الكاذب رحل",
+     "en": "The honest rename survived and the lying test is gone"
+    },
+    "code": "assert '_fetch_fee' in globals() and '_lookup_fee' not in globals(), 'expected: _fetch_fee kept, _lookup_fee gone | actual: %r' % (('_fetch_fee' in globals(), '_lookup_fee' in globals()),)",
+    "expected": "_fetch_fee kept, _lookup_fee gone"
+   }
+  ]
+ }
+]

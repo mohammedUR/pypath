@@ -1,0 +1,52 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch2.l5",
+   "id": "ex2.trace-appetite",
+   "code": "PITCHES = [('P1', 6), ('P2', 8), ('P3', 2), ('P4', 6)]\nBIG_BATCH = 6\nfor pid, appetite in PITCHES:\n    if appetite > BIG_BATCH:\n        print('%s: narrow' % pid)\n    else:\n        print('%s: bet' % pid)",
+   "answer": "P1: bet\nP2: narrow\nP3: bet\nP4: bet"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch2.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "TOTAL = 10\nWINDOW = 4\ndone = 0\nfor fid, pts, defect in [('A', 3, 1), ('B', 4, 1), ('C', 3, 1)]:\n    done += pts\n    fresh = done >= TOTAL - WINDOW\n    print(fid, 'fresh' if fresh else 'cold')"
+  },
+  {
+   "lesson": "swe.ch2.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "WORK = [('G1', 2, 0), ('G2', 3, 1), ('G3', 2, 1), ('G4', 1, 0)]\nWINDOW = 7\nEARLY_FIX = 4\n\ntotal_defects = sum(f[2] for f in WORK)\ncost = 0\nfound = 0\nfor i in range(0, len(WORK), 2):\n    batch = WORK[i:i + 2]\n    built = 0\n    for fid, pts, defect in batch:\n        cost += pts\n        built += pts\n    print('iter %d: build %d points, test fresh' % (i // 2 + 1, built))\n    for fid, pts, defect in batch:\n        if defect and built <= WINDOW:\n            found += 1\n            cost += EARLY_FIX\n            print('agile: fix %s inside iteration for %d' % (fid, EARLY_FIX))\nprint('agile: found %d/%d defects cost %d' % (found, total_defects, cost))"
+  },
+  {
+   "lesson": "swe.ch2.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "WORK = [\n    ('F1', 3, 0),\n    ('F2', 2, 1),\n    ('F3', 4, 0),\n    ('F4', 2, 1),\n    ('F5', 3, 1),\n    ('F6', 2, 0),\n]\nWINDOW = 7\nLATE_FIX = 9\nEARLY_FIX = 4\nESCAPED_COST = 12\n\ndef defects(work):\n    return sum(f[2] for f in work)\n\ndef simulate_waterfall(work, window=WINDOW):\n    total = sum(f[1] for f in work)\n    found = escaped = 0\n    cost = total\n    done = 0\n    for fid, pts, defect in work:\n        done += pts\n        if defect:\n            if done >= total - window:\n                found += 1\n                cost += LATE_FIX\n            else:\n                escaped += 1\n                cost += ESCAPED_COST\n    print('waterfall: found %d/%d defects cost %d' % (found, defects(work), cost))\n    return found, escaped, cost\n\ndef simulate_agile(work, per_iter=2, window=WINDOW):\n    found = escaped = 0\n    cost = 0\n    for i in range(0, len(work), per_iter):\n        batch = work[i:i + per_iter]\n        built = 0\n        for fid, pts, defect in batch:\n            cost += pts\n            built += pts\n        for fid, pts, defect in batch:\n            if defect:\n                if built <= window:\n                    found += 1\n                    cost += EARLY_FIX\n                else:\n                    escaped += 1\n                    cost += ESCAPED_COST\n    print('agile: found %d/%d defects cost %d' % (found, defects(work), cost))\n    return found, escaped, cost\n\nsimulate_waterfall(WORK)\nsimulate_agile(WORK)\n\n# جرّب: ارفع WINDOW إلى 16 — هل يتحول الشلال إلى رشيق؟ بأي كلفة من الصدق؟\n# try: raise WINDOW to 16 — does the waterfall turn agile? at what cost to the truth?\n# جرّب: اخفض WINDOW إلى 4 — حتى الرشيق يخسر عيوبه: أي دفعات بردت؟\n# try: drop WINDOW to 4 — even the agile side loses defects: which batches went cold?\n# جرّب: أضف ('F7', 2, 1) آخر القائمة — من يمسك عيبها أولًا؟\n# try: append ('F7', 2, 1) at the end of the list — who catches its defect first?\n"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch2.l5",
+   "id": "ex3.mcq-shapeup",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch2.l5",
+   "id": "ex4.numeric-cooldown",
+   "answer": "8",
+   "solution": "8"
+  }
+ ],
+ "fills": [],
+ "broken": [
+  {
+   "lesson": "swe.ch2.l5",
+   "id": "ex5.debug-blind-waterfall",
+   "brokenCode": "WORK = [\n    ('F1', 3, 0),\n    ('F2', 2, 1),\n    ('F3', 4, 0),\n    ('F4', 2, 1),\n    ('F5', 3, 1),\n    ('F6', 2, 0),\n]\nWINDOW = 7\nLATE_FIX = 9\nESCAPED_COST = 12\nTOTAL = sum(f[1] for f in WORK)\nN_DEFECTS = sum(f[2] for f in WORK)\n\nfound = 0\nescaped = 0\ncost = 0\ndone = 0\nfor fid, pts, defect in WORK:\n    cost += pts\n    done += pts\n    if defect:\n        if done >= TOTAL - WINDOW:\n            found += 1\n            cost += LATE_FIX\n            print('waterfall: fix %s late for %d' % (fid, LATE_FIX))\n        else:\n            pass  # عيب بارد: لا شيء يُسجل هنا، صحيح؟\nprint('waterfall: found %d/%d defects cost %d' % (found, N_DEFECTS, cost))\nif escaped == 0:\n    print('escape check: clean')"
+  }
+ ]
+}

@@ -1,0 +1,928 @@
+
+===== صفحة الكتاب 314 =====
+Chapter 12 — Quality Metrics
+Where we are. Every earlier chapter asked you to do something well: elicit requirements, design for change,
+review code, test thoroughly, secure it. This chapter asks a different question: how do you know whether it
+worked? Opinions about quality are cheap and contradictory. Measurement replaces “I think the build got
+better” with “the defect-removal efficiency rose from 84% to 91%, and here is the confidence interval.” This
+is the most quantitative chapter in the book. We build the statistical toolkit — scales of measurement,
+boxplots, variance, distributions, confidence intervals, and linear regression — and we ground every formula
+in a small dataset we carry from start to finish.
+You cannot manage what you cannot see, and in software almost nothing is directly visible. You cannot hold
+“maintainability” in your hand or point at a cubic centimeter of “reliability.” Metrics are how we make invisible
+attributes visible enough to reason about, compare, and improve. But metrics are also dangerous: a badly chosen
+number will be optimized at the expense of the very thing you cared about. So this chapter is as much about
+choosing and interpreting metrics honestly as it is about computing them. Get the statistics right, and get the
+humility right too.
+Throughout, we carry one running dataset. A team runs code reviews and records, for a set of releases, how many
+customer-found defects each release produced in its first six months. Sorted, the eleven values are:
+2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23
+We will summarize this dataset with a boxplot and a histogram, compute its variance and standard deviation, wrap
+a confidence interval around its mean, and — using a second, paired dataset — fit a regression line. Keep these
+numbers in view; they anchor everything abstract that follows.
+Two paths through this chapter. For a first pass, §12.1–§12.5 stand alone: meaningful metrics, software
+quality, charts, defect measurement, and a real improvement case study — nothing beyond arithmetic.
+§12.6–§12.9 (dispersion, probability distributions, confidence intervals, and regression) are the quantitative
+backbone for courses that want students to defend a metric claim statistically; they assume comfort with
+algebra and reward a second week. If you take only the first path, return for §12.8 before you claim two
+releases differ in quality.
+
+===== صفحة الكتاب 315 =====
+12.1 Meaningful Metrics
+12.1.1 Metrics Quantify Attributes
+An attribute is a property of some entity you care about: the size of a module, the duration of a build, the effort to
+fix a bug, the satisfaction of a customer. A metric (more precisely, a measure) is a rule that assigns a number or
+symbol to an attribute so that the assignment preserves something true about the world. Everything rides on that
+last clause. If module A really is more complex than module B, then a valid complexity metric must assign A a
+larger number than B. When the numbers stop tracking the reality, the metric has failed, no matter how carefully it
+is computed.
+Measurement theory names three entities you should keep distinct:
+The entity — the thing being measured (a file, a release, a review session).
+The attribute — the specific property of interest (its size, its defect count).
+The metric — the mapping from attribute to value (lines of code, defects per KLOC).
+A single entity has many attributes, and one attribute admits many metrics. A source file has size, age, complexity,
+and churn; “size” alone can be measured as bytes, lines, statements, or tokens. Confusing these is the root of most
+measurement nonsense. “The file is 400” is meaningless until you say 400 what, measuring which attribute.
+Definition. A metric is valid if entities that differ in the attribute differ in the metric in the same direction (it
+represents the attribute), and reliable if repeating the measurement gives the same value. A metric can be
+reliable but invalid — counting lines of code is perfectly repeatable, yet it is a poor measure of “programmer
+productivity.”
+12.1.2 Selecting Useful Metrics
+Since almost anything can be measured, teams must choose measures that support useful decisions. The hard part
+is deciding what is worth measuring. A useful metric passes several tests at once:
+1. Relevant. It moves when the attribute you care about moves. Counting comments does not track code
+quality; if anything, heavy commenting can signal code so unclear it needs prose to explain it.
+2. Actionable. When the number is bad, you know what to do. A metric you cannot act on is a spectator sport,
+not an engineering tool.
+3. Cheap enough. The cost of collecting it is small relative to the value of the decision it informs. A metric
+that needs a week of manual effort per release will not survive contact with a deadline.
+4. Robust against gaming. The moment a metric becomes a target for people’s incentives, people begin
+optimizing the measured value, sometimes at the expense of the underlying goal. This is Goodhart’s Law
+— the single most common way metrics programs go wrong.1
+
+===== صفحة الكتاب 316 =====
+Pitfall. Reward developers for “lines of code written” and you will get more, longer, more duplicated code.
+Reward testers for “number of bugs found” and you will get a flood of trivial, low-severity reports. Reward
+“closing tickets fast” and hard tickets get closed unfixed. Every metric attached to an incentive is quietly
+redefined by the people it measures. Prefer metrics that are hard to game and pair each metric with a
+counter-metric that would degrade if someone cheated (pair “tickets closed” with “tickets reopened”).
+12.1.3 Goal-Directed Measurement: GQM
+The antidote to measuring the merely convenient is to start from a goal, not from a tool. The Goal-Question-
+Metric (GQM) method, introduced by Victor Basili and colleagues, gives measurement a top-down discipline:2
+Goal — a business or engineering objective, stated with an object, a purpose, a quality focus, a viewpoint,
+and a context. “Improve (purpose) the reliability (focus) of the checkout service (object) from the
+customer’s viewpoint (viewpoint) in production (context).”
+Question — a concrete question whose answer would tell you whether you are meeting the goal. “Are
+customers hitting fewer failures than last quarter?”
+Metric — the data that answers the question. “Customer-found defects per 1,000 active installs, tracked
+monthly.”
+The direction matters. If you start from the metric (“we have a dashboard of 40 numbers — what do they mean?”),
+you drown in data and act on none of it. If you start from the goal, every number on the dashboard earns its place
+by answering a question you actually asked. When a metric answers no live question, delete it: an unused metric
+still costs collection effort and still tempts someone to game it.
+
+===== صفحة الكتاب 317 =====
+12.2 Software Quality
+12.2.1 The Many Forms of Software Quality
+“Quality” is not one thing, and arguments about software quality usually turn out to be people talking past each
+other because they mean different forms of it. It helps to name them explicitly:
+Functional quality — does the software do what it is supposed to do, correctly? This is conformance to
+specification: the features work, the results are right, the edge cases are handled.
+Process quality — is the way the software is built repeatable, visible, and improving? A team that ships
+correct software by heroics has high functional quality and low process quality; next quarter’s release is a
+coin flip.
+Product quality — the internal, structural health of the artifact: readability, modularity, low coupling, test
+coverage, absence of latent defects. Product quality is invisible to users but governs the cost of change
+(Chapter 6).
+Operational quality — how the system behaves in production: availability, latency, resource use,
+recoverability. A feature-complete service that is down two hours a week has poor operational quality.
+Aesthetic quality — the harder-to-quantify sense of a clean interface, a coherent API, a design that feels
+right. Real, but resistant to a single number.
+Customer-satisfaction quality — whether the people who use and pay for the software are actually happy
+with it. This is the form that ultimately pays the bills, and it is only loosely correlated with the others: users
+can love buggy software that solves their problem, and hate flawless software that does not.
+The international standard ISO/IEC 25010 organizes product quality into nine characteristics — functional
+suitability, performance efficiency, compatibility, interaction capability, reliability, security, maintainability,
+flexibility, and safety — each subdivided further. (The widely cited 2011 edition had eight, with usability and
+portability where the current edition has interaction capability and flexibility; taxonomies get revised, which is
+itself a lesson about measurement.)3 Memorizing the taxonomy matters less than the habit it encodes: before you
+measure quality, say which quality.
+Principle. There is no single “quality score.” Different stakeholders optimize different forms of quality, and
+improving one can degrade another (heavy security hardening can hurt usability). State which form you
+mean, whose viewpoint it takes, and why it matters — the discipline GQM enforces.
+12.2.2 Measuring Customer Support
+Customer support is where several forms of quality become visible at once, which makes it a rich source of
+metrics — and a treacherous one. Common support metrics include:
+Ticket volume — how many support requests arrive per unit time (or per install).
+
+===== صفحة الكتاب 318 =====
+Time to first response and time to resolution — how quickly the team reacts and fixes.
+Backlog — how many open tickets, and how old the oldest are.
+Reopen rate — the fraction of “resolved” tickets the customer reopens (a counter-metric to resolution
+speed).
+Customer satisfaction (CSAT) and Net Promoter Score (NPS) — survey-based measures of how
+customers feel.4
+Notice how each metric, alone, misleads. Falling ticket volume might mean the software improved — or that users
+gave up and left. Fast resolution might mean skillful support — or tickets closed without really fixing anything
+(which the reopen rate would expose). This is why support metrics travel in packs: you interpret any one of them
+only against the others, and against the underlying goal of keeping customers successful. We will return to
+support-driven quality improvement as a full case study in §12.5.
+12.3 Graphical Displays of Data Sets
+12.3.1 Data Sets
+A data set is a collection of measured values. The simplest is univariate — one attribute measured across many
+entities, like our eleven defect counts. A bivariate data set pairs two attributes per entity (module size and defect
+count), which is what regression needs. Before you compute a single statistic, look at the data. A number summary
+can hide a shape; a picture reveals it. The rest of §12.3 covers displays for categorical structure, schedules, and
+uncertainty; §12.6 covers displays for dispersion.
+12.3.2 Scales of Measurement
+Not all numbers carry the same information, and this determines which statistics and charts are even legal. There
+are four classic scales of measurement, from least to most informative:
+Scale
+What is meaningful
+Example
+Legal operations
+Nominal
+equality only; categories
+defect type (UI, logic,
+data)
+count, mode
+Ordinal
+order, but not distance
+severity (low < med <
+high)
+median, percentile
+Interval
+order and equal distances, no true
+zero
+calendar date, °C
+mean, standard deviation,
+difference
+Ratio
+all of the above and a true zero
+defect count, time, KLOC
+ratios, coefficient of variation
+The scale tells you what you may do:
+
+===== صفحة الكتاب 319 =====
+On a nominal scale, “the average defect type is 2.3” is nonsense — the categories have no order to
+average. You may only count and find the most frequent (the mode).
+On an ordinal scale, you may find a median (“the median severity is High”) but not a mean, because the
+distance from Low to Medium need not equal Medium to High.
+On an interval scale, differences are meaningful (20°C is 10 degrees warmer than 10°C) but ratios are not
+(20°C is not “twice as hot” as 10°C, because 0°C is not true zero). Means and standard deviations become
+legal.
+On a ratio scale, everything is legal, including ratios (“release B has twice the defects of release A”),
+because zero really means “none.”
+Pitfall. Severity ratings and Likert survey scores (“rate 1–5”) are ordinal, yet teams routinely average them.
+“Average severity 2.7” treats the gap between severities as if it were constant, which it is not — one critical
+defect is not “worth” three trivial ones. Report the median and the distribution of ordinal data, not the mean.
+Our running defect counts are ratio-scaled (zero defects means none, and “twice as many” is meaningful), so
+every statistic in this chapter is fair game for them.
+12.3.3 Bar Charts Display Data by Category
+A bar chart shows a numeric value for each category of a nominal or ordinal attribute, using bar length to encode
+magnitude. It answers “how does this quantity break down by category?” Suppose the 80 customer-found defects
+behind one release sort by severity as: Critical 5, High 18, Medium 42, Low 15. A bar chart makes the shape
+immediate:
+Severity mix of 80 escaped defects (bar length ∝ count)
+Critical  5  |█████
+High     18  |██████████████████
+Medium   42  |██████████████████████████████████████████
+Low      15  |███████████████
+Two rules keep bar charts honest. First, start the axis at zero — a bar’s length encodes the value, so a truncated
+axis exaggerates differences. Second, keep the bars categorical: a bar chart’s horizontal axis has no continuous
+meaning, and reordering the categories changes nothing about the data (unlike a histogram, §12.6.3, whose bins
+are ordered and continuous). Confusing the two is a common error: bar charts are for categories, histograms are
+for ranges of a continuous variable.
+
+===== صفحة الكتاب 320 =====
+12.3.4 Gantt Charts Display Schedules
+A Gantt chart displays a schedule: tasks on the vertical axis, time on the horizontal axis, each task drawn as a
+horizontal bar spanning its start and end. It makes durations, overlaps, dependencies, and the critical path (the
+chain of tasks that determines the earliest possible finish) visible at a glance. Here is a quality-improvement
+initiative — the one we develop in §12.5 — as a Mermaid Gantt chart:
+Read it the way a manager does: the Measure tasks run in parallel at the start; nothing in Improve can begin until
+Set target DRE finishes; and Re-measure cannot start until Add integration tests is done, making the analyze-test-
+remeasure chain the critical path. If any task on that chain slips, the whole quarter slips. Gantt charts are about
+time and dependency, not quantity — which is what distinguishes them from bar charts.
+12.3.5 Hill Charts: Displaying Uncertainty, Not Just Quantity
+The progress charts most teams use — a burndown of remaining tasks, or a “percent done” bar — report the
+quantity of work remaining, but they usually assume that the team has already discovered all of the work. The
+riskiest work is the work you haven’t figured out yet, and a task list often grows as you discover what a problem
+really involves. A burndown that ticks down looks reassuring right up until the unknown you never listed blows up
+the schedule.
+The hill chart, popularized by Basecamp’s Shape Up, adds information that a burndown omits: how much
+uncertainty remains in each piece of work.5 Represent each item as a dot moving over a hill:
+
+===== صفحة الكتاب 321 =====
+. . . . .            <- crest: "we know what to do"
+.              .
+.                    .
+.                          .
+___.______________________________.___
+UPHILL                    DOWNHILL
+"figuring it out"          "just execution"
+(unknowns remain)          (all unknowns solved)
+Uphill means figuring it out — open questions, unsolved design, unproven technical assumptions.
+Downhill means just execution — the unknowns are resolved and only the known, routine work remains.
+Two properties make it a better management signal than a burndown. First, a dot that stops moving is a raised
+hand: it flags a stuck piece before a missed deadline announces it, and without interrogating anyone. Second, its
+language is about the work, not the person — “what would get this scope over the hill?” depersonalizes a status
+conversation that “why isn’t this done?” would sour. Used well, teams push the novel, risky work uphill first and
+leave routine “screw-tightening” for last, so uncertainty falls fastest early — the same risk-first instinct behind the
+spiral model (§2.7) and Shape Up’s building phase (§2.8).
+Principle. Use a progress metric that makes uncertainty visible alongside the amount of work remaining. A
+number that only counts finished tasks will look healthiest right before the unknown you never measured
+comes due.
+12.4 Product Quality: Measuring Defects
+Defects are the most measurable face of quality, so they anchor most quality programs. Measure the outcome you
+care about — usually “how much pain reaches the customer” — and avoid letting the result depend mainly on
+how aggressively the team searched for defects.
+12.4.1 Severity of Defects
+Not all defects matter equally, so raw counts mislead. Teams classify each defect by severity, an ordinal scale
+describing the impact of the failure it causes:
+Critical (S1) — data loss, security breach, or total outage; no workaround.
+High (S2) — a major feature is broken; a painful workaround may exist.
+Medium (S3) — a feature misbehaves but the user can proceed.
+Low (S4) — cosmetic or trivial; annoyance only.
+
+===== صفحة الكتاب 322 =====
+Severity is distinct from priority, which is the business decision of when to fix. A low-severity typo on the login
+page can be high-priority because everyone sees it; a critical bug in a feature no one uses can be low-priority.
+Because severity is ordinal, summarize it with counts per level and a median — not a mean (§12.3.2). A release
+with one Critical and five Lows can be worse than one with ten Mediums, even though the second has more total
+defects; the severity distribution captures what the count destroys.
+12.4.2 Defect-Removal Efficiency
+The central product-quality metric is defect-removal efficiency (DRE): of all the defects that existed, what
+fraction did you catch before they reached the customer?
+DRE =
+𝐷before
+𝐷before + 𝐷after
+× 100
+where 𝐷before  is the number of defects found and removed before release (by reviews, static analysis, and testing)
+and 𝐷after  is the number the customer finds after release. The denominator is the total defects that were ever
+present; DRE is the share your internal nets caught.
+Worked example. During development of a release, code review, static analysis, and testing together found
+and removed 720 defects. In the first six months of production, customers reported 80 more.
+DRE =
+720
+720 + 80 × 100
+The team caught nine of every ten defects before shipping. Some organizations use 95% DRE as an
+aspirational target; much lower values suggest that too many defects are escaping to users.6
+DRE can also be computed per phase to show where defects leak through. If a phase receives defects, removes
+some, and passes the rest downstream, its phase DRE is defects removed in the phase divided by defects present
+when the phase began. Low phase DRE for, say, code review tells you where to invest. Two cautions keep DRE
+trustworthy. First, you only know 𝐷after  after enough time has passed — DRE for a release is provisional until its
+defects have had time to surface (often you fix a measurement window, like six months). Second, DRE rewards
+finding your own bugs, so it resists the gaming that raw “bugs found” invites: inflating 𝐷before  with trivial finds
+barely moves the ratio unless real escapes drop too.
+12.4.3 Customer-Found Defects
+A customer-found defect (CFD) is exactly what it sounds like: a defect first reported by a customer in
+production, i.e., the 𝐷after  term above. CFDs are the most honest defect metric in one sense — every one
+represents real pain that reached a real user, defects that survived every net you built. That makes CFD count, and
+especially the severity mix of CFDs, a direct measure of escaped quality. Our running dataset is a CFD series:
+eleven releases with 2, 4, 5, 5, 7, 8, 9, 10, 12, 14, and 23 customer-found defects respectively in their first six
+months.
+
+===== صفحة الكتاب 323 =====
+12.4.4 CFDs Measure Installs, Not Quality
+A CFD requires careful interpretation, because installation counts can make a dashboard appear healthier without
+showing whether product quality improved. Raw CFD count is confounded by usage. A release installed on ten
+machines and a release installed on ten million machines can have identical code quality, yet the second will
+generate vastly more customer-found defects, simply because more users exercise more paths on more data. A
+falling CFD count might mean the code got better — or that adoption cratered. A rising CFD count might mean
+the code got worse — or that a hit feature tripled your install base.
+The fix is normalization: divide by exposure. Report CFDs per 1,000 active installs, or per million transactions,
+or per user-month. Only then does the metric track quality rather than popularity. If the release with 23 raw CFDs
+had ten times the installs of the release with 5, it is actually the cleaner release per user.
+Principle. Any count of production events — defects, crashes, support tickets — must be normalized by
+exposure before you compare across releases or over time. An unnormalized production count measures how
+many people used the software at least as much as it measures how good the software is. Raw CFDs
+measure installs; CFDs-per-install measure quality.
+12.5 Ops Quality Improvement: A Case Study
+12.5.1 How to Improve Software Quality
+You improve what you measure, measure against a target, act, and re-measure — the loop the Gantt chart in
+§12.3.4 lays out (Measure → Analyze → Improve → Verify). This is just the scientific method wearing a hard hat,
+and it is the most reliable way to improve quality, because it forces you to state a hypothesis (“more integration
+tests will cut escaped defects”) and then check it against data rather than declaring victory by feeling.
+Concretely, a hosting company we will follow — call it Northwind — ships a document service and is alarmed by
+rising support load. Leadership wants “better quality,” which means nothing until it is operationalized. The team
+applies GQM (§12.1.3) to turn the wish into a measurable program.
+12.5.2 The Customer Quality Metric
+Northwind’s goal is “reduce the reliability pain customers feel in production.” The question — “how much pain
+reaches customers, per unit of usage?” — points to a single top-line customer quality metric:
+𝑄cust = severity-weighted CFDs in the quarter
+active installs (thousands)
+.
+Weighting by severity keeps the metric from treating a cosmetic typo like an outage (Critical = 10, High = 5,
+Medium = 2, Low = 1, say), and normalizing by installs obeys the principle of §12.4.4. Leadership tracks this
+
+===== صفحة الكتاب 324 =====
+single value because it reflects customer impact. Since it measures outcomes instead of engineering activity, a
+team cannot improve it simply by doing more of the wrong work.
+12.5.3 Subgoals: Product and Process Improvement
+A top-line outcome metric tells you whether you are winning but not how to win. So Northwind decomposes the
+goal into two subgoals, each with its own metric:
+Product improvement — make each release intrinsically cleaner. Metric: DRE (§12.4.2). Raising DRE
+means fewer defects escape per release regardless of usage.
+Process improvement — make the way releases are built more effective, so that high DRE is repeatable
+rather than lucky. Metrics: defect-injection rate (defects introduced per KLOC), review coverage (fraction
+of changes reviewed), and escaped-defect root-cause mix (which lifecycle phase each escaped defect
+came from).
+The relationship is a small hierarchy: process improvements cause product improvements (better reviews inject
+and escape fewer defects), and product improvements cause the top-line customer metric to fall.
+12.5.4 Measuring Process Improvements
+The dangerous move is to assume the process change worked. Northwind adds integration tests and strengthens
+code review (the Improve phase), then re-measures. Before the change, DRE was 84% and 𝑄cust  was 7.5
+
+===== صفحة الكتاب 325 =====
+weighted CFDs per thousand installs. After a quarter, DRE rose to 91% and 𝑄cust  fell to 4.8. That looks like a win
+— but is the drop real, or just the noise of a naturally variable metric? A single before/after pair cannot answer
+that. You need the dispersion of the metric (how much it bounces release to release even with no real change) and
+a confidence interval around the improvement. That is precisely why the second half of this chapter builds the
+statistical machinery: without it, “quality improved” is a hope, not a finding. We now develop that machinery on
+our running CFD dataset and return to the verdict in §12.8.
+12.6 Data Dispersion: Boxplots and Histograms
+A single number — the mean — hides how spread out and how shaped the data are. Two release series can share a
+mean of 9 defects while one clusters tightly around 9 and the other swings from 0 to 30. Dispersion is often the
+more important story, because it tells you how predictable your process is. We now summarize our running dataset
+visually.
+Recall the sorted CFD dataset (eleven releases):
+2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23
+12.6.1 Medians and Quartiles
+The median is the middle value when the data are sorted — the 50th percentile. With 𝑛= 11 (odd), it is the 6th
+value: median = 8. The median is resistant to outliers: that lone 23 barely nudges it. The quartiles split the data
+into four parts:
+Q1 (first quartile, 25th percentile) is the median of the lower half. Excluding the overall median, the lower
+half is 2, 4, 5, 5, 7, whose median is Q1 = 5.
+Q2 is the overall median, 8.
+Q3 (third quartile, 75th percentile) is the median of the upper half, 9, 10, 12, 14, 23 — so Q3 = 12.
+The interquartile range measures spread using the middle 50% of the data, which is why it too resists outliers:
+IQR = 𝑄3 −𝑄1 = 12 −5 = 7.
+12.6.2 Box Plots Summarize Data by Quartile
+A boxplot (box-and-whisker plot) draws the five-number summary — minimum, Q1, median, Q3, maximum —
+as a box from Q1 to Q3 with a line at the median, and “whiskers” reaching to the most extreme non-outlier values.
+Points beyond the outlier fences are drawn individually. The standard fences are:
+lower fence = 𝑄1 −1.5 × IQR,
+upper fence = 𝑄3 + 1.5 × IQR.
+For our data:
+lower fence = 5 −1.5(7) = −5.5,
+upper fence = 12 + 1.5(7) = 22.5.
+
+===== صفحة الكتاب 326 =====
+Nothing falls below −5.5, but 23 exceeds 22.5, so 23 is an outlier. The upper whisker therefore stops at the largest
+value within the fence, which is 14. Here is the boxplot described numerically, drawn to scale on a 0–24 axis:
+0    2    4    5    7    8   10   12   14        23
+|----[========|=========]----------------------o
+Q1=5    med=8    Q3=12   whisker→14      outlier
+min=2                 |<--- IQR = 7 --->|
+Read at a glance: the box (5 to 12) holds the middle 50% of releases; the median sits at 8, a little left of the box’s
+center, so the data are mildly right-skewed (a longer tail toward high defect counts); and one release (23) is a
+genuine outlier worth investigating on its own — maybe a spike in installs (§12.4.4) or a botched release. Placed
+side by side, Northwind’s before-and-after boxplots show whether the entire distribution moved downward and
+how its spread changed. The mean alone cannot show either.
+12.6.3 Histograms of Data Spread
+A histogram shows the shape of a single continuous variable by dividing its range into equal bins and drawing a
+bar whose height is the count of values in each bin. Unlike a bar chart (§12.3.3), the horizontal axis is continuous
+and ordered, and bin width is a real choice: too wide hides structure, too narrow turns the picture into noise. With
+bin width 5, our data fall as:
+Customer-found defects per release (bin width = 5)
+[ 0,  5)   2  |██          (values 2, 4)
+[ 5, 10)   5  |█████       (values 5, 5, 7, 8, 9)
+[10, 15)   3  |███         (values 10, 12, 14)
+[15, 20)   0  |            (none)
+[20, 25)   1  |█           (value 23)
+The shape confirms the boxplot: a hump in the single digits, a right tail, and an isolated value far out at 23.
+Histograms and boxplots are complements — the boxplot gives a crisp five-number summary and flags outliers,
+the histogram reveals multi-modality and gaps a boxplot would smooth over. Look at both before trusting a mean.
+12.7 Data Dispersion: Statistics
+Pictures build intuition; numbers let you compute confidence intervals and regressions. We now put dispersion on
+a precise footing, still using the running dataset.
+12.7.1 Variance from the Mean
+The mean of our data is
+
+===== صفحة الكتاب 327 =====
+‾𝑥
+= 1𝑛∑𝑖= 1
+𝑛
+𝑥𝑖= 2 + 4 + 5 + 5 + 7 + 8 + 9 + 10 + 12 + 14 + 23
+11
+= 99
+11 = 9.
+The variance measures average squared distance from the mean. For a sample (data drawn from a larger
+population you want to infer about), we divide by 𝑛−1, not 𝑛:
+𝑠2 =
+1
+𝑛−1
+𝑛∑
+𝑖= 1 (𝑥𝑖−‾𝑥)2 .
+The 𝑛−1 (the degrees of freedom, and Bessel’s correction) exists because you estimated the mean from the same
+data, which uses up one degree of freedom and makes the naive 1𝑛 version systematically too small. Working the
+sum of squared deviations term by term:
+𝑥𝑖
+𝑥𝑖−‾𝑥
+(𝑥𝑖−‾𝑥)2
+2
+−7
+49
+4
+−5
+25
+5
+−4
+16
+5
+−4
+16
+7
+−2
+4
+8
+−1
+1
+9
+0
+0
+10
+1
+1
+12
+3
+9
+14
+5
+25
+23
+14
+196
+Σ
+0
+342
+The deviations sum to zero (a useful check — they always do). So
+𝑠2 =
+342
+11 −1 = 342
+10 = 34.2,
+𝑠= √34.2 ≈5.85.
+The standard deviation 𝑠≈5.85 is in the original units (defects) and says, loosely, that a typical release lands
+about 5.85 defects away from the mean of 9. Notice how heavily the outlier 23 dominates: its single term (196) is
+more than half the entire sum of squares. Standard deviation is not resistant to outliers — another reason to look at
+the boxplot’s IQR alongside it. (If these eleven values were the entire population rather than a sample, you would
+divide by 𝑛= 11 to get the population variance 𝜎2 = 342/11 ≈31.1.)
+You can check the arithmetic in code:
+
+===== صفحة الكتاب 328 =====
+One warning: statistics libraries differ on which divisor they use by default — before you trust a library’s output,
+check whether it computes the sample or the population version.
+12.7.2 Discrete Probability Distribution
+To reason about data you have not yet seen, you need a model of how values occur: a probability distribution. A
+discrete distribution assigns a probability to each of countably many outcomes, with the probabilities summing to
+1. Suppose that, from history, the number 𝑋 of critical defects in a release follows:
+𝑥 (critical defects)
+0
+1
+2
+3
+𝑃(𝑋= 𝑥)
+0.50
+0.30
+0.15
+0.05
+The expected value (mean of the distribution) is the probability-weighted average:
+𝐸[𝑋] = ∑
+𝑥𝑥, 𝑃(𝑋= 𝑥) = 0(0.50) + 1(0.30) + 2(0.15) + 3(0.05) = 0.75.
+Its variance uses 𝐸[𝑋2 ] −(𝐸[𝑋])2 :
+𝐸[𝑋2 ]
+= 02 (0.5) + 12 (0.3) + 22 (0.15) + 32 (0.05) = 1.35, Var⁡(𝑋)
+= 1.35 −0.752 = 0.7875.
+So you expect about 0.75 critical defects per release, with a standard deviation of √0.7875 ≈0.89. This is the
+bridge from describing past data to predicting future data.
+12.7.3 Continuous Distributions
+Many quantities — a build’s duration, a request’s latency, a review’s length — are continuous: they can take any
+value in a range, so the probability of exactly 42.0000 minutes is zero. Instead of a probability per outcome, a
+continuous distribution has a probability density function 𝑓(𝑥), and probability is area under the curve:
+𝑏
+import statistics
+cfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]
+s = statistics.stdev(cfds)       # divides by n - 1 (Bessel's correction)
+sigma = statistics.pstdev(cfds)  # divides by n
+print(f"s     = {s:.2f}")      # 5.85 — matches the hand computation
+print(f"sigma = {sigma:.2f}")  # 5.58
+# Warning: NumPy's np.std() defaults to ddof=0 and silently gives the population
+# version (5.58 here); pass ddof=1 when your data are a sample.
+
+===== صفحة الكتاب 329 =====
+𝑃(𝑎≤𝑋≤𝑏) = ∫𝑎
+𝑏𝑓(𝑥), 𝑑𝑥,
+∫−∞
+∞𝑓(𝑥), 𝑑𝑥= 1.
+You never read a probability off the height of the curve; you read it off the area over an interval. This is the model
+behind the two distributions that dominate quality statistics: the normal and the Student’s 𝑡.
+12.7.4 Introduction to Normal Distributions
+The normal (Gaussian) distribution is the symmetric, bell-shaped curve defined by its mean 𝜇 and standard
+deviation 𝜎, written 𝑁(𝜇, 𝜎2 ). It matters for two reasons. First, many natural measurements are approximately
+normal. Second, and far more important, the Central Limit Theorem says that the average of many independent
+measurements is approximately normal regardless of the shape of the original data — which is why the normal
+shows up whenever you reason about sample means, even for lopsided data like our right-skewed defect counts.
+The empirical rule (68–95–99.7) captures its spread: about 68% of values lie within 1𝜎 of the mean, about 95%
+within 2𝜎, and about 99.7% within 3𝜎. Any value is located by its z-score, the number of standard deviations
+from the mean:
+𝑧= 𝑥−𝜇
+𝜎
+.
+Worked example. Historical review durations are approximately normal with 𝜇= 45 minutes and 𝜎= 12
+minutes. A review that took 69 minutes has 𝑧= (69 −45)/12 = 2.0 — two standard deviations above the
+mean. By the empirical rule, only about 2.5% of reviews run that long or longer, so 69 minutes is genuinely
+unusual and might warrant a look.
+The standard normal is 𝑁(0, 1): the distribution of z-scores themselves. Converting to z-scores lets you use one
+table (or the constants like 1.96 below) for every normal distribution.
+12.7.5 Introduction to Student’s t-Distributions
+There is a catch. The z-score formula needs the true population standard deviation 𝜎, which you almost never
+know — you only have the sample estimate 𝑠. Substituting 𝑠 for 𝜎 adds extra uncertainty, especially with small
+samples, and the Student’s t-distribution accounts for it. The 𝑡-distribution is also bell-shaped and centered at
+zero, but it has heavier tails than the normal — it admits that extreme values are a bit more likely when you had
+to estimate the spread from few data points.
+Its shape depends on a single parameter, the degrees of freedom, 𝑑𝑓= 𝑛−1. With few degrees of freedom the
+tails are fat; as 𝑑𝑓 grows, the 𝑡-distribution steadily approaches the standard normal (they are nearly identical
+past 𝑑𝑓≈30). The practical rule follows directly:
+Population 𝜎 known (rare): use the normal and its critical value (1.96 for 95%).
+
+===== صفحة الكتاب 330 =====
+Population 𝜎 unknown, estimated by 𝑠 (usual): use the t-distribution with 𝑛−1 degrees of freedom,
+whose critical value is a bit larger than 1.96 to pay for the extra uncertainty.
+12.8 Confidence Intervals
+12.8.1 Definition of Confidence Interval
+A sample mean is a single guess; a confidence interval is a guess with error bars. It is a range, computed from
+your sample, that is likely to contain the true population mean. A 95% confidence interval is built by a procedure
+that, over many repeated samples, brackets the true mean 95% of the time.
+Pitfall. A 95% confidence interval does not mean “there is a 95% probability the true mean is in this
+particular interval.” The true mean is a fixed (unknown) number; it is either in your interval or not. The 95%
+describes the long-run success rate of the method, not the odds for one interval. Speak of confidence in the
+procedure, not probability of the parameter.
+Every confidence interval for a mean has the same shape:
+‾𝑥± (critical value) × (standard error),
+standard error = (SD)
+√𝑛.
+The standard error shrinks as √𝑛 grows: to halve your error bars you need four times the data. The only question
+is which critical value — z or t — which depends on whether you know the population standard deviation.
+12.8.2 If the Population Standard Deviation Is Known: z-interval
+When 𝜎 is known (for instance, from long historical records of a stable process), use the normal distribution’s
+critical value. For 95% confidence that value is 𝑧* = 1.96 (from the empirical rule; more precisely, 95% of a
+normal lies within 1.96 standard deviations). The interval is:
+‾𝑥± 𝑧* ⋅𝜎
+√𝑛.
+Worked example. You time 𝑛= 36 code reviews and get a sample mean of ‾𝑥= 45 minutes. From years of
+records the population standard deviation is known to be 𝜎= 12 minutes. A 95% z-interval:
+45 ± 1.96 ⋅12
+√36 = 45 ± 1.96 ⋅12
+6 = 45 ± 1.96(2) = 45 ± 3.92.
+The 95% confidence interval is (41.08, 48.92) minutes. You are confident the true average review time lies
+in that band. (Note √36 = 6 made this clean; real samples rarely do.)
+
+===== صفحة الكتاب 331 =====
+12.8.3 If the Population Standard Deviation Is Unknown: t-interval
+Usually you do not know 𝜎 and must estimate it with the sample standard deviation 𝑠. Then use the t-distribution
+with 𝑑𝑓= 𝑛−1:
+‾𝑥± 𝑡𝑛−1
+*
+⋅𝑠
+√𝑛.
+Let us finish the story from §12.5.4 using our running CFD dataset. We have 𝑛= 11, ‾𝑥= 9, and 𝑠≈5.848 (from
+§12.7.1). For 95% confidence with 𝑑𝑓= 11 −1 = 10, the critical value is 𝑡10
+*
+= 2.228 (larger than 1.96, paying
+for the estimated spread and small sample). Then:
+standard error = 𝑠
+√𝑛= 5.848
+√11 = 5.848
+3.317 ≈1.763,
+margin = 𝑡10
+* ⋅𝑠
+√𝑛= 2.228 × 1.763 ≈3.93,
+95% CI = 9 ± 3.93 = (5.07, 12.93) customer-found defects.
+Now interpret Northwind’s result — and resist a tempting shortcut. The “before” interval says the true mean CFD
+rate plausibly lies anywhere from about 5 to 13 defects per release. It does not follow that you can judge the
+improvement by computing a second interval for the “after” quarter and eyeballing whether the two overlap:
+overlap of two separate intervals is not a reliable test of whether two means differ. What §12.5.4 asked for was a
+confidence interval around the improvement itself — one interval for the difference between the means. Build it
+from paired differences when the observations are naturally paired (the same release measured under both
+processes); for two independent samples like Northwind’s before and after quarters, it is
+$$ (\bar{x}{\text{before}} - \bar{x}{\text{after}}) \pm t^* \sqrt{\frac{s_1^2}{n_1} + \frac{s_2^2}{n_2}}, $$
+with degrees of freedom from your statistics package (or, conservatively, the smaller 𝑛−1). If that interval
+excludes zero, the improvement is unlikely to be noise, and you can report it with quantified confidence. If it
+includes zero, the right conclusion is “we cannot yet distinguish the improvement from ordinary release-to-release
+variation; collect more data.” Either way, a confidence interval turns “quality improved” from a hope into a
+defensible finding — or an honest not yet.
+Principle. As a default, never report a before/after change without a confidence interval or an equivalent
+test: metrics vary release to release even when nothing changed, and the interval is what separates a real
+improvement from a lucky quarter. And when your data cannot support one — a handful of observations,
+definitions that changed midway, measurements that aren’t independent — say that instead. Descriptive
+numbers with stated limitations are honest; an interval computed from data that do not meet its assumptions
+is pseudo-precision.
+
+===== صفحة الكتاب 332 =====
+12.9 Simple Linear Regression
+Confidence intervals summarize one variable. Regression models how one variable depends on another — for
+example, how the number of defects in a module depends on its size. It lets you predict (estimate defects for a new
+module from its size) and understand (quantify how much each extra KLOC costs you in defects).
+Our second, bivariate dataset pairs each module’s size 𝑥 (in KLOC) with its customer-found defects 𝑦:
+𝑥 (KLOC)
+2
+4
+6
+8
+10
+𝑦 (defects)
+5
+9
+10
+13
+18
+12.9.1 The Simpler Case: Line through the Origin
+Sometimes theory forces the line through the origin: zero size should mean zero defects, zero effort for zero work.
+A one-parameter model 𝑦= 𝑏, 𝑥 has the least-squares slope
+𝑏=
+∑𝑥𝑖𝑦𝑖
+∑𝑥𝑖
+2
+.
+For our data, ∑𝑥𝑖𝑦𝑖= (2)(5) + (4)(9) + (6)(10) + (8)(13) + (10)(18) = 10 + 36 + 60 + 104 + 180 = 390 and
+∑𝑥𝑖
+2 = 4 + 16 + 36 + 64 + 100 = 220, so
+𝑏= 390
+220 ≈1.77 defects per KLOC.
+The through-origin model predicts about 1.77 defects for every thousand lines. It is simpler, but it forces the fit to
+pass through (0, 0) even if the data would prefer an offset — which brings us to the general case.
+12.9.2 Ordinary Least-Squares Fit
+Ordinary least squares (OLS) fits the line ̂𝑦= 𝑏0 + 𝑏1 𝑥 that minimizes the sum of squared vertical residuals
+𝑒𝑖= 𝑦𝑖−
+̂𝑦𝑖. Squaring (rather than taking absolute values) makes the problem smoothly solvable and penalizes
+large misses heavily. Minimizing ∑𝑒𝑖
+2  by setting its partial derivatives with respect to 𝑏0  and 𝑏1  to zero yields
+the normal equations, whose solution is:
+𝑏1 =
+∑(𝑥𝑖−‾𝑥)(𝑦𝑖−‾𝑦)
+∑(𝑥𝑖−‾𝑥)2
+= 𝑆𝑥𝑦
+𝑆𝑥𝑥
+,
+𝑏0 = ‾𝑦−𝑏1 ‾𝑥.
+The intercept formula guarantees the line passes through the point of averages ( ‾𝑥, ‾𝑦) — a useful sanity check.
+Work it through. The means are ‾𝑥= (2 + 4 + 6 + 8 + 10)/5 = 6 and ‾𝑦= (5 + 9 + 10 + 13 + 18)/5 = 11. Then
+tabulate the deviations:
+
+===== صفحة الكتاب 333 =====
+𝑥𝑖
+𝑦𝑖
+𝑥𝑖−‾𝑥
+𝑦𝑖−‾𝑦
+(𝑥𝑖−‾𝑥)(𝑦𝑖−‾𝑦)
+(𝑥𝑖−‾𝑥)
+2
+2
+5
+−4
+−6
+24
+16
+4
+9
+−2
+−2
+4
+4
+6
+10
+0
+−1
+0
+0
+8
+13
+2
+2
+4
+4
+10
+18
+4
+7
+28
+16
+Σ
+60
+40
+So 𝑆𝑥𝑦= 60 and 𝑆𝑥𝑥= 40, giving:
+𝑏1 = 60
+40 = 1.5,
+𝑏0 = 11 −1.5(6) = 2.
+The fitted line is:
+̂𝑦= 2 + 1.5, 𝑥.
+Interpret both coefficients. The slope 𝑏1 = 1.5 says each additional KLOC brings about 1.5 more customer-found
+defects — a rate, the actionable number. The intercept 𝑏0 = 2 is the model’s prediction at zero size; here it is a
+mathematical artifact (a zero-size module cannot have 2 defects), a reminder not to extrapolate a regression
+outside the range of your data. Check the fit by residuals:
+𝑥𝑖
+𝑦𝑖
+̂𝑦𝑖= 2 + 1.5𝑥𝑖
+residual 𝑒𝑖
+2
+5
+5
+0
+4
+9
+8
++1
+6
+10
+11
+−1
+8
+13
+14
+−1
+10
+18
+17
++1
+The residuals sum to zero (they always do with an intercept) and are small. The sum of squared errors is
+SSE = 02 + 12 + (−1)2 + (−1)2 + 12 = 4. To judge fit, compare it to the total variation
+SST = ∑(𝑦𝑖−‾𝑦)2 = 36 + 4 + 1 + 4 + 49 = 94. The coefficient of determination is
+𝑅2 = 1 −SSE
+SST = 1 −4
+94 ≈0.957.
+So size explains about 96% of the variation in defect counts here — a strong linear relationship. (Equivalently, the
+correlation is 𝑟= 𝑆𝑥𝑦/√𝑆𝑥𝑥𝑆𝑦𝑦= 60/√40 ⋅94 ≈0.978, and 𝑟2 = 𝑅2 .)
+
+===== صفحة الكتاب 334 =====
+Pitfall. Regression measures association, not causation. A high 𝑅2  between size and defects does not prove
+that shrinking modules causes fewer defects — both might be driven by a third factor (rushed, complex
+features are both large and buggy). And never extrapolate: our model is fit on 2–10 KLOC and says nothing
+reliable about a 40-KLOC module or about zero. Regression describes the data you have, in the range you
+have it.
+12.10 Conclusion
+Metrics are how software engineering earns the word engineering: they replace assertion with evidence. But the
+chapter’s two halves carry one shared lesson. The measurement half (§§12.1–12.5) insists that a number is only as
+good as the goal behind it — choose metrics from goals (GQM), state which form of quality you mean, normalize
+production counts by exposure so you measure quality and not popularity, and expect any metric tied to an
+incentive to be gamed. The statistical half (§§12.6–12.9) insists that a number is only as good as its uncertainty —
+a mean without a spread misleads, a boxplot and histogram reveal shape and outliers a mean hides, and a
+before/after comparison without a confidence interval cannot tell a real improvement from a lucky quarter.
+We carried one dataset through the whole apparatus: eleven customer-found-defect counts with mean 9, median 8,
+IQR 7, variance 34.2, standard deviation 5.85, one outlier at 23, and a 95% t-interval of (5.07, 12.93); and a paired
+dataset whose least-squares fit ̂𝑦= 2 + 1.5𝑥 explains 96% of the variation in defects by size. Every one of those
+numbers began as an invisible attribute and ended as something you can compare, defend, and act on.
+Used well, metrics close the loop that began in Chapter 1: they tell you, with evidence rather than opinion,
+whether your requirements, design, reviews, and tests are actually producing software that works — and whether
+it is getting better. Used badly, they become theater: dashboards no one reads, targets everyone games, averages
+that hide the story. The difference is discipline, not statistical sophistication: start from a goal, say what you mean
+by quality, and never report a change without its error bars.
+Sources
+1 C. A. E. Goodhart, Problems of Monetary Management: The U.K. Experience (1975; reprinted in Monetary Theory and
+Practice, Palgrave, 1984). link.springer.com. The popular phrasing — “when a measure becomes a target, it ceases to be a
+good measure” — is Marilyn Strathern’s, from “‘Improving Ratings’: Audit in the British University System,” European
+Review 5(3) (1997).
+2 Victor R. Basili, Gianluigi Caldiera & H. Dieter Rombach, “The Goal Question Metric Approach,” Encyclopedia of Software
+Engineering (Wiley, 1994). cs.umd.edu.
+3 ISO/IEC 25010:2023, Systems and software engineering — SQuaRE — Product quality model (2023) — nine characteristics; it
+revises ISO/IEC 25010:2011, whose product-quality model had eight. iso25000.com; iso.org.
+4 Frederick F. Reichheld, “The One Number You Need to Grow,” Harvard Business Review (December 2003). hbr.org.
+
+===== صفحة الكتاب 335 =====
+5 Ryan Singer, Shape Up: Stop Running in Circles and Ship Work that Matters, ch. 13 “Show Progress” (Basecamp, 2019).
+basecamp.com.
+6 Capers Jones, Software Defect Removal Efficiency (Capers Jones & Associates, 2011) — reports a U.S. average DRE near 85%
+and that combining inspections, static analysis, and testing is how projects top 95%. ppi-int.com.
+Key takeaways are summarized above in §12.10.
+Continue to the Exercises.
+Go deeper with the Open Resources for this chapter.
+
+===== صفحة الكتاب 336 =====
+
+===== صفحة الكتاب 337 =====
+Chapter 12 — Exercises
+Exercises are graded by depth: [warm‑up] checks understanding, [analysis] asks you to reason; a [calculation]
+tag marks exercises that require working the numbers. At least five exercises require calculation — show your
+work, including formulas and intermediate values, not just a final number.
+Two datasets recur (the same ones used in the chapter). Dataset A is a univariate series of customer-found defects
+for eleven releases; Dataset B pairs module size with defects.
+Dataset A (sorted): 2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23
+Dataset B: 𝑥 (KLOC) = 2, 4, 6, 8, 10; 𝑦 (defects) = 5, 9, 10, 13, 18
+Concepts
+1. [warm‑up] In your own words, distinguish an entity, an attribute, and a metric. Give two different metrics
+for the same attribute of a source file, and say why one might be more valid than the other.
+2. [warm‑up] Classify each of the following by scale of measurement (nominal, ordinal, interval, or ratio)
+and name one statistic that is legal and one that is illegal for it: (a) defect severity S1–S4, (b) defect count
+per release, (c) the calendar date a bug was filed, (d) the module a bug lives in.
+3. [warm‑up] State the difference between a bar chart and a histogram. Give one dataset that belongs on
+each, and explain why swapping them would mislead.
+4. [warm‑up] Write the GQM for this goal: “reduce the time new engineers take to make their first safe
+production change.” Supply at least one question and two metrics, and name a counter-metric that would
+catch someone gaming one of them.
+Analysis
+5. [analysis] A manager proposes paying testers a bonus per bug they file. Using Goodhart’s Law and the idea
+of a counter-metric, predict two specific ways this will distort behavior, and propose a metric pair that
+resists the distortion.
+6. [analysis] Two releases each report exactly 30 customer-found defects. Release P runs on 5,000 installs;
+release Q runs on 500,000 installs. Explain, with a normalized figure for each, why raw CFD count makes
+them look equal when their quality is very different. State which release is cleaner and by how much.
+7. [analysis] The chapter says severity is ordinal and should not be averaged. A colleague insists “average
+severity 2.7” is fine because the labels map to numbers 1–4. Rebut this in two or three sentences, and
+propose what to report instead.
+8. [analysis] Explain the difference between DRE improving because your product got better and the
+customer quality metric 𝑄cust  falling because usage dropped. Which metric is confounded by usage and
+
+===== صفحة الكتاب 338 =====
+which is not? Why does Northwind track both (§12.5)?
+9. [analysis] You compute a 95% confidence interval (5.07, 12.93) for a release’s mean CFD count. A
+teammate says “so there’s a 95% chance the true mean is between 5.07 and 12.93.” Explain precisely why
+this interpretation is wrong and give the correct one.
+Calculation
+10. [analysis][calculation] (Defect-removal efficiency.) During development, reviews and testing remove 465
+defects. In the first six months of production, customers report 35 more. (a) Compute DRE. (b) The team’s
+goal is 95% DRE; how many fewer escaped defects (holding 𝐷before  fixed) would they have needed to hit
+it? (c) Explain why DRE for this release is still “provisional” at six months.
+11. [analysis][calculation] (Quartiles and boxplot.) For Dataset A, compute the five-number summary (min,
+Q1, median, Q3, max), the IQR, and the upper and lower outlier fences. Identify any outliers, state where
+each whisker ends, and say whether the distribution is left- or right-skewed and how you can tell from the
+summary.
+12. [analysis][calculation] (Variance and standard deviation.) For Dataset A, compute the mean, the sample
+variance 𝑠2 , and the sample standard deviation 𝑠, showing the deviation table. Then recompute the
+variance dividing by 𝑛 instead of 𝑛−1. Explain which is appropriate if the eleven values are (a) a sample
+from an ongoing process, versus (b) the entire population of releases ever shipped.
+13. [analysis][calculation] (z-interval.) You measure 𝑛= 64 builds and get a sample mean duration of ‾𝑥= 8.0
+minutes. From long history the population standard deviation is known to be 𝜎= 2.4 minutes. Construct
+the 95% z-interval for the true mean build time (use 𝑧* = 1.96). Then state what would happen to the
+interval’s width if you quadrupled the sample size to 256, and by what factor.
+14. [analysis][calculation] (t-interval.) A different eight-release sample of CFD counts has ‾𝑥= 11 and 𝑠= 4.0
+. Using 𝑡7
+* = 2.365 for 95% confidence, construct the t-interval for the mean. Then explain in one sentence
+why you used a t-value larger than 1.96 rather than the normal critical value.
+15. [analysis][calculation] (OLS regression.) For Dataset B, fit the least-squares line ̂𝑦= 𝑏0 + 𝑏1 𝑥. Show ‾𝑥,
+‾𝑦, 𝑆𝑥𝑦, 𝑆𝑥𝑥, then 𝑏1  and 𝑏0 . Compute the residual for the 𝑥= 4 point, the SSE, and 𝑅2 . Interpret the
+slope in plain words, and explain why predicting 𝑦 at 𝑥= 40 from this fit would be unwise.
+
+===== صفحة الكتاب 339 =====
+
+===== صفحة الكتاب 340 =====
+Chapter 12 — Open Resources
+Free, open-licensed, or freely accessible materials that reinforce this chapter. Types: 📘 open text · 🎓 course ·
+📄 primary source / standard · 🎥 video. Licenses vary and are noted where known; linked resources remain
+under their own terms.
+Statistics foundations (§§12.6–12.9)
+📘 OpenIntro Statistics — openintro.org/book/os. A complete, rigorous, free introductory statistics text.
+Covers scales of data, boxplots and quartiles, variance and standard deviation, the normal and t
+distributions, confidence intervals, and least-squares regression — the exact toolkit of §§12.6–12.9, with
+worked examples. License: CC BY-SA 3.0 (PDF free; print available at cost).
+📘 Introduction to Modern Statistics (Çetinkaya-Rundel & Hardin) — openintro-ims.netlify.app. A
+newer OpenIntro text emphasizing simulation-based and computational inference; strong chapters on
+exploratory data displays, the bootstrap, confidence intervals, and linear regression. License: CC BY-SA. A
+good second pass once the classic text’s formulas are clear.
+🎓 Khan Academy — Statistics and Probability — khanacademy.org/math/statistics-probability. Short
+videos and practice on quartiles/boxplots, variance/SD, z-scores, the normal distribution, confidence
+intervals, and regression. Free to use.
+Software metrics and quality (§§12.1–12.5)
+📄 Basili, Caldiera & Rombach — “The Goal Question Metric Approach” (Encyclopedia of Software
+Engineering, 1994) — cs.umd.edu/users/mvz/handouts/gqm.pdf. The primary source for GQM (§12.1.3),
+freely posted as a course handout at the University of Maryland (Basili’s home institution). Read it for the
+original, goal-first framing of measurement.
+📄 Goodhart — “Problems of Monetary Management: The U.K. Experience” (1975) —
+link.springer.com. The origin of Goodhart’s Law (§12.1.2), reprinted in Monetary Theory and Practice
+(Palgrave, 1984). The chapter is paywalled; the popular phrasing — “when a measure becomes a target, it
+ceases to be a good measure” — is Marilyn Strathern’s, from “‘Improving Ratings’” (European Review,
+1997), also paywalled but widely summarized.
+📄 Reichheld — “The One Number You Need to Grow” (Harvard Business Review, Dec. 2003) —
+hbr.org/2003/12/the-one-number-you-need-to-grow. The article that introduced the Net Promoter Score
+(§12.2.2). HBR allows a limited number of free article views per month.
+📄 Capers Jones — “Software Defect Removal Efficiency” (2011) — ppi-int.com (PDF). A short, free
+paper by the metric’s best-known proponent (§12.4.2): U.S. average DRE near 85%, and why topping 95%
+takes inspections and static analysis on top of testing.
+
+===== صفحة الكتاب 341 =====
+📘 Singer, Shape Up, ch. 13 “Show Progress” — basecamp.com/shapeup/3.4-chapter-13. The primary
+source for hill charts (§12.3.5): why to-do lists grow as work progresses, and how dots on a hill expose
+uncertainty a burndown hides. The full book is free to read online.
+📘 Fenton & Bieman, Software Metrics: A Rigorous and Practical Approach — the standard reference
+for measurement theory, scales of measurement, and valid vs. invalid metrics (§§12.1, 12.3.2). Not open-
+licensed, but foundational; look for the authors’ freely posted lecture notes and papers, and library copies.
+📄 DORA — DevOps Research and Assessment metrics — dora.dev. The five delivery metrics —
+throughput (change lead time, deployment frequency, failed-deployment recovery time) and instability
+(change fail rate, deployment rework rate; the “four keys” until 2024) — and the annual State of DevOps
+reports. An excellent, evidence-based example of goal-directed, hard-to-game operational metrics (§12.2,
+§12.5). Reports free to read.
+📄 ISO/IEC 25010 — Systems and software Quality Requirements and Evaluation (SQuaRE):
+Product quality model — iso25000.com/en/iso-25000-standards/iso-25010. The nine product-quality
+characteristics referenced in §12.2.1 (the 2023 revision; the widely cited 2011 edition had eight). The
+summary portal is free; the formal standard is paywalled by ISO (iso.org/standard/78176.html).
+Reference and data
+📄 NIST/SEMATECH e-Handbook of Statistical Methods — itl.nist.gov/div898/handbook. A free,
+authoritative U.S.-government reference for descriptive statistics, distributions, confidence intervals, and
+regression, with formulas and case studies. Public domain (U.S. government work).
+🎥 StatQuest with Josh Starmer — youtube.com/@statquest. Clear, free video explanations of variance,
+the normal distribution, confidence intervals, and linear regression — useful if a formula in §§12.7–12.9
+needs a second, visual pass.
+License note
+Linked resources remain under their own licenses (several are CC BY-SA; the NIST handbook is U.S. public
+domain; ISO and Fenton & Bieman are not open). This page is CC BY-SA 4.0.
+
+===== صفحة الكتاب 342 =====

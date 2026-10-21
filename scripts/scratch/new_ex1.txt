@@ -1,0 +1,96 @@
+    {
+      kind: 'exercise',
+      id: 'ex1.scoreboard',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'أعد إنتاج لوحة النتائج على البيانات النظيفة والمشوشة: ابنِ stump وbagged وeval_pair كما في المثال، واطبع السطرين بصيغة clean  single %.4f bagged %.4f ثم noisy  single %.4f bagged %.4f.',
+        en: 'Reproduce the scoreboard on the clean and noisy data: build stump, bagged, and eval_pair as in the example, and print the two lines formatted clean  single %.4f bagged %.4f then noisy  single %.4f bagged %.4f.',
+      },
+      starterCode: `XS = [1, 2, 3, 4, 5, 6, 7, 8]
+YS = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]
+BOOTS = [[0, 1, 1, 3, 4, 5, 6, 7],
+         [0, 2, 3, 3, 5, 6, 6, 7],
+         [1, 2, 2, 3, 4, 4, 5, 7]]
+NOISY_XS = XS + [9, 10]
+NOISY_YS = YS + [20.0, -3.0]
+NOISY_BOOTS = [[0, 1, 1, 3, 4, 5, 6, 7, 8, 8],
+               [0, 2, 3, 3, 5, 6, 6, 7, 9, 9],
+               [1, 2, 2, 4, 4, 5, 7, 7, 9, 9]]
+
+def sse(v):
+    ...  # TODO
+
+def stump(xs_, ys_):
+    ...  # TODO
+
+def mse(res):
+    ...  # TODO
+
+# TODO: build eval_pair, then print the clean and noisy lines
+`,
+      solution: `XS = [1, 2, 3, 4, 5, 6, 7, 8]
+YS = [1.0, 1.0, 2.0, 2.0, 6.0, 6.0, 7.0, 7.0]
+BOOTS = [[0, 1, 1, 3, 4, 5, 6, 7],
+         [0, 2, 3, 3, 5, 6, 6, 7],
+         [1, 2, 2, 3, 4, 4, 5, 7]]
+NOISY_XS = XS + [9, 10]
+NOISY_YS = YS + [20.0, -3.0]
+NOISY_BOOTS = [[0, 1, 1, 3, 4, 5, 6, 7, 8, 8],
+               [0, 2, 3, 3, 5, 6, 6, 7, 9, 9],
+               [1, 2, 2, 4, 4, 5, 7, 7, 9, 9]]
+
+def sse(v):
+    m = sum(v) / len(v)
+    return sum((a - m) ** 2 for a in v)
+
+def stump(xs_, ys_):
+    best = None
+    sx = sorted(set(xs_))
+    for t in [(a + b) / 2 for a, b in zip(sx, sx[1:])]:
+        left = [y for x, y in zip(xs_, ys_) if x <= t]
+        right = [y for x, y in zip(xs_, ys_) if x > t]
+        tot = sse(left) + sse(right)
+        if best is None or tot < best[1]:
+            best = (t, tot, sum(left) / len(left), sum(right) / len(right))
+    return best
+
+def mse(res):
+    return sum(r * r for r in res) / len(res)
+
+def eval_pair(xs_, ys_, boots):
+    pool = [stump([xs_[i] for i in idx], [ys_[i] for i in idx]) for idx in boots]
+
+    def bagged(x):
+        return sum((p[2] if x <= p[0] else p[3]) for p in pool) / len(pool)
+
+    s = stump(xs_, ys_)
+    r_single = [y - (s[2] if x <= s[0] else s[3]) for x, y in zip(xs_, ys_)]
+    r_bag = [y - bagged(x) for x, y in zip(xs_, ys_)]
+    return mse(r_single), mse(r_bag)
+
+clean_single, clean_bag = eval_pair(XS, YS, BOOTS)
+noisy_single, noisy_bag = eval_pair(NOISY_XS, NOISY_YS, NOISY_BOOTS)
+print("clean  single %.4f bagged %.4f" % (clean_single, clean_bag))
+print("noisy  single %.4f bagged %.4f" % (noisy_single, noisy_bag))`,
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'القيم الأربع مطابقة', en: 'All four values match' },
+          code: `assert abs(clean_single - 0.25) < 1e-9, 'clean single expected 0.25 | actual: %r' % clean_single\nassert abs(clean_bag - 0.3923611111111111) < 1e-9, 'clean bagged expected 0.3924 | actual: %r' % clean_bag\nassert abs(noisy_single - 27.183333333333334) < 1e-6, 'noisy single expected 27.1833 | actual: %r' % noisy_single\nassert abs(noisy_bag - 21.891840277777776) < 1e-6, 'noisy bagged expected 21.8918 | actual: %r' % noisy_bag`,
+          expected: '0.25 / 0.3924 / 27.1833 / 21.8918',
+        },
+        {
+          id: 't2',
+          name: { ar: 'انقلاب الحكم مع الضوضاء', en: 'The verdict flips under noise' },
+          code: `assert clean_bag > clean_single, 'on clean data bagging is expected to lose'\nassert noisy_bag < noisy_single, 'on noisy data bagging is expected to win'`,
+          expected: 'loses clean, wins noisy',
+        },
+      ],
+      hints: [
+        { ar: 'انقل stump وbagged من درس البناء، ثم لفّهما بـ eval_pair تعيد (mse_single, mse_bagged).', en: 'Port stump and bagged from the construction lesson, then wrap them in eval_pair returning (mse_single, mse_bagged).' },
+        { ar: 'بيانات الضوضاء: NOISY_XS = XS + [9, 10] وNOISY_YS = YS + [20.0, -3.0] وعيناتها الثابتة في المثال.', en: 'Noisy data: NOISY_XS = XS + [9, 10], NOISY_YS = YS + [20.0, -3.0], with the fixed samples from the example.' },
+        { ar: 'سطرا الطباعة فيهما فراغان بعد clean/noisy — انسخ الصيغة حرفيًا.', en: 'Both print lines carry two spaces after clean/noisy — copy the format verbatim.' },
+        { ar: 'المخرجات المتوقعة: 0.2500/0.3924 نظيف، و27.1833/21.8918 مشوش.', en: 'Expected output: 0.2500/0.3924 clean, 27.1833/21.8918 noisy.' },
+      ],
+    },

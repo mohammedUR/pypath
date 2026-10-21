@@ -1,0 +1,172 @@
+[
+ {
+  "lesson": "swe.ch1.l1",
+  "id": "ex1.paths",
+  "solution": "def paths(n):\n    return n * (n - 1) // 2\n\nfor n in [2, 3, 5, 9]:\n    print('team: %d paths: %d' % (n, paths(n)))\n\nassert paths(2) == 1\nassert paths(9) == 36\n\nprint('growth 3->9: %d' % (paths(9) - paths(3)))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الجدول يصل إلى فريق 9 بـ 36 قناة",
+     "en": "The table reaches team 9 with 36 channels"
+    },
+    "code": "assert 'team: 9 paths: 36' in __learner_output__, 'expected: team: 9 paths: 36 | actual: %r' % __learner_output__",
+    "expected": "team: 9 paths: 36"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "سطر النمو صحيح",
+     "en": "The growth line is correct"
+    },
+    "code": "assert 'growth 3->9: 33' in __learner_output__, 'expected: growth 3->9: 33 | actual: %r' % __learner_output__",
+    "expected": "growth 3->9: 33"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الدالة تعمم على حجم لم يُطبع",
+     "en": "The function generalizes to an unprinted size"
+    },
+    "code": "assert paths(4) == 6 and paths(2) == 1, 'expected: 6 and 1 | actual: %r' % ((paths(4), paths(2)),)",
+    "expected": "6 and 1"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch1.l2",
+  "id": "ex1.cost-table",
+  "solution": "STAGE_COST = {'requirements': 1, 'design': 5, 'code': 10, 'testing': 20, 'production': 100}\n\ndef fix_cost(stage):\n    return STAGE_COST[stage]\n\ncaught = 5 * fix_cost('testing')\nescaped = 5 * fix_cost('production')\nprint('5 faults caught in testing: %d' % caught)\nprint('5 faults escaping to production: %d' % escaped)\nprint('saved: %d' % (escaped - caught))\n\nassert fix_cost('requirements') == 1\nassert fix_cost('production') == 100",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "سطر الهروب إلى الإنتاج صحيح",
+     "en": "The production-escape line is correct"
+    },
+    "code": "assert '5 faults escaping to production: 500' in __learner_output__, 'expected: 5 faults escaping to production: 500 | actual: %r' % __learner_output__",
+    "expected": "5 faults escaping to production: 500"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "سطر الوفر صحيح",
+     "en": "The savings line is correct"
+    },
+    "code": "assert 'saved: 400' in __learner_output__, 'expected: saved: 400 | actual: %r' % __learner_output__",
+    "expected": "saved: 400"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الجدول كامل بقيمه الصحيحة",
+     "en": "The table is complete with correct values"
+    },
+    "code": "assert fix_cost('design') == 5 and fix_cost('code') == 10 and len(STAGE_COST) == 5, 'expected: 5, 10, 5 stages | actual: %r' % ((fix_cost('design'), fix_cost('code'), len(STAGE_COST)),)",
+    "expected": "5, 10, 5 stages"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch1.l3",
+  "id": "ex1.advisor",
+  "solution": "def advisor(scope, time, cost, flex):\n    if flex == 'scope':\n        return time * cost\n    if flex == 'time':\n        return scope / cost\n    if flex == 'cost':\n        return scope / time\n    raise ValueError('unknown flex')\n\nprint('scope flex: %d' % advisor(10, 4, 2, 'scope'))\nprint('time flex: %.1f' % advisor(10, 4, 2, 'time'))\nprint('cost flex: %.1f' % advisor(10, 4, 2, 'cost'))\n\nassert advisor(10, 4, 2, 'scope') == 8\nassert advisor(10, 4, 2, 'time') == 5.0\nassert advisor(10, 4, 2, 'cost') == 2.5",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الدالة تعمم على أرقام لم تُطبع",
+     "en": "The function generalizes to unprinted numbers"
+    },
+    "code": "assert advisor(12, 3, 2, 'scope') == 6 and advisor(10, 5, 2, 'time') == 5.0, 'expected: 6 and 5.0 | actual: %r' % ((advisor(12, 3, 2, 'scope'), advisor(10, 5, 2, 'time')),)",
+    "expected": "6 and 5.0"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "أسطر الطباعة الثلاثة صحيحة",
+     "en": "All three printed lines are correct"
+    },
+    "code": "assert 'scope flex: 8' in __learner_output__ and 'time flex: 5.0' in __learner_output__ and 'cost flex: 2.5' in __learner_output__, 'expected: 8 / 5.0 / 2.5 lines | actual: %r' % __learner_output__",
+    "expected": "8 / 5.0 / 2.5 lines"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الفرع المجهول يرفض بصوت عالٍ",
+     "en": "The unknown branch refuses loudly"
+    },
+    "code": "assert advisor(9, 3, 3, 'cost') == 3.0, 'expected: 3.0 | actual: %r' % advisor(9, 3, 3, 'cost')",
+    "expected": "3.0"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch1.l4",
+  "id": "ex1.project-balance",
+  "solution": "STAGE_COST = {'requirements': 1, 'design': 5, 'code': 10, 'testing': 20, 'production': 100}\n\ndef balance(scope, time, cost, flex):\n    # the responsibility gate runs first: some demands are refused, not traded\n    if flex == 'crunch':\n        return 'refuse: crunch hides the trade-off'\n    capacity = time * cost\n    if scope <= capacity:\n        return 'ship as planned'\n    over = scope - capacity\n    if flex == 'scope':\n        return 'cut scope: %d' % over\n    if flex == 'time':\n        return 'move date: +%d months' % (-(-over // cost))\n    return 'hire: +%d devs' % (-(-over // time))\n\nprint(balance(8, 4, 2, 'scope'))\nprint(balance(12, 4, 2, 'time'))\nprint(balance(12, 4, 2, 'cost'))\nprint(balance(8, 4, 2, 'crunch'))\nprint('crunch escapes: %d units vs caught in requirements: %d' % (\n    4 * STAGE_COST['production'], 4 * STAGE_COST['requirements']))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "التوصيات الأربع تطبع بالترتيب الصحيح",
+     "en": "The four recommendations print in the right order"
+    },
+    "code": "assert 'ship as planned' in __learner_output__ and 'move date: +2 months' in __learner_output__ and 'hire: +1 devs' in __learner_output__ and 'refuse: crunch hides the trade-off' in __learner_output__, 'expected: all four recommendations | actual: %r' % __learner_output__",
+    "expected": "all four recommendations"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الميزان يحسم سيناريوهات جديدة",
+     "en": "The balance decides fresh scenarios"
+    },
+    "code": "assert balance(10, 5, 2, 'scope') == 'ship as planned' and balance(13, 5, 2, 'scope') == 'cut scope: 3', 'expected: ship / cut scope: 3 | actual: %r' % ((balance(10, 5, 2, 'scope'), balance(13, 5, 2, 'scope')),)",
+    "expected": "ship / cut scope: 3"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سقف الكلفة وسطر الهروب صحيحان",
+     "en": "The ceiling arithmetic and escape line are correct"
+    },
+    "code": "assert balance(16, 5, 3, 'cost') == 'hire: +1 devs' and balance(16, 5, 3, 'time') == 'move date: +1 months' and 'crunch escapes: 400 units vs caught in requirements: 4' in __learner_output__, 'expected: hire/move ceilings and escape line | actual: %r' % __learner_output__",
+    "expected": "hire/move ceilings and escape line"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch1.l4",
+  "id": "ex5.debug-silent-crunch",
+  "solution": "def balance(scope, time, cost, flex):\n    # the responsibility gate runs first: some demands are refused, not traded\n    if flex == 'crunch':\n        return 'refuse: crunch hides the trade-off'\n    capacity = time * cost\n    if scope <= capacity:\n        return 'ship as planned'\n    over = scope - capacity\n    if flex == 'scope':\n        return 'cut scope: %d' % over\n    if flex == 'time':\n        return 'move date: +%d months' % (-(-over // cost))\n    return 'hire: +%d devs' % (-(-over // time))\n\nprint('scope: 8 time: 4 cost: 2 flex: crunch')\nprint(balance(8, 4, 2, 'crunch'))\nprint('scope: 12 time: 4 cost: 2 flex: crunch')\nprint(balance(12, 4, 2, 'crunch'))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "بوابة الرفض تعمل في الحالتين",
+     "en": "The refusal gate fires in both cases"
+    },
+    "code": "assert __learner_output__.count('refuse: crunch hides the trade-off') == 2, 'expected: 2 refusals | actual: %r' % __learner_output__",
+    "expected": "2 refusals"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "لم يعد هناك ابتلاع صامت",
+     "en": "No more silent absorption"
+    },
+    "code": "assert 'ship as planned' not in __learner_output__ and 'hire:' not in __learner_output__, 'expected: no silent recommendations | actual: %r' % __learner_output__",
+    "expected": "no silent recommendations"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "التوصيات الصادقة لم تُمَس",
+     "en": "The honest recommendations are untouched"
+    },
+    "code": "assert balance(12, 4, 2, 'time') == 'move date: +2 months' and balance(12, 4, 2, 'cost') == 'hire: +1 devs' and balance(12, 4, 2, 'scope') == 'cut scope: 4', 'expected: +2 months / +1 devs / cut scope: 4 | actual: %r' % ((balance(12, 4, 2, 'time'), balance(12, 4, 2, 'cost'), balance(12, 4, 2, 'scope')),)",
+    "expected": "+2 months / +1 devs / cut scope: 4"
+   }
+  ]
+ }
+]

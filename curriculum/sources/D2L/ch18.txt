@@ -1,0 +1,1186 @@
+
+===== صفحة الكتاب 837 =====
+258
+18
+Gaussian Processes
+Andrew Gordon Wilson (New York University and Amazon)
+Gaussian processes (GPs) are ubitiquous. You have already encountered many examples of
+GPs without realizing it. Any model that is linear in its parameters with a Gaussian distri-
+bution over the parameters is a Gaussian process. This class spans discrete models, includ-
+ing random walks, and autoregressive processes, as well as continuous models, including
+Bayesian linear regression models, polynomials, Fourier series, radial basis functions, and
+even neural networks with an infinite number of hidden units. There is a running joke that
+“everything is a special case of a Gaussian process”.
+Learning about Gaussian processes is important for three reasons: (1) they provide a func-
+tion space perspective of modelling, which makes understanding a variety of model classes,
+including deep neural networks, much more approachable; (2) they have an extraordinary
+range of applications where they are state-of-the-art, including active learning, hyperpa-
+rameter learning, auto-ML, and spatiotemporal regression; (3) over the last few years,
+algorithmic advances have made Gaussian processes increasingly scalable and relevant,
+harmonizing with deep learning through frameworks such as GPyTorch 258 (Gardner et
+al., 2018). Indeed, GPs and and deep neural networks are not competing approaches, but
+highly complementary, and can be combined to great effect. These algorithmic advances
+are not just relevant to Gaussian processes, but provide a foundation in numerical methods
+that is broadly useful in deep learning.
+In this chapter, we introduce Gaussian processes. In the introductory notebook, we start
+by reasoning intuitively about what Gaussian processes are and how they directly model
+functions. In the priors notebook, we focus on how to specify Gaussian process priors.
+We directly connect the tradiational weight-space approach to modelling to function space,
+which will help us reason about constructing and understanding machine learning mod-
+els, including deep neural networks. We then introduce popular covariance functions, also
+known as kernels, which control the generalization properties of a Gaussian process. A
+GP with a given kernel defines a prior over functions. In the inference notebook, we will
+show how to use data to infer a posterior, in order to make predictions. This notebook
+contains from-scratch code for making predictions with a Gaussian process, as well as an
+introduction to GPyTorch. In upcoming notebooks, we will introduce the numerics behind
+Gaussian processes, which is useful for scaling Gaussian processes but also a powerful gen-
+eral foundation for deep learning, and advanced use-cases such as hyperparameter tuning in
+deep learning. Our examples will make use of GPyTorch, which makes Gaussian processes
+scale, and is closely integrated with deep learning functionality and PyTorch.
+797
+
+===== صفحة الكتاب 838 =====
+798
+Gaussian Processes
+18.1 Introduction to Gaussian Processes
+In many cases, machine learning amounts to estimating parameters from data. These pa-
+rameters are often numerous and relatively uninterpretable — such as the weights of a neu-
+ral network. Gaussian processes, by contrast, provide a mechanism for directly reasoning
+about the high-level properties of functions that could fit our data. For example, we may
+have a sense of whether these functions are quickly varying, periodic, involve conditional
+independencies, or translation invariance. Gaussian processes enable us to easily incorpo-
+rate these properties into our model, by directly specifying a Gaussian distribution over the
+function values that could fit our data.
+Let’s get a feel for how Gaussian processes operate, by starting with some examples.
+Suppose we observe the following dataset, of regression targets (outputs), 𝑦, indexed by
+inputs, 𝑥. As an example, the targets could be changes in carbon dioxide concentrations,
+and the inputs could be the times at which these targets have been recorded. What are
+some features of the data? How quickly does it seem to varying? Do we have data points
+collected at regular intervals, or are there missing inputs? How would you imagine filling
+in the missing regions, or forecasting up until 𝑥= 25?
+t
+Fig. 18.1.1
+Observed data.
+In order to fit the data with a Gaussian process, we start by specifying a prior distribution
+over what types of functions we might believe to be reasonable. Here we show several
+sample functions from a Gaussian process. Does this prior look reasonable? Note here
+we are not looking for functions that fit our dataset, but instead for specifying reasonable
+high-level properties of the solutions, such as how quickly they vary with inputs. Note that
+we will see code for reproducing all of the plots in this notebook, in the next notebooks on
+priors and inference.
+Once we condition on data, we can use this prior to infer a posterior distribution over func-
+tions that could fit the data. Here we show sample posterior functions.
+We see that each of these functions are entirely consistent with our data, perfectly running
+through each observation. In order to use these posterior samples to make predictions, we
+can average the values of every possible sample function from the posterior, to create the
+
+===== صفحة الكتاب 839 =====
+799
+Introduction to Gaussian Processes
+t
+Fig. 18.1.2
+Sample prior functions that we may want to represent with our model.
+t
+Fig. 18.1.3
+Sample posterior functions, once we have observed the data.
+curve below, in thick blue. Note that we do not actually have to take an infinite number of
+samples to compute this expectation; as we will see later, we can compute the expectation
+in closed form.
+t
+Fig. 18.1.4
+Posterior samples, alongside posterior mean, which can be used for point predictions, in
+blue.
+We may also want a representation of uncertainty, so we know how confident we should
+be in our predictions. Intuitively, we should have more uncertainty where there is more
+variability in the sample posterior functions, as this tells us there are many more possible
+values the true function could take. This type of uncertainty is called epistemic uncertainty,
+which is the reducible uncertainty associated with lack of information. As we acquire more
+data, this type of uncertainty disappears, as there will be increasingly fewer solutions con-
+sistent with what we observe. Like with the posterior mean, we can compute the posterior
+variance (the variability of these functions in the posterior) in closed form. With shade,
+we show two times the posterior standard deviation on either side of the mean, creating a
+
+===== صفحة الكتاب 840 =====
+800
+Gaussian Processes
+credible interval that has a 95% probability of containing the true value of the function for
+any input 𝑥.
+t
+Fig. 18.1.5
+Posterior samples, including 95% credible set.
+The plot looks somewhat cleaner if we remove the posterior samples, simply visualizing
+the data, posterior mean, and 95% credible set. Notice how the uncertainty grows away
+from the data, a property of epistemic uncertainty.
+t
+Fig. 18.1.6
+Point predictions, and credible set.
+The properties of the Gaussian process that we used to fit the data are strongly controlled
+by what’s called a covariance function, also known as a kernel. The covariance function
+we used is called the RBF (Radial Basis Function) kernel, which has the form
+𝑘RBF(𝑥, 𝑥′) = Cov( 𝑓(𝑥), 𝑓(𝑥′)) = 𝑎2 exp
+
+−1
+2ℓ2 ||𝑥−𝑥′||2
+
+(18.1.1)
+The hyperparameters of this kernel are interpretable. The amplitude parameter 𝑎controls
+the vertical scale over which the function is varying, and the length-scale parameter ℓcon-
+trols the rate of variation (the wiggliness) of the function. Larger 𝑎means larger function
+values, and larger ℓmeans more slowly varying functions. Let’s see what happens to our
+sample prior and posterior functions as we vary 𝑎and ℓ.
+The length-scale has a particularly pronounced effect on the predictions and uncertainty of
+a GP. At ||𝑥−𝑥′|| = ℓ, the covariance between a pair of function values is 𝑎2 exp(−0.5).
+At larger distances than ℓ, the values of the function values becomes nearly uncorrelated.
+This means that if we want to make a prediction at a point 𝑥∗, then function values with
+inputs 𝑥such that ||𝑥−𝑥′|| > ℓwill not have a strong effect on our predictions.
+Let’s see how changing the lengthscale affects sample prior and posterior functions, and
+
+===== صفحة الكتاب 841 =====
+801
+Introduction to Gaussian Processes
+credible sets. The above fits use a length-scale of 2. Let’s now consider ℓ= 0.1, 0.5, 2, 5, 10
+. A length-scale of 0.1 is very small relative to the range of the input domain we are consid-
+ering, 25. For example, the values of the function at 𝑥= 5 and 𝑥= 10 will have essentially
+no correlation at such a length-scale. On the other hand, for a length-scale of 10, the func-
+tion values at these inputs will be highly correlated. Note that the vertical scale changes in
+the following figures.
+
+===== صفحة الكتاب 842 =====
+802
+Gaussian Processes
+
+===== صفحة الكتاب 843 =====
+803
+Introduction to Gaussian Processes
+Notice as the length-scale increases the ‘wiggliness’ of the functions decrease, and our
+uncertainty decreases. If the length-scale is small, the uncertainty will quickly increase as
+we move away from the data, as the datapoints become less informative about the function
+values.
+Now, let’s vary the amplitude parameter, holding the length-scale fixed at 2. Note the ver-
+tical scale is held fixed for the prior samples, and varies for the posterior samples, so you
+can clearly see both the increasing scale of the function, and the fits to the data.
+
+===== صفحة الكتاب 844 =====
+804
+Gaussian Processes
+We see the amplitude parameter affects the scale of the function, but not the rate of variation.
+At this point, we also have the sense that the generalization performance of our procedure
+will depend on having reasonable values for these hyperparameters. Values of ℓ= 2 and 𝑎=
+1 appeared to provide reasonable fits, while some of the other values did not. Fortunately,
+there is a robust and automatic way to specify these hyperparameters, using what is called
+the marginal likelihood, which we will return to in the notebook on inference.
+
+===== صفحة الكتاب 845 =====
+805
+Introduction to Gaussian Processes
+So what is a GP, really? As we started, a GP simply says that any collection of function
+values 𝑓(𝑥1), . . . , 𝑓(𝑥𝑛), indexed by any collection of inputs 𝑥1, . . . , 𝑥𝑛has a joint multi-
+variate Gaussian distribution. The mean vector 𝜇of this distribution is given by a mean
+function, which is typically taken to be a constant or zero. The covariance matrix of this
+distribution is given by the kernel evaluated at all pairs of the inputs 𝑥.
+
+𝑓(𝑥)
+𝑓(𝑥1)
+...
+𝑓(𝑥𝑛)
+
+∼N
+©­­­­­
+«
+𝜇,
+
+𝑘(𝑥, 𝑥)
+𝑘(𝑥, 𝑥1)
+. . .
+𝑘(𝑥, 𝑥𝑛)
+𝑘(𝑥1, 𝑥)
+𝑘(𝑥1, 𝑥1)
+. . .
+𝑘(𝑥1, 𝑥𝑛)
+...
+...
+...
+...
+𝑘(𝑥𝑛, 𝑥)
+𝑘(𝑥𝑛, 𝑥1)
+. . .
+𝑘(𝑥𝑛, 𝑥𝑛)
+
+ª®®®®®
+¬
+(18.1.2)
+Equation (18.1.2) specifies a GP prior. We can compute the conditional distribution of 𝑓(𝑥)
+for any 𝑥given 𝑓(𝑥1), . . . , 𝑓(𝑥𝑛), the function values we have observed. This conditional
+distribution is called the posterior, and it is what we use to make predictions.
+In particular,
+𝑓(𝑥)| 𝑓(𝑥1), . . . , 𝑓(𝑥𝑛) ∼N (𝑚, 𝑠2)
+(18.1.3)
+where
+𝑚= 𝑘(𝑥, 𝑥1:𝑛)𝑘(𝑥1:𝑛, 𝑥1:𝑛)−1 𝑓(𝑥1:𝑛)
+(18.1.4)
+𝑠2 = 𝑘(𝑥, 𝑥) −𝑘(𝑥, 𝑥1:𝑛)𝑘(𝑥1:𝑛, 𝑥1:𝑛)−1𝑘(𝑥, 𝑥1:𝑛)
+(18.1.5)
+where 𝑘(𝑥, 𝑥1:𝑛) is a 1 × 𝑛vector formed by evaluating 𝑘(𝑥, 𝑥𝑖) for 𝑖= 1, . . . , 𝑛and
+𝑘(𝑥1:𝑛, 𝑥1:𝑛) is an 𝑛× 𝑛matrix formed by evaluating 𝑘(𝑥𝑖, 𝑥𝑗) for 𝑖, 𝑗= 1, . . . , 𝑛. 𝑚is
+what we can use as a point predictor for any 𝑥, and 𝑠2 is what we use for uncertainty: if we
+want to create an interval with a 95% probability that 𝑓(𝑥) is in the interval, we would use
+𝑚±2𝑠. The predictive means and uncertainties for all the above figures were created using
+these equations. The observed data points were given by 𝑓(𝑥1), . . . , 𝑓(𝑥𝑛) and chose a fine
+grained set of 𝑥points to make predictions.
+Let’s suppose we observe a single datapoint, 𝑓(𝑥1), and we want to determine the value
+of 𝑓(𝑥) at some 𝑥. Because 𝑓(𝑥) is described by a Gaussian process, we know the joint
+distribution over ( 𝑓(𝑥), 𝑓(𝑥1)) is Gaussian:
+ 𝑓(𝑥)
+𝑓(𝑥1)
+
+∼N
+
+𝜇,
+ 𝑘(𝑥, 𝑥)
+𝑘(𝑥, 𝑥1)
+𝑘(𝑥1, 𝑥)
+𝑘(𝑥1, 𝑥1)
+
+(18.1.6)
+The off-diagonal expression 𝑘(𝑥, 𝑥1) = 𝑘(𝑥1, 𝑥) tells us how correlated the function values
+will be — how strongly determined 𝑓(𝑥) will be from 𝑓(𝑥1). We have seen already that if
+we use a large length-scale, relative to the distance between 𝑥and 𝑥1, ||𝑥−𝑥1||, then the
+function values will be highly correlated. We can visualize the process of determining 𝑓(𝑥)
+from 𝑓(𝑥1) both in the space of functions, and in the joint distribution over 𝑓(𝑥1), 𝑓(𝑥).
+Let’s initially consider an 𝑥such that 𝑘(𝑥, 𝑥1) = 0.9, and 𝑘(𝑥, 𝑥) = 1, meaning that the
+value of 𝑓(𝑥) is moderately correlated with the value of 𝑓(𝑥1). In the joint distribution, the
+contours of constant probability will be relatively narrow ellipses.
+Suppose we observe 𝑓(𝑥1) = 1.2. To condition on this value of 𝑓(𝑥1), we can draw a
+
+===== صفحة الكتاب 846 =====
+806
+Gaussian Processes
+horizontal line at 1.2 on our plot of the density, and see that the value of 𝑓(𝑥) is mostly
+constrained to [0.64, 1.52]. We have also drawn this plot in function space, showing the
+observed point 𝑓(𝑥1) in orange, and 1 standard deviation of the Gaussian process predictive
+distribution for 𝑓(𝑥) in blue, about the mean value of 1.08.
+Now suppose we have a stronger correlation, 𝑘(𝑥, 𝑥1) = 0.95. Now the ellipses have nar-
+rowed further, and the value of 𝑓(𝑥) is even more strongly determined by 𝑓(𝑥1). Draw-
+ing a horizontal line at 1.2, we see the contours for 𝑓(𝑥) support values mostly within
+[0.83, 1.45]. Again, we also show the plot in function space, with one standard deviation
+about the mean predictive value of 1.14.
+
+===== صفحة الكتاب 847 =====
+807
+Introduction to Gaussian Processes
+We see that the posterior mean predictor of our Gaussian process is closer to 1.2, be-
+cause there is now a stronger correlation. We also see that our uncertainty (the error bars)
+have somewhat decreased. Despite the strong correlation between these function values,
+our uncertainty is still righly quite large, because we have only observed a single data
+point!
+This procedure can give us a posterior on 𝑓(𝑥) for any 𝑥, for any number of points we have
+observed. Suppose we observe 𝑓(𝑥1), 𝑓(𝑥2). We now visualize the posterior for 𝑓(𝑥) at a
+particular 𝑥= 𝑥′ in function space. The exact distribution for 𝑓(𝑥) is given by the above
+equations. 𝑓(𝑥) is Gaussian distributed, with mean
+𝑚= 𝑘(𝑥, 𝑥1:3)𝑘(𝑥1:3, 𝑥1:3)−1 𝑓(𝑥1:3)
+(18.1.7)
+and variance
+𝑠2 = 𝑘(𝑥, 𝑥) −𝑘(𝑥, 𝑥1:3)𝑘(𝑥1:3, 𝑥1:3)−1𝑘(𝑥, 𝑥1:3)
+(18.1.8)
+In this introductory notebook, we have been considering noise free observations. As we will
+see, it is easy to include observation noise. If we assume that the data are generated from a
+latent noise free function 𝑓(𝑥) plus iid Gaussian noise 𝜖(𝑥) ∼N (0, 𝜎2) with variance 𝜎2,
+then our covariance function simply becomes 𝑘(𝑥𝑖, 𝑥𝑗) →𝑘(𝑥𝑖, 𝑥𝑗) + 𝛿𝑖𝑗𝜎2, where 𝛿𝑖𝑗= 1
+if 𝑖= 𝑗and 0 otherwise.
+We have already started getting some intuition about how we can use a Gaussian process
+to specify a prior and posterior over solutions, and how the kernel function affects the
+properties of these solutions. In the following notebooks, we will precisely show how to
+specify a Gaussian process prior, introduce and derive various kernel functions, and then
+go through the mechanics of how to automatically learn kernel hyperparameters, and form
+a Gaussian process posterior to make predictions. While it takes time and practice to get
+used to concepts such as a “distributions over functions”, the actual mechanics of finding
+the GP predictive equations is actually quite simple — making it easy to get practice to
+form an intuitive understanding of these concepts.
+18.1.1 Summary
+In typical machine learning, we specify a function with some free parameters (such as
+a neural network and its weights), and we focus on estimating those parameters, which
+
+===== صفحة الكتاب 848 =====
+808
+Gaussian Processes
+may not be interpretable. With a Gaussian process, we instead reason about distributions
+over functions directly, which enables us to reason about the high-level properties of the
+solutions. These properties are controlled by a covariance function (kernel), which often
+has a few highly interpretable hyperparameters. These hyperparameters include the length-
+scale, which controls how rapidly (how wiggily) the functions are. Another hyperparameter
+is the amplitude, which controls the vertical scale over which our functions are varying.
+Representing many different functions that can fit the data, and combining them all together
+into a predictive distribution, is a distinctive feature of Bayesian methods. Because there
+is a greater amount of variability between possible solutions far away from the data, our
+uncertainty intuitively grows as we move from the data.
+A Gaussian process represents a distribution over functions by specifying a multivariate
+normal (Gaussian) distribution over all possible function values. It is possible to easily
+manipulate Gaussian distributions to find the distribution of one function value based on
+the values of any set of other values. In other words, if we observe a set of points, then we
+can condition on these points and infer a distribution over what the value of the function
+might look like at any other input. How we model the correlations between these points is
+determined by the covariance function and is what defines the generalization properties of
+the Gaussian process. While it takes time to get used to Gaussian processes, they are easy
+to work with, have many applications, and help us understand and develop other model
+classes, like neural networks.
+18.1.2 Exercises
+1. What is the difference between epistemic uncertainty versus observation uncertainty?
+2. Besides rate of variation and amplitude, what other properties of functions might we
+want to consider, and what would be real-world examples of functions that have those
+properties?
+3. The RBF covariance function we considered says that covariances (and correlations)
+between observations decrease with their distance in the input space (times, spatial lo-
+cations, etc.). Is this a reasonable assumption? Why or why not?
+4. Is a sum of two Gaussian variables Gaussian? Is a product of two Gaussian variables
+Gaussian? If (a,b) have a joint Gaussian distribution, is a|b (a given b) Gaussian? Is a
+Gaussian?
+5. Repeat the exercise where we observe a data point at 𝑓(𝑥1) = 1.2, but now suppose we
+additionally observe 𝑓(𝑥2) = 1.4. Let 𝑘(𝑥, 𝑥1) = 0.9, and 𝑘(𝑥, 𝑥2) = 0.8. Will we be
+more or less certain about the value of 𝑓(𝑥), than when we had only observed 𝑓(𝑥1)?
+What is the mean and 95% credible set for our value of 𝑓(𝑥) now?
+6. Do you think increasing our estimate of observation noise would increase or decrease
+our estimate of the length-scale of the ground truth function?
+7. As we move away from the data, suppose the uncertainty in our predictive distribution
+increases to a point, then stops increasing. Why might that happen?
+
+===== صفحة الكتاب 849 =====
+809
+Gaussian Process Priors
+259
+Discussions259.
+18.2 Gaussian Process Priors
+Understanding Gaussian processes (GPs) is important for reasoning about model construc-
+tion and generalization, and for achieving state-of-the-art performance in a variety of appli-
+cations, including active learning, and hyperparameter tuning in deep learning. GPs are ev-
+erywhere, and it is in our interests to know what they are and how we can use them.
+In this section, we introduce Gaussian process priors over functions. In the next notebook,
+we show how to use these priors to do posterior inference and make predictions. The
+next section can be viewed as “GPs in a nutshell”, quickly giving what you need to apply
+Gaussian processes in practice.
+import numpy as np
+from scipy.spatial import distance_matrix
+from d2l import torch as d2l
+d2l.set_figsize()
+18.2.1 Definition
+A Gaussian process is defined as a collection of random variables, any finite number of
+which have a joint Gaussian distribution. If a function 𝑓(𝑥) is a Gaussian process, with
+mean function 𝑚(𝑥) and covariance function or kernel 𝑘(𝑥, 𝑥′), 𝑓(𝑥) ∼GP(𝑚, 𝑘), then any
+collection of function values queried at any collection of input points 𝑥(times, spatial lo-
+cations, image pixels, etc.), has a joint multivariate Gaussian distribution with mean vector
+𝜇and covariance matrix 𝐾: 𝑓(𝑥1), . . . , 𝑓(𝑥𝑛) ∼N (𝜇, 𝐾), where 𝜇𝑖= 𝐸[ 𝑓(𝑥𝑖)] = 𝑚(𝑥𝑖)
+and 𝐾𝑖𝑗= Cov( 𝑓(𝑥𝑖), 𝑓(𝑥𝑗)) = 𝑘(𝑥𝑖, 𝑥𝑗).
+This definition may seem abstract and inaccessible, but Gaussian processes are in fact very
+simple objects. Any function
+𝑓(𝑥) = 𝑤⊤𝜙(𝑥) = ⟨𝑤, 𝜙(𝑥)⟩,
+(18.2.1)
+with 𝑤drawn from a Gaussian (normal) distribution, and 𝜙being any vector of basis func-
+tions, for example 𝜙(𝑥) = (1, 𝑥, 𝑥2, ..., 𝑥𝑑)⊤, is a Gaussian process. Moreover, any Gaus-
+sian process f(x) can be expressed in the form of equation (18.2.1). Let’s consider a few
+concrete examples, to begin getting acquainted with Gaussian processes, after which we
+can appreciate how simple and useful they really are.
+18.2.2 A Simple Gaussian Process
+
+===== صفحة الكتاب 850 =====
+810
+Gaussian Processes
+Suppose 𝑓(𝑥) = 𝑤0 + 𝑤1𝑥, and 𝑤0, 𝑤1 ∼N (0, 1), with 𝑤0, 𝑤1, 𝑥all in one dimension.
+We can equivalently write this function as the inner product 𝑓(𝑥) = (𝑤0, 𝑤1)(1, 𝑥)⊤. In
+(18.2.1) above, 𝑤= (𝑤0, 𝑤1)⊤and 𝜙(𝑥) = (1, 𝑥)⊤.
+For any 𝑥, 𝑓(𝑥) is a sum of two Gaussian random variables. Since Gaussians are closed
+under addition, 𝑓(𝑥) is also a Gaussian random variable for any 𝑥. In fact, we can compute
+for any particular 𝑥that 𝑓(𝑥) is N (0, 1 + 𝑥2). Similarly, the joint distribution for any col-
+lection of function values, ( 𝑓(𝑥1), . . . , 𝑓(𝑥𝑛)), for any collection of inputs 𝑥1, . . . , 𝑥𝑛, is a
+multivariate Gaussian distribution. Therefore 𝑓(𝑥) is a Gaussian process.
+In short, 𝑓(𝑥) is a random function, or a distribution over functions. We can gain some
+insights into this distribution by repeatedly sampling values for 𝑤0, 𝑤1, and visualizing the
+corresponding functions 𝑓(𝑥), which are straight lines with slopes and different intercepts,
+as follows:
+def lin_func(x, n_sample):
+preds = np.zeros((n_sample, x.shape[0]))
+for ii in range(n_sample):
+w = np.random.normal(0, 1, 2)
+y = w[0] + w[1] * x
+preds[ii, :] = y
+return preds
+x_points = np.linspace(-5, 5, 50)
+outs = lin_func(x_points, 10)
+lw_bd = -2 * np.sqrt((1 + x_points ** 2))
+up_bd = 2 * np.sqrt((1 + x_points ** 2))
+d2l.plt.fill_between(x_points, lw_bd, up_bd, alpha=0.25)
+d2l.plt.plot(x_points, np.zeros(len(x_points)), linewidth=4, color='black')
+d2l.plt.plot(x_points, outs.T)
+d2l.plt.xlabel("x", fontsize=20)
+d2l.plt.ylabel("f(x)", fontsize=20)
+d2l.plt.show()
+If 𝑤0 and 𝑤1 are instead drawn from N (0, 𝛼2), how do you imagine varying 𝛼affects the
+distribution over functions?
+18.2.3 From Weight Space to Function Space
+
+===== صفحة الكتاب 851 =====
+811
+Gaussian Process Priors
+In the plot above, we saw how a distribution over parameters in a model induces a distri-
+bution over functions. While we often have ideas about the functions we want to model —
+whether they’re smooth, periodic, quickly varying, etc. — it is relatively tedious to reason
+about the parameters, which are largely uninterpretable. Fortunately, Gaussian processes
+provide an easy mechanism to reason directly about functions. Since a Gaussian distribu-
+tion is entirely defined by its first two moments, its mean and covariance matrix, a Gaussian
+process by extension is defined by its mean function and covariance function.
+In the above example, the mean function
+𝑚(𝑥) = 𝐸[ 𝑓(𝑥)] = 𝐸[𝑤0 + 𝑤1𝑥] = 𝐸[𝑤0] + 𝐸[𝑤1]𝑥= 0 + 0 = 0.
+(18.2.2)
+Similarly, the covariance function is
+𝑘(𝑥, 𝑥′) = Cov( 𝑓(𝑥), 𝑓(𝑥′)) = 𝐸[ 𝑓(𝑥) 𝑓(𝑥′)] −𝐸[ 𝑓(𝑥)]𝐸[ 𝑓(𝑥′)] = 𝐸[𝑤2
+0 + 𝑤0𝑤1𝑥′ + 𝑤1𝑤0𝑥+ 𝑤2
+1𝑥𝑥′] = 1 + 𝑥𝑥′.
+(18.2.3)
+Our distribution over functions can now be directly specified and sampled from, without
+needing to sample from the distribution over parameters. For example, to draw from 𝑓(𝑥),
+we can simply form our multivariate Gaussian distribution associated with any collection of
+𝑥we want to query, and sample from it directly. We will begin to see just how advantageous
+this formulation will be.
+First, we note that essentially the same derivation for the simple straight line model above
+can be applied to find the mean and covariance function for any model of the form 𝑓(𝑥) =
+𝑤⊤𝜙(𝑥), with 𝑤∼N (𝑢, 𝑆). In this case, the mean function 𝑚(𝑥) = 𝑢⊤𝜙(𝑥), and the
+covariance function 𝑘(𝑥, 𝑥′) = 𝜙(𝑥)⊤𝑆𝜙(𝑥′). Since 𝜙(𝑥) can represent a vector of any non-
+linear basis functions, we are considering a very general model class, including models
+with an even an infinite number of parameters.
+18.2.4 The Radial Basis Function (RBF) Kernel
+The radial basis function (RBF) kernel is the most popular covariance function for Gaus-
+sian processes, and kernel machines in general. This kernel has the form 𝑘RBF(𝑥, 𝑥′) =
+𝑎2 exp
+
+−1
+2ℓ2 ||𝑥−𝑥′||2
+, where 𝑎is an amplitude parameter, and ℓis a lengthscale hyper-
+parameter.
+Let’s derive this kernel starting from weight space. Consider the function
+𝑓(𝑥) =
+𝐽
+Õ
+𝑖=1
+𝑤𝑖𝜙𝑖(𝑥), 𝑤𝑖∼N
+
+0, 𝜎2
+𝐽
+
+, 𝜙𝑖(𝑥) = exp
+
+−(𝑥−𝑐𝑖)2
+2ℓ2
+
+.
+(18.2.4)
+𝑓(𝑥) is a sum of radial basis functions, with width ℓ, centred at the points 𝑐𝑖, as shown in
+the following figure.
+We can recognize 𝑓(𝑥) as having the form 𝑤⊤𝜙(𝑥), where 𝑤= (𝑤1, . . . , 𝑤𝐽)⊤and 𝜙(𝑥)
+is a vector containing each of the radial basis functions. The covariance function of this
+
+===== صفحة الكتاب 852 =====
+812
+Gaussian Processes
+Gaussian process is then
+𝑘(𝑥, 𝑥′) = 𝜎2
+𝐽
+𝐽
+Õ
+𝑖=1
+𝜙𝑖(𝑥)𝜙𝑖(𝑥′).
+(18.2.5)
+Now let’s consider what happens as we take the number of parameters (and basis functions)
+to infinity. Let 𝑐𝐽= log 𝐽, 𝑐1 = −log 𝐽, and 𝑐𝑖+1 −𝑐𝑖= Δ𝑐= 2 log 𝐽
+𝐽, and 𝐽→∞. The
+covariance function becomes the Riemann sum:
+𝑘(𝑥, 𝑥′) = lim
+𝐽→∞
+𝜎2
+𝐽
+𝐽
+Õ
+𝑖=1
+𝜙𝑖(𝑥)𝜙𝑖(𝑥′) =
+∫𝑐∞
+𝑐0
+𝜙𝑐(𝑥)𝜙𝑐(𝑥′)𝑑𝑐.
+(18.2.6)
+By setting 𝑐0 = −∞and 𝑐∞= ∞, we spread the infinitely many basis functions across the
+whole real line, each a distance Δ𝑐→0 apart:
+𝑘(𝑥, 𝑥′) =
+∫∞
+−∞
+exp(−(𝑥−𝑐)2
+2ℓ2
+) exp(−(𝑥′ −𝑐)2
+2ℓ2
+)𝑑𝑐= √𝜋ℓ𝜎2 exp(−(𝑥−𝑥′)2
+2(
+√
+2ℓ)2 ) ∝𝑘RBF(𝑥, 𝑥′).
+(18.2.7)
+It is worth taking a moment to absorb what we have done here. By moving into the function
+space representation, we have derived how to represent a model with an infinite number of
+parameters, using a finite amount of computation. A Gaussian process with an RBF kernel
+is a universal approximator, capable of representing any continuous function to arbitrary
+precision. We can intuitively see why from the above derivation. We can collapse each
+radial basis function to a point mass taking ℓ→0, and give each point mass any height we
+wish.
+So a Gaussian process with an RBF kernel is a model with an infinite number of param-
+eters and much more flexibility than any finite neural network. Perhaps all the fuss about
+overparametrized neural networks is misplaced. As we will see, GPs with RBF kernels
+do not overfit, and in fact provide especially compelling generalization performance on
+small datasets. Moreover, the examples in (Zhang et al., 2021), such as the ability to fit
+images with random labels perfectly, but still generalize well on structured problems, (can
+be perfectly reproduced using Gaussian processes) (Wilson and Izmailov, 2020). Neural
+networks are not as distinct as we make them out to be.
+We can build further intuition about Gaussian processes with RBF kernels, and hyperpa-
+rameters such as length-scale, by sampling directly from the distribution over functions.
+As before, this involves a simple procedure:
+1. Choose the input 𝑥points we want to query the GP: 𝑥1, . . . , 𝑥𝑛.
+2. Evaluate 𝑚(𝑥𝑖), 𝑖= 1, . . . , 𝑛, and 𝑘(𝑥𝑖, 𝑥𝑗) for 𝑖, 𝑗= 1, . . . , 𝑛to respectively form the
+mean vector and covariance matrix 𝜇and 𝐾, where ( 𝑓(𝑥1), . . . , 𝑓(𝑥𝑛)) ∼N (𝜇, 𝐾).
+3. Sample from this multivariate Gaussian distribution to obtain the sample function val-
+ues.
+4. Sample more times to visualize more sample functions queried at those points.
+We illustrate this process in the figure below.
+
+===== صفحة الكتاب 853 =====
+813
+Gaussian Process Priors
+def rbfkernel(x1, x2, ls=4.):
+#@save
+dist = distance_matrix(np.expand_dims(x1, 1), np.expand_dims(x2, 1))
+return np.exp(-(1. / ls / 2) * (dist ** 2))
+x_points = np.linspace(0, 5, 50)
+meanvec = np.zeros(len(x_points))
+covmat = rbfkernel(x_points,x_points, 1)
+prior_samples= np.random.multivariate_normal(meanvec, covmat, size=5);
+d2l.plt.plot(x_points, prior_samples.T, alpha=0.5)
+d2l.plt.show()
+18.2.5 The Neural Network Kernel
+Research on Gaussian processes in machine learning was triggered by research on neu-
+ral networks. Radford Neal was pursuing ever larger Bayesian neural networks, ultimately
+showing in 1994 (later published in 1996, as it was one of the most infamous NeurIPS
+rejections) that such networks with an infinite number of hidden units become Gaussian
+processes with particular kernel functions (Neal, 1996). Interest in this derivation has re-
+surfaced, with ideas like the neural tangent kernel being used to investigate the generaliza-
+tion properties of neural networks (Matthews et al., 2018) (Novak et al., 2018). We can
+derive the neural network kernel as follows.
+Consider a neural network function 𝑓(𝑥) with one hidden layer:
+𝑓(𝑥) = 𝑏+
+𝐽
+Õ
+𝑖=1
+𝑣𝑖ℎ(𝑥; 𝑢𝑖).
+(18.2.8)
+𝑏is a bias, 𝑣𝑖are the hidden to output weights, ℎis any bounded hidden unit transfer
+function, 𝑢𝑖are the input to hidden weights, and 𝐽is the number of hidden units. Let 𝑏and
+𝑣𝑖be independent with zero mean and variances 𝜎2
+𝑏and 𝜎2
+𝑣/𝐽, respectively, and let the 𝑢𝑖
+have independent identical distributions. We can then use the central limit theorem to show
+that any collection of function values 𝑓(𝑥1), . . . , 𝑓(𝑥𝑛) has a joint multivariate Gaussian
+distribution.
+The mean and covariance function of the corresponding Gaussian process are:
+𝑚(𝑥) = 𝐸[ 𝑓(𝑥)] = 0
+(18.2.9)
+
+===== صفحة الكتاب 854 =====
+814
+Gaussian Processes
+𝑘(𝑥, 𝑥′) = cov[ 𝑓(𝑥), 𝑓(𝑥′)] = 𝐸[ 𝑓(𝑥) 𝑓(𝑥′)] = 𝜎2
+𝑏+ 1
+𝐽
+𝐽
+Õ
+𝑖=1
+𝜎2
+𝑣𝐸[ℎ𝑖(𝑥; 𝑢𝑖)ℎ𝑖(𝑥′; 𝑢𝑖)]
+(18.2.10)
+In some cases, we can essentially evaluate this covariance function in closed form. Let
+ℎ(𝑥; 𝑢) = erf(𝑢0 + Í𝑃
+𝑗=1 𝑢𝑗𝑥𝑗), where erf(𝑧) =
+2
+√𝜋
+∫𝑧
+0 𝑒−𝑡2𝑑𝑡, and 𝑢∼N (0, Σ). Then
+𝑘(𝑥, 𝑥′) = 2
+𝜋sin(
+2 ˜𝑥⊤Σ ˜𝑥′
+√
+(1+2 ˜𝑥⊤Σ ˜𝑥) (1+2 ˜𝑥′⊤Σ ˜𝑥′) ).
+The RBF kernel is stationary, meaning that it is translation invariant, and therefore can
+be written as a function of 𝜏= 𝑥−𝑥′. Intuitively, stationarity means that the high-level
+properties of the function, such as rate of variation, do not change as we move in input
+space. The neural network kernel, however, is non-stationary. Below, we show sample
+functions from a Gaussian process with this kernel. We can see that the function looks
+qualitatively different near the origin.
+18.2.6 Summary
+The first step in performing Bayesian inference involves specifying a prior. Gaussian pro-
+cesses can be used to specify a whole prior over functions. Starting from a traditional
+“weight space” view of modelling, we can induce a prior over functions by starting with the
+functional form of a model, and introducing a distribution over its parameters. We can al-
+ternatively specify a prior distribution directly in function space, with properties controlled
+by a kernel. The function-space approach has many advantages. We can build models that
+actually correspond to an infinite number of parameters, but use a finite amount of com-
+putation! Moreover, while these models have a great amount of flexibility, they also make
+strong assumptions about what types of functions are a priori likely, leading to relatively
+good generalization on small datasets.
+The assumptions of models in function space are intuitively controlled by kernels, which of-
+ten encode higher level properties of functions, such as smoothness and periodicity. Many
+kernels are stationary, meaning that they are translation invariant. Functions drawn from
+a Gaussian process with a stationary kernel have roughly the same high-level properties
+(such as rate of variation) regardless of where we look in the input space.
+Gaussian processes are a relatively general model class, containing many examples of mod-
+els we are already familiar with, including polynomials, Fourier series, and so on, as long
+as we have a Gaussian prior over the parameters. They also include neural networks with
+an infinite number of parameters, even without Gaussian distributions over the parameters.
+This connection, discovered by Radford Neal, triggered machine learning researchers to
+move away from neural networks, and towards Gaussian processes.
+18.2.7 Exercises
+1. Draw sample prior functions from a GP with an Ornstein-Uhlenbeck (OU) kernel, 𝑘OU(𝑥, 𝑥′) =
+exp
+
+−1
+2ℓ||𝑥−𝑥′|
+
+. If you fix the lengthscale ℓto be the same, how do these functions
+look different than sample functions from a GP with an RBF kernel?
+
+===== صفحة الكتاب 855 =====
+815
+Gaussian Process Inference
+260
+261
+2. How does changing the amplitude 𝑎2 of the RBF kernel affect the distribution over
+functions?
+3. Suppose we form 𝑢(𝑥) = 𝑓(𝑥)+2𝑔(𝑥), where 𝑓(𝑥) ∼GP(𝑚1, 𝑘1) and 𝑔(𝑥) ∼GP(𝑚2, 𝑘2).
+Is 𝑢(𝑥) a Gaussian process, and if so, what is its mean and covariance function?
+4. Suppose we form 𝑔(𝑥) = 𝑎(𝑥) 𝑓(𝑥), where 𝑓(𝑥) ∼GP(0, 𝑘) and 𝑎(𝑥) = 𝑥2. Is 𝑔(𝑥)
+a Gaussian process, and if so, what is its mean and covariance function? What is the
+effect of 𝑎(𝑥)? What do sample functions drawn from 𝑔(𝑥) look like?
+5. Suppose we form 𝑢(𝑥) = 𝑓(𝑥)𝑔(𝑥), where 𝑓(𝑥) ∼GP(𝑚1, 𝑘1) and 𝑔(𝑥) ∼GP(𝑚2, 𝑘2).
+Is 𝑢(𝑥) a Gaussian process, and if so, what is its mean and covariance function?
+Discussions260.
+18.3 Gaussian Process Inference
+In this section, we will show how to perform posterior inference and make predictions using
+the GP priors we introduced in the last section. We will start with regression, where we can
+perform inference in closed form. This is a “GPs in a nutshell” section to quickly get up
+and running with Gaussian processes in practice. We’ll start coding all the basic operations
+from scratch, and then introduce GPyTorch261, which will make working with state-of-the-
+art Gaussian processes and integration with deep neural networks much more convenient.
+We will consider these more advanced topics in depth in the next section. In that section,
+we will also consider settings where approximate inference is required — classification,
+point processes, or any non-Gaussian likelihoods.
+18.3.1 Posterior Inference for Regression
+An observation model relates the function we want to learn, 𝑓(𝑥), to our observations
+𝑦(𝑥), both indexed by some input 𝑥. In classification, 𝑥could be the pixels of an image,
+and 𝑦could be the associated class label. In regression, 𝑦typically represents a continuous
+output, such as a land surface temperature, a sea-level, a 𝐶𝑂2 concentration, etc.
+In regression, we often assume the outputs are given by a latent noise-free function 𝑓(𝑥)
+plus i.i.d. Gaussian noise 𝜖(𝑥):
+𝑦(𝑥) = 𝑓(𝑥) + 𝜖(𝑥),
+(18.3.1)
+with 𝜖(𝑥) ∼N (0, 𝜎2). Let y = 𝑦(𝑋) = (𝑦(𝑥1), . . . , 𝑦(𝑥𝑛))⊤be a vector of our training
+observations, and f = ( 𝑓(𝑥1), . . . , 𝑓(𝑥𝑛))⊤be a vector of the latent noise-free function
+values, queried at the training inputs 𝑋= 𝑥1, . . . , 𝑥𝑛.
+We will assume 𝑓(𝑥) ∼GP(𝑚, 𝑘), which means that any collection of function values f
+has a joint multivariate Gaussian distribution, with mean vector 𝜇𝑖= 𝑚(𝑥𝑖) and covariance
+matrix 𝐾𝑖𝑗= 𝑘(𝑥𝑖, 𝑥𝑗). The RBF kernel 𝑘(𝑥𝑖, 𝑥𝑗) = 𝑎2 exp
+
+−1
+2ℓ2 ||𝑥𝑖−𝑥𝑗||2
+would be a
+
+===== صفحة الكتاب 856 =====
+816
+Gaussian Processes
+standard choice of covariance function. For notational simplicity, we will assume the mean
+function 𝑚(𝑥) = 0; our derivations can easily be generalized later on.
+Suppose we want to make predictions at a set of inputs
+𝑋∗= 𝑥∗1, 𝑥∗2, . . . , 𝑥∗𝑚.
+(18.3.2)
+Then we want to find 𝑥2 and 𝑝(f∗|y, 𝑋). In the regression setting, we can conveniently
+find this distribution by using Gaussian identities, after finding the joint distribution over
+f∗= 𝑓(𝑋∗) and y.
+If we evaluate equation (18.3.1) at the training inputs 𝑋, we have y = f + ﬄ. By the
+definition of a Gaussian process (see last section), f ∼N (0, 𝐾(𝑋, 𝑋)) where 𝐾(𝑋, 𝑋) is
+an 𝑛× 𝑛matrix formed by evaluating our covariance function (aka kernel) at all possible
+pairs of inputs 𝑥𝑖, 𝑥𝑗∈𝑋. ﬄis simply a vector comprised of iid samples from N (0, 𝜎2)
+and thus has distribution N (0, 𝜎2𝐼). y is therefore a sum of two independent multivariate
+Gaussian variables, and thus has distribution N (0, 𝐾(𝑋, 𝑋) + 𝜎2𝐼). One can also show
+that cov(f∗, y) = cov(y, f∗)⊤= 𝐾(𝑋∗, 𝑋) where 𝐾(𝑋∗, 𝑋) is an 𝑚× 𝑛matrix formed by
+evaluating the kernel at all pairs of test and training inputs.
+y
+f∗
+
+∼N
+
+0, A =
+𝐾(𝑋, 𝑋) + 𝜎2𝐼
+𝐾(𝑋, 𝑋∗)
+𝐾(𝑋∗, 𝑋)
+𝐾(𝑋∗, 𝑋∗)
+
+(18.3.3)
+We can then use standard Gaussian identities to find the conditional distribution from the
+joint distribution (see, e.g., Bishop Chapter 2), f∗|y, 𝑋, 𝑋∗∼N (𝑚∗, 𝑆∗), where 𝑚∗=
+𝐾(𝑋∗, 𝑋)[𝐾(𝑋, 𝑋)+𝜎2𝐼]−1y, and 𝑆= 𝐾(𝑋∗, 𝑋∗)−𝐾(𝑋∗, 𝑋)[𝐾(𝑋, 𝑋)+𝜎2𝐼]−1𝐾(𝑋, 𝑋∗).
+Typically, we do not need to make use of the full predictive covariance matrix 𝑆, and in-
+stead use the diagonal of 𝑆for uncertainty about each prediction. Often for this reason we
+write the predictive distribution for a single test point 𝑥∗, rather than a collection of test
+points.
+The kernel matrix has parameters 𝜃that we also wish to estimate, such the amplitude 𝑎and
+lengthscale ℓof the RBF kernel above. For these purposes we use the marginal likelihood,
+𝑝(y|𝜃, 𝑋), which we already derived in working out the marginal distributions to find the
+joint distribution over y, f∗. As we will see, the marginal likelihood compartmentalizes into
+model fit and model complexity terms, and automatically encodes a notion of Occam’s razor
+for learning hyperparameters. For a full discussion, see MacKay Ch. 28 (MacKay, 2003),
+and Rasmussen and Williams Ch. 5 (Rasmussen and Williams, 2006).
+import math
+import os
+import gpytorch
+import matplotlib.pyplot as plt
+import numpy as np
+import torch
+from scipy import optimize
+from scipy.spatial import distance_matrix
+from d2l import torch as d2l
+d2l.set_figsize()
+
+===== صفحة الكتاب 857 =====
+817
+Gaussian Process Inference
+18.3.2 Equations for Making Predictions and Learning Kernel
+Hyperparameters in GP Regression
+We list here the equations you will use for learning hyperparameters and making predictions
+in Gaussian process regression. Again, we assume a vector of regression targets y, indexed
+by inputs 𝑋= {𝑥1, . . . , 𝑥𝑛}, and we wish to make a prediction at a test input 𝑥∗. We assume
+i.i.d. additive zero-mean Gaussian noise with variance 𝜎2. We use a Gaussian process
+prior 𝑓(𝑥) ∼GP(𝑚, 𝑘) for the latent noise-free function, with mean function 𝑚and kernel
+function 𝑘. The kernel itself has parameters 𝜃that we want to learn. For example, if we
+use an RBF kernel, 𝑘(𝑥𝑖, 𝑥𝑗) = 𝑎2 exp
+
+−1
+2ℓ2 ||𝑥−𝑥′||2
+, we want to learn 𝜃= {𝑎2, ℓ2}. Let
+𝐾(𝑋, 𝑋) represent an 𝑛× 𝑛matrix corresponding to evaluating the kernel for all possible
+pairs of 𝑛training inputs. Let 𝐾(𝑥∗, 𝑋) represent a 1 × 𝑛vector formed by evaluating
+𝑘(𝑥∗, 𝑥𝑖), 𝑖= 1, . . . , 𝑛. Let 𝜇be a mean vector formed by evaluating the mean function
+𝑚(𝑥) at every training points 𝑥.
+Typically in working with Gaussian processes, we follow a two-step procedure. 1. Learn
+kernel hyperparameters ˆ𝜃by maximizing the marginal likelihood with respect to these hy-
+perparameters. 2. Use the predictive mean as a point predictor, and 2 times the predictive
+standard deviation to form a 95% credible set, conditioning on these learned hyperparam-
+eters ˆ𝜃.
+The log marginal likelihood is simply a log Gaussian density, which has the form:
+log 𝑝(y|𝜃, 𝑋) = −1
+2y⊤[𝐾𝜃(𝑋, 𝑋) + 𝜎2𝐼]−1y −1
+2 log |𝐾𝜃(𝑋, 𝑋)| + 𝑐
+(18.3.4)
+The predictive distribution has the form:
+𝑝(𝑦∗|𝑥∗, y, 𝜃) = N (𝑎∗, 𝑣∗)
+(18.3.5)
+𝑎∗= 𝑘𝜃(𝑥∗, 𝑋)[𝐾𝜃(𝑋, 𝑋) + 𝜎2𝐼]−1(y −𝜇) + 𝜇
+(18.3.6)
+𝑣∗= 𝑘𝜃(𝑥∗, 𝑥∗) −𝐾𝜃(𝑥∗, 𝑋)[𝐾𝜃(𝑋, 𝑋) + 𝜎2𝐼]−1𝑘𝜃(𝑋, 𝑥∗)
+(18.3.7)
+18.3.3 Interpreting Equations for Learning and Predictions
+There are some key points to note about the predictive distributions for Gaussian pro-
+cesses:
+• Despite the flexibility of the model class, it is possible to do exact Bayesian inference for
+GP regression in closed form. Aside from learning the kernel hyperparameters, there
+is no training. We can write down exactly what equations we want to use to make
+predictions. Gaussian processes are relatively exceptional in this respect, and it has
+greatly contributed to their convenience, versatility, and continued popularity.
+• The predictive mean 𝑎∗is a linear combination of the training targets y, weighted by the
+kernel 𝑘𝜃(𝑥∗, 𝑋)[𝐾𝜃(𝑋, 𝑋) +𝜎2𝐼]−1. As we will see, the kernel (and its hyperparam-
+eters) thus plays a crucial role in the generalization properties of the model.
+
+===== صفحة الكتاب 858 =====
+818
+Gaussian Processes
+• The predictive mean explicitly depends on the target values y but the predictive variance
+does not. The predictive uncertainty instead grows as the test input 𝑥∗moves away
+from the target locations 𝑋, as governed by the kernel function. However, uncertainty
+will implicitly depend on the values of the targets y through the kernel hyperparameters
+𝜃, which are learned from the data.
+• The marginal likelihood compartmentalizes into model fit and model complexity (log
+determinant) terms. The marginal likelihood tends to select for hyperparameters that
+provide the simplest fits that are still consistent with the data.
+• The key computational bottlenecks come from solving a linear system and computing
+a log determinant over an 𝑛× 𝑛symmetric positive definite matrix 𝐾(𝑋, 𝑋) for 𝑛
+training points. Naively, these operations each incur O(𝑛3) computations, as well as
+O(𝑛2) storage for each entry of the kernel (covariance) matrix, often starting with a
+Cholesky decomposition. Historically, these bottlenecks have limited GPs to problems
+with fewer than about 10,000 training points, and have given GPs a reputation for
+“being slow” that has been inaccurate now for almost a decade. In advanced topics,
+we will discuss how GPs can be scaled to problems with millions of points.
+• For popular choices of kernel functions, 𝐾(𝑋, 𝑋) is often close to singular, which can
+cause numerical issues when performing Cholesky decompositions or other opera-
+tions intended to solve linear systems. Fortunately, in regression we are often working
+with 𝐾𝜃(𝑋, 𝑋) + 𝜎2𝐼, such that the noise variance 𝜎2 gets added to the diagonal of
+𝐾(𝑋, 𝑋), significantly improving its conditioning. If the noise variance is small, or
+we are doing noise free regression, it is common practice to add a small amount of
+“jitter” to the diagonal, on the order of 10−6, to improve conditioning.
+18.3.4 Worked Example from Scratch
+Let’s create some regression data, and then fit the data with a GP, implementing every step
+from scratch. We’ll sample data from
+𝑦(𝑥) = sin(𝑥) + 1
+2 sin(4𝑥) + 𝜖,
+(18.3.8)
+with 𝜖∼N (0, 𝜎2). The noise free function we wish to find is 𝑓(𝑥) = sin(𝑥) + 1
+2 sin(4𝑥).
+We’ll start by using a noise standard deviation 𝜎= 0.25.
+def data_maker1(x, sig):
+return np.sin(x) + 0.5 * np.sin(4 * x) + np.random.randn(x.shape[0]) * sig
+sig = 0.25
+train_x, test_x = np.linspace(0, 5, 50), np.linspace(0, 5, 500)
+train_y, test_y = data_maker1(train_x, sig=sig), data_maker1(test_x, sig=0.)
+d2l.plt.scatter(train_x, train_y)
+d2l.plt.plot(test_x, test_y)
+d2l.plt.xlabel("x", fontsize=20)
+d2l.plt.ylabel("Observations y", fontsize=20)
+d2l.plt.show()
+
+===== صفحة الكتاب 859 =====
+819
+Gaussian Process Inference
+Here we see the noisy observations as circles, and the noise-free function in blue that we
+wish to find.
+Now, let’s specify a GP prior over the latent noise-free function, 𝑓(𝑥) ∼GP(𝑚, 𝑘). We’ll
+use a mean function 𝑚(𝑥) = 0, and an RBF covariance function (kernel)
+𝑘(𝑥𝑖, 𝑥𝑗) = 𝑎2 exp
+
+−1
+2ℓ2 ||𝑥−𝑥′||2
+
+.
+(18.3.9)
+mean = np.zeros(test_x.shape[0])
+cov = d2l.rbfkernel(test_x, test_x, ls=0.2)
+We have started with a length-scale of 0.2. Before we fit the data, it is important to consider
+whether we have specified a reasonable prior. Let’s visualize some sample functions from
+this prior, as well as the 95% credible set (we believe there’s a 95% chance that the true
+function is within this region).
+prior_samples = np.random.multivariate_normal(mean=mean, cov=cov, size=5)
+d2l.plt.plot(test_x, prior_samples.T, color='black', alpha=0.5)
+d2l.plt.plot(test_x, mean, linewidth=2.)
+d2l.plt.fill_between(test_x, mean - 2 * np.diag(cov), mean + 2 * np.diag(cov),
+alpha=0.25)
+d2l.plt.show()
+Do these samples look reasonable? Are the high-level properties of the functions aligned
+with the type of data we are trying to model?
+Now let’s form the mean and variance of the posterior predictive distribution at any arbitrary
+
+===== صفحة الكتاب 860 =====
+820
+Gaussian Processes
+test point 𝑥∗.
+¯𝑓∗= 𝐾(𝑥, 𝑥∗)𝑇(𝐾(𝑥, 𝑥) + 𝜎2𝐼)−1𝑦
+(18.3.10)
+𝑉( 𝑓∗) = 𝐾(𝑥∗, 𝑥∗) −𝐾(𝑥, 𝑥∗)𝑇(𝐾(𝑥, 𝑥) + 𝜎2𝐼)−1𝐾(𝑥, 𝑥∗)
+(18.3.11)
+Before we make predictions, we should learn our kernel hyperparameters 𝜃and noise vari-
+ance 𝜎2. Let’s initialize our length-scale at 0.75, as our prior functions looked too quickly
+varying compared to the data we are fitting. We’ll also guess a noise standard deviation 𝜎
+of 0.75.
+In order to learn these parameters, we will maximize the marginal likelihood with respect
+to these parameters.
+log 𝑝(𝑦|𝑋) = log
+∫
+𝑝(𝑦| 𝑓, 𝑋)𝑝( 𝑓|𝑋)𝑑𝑓
+(18.3.12)
+log 𝑝(𝑦|𝑋) = −1
+2 𝑦𝑇(𝐾(𝑥, 𝑥) + 𝜎2𝐼)−1𝑦−1
+2 log |𝐾(𝑥, 𝑥) + 𝜎2𝐼| −𝑛
+2 log 2𝜋
+(18.3.13)
+Perhaps our prior functions were too quickly varying. Let’s guess a length-scale of 0.4.
+We’ll also guess a noise standard deviation of 0.75. These are simply hyperparameter ini-
+tializations — we will learn these parameters from the marginal likelihood.
+ell_est = 0.4
+post_sig_est = 0.5
+def neg_MLL(pars):
+K = d2l.rbfkernel(train_x, train_x, ls=pars[0])
+kernel_term = -0.5 * train_y @ \
+np.linalg.inv(K + pars[1] ** 2 * np.eye(train_x.shape[0])) @ train_y
+logdet = -0.5 * np.log(np.linalg.det(K + pars[1] ** 2 * \
+np.eye(train_x.shape[0])))
+const = -train_x.shape[0] / 2. * np.log(2 * np.pi)
+return -(kernel_term + logdet + const)
+learned_hypers = optimize.minimize(neg_MLL, x0=np.array([ell_est,post_sig_
+↩→est]),
+bounds=((0.01, 10.), (0.01, 10.)))
+ell = learned_hypers.x[0]
+post_sig_est = learned_hypers.x[1]
+In this instance, we learn a length-scale of 0.299, and a noise standard deviation of 0.24.
+Note that the learned noise is extremely close to the true noise, which helps indicate that
+our GP is a very well-specified to this problem.
+In general, it is crucial to put careful thought into selecting the kernel and initializing the
+hyperparameters. While marginal likelihood optimization can be relatively robust to ini-
+tialization, it is not immune to poor initializations. Try running the above script with a
+variety of initializations and see what results you find.
+Now, let’s make predictions with these learned hypers.
+
+===== صفحة الكتاب 861 =====
+821
+Gaussian Process Inference
+K_x_xstar = d2l.rbfkernel(train_x, test_x, ls=ell)
+K_x_x = d2l.rbfkernel(train_x, train_x, ls=ell)
+K_xstar_xstar = d2l.rbfkernel(test_x, test_x, ls=ell)
+post_mean = K_x_xstar.T @ np.linalg.inv((K_x_x + \
+post_sig_est ** 2 * np.eye(train_x.shape[0]))) @ train_y
+post_cov = K_xstar_xstar - K_x_xstar.T @ np.linalg.inv((K_x_x + \
+post_sig_est ** 2 * np.eye(train_x.shape[0]))) @ K_x_xstar
+lw_bd = post_mean - 2 * np.sqrt(np.diag(post_cov))
+up_bd = post_mean + 2 * np.sqrt(np.diag(post_cov))
+d2l.plt.scatter(train_x, train_y)
+d2l.plt.plot(test_x, test_y, linewidth=2.)
+d2l.plt.plot(test_x, post_mean, linewidth=2.)
+d2l.plt.fill_between(test_x, lw_bd, up_bd, alpha=0.25)
+d2l.plt.legend(['Observed Data', 'True Function', 'Predictive Mean', '95% Set␣
+↩→on True Func'])
+d2l.plt.show()
+We see the posterior mean in orange almost perfectly matches the true noise free function!
+Note that the 95% credible set we are showing is for the latent noise free (true) function,
+and not the data points. We see that this credible set entirely contains the true function, and
+does not seem overly wide or narrow. We would not want nor expect it to contain the data
+points. If we wish to have a credible set for the observations, we should compute
+lw_bd_observed = post_mean - 2 * np.sqrt(np.diag(post_cov) + post_sig_est ** 2)
+up_bd_observed = post_mean + 2 * np.sqrt(np.diag(post_cov) + post_sig_est ** 2)
+There are two sources of uncertainty, epistemic uncertainty, representing reducible uncer-
+tainty, and aleatoric or irreducible uncertainty. The epistemic uncertainty here represents
+uncertainty about the true values of the noise free function. This uncertainty should grow
+as we move away from the data points, as away from the data there are a greater variety of
+function values consistent with our data. As we observe more and more data, our beliefs
+about the true function become more confident, and the epistemic uncertainty disappears.
+The aleatoric uncertainty in this instance is the observation noise, since the data are given
+to us with this noise, and it cannot be reduced.
+The epistemic uncertainty in the data is captured by variance of the latent noise free function
+np.diag(post_cov). The aleatoric uncertainty is captured by the noise variance post_sig_est**2.
+
+===== صفحة الكتاب 862 =====
+822
+Gaussian Processes
+Unfortunately, people are often careless about how they represent uncertainty, with many
+papers showing error bars that are completely undefined, no clear sense of whether we are
+visualizing epistemic or aleatoric uncertainty or both, and confusing noise variances with
+noise standard deviations, standard deviations with standard errors, confidence intervals
+with credible sets, and so on. Without being precise about what the uncertainty represents,
+it is essentially meaningless.
+In the spirit of playing close attention to what our uncertainty represents, it is crucial to
+note that we are taking two times the square root of our variance estimate for the noise free
+function. Since our predictive distribution is Gaussian, this quantity enables us to form a
+95% credible set, representing our beliefs about the interval which is 95% likely to contain
+the ground truth function. The noise variance is living on a completely different scale, and
+is much less interpretable.
+Finally, let’s take a look at 20 posterior samples. These samples tell us what types of
+functions we believe might fit our data, a posteriori.
+post_samples = np.random.multivariate_normal(post_mean, post_cov, size=20)
+d2l.plt.scatter(train_x, train_y)
+d2l.plt.plot(test_x, test_y, linewidth=2.)
+d2l.plt.plot(test_x, post_mean, linewidth=2.)
+d2l.plt.plot(test_x, post_samples.T, color='gray', alpha=0.25)
+d2l.plt.fill_between(test_x, lw_bd, up_bd, alpha=0.25)
+plt.legend(['Observed Data', 'True Function', 'Predictive Mean', 'Posterior␣
+↩→Samples'])
+d2l.plt.show()
+In basic regression applications, it is most common to use the posterior predictive mean
+and standard deviation as a point predictor and metric for uncertainty, respectively. In
+more advanced applications, such as Bayesian optimization with Monte Carlo acquisition
+functions, or Gaussian processes for model-based RL, it often necessary to take posterior
+samples. However, even if not strictly required in the basic applications, these samples
+give us more intuition about the fit we have for the data, and are often useful to include in
+visualizations.
+18.3.5 Making Life Easy with GPyTorch
+As we have seen, it is actually pretty easy to implement basic Gaussian process regres-
+sion entirely from scratch. However, as soon as we want to explore a variety of kernel
+
+===== صفحة الكتاب 863 =====
+823
+Gaussian Process Inference
+262
+263
+choices, consider approximate inference (which is needed even for classification), combine
+GPs with neural networks, or even have a dataset larger than about 10,000 points, then an
+implementation from scratch becomes unwieldy and cumbersome. Some of the most effec-
+tive methods for scalable GP inference, such as SKI (also known as KISS-GP), can require
+hundreds of lines of code implementing advanced numerical linear algebra routines.
+In these cases, the GPyTorch library will make our lives a lot easier. We’ll be discussing
+GPyTorch more in future notebooks on Gaussian process numerics, and advanced methods.
+The GPyTorch library contains many examples 262 . To get a feel for the package, we will
+walk through the simple regression example263, showing how it can be adapted to reproduce
+our above results using GPyTorch. This may seem like a lot of code to simply reproduce the
+basic regression above, and in a sense, it is. But we can immediately use a variety of kernels,
+scalable inference techniques, and approximate inference, by only changing a few lines of
+code from below, instead of writing potentially thousands of lines of new code.
+# First let's convert our data into tensors for use with PyTorch
+train_x = torch.tensor(train_x)
+train_y = torch.tensor(train_y)
+test_y = torch.tensor(test_y)
+# We are using exact GP inference with a zero mean and RBF kernel
+class ExactGPModel(gpytorch.models.ExactGP):
+def __init__(self, train_x, train_y, likelihood):
+super(ExactGPModel, self).__init__(train_x, train_y, likelihood)
+self.mean_module = gpytorch.means.ZeroMean()
+self.covar_module = gpytorch.kernels.ScaleKernel(
+gpytorch.kernels.RBFKernel())
+def forward(self, x):
+mean_x = self.mean_module(x)
+covar_x = self.covar_module(x)
+return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
+This code block puts the data in the right format for GPyTorch, and specifies that we are
+using exact inference, as well the mean function (zero) and kernel function (RBF) that
+we want to use. We can use any other kernel very easily, by calling, for instance, gpy-
+torch.kernels.matern_kernel(), or gpyotrch.kernels.spectral_mixture_kernel(). So far, we
+have only discussed exact inference, where it is possible to infer a predictive distribution
+without making any approximations. For Gaussian processes, we can only perform exact
+inference when we have a Gaussian likelihood; more specifically, when we assume that our
+observations are generated as a noise-free function represented by a Gaussian process, plus
+Gaussian noise. In future notebooks, we will consider other settings, such as classification,
+where we cannot make these assumptions.
+# Initialize Gaussian likelihood
+likelihood = gpytorch.likelihoods.GaussianLikelihood()
+model = ExactGPModel(train_x, train_y, likelihood)
+training_iter = 50
+# Find optimal model hyperparameters
+(continues on next page)
+
+===== صفحة الكتاب 864 =====
+824
+Gaussian Processes
+(continued from previous page)
+model.train()
+likelihood.train()
+# Use the adam optimizer, includes GaussianLikelihood parameters
+optimizer = torch.optim.Adam(model.parameters(), lr=0.1)
+# Set our loss as the negative log GP marginal likelihood
+mll = gpytorch.mlls.ExactMarginalLogLikelihood(likelihood, model)
+Here, we explicitly specify the likelihood we want to use (Gaussian), the objective we will
+use for training kernel hyperparameters (here, the marginal likelihood), and the procedure
+we we want to use for optimizing that objective (in this case, Adam). We note that while
+we are using Adam, which is a “stochastic” optimizer, in this case, it is full-batch Adam.
+Because the marginal likelihood does not factorize over data instances, we cannot use an
+optimizer over “mini-batches” of data and be guaranteed convergence. Other optimizers,
+such as L-BFGS, are also supported by GPyTorch. Unlike in standard deep learning, doing
+a good job of optimizing the marginal likelihood corresponds strongly with good general-
+ization, which often inclines us towards powerful optimizers like L-BFGS, assuming they
+are not prohibitively expensive.
+for i in range(training_iter):
+# Zero gradients from previous iteration
+optimizer.zero_grad()
+# Output from model
+output = model(train_x)
+# Calc loss and backprop gradients
+loss = -mll(output, train_y)
+loss.backward()
+if i % 10 == 0:
+print(f'Iter {i+1:d}/{training_iter:d} - Loss: {loss.item():.3f} '
+f'squared lengthscale: '
+f'{model.covar_module.base_kernel.lengthscale.item():.3f} '
+f'noise variance: {model.likelihood.noise.item():.3f}')
+optimizer.step()
+Iter 1/50 - Loss: 1.000 squared lengthscale: 0.693 noise variance: 0.693
+Iter 11/50 - Loss: 0.711 squared lengthscale: 0.490 noise variance: 0.312
+Iter 21/50 - Loss: 0.451 squared lengthscale: 0.506 noise variance: 0.127
+Iter 31/50 - Loss: 0.330 squared lengthscale: 0.485 noise variance: 0.055
+Iter 41/50 - Loss: 0.344 squared lengthscale: 0.472 noise variance: 0.038
+Here we actually run the optimization procedure, outputting the values of the loss every 10
+iterations.
+# Get into evaluation (predictive posterior) mode
+test_x = torch.tensor(test_x)
+model.eval()
+likelihood.eval()
+observed_pred = likelihood(model(test_x))
+The above codeblock enables us to make predictions on our test inputs.
+
+===== صفحة الكتاب 865 =====
+825
+Gaussian Process Inference
+with torch.no_grad():
+# Initialize plot
+f, ax = d2l.plt.subplots(1, 1, figsize=(4, 3))
+# Get upper and lower bounds for 95\% credible set (in this case, in
+# observation space)
+lower, upper = observed_pred.confidence_region()
+ax.scatter(train_x.numpy(), train_y.numpy())
+ax.plot(test_x.numpy(), test_y.numpy(), linewidth=2.)
+ax.plot(test_x.numpy(), observed_pred.mean.numpy(), linewidth=2.)
+ax.fill_between(test_x.numpy(), lower.numpy(), upper.numpy(), alpha=0.25)
+ax.set_ylim([-1.5, 1.5])
+ax.legend(['True Function', 'Predictive Mean', 'Observed Data',
+'95% Credible Set'])
+Finally, we plot the fit.
+We see the fits are virtually identical. A few things to note: GPyTorch is working with
+squared length-scales and observation noise. For example, our learned noise standard de-
+viation in the for scratch code is about 0.283. The noise variance found by GPyTorch is
+0.81 ≈0.2832. In the GPyTorch plot, we also show the credible set in the observation
+space rather than the latent function space, to demonstrate that they indeed cover the ob-
+served datapoints.
+18.3.6 Summary
+We can combine a Gaussian process prior with data to form a posterior, which we use to
+make predictions. We can also form a marginal likelihood, which is useful for automatic
+learning of kernel hyperparameters, which control properties such as the rate of variation of
+the Gaussian process. The mechanics of forming the posterior and learning kernel hyperpa-
+rameters for regression are simple, involving about a dozen lines of code. This notebook is
+a good reference for any reader wanting to quickly get “up and running” with Gaussian pro-
+cesses. We also introduced the GPyTorch library. Although the GPyTorch code for basic
+regression is relatively long, it can be trivially modified for other kernel functions, or more
+advanced functionality we will discuss in future notebooks, such as scalable inference, or
+non-Gaussian likelihoods for classification.
+18.3.7 Exercises
+
+===== صفحة الكتاب 866 =====
+826
+Gaussian Processes
+1. We have emphasized the importance of learning kernel hyperparameters, and the effect
+of hyperparameters and kernels on the generalization properties of Gaussian processes.
+Try skipping the step where we learn hypers, and instead guess a variety of length-scales
+and noise variances, and check their effect on predictions. What happens when you use
+a large length-scale? A small length-scale? A large noise variance? A small noise
+variance?
+2. We have said that the marginal likelihood is not a convex objective, but that hyperpa-
+rameters like length-scale and noise variance can be reliably estimated in GP regression.
+This is generally true — in fact, the marginal likelihood is much better at learning length-
+scale hyperparameters than conventional approaches in spatial statistics, which involve
+fitting empirical autocorrelation functions (“covariograms”). Arguably, the biggest con-
+tribution from machine learning to Gaussian process research, at least before recent work
+on scalable inference, was the introduction of the marginal lkelihood for hyperparameter
+learning.
+However, different pairings of even these parameters provide interpretably different plau-
+sible explanations for many datasets, leading to local optima in our objective. If we use a
+large length-scale, then we assume the true underlying function is slowly varying. If the
+observed data are varying significantly, then the only we can plausibly have a large length-
+scale is with a large noise-variance. If we use a small length-scale, on the other hand, our fit
+will be very sensitive to the variations in the data, leaving little room to explain variations
+with noise (aleatoric uncertainty).
+Try seeing if you can find these local optima: initialize with very large length-scale with
+large noise, and small length-scales with small noise. Do you converge to different solu-
+tions?
+3. We have said that a fundamental advantage of Bayesian methods is in naturally repre-
+senting epistemic uncertainty. In the above example, we cannot fully see the effects of
+epistemic uncertainty. Try instead to predict with test_x = np.linspace(0, 10,
+1000). What happens to the 95% credible set as your predictions move beyond the
+data? Does it cover the true function in that interval? What happens if you only visual-
+ize aleatoric uncertainty in that region?
+4. Try running the above example, but instead with 10,000, 20,000 and 40,000 training
+points, and measure the runtimes. How does the training time scale? Alternatively, how
+do the runtimes scale with the number of test points? Is it different for the predictive
+mean and the predictive variance? Answer this question both by theoretically working
+out the training and testing time complexities, and by running the code above with a
+different number of points.
+5. Try running the GPyTorch example with different covariance functions, such as the
+Matern kernel. How do the results change? How about the spectral mixture kernel,
+found in the GPyTorch library? Are some easier to train the marginal likelihood than
+others? Are some more valuable for long-range versus short-range predictions?
+6. In our GPyTorch example, we plotted the predictive distribution including observation
+
+===== صفحة الكتاب 867 =====
+827
+Gaussian Process Inference
+264
+noise, while in our “from scratch” example, we only included epistemic uncertainty.
+Re-do the GPyTorch example, but this time only plotting epistemic uncertainty, and
+compare to the from-scratch results. Do the predictive distributions now look the same?
+(They should.)
+Discussions264.

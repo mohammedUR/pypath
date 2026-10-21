@@ -1,0 +1,61 @@
+[
+ {
+  "lesson": "swe.ch2.l5",
+  "id": "ex1.process-sim",
+  "solution": "WORK = [\n    ('F1', 3, 0),\n    ('F2', 2, 1),\n    ('F3', 4, 0),\n    ('F4', 2, 1),\n    ('F5', 3, 1),\n    ('F6', 2, 0),\n]\nWINDOW = 7\nLATE_FIX = 9\nEARLY_FIX = 4\nESCAPED_COST = 12\nTOTAL = sum(f[1] for f in WORK)\nN_DEFECTS = sum(f[2] for f in WORK)\n\ndef simulate_waterfall(work):\n    found = escaped = 0\n    cost = 0\n    done = 0\n    for fid, pts, defect in work:\n        cost += pts\n        done += pts\n        if defect:\n            if done >= TOTAL - WINDOW:\n                found += 1\n                cost += LATE_FIX\n                print('waterfall: fix %s late for %d' % (fid, LATE_FIX))\n            else:\n                escaped += 1\n                cost += ESCAPED_COST\n                print('waterfall: %s cold at test time -> escaped' % fid)\n    print('waterfall: found %d/%d defects cost %d' % (found, N_DEFECTS, cost))\n    return {'found': found, 'escaped': escaped, 'cost': cost}\n\ndef simulate_agile(work, per_iter=2):\n    found = escaped = 0\n    cost = 0\n    for i in range(0, len(work), per_iter):\n        batch = work[i:i + per_iter]\n        built = 0\n        for fid, pts, defect in batch:\n            cost += pts\n            built += pts\n        for fid, pts, defect in batch:\n            if defect:\n                if built <= WINDOW:\n                    found += 1\n                    cost += EARLY_FIX\n                    print('agile: fix %s inside iteration for %d' % (fid, EARLY_FIX))\n                else:\n                    escaped += 1\n                    cost += ESCAPED_COST\n    print('agile: found %d/%d defects cost %d' % (found, N_DEFECTS, cost))\n    return {'found': found, 'escaped': escaped, 'cost': cost}\n\nwf = simulate_waterfall(WORK)\nag = simulate_agile(WORK)\nprint('result: same %d points, cost %d vs %d, escaped %d vs %d' % (TOTAL, wf['cost'], ag['cost'], wf['escaped'], ag['escaped']))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الشلال: عيبان من ثلاثة وفاتورة 46",
+     "en": "Waterfall: two of three defects and a bill of 46"
+    },
+    "code": "assert 'waterfall: found 2/3 defects cost 46' in __learner_output__, 'expected: waterfall: found 2/3 defects cost 46 | actual: %r' % __learner_output__",
+    "expected": "waterfall: found 2/3 defects cost 46"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الرشيق: العيوب الثلاثة وفاتورة 28",
+     "en": "Agile: all three defects and a bill of 28"
+    },
+    "code": "assert 'agile: found 3/3 defects cost 28' in __learner_output__, 'expected: agile: found 3/3 defects cost 28 | actual: %r' % __learner_output__",
+    "expected": "agile: found 3/3 defects cost 28"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سطر الختام يقارن الفاتورتين والهارب",
+     "en": "The closing line compares both bills and the escaped defect"
+    },
+    "code": "assert 'result: same 16 points, cost 46 vs 28, escaped 1 vs 0' in __learner_output__, 'expected: result: same 16 points, cost 46 vs 28, escaped 1 vs 0 | actual: %r' % __learner_output__",
+    "expected": "result: same 16 points, cost 46 vs 28, escaped 1 vs 0"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch2.l5",
+  "id": "ex5.debug-blind-waterfall",
+  "solution": "WORK = [\n    ('F1', 3, 0),\n    ('F2', 2, 1),\n    ('F3', 4, 0),\n    ('F4', 2, 1),\n    ('F5', 3, 1),\n    ('F6', 2, 0),\n]\nWINDOW = 7\nLATE_FIX = 9\nESCAPED_COST = 12\nTOTAL = sum(f[1] for f in WORK)\nN_DEFECTS = sum(f[2] for f in WORK)\n\nfound = 0\nescaped = 0\ncost = 0\ndone = 0\nfor fid, pts, defect in WORK:\n    cost += pts\n    done += pts\n    if defect:\n        if done >= TOTAL - WINDOW:\n            found += 1\n            cost += LATE_FIX\n            print('waterfall: fix %s late for %d' % (fid, LATE_FIX))\n        else:\n            escaped += 1\n            cost += ESCAPED_COST\n            print('waterfall: %s cold at test time -> escaped' % fid)\nprint('waterfall: found %d/%d defects cost %d' % (found, N_DEFECTS, cost))\nprint('escape check: escaped %d' % escaped)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الفاتورة تشمل فاتورة الهروب",
+     "en": "The bill includes the escape bill"
+    },
+    "code": "assert 'waterfall: found 2/3 defects cost 46' in __learner_output__, 'expected: waterfall: found 2/3 defects cost 46 (books the escape bill) | actual: %r' % __learner_output__",
+    "expected": "waterfall: found 2/3 defects cost 46"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "فحص الهروب يطبع الرقم لا الأمل",
+     "en": "The escape check prints the number, not blind hope"
+    },
+    "code": "assert 'escape check: escaped 1' in __learner_output__, 'expected: escape check: escaped 1 | actual: %r' % __learner_output__",
+    "expected": "escape check: escaped 1"
+   }
+  ]
+ }
+]

@@ -1,0 +1,702 @@
+  1141→Õ
+  1142→𝑖=1
+  1143→|𝑥𝑖| .
+  1144→(2.3.14)
+  1145→Compared to the ℓ2 norm, it is less sensitive to outliers. To compute the ℓ1 norm, we
+  1146→compose the absolute value with the sum operation.
+  1147→torch.abs(u).sum()
+  1148→tensor(7.)
+  1149→Both the ℓ2 and ℓ1 norms are special cases of the more general ℓ𝑝norms:
+  1150→∥x∥𝑝=
+  1151→ 𝑛
+  1152→Õ
+  1153→𝑖=1
+  1154→|𝑥𝑖| 𝑝
+  1155→!1/𝑝
+  1156→.
+  1157→(2.3.15)
+  1158→In the case of matrices, matters are more complicated. After all, matrices can be viewed
+  1159→both as collections of individual entries and as objects that operate on vectors and transform
+  1160→them into other vectors. For instance, we can ask by how much longer the matrix–vector
+  1161→product Xv could be relative to v. This line of thought leads to what is called the spectral
+  1162→
+  1163→===== صفحة الكتاب 92 =====
+  1164→52
+  1165→Preliminaries
+  1166→norm. For now, we introduce the Frobenius norm, which is much easier to compute and
+  1167→defined as the square root of the sum of the squares of a matrix’s elements:
+  1168→∥X∥F =
+  1169→v
+  1170→u
+  1171→t 𝑚
+  1172→Õ
+  1173→𝑖=1
+  1174→𝑛
+  1175→Õ
+  1176→𝑗=1
+  1177→𝑥2
+  1178→𝑖𝑗.
+  1179→(2.3.16)
+  1180→The Frobenius norm behaves as if it were an ℓ2 norm of a matrix-shaped vector. Invoking
+  1181→the following function will calculate the Frobenius norm of a matrix.
+  1182→torch.norm(torch.ones((4, 9)))
+  1183→tensor(6.)
+  1184→While we do not want to get too far ahead of ourselves, we already can plant some intu-
+  1185→ition about why these concepts are useful. In deep learning, we are often trying to solve
+  1186→optimization problems: maximize the probability assigned to observed data; maximize the
+  1187→revenue associated with a recommender model; minimize the distance between predictions
+  1188→and the ground truth observations; minimize the distance between representations of photos
+  1189→of the same person while maximizing the distance between representations of photos of dif-
+  1190→ferent people. These distances, which constitute the objectives of deep learning algorithms,
+  1191→are often expressed as norms.
+  1192→2.3.12 Discussion
+  1193→In this section, we have reviewed all the linear algebra that you will need to understand a
+  1194→significant chunk of modern deep learning. There is a lot more to linear algebra, though,
+  1195→and much of it is useful for machine learning. For example, matrices can be decomposed
+  1196→into factors, and these decompositions can reveal low-dimensional structure in real-world
+  1197→datasets. There are entire subfields of machine learning that focus on using matrix decom-
+  1198→positions and their generalizations to high-order tensors to discover structure in datasets
+  1199→and solve prediction problems. But this book focuses on deep learning. And we believe
+  1200→you will be more inclined to learn more mathematics once you have gotten your hands dirty
+  1201→applying machine learning to real datasets. So while we reserve the right to introduce more
+  1202→mathematics later on, we wrap up this section here.
+  1203→If you are eager to learn more linear algebra, there are many excellent books and online
+  1204→resources. For a more advanced crash course, consider checking out Strang (1993), Kolter
+  1205→(2008), and Petersen and Pedersen (2008).
+  1206→To recap:
+  1207→• Scalars, vectors, matrices, and tensors are the basic mathematical objects used in linear
+  1208→algebra and have zero, one, two, and an arbitrary number of axes, respectively.
+  1209→• Tensors can be sliced or reduced along specified axes via indexing, or operations such
+  1210→as sum and mean, respectively.
+  1211→
+  1212→===== صفحة الكتاب 93 =====
+  1213→53
+  1214→Linear Algebra
+  1215→• Elementwise products are called Hadamard products. By contrast, dot products, matrix–
+  1216→vector products, and matrix–matrix products are not elementwise operations and in
+  1217→general return objects having shapes that are different from the the operands.
+  1218→• Compared to Hadamard products, matrix–matrix products take considerably longer to
+  1219→compute (cubic rather than quadratic time).
+  1220→• Norms capture various notions of the magnitude of a vector (or matrix), and are com-
+  1221→monly applied to the difference of two vectors to measure their distance apart.
+  1222→• Common vector norms include the ℓ1 and ℓ2 norms, and common matrix norms include
+  1223→the spectral and Frobenius norms.
+  1224→2.3.13 Exercises
+  1225→1. Prove that the transpose of the transpose of a matrix is the matrix itself: (A⊤)⊤= A.
+  1226→2. Given two matrices A and B, show that sum and transposition commute: A⊤+ B⊤=
+  1227→(A + B)⊤.
+  1228→3. Given any square matrix A, is A + A⊤always symmetric? Can you prove the result by
+  1229→using only the results of the previous two exercises?
+  1230→4. We defined the tensor X of shape (2, 3, 4) in this section. What is the output of len(X)?
+  1231→Write your answer without implementing any code, then check your answer using code.
+  1232→5. For a tensor X of arbitrary shape, does len(X) always correspond to the length of a
+  1233→certain axis of X? What is that axis?
+  1234→6. Run A / A.sum(axis=1) and see what happens. Can you analyze the results?
+  1235→7. When traveling between two points in downtown Manhattan, what is the distance that
+  1236→you need to cover in terms of the coordinates, i.e., in terms of avenues and streets? Can
+  1237→you travel diagonally?
+  1238→8. Consider a tensor of shape (2, 3, 4). What are the shapes of the summation outputs
+  1239→along axes 0, 1, and 2?
+  1240→9. Feed a tensor with three or more axes to the linalg.norm function and observe its
+  1241→output. What does this function compute for tensors of arbitrary shape?
+  1242→10. Consider three large matrices, say A ∈R210×216, B ∈R216×25 and C ∈R25×214, ini-
+  1243→tialized with Gaussian random variables. You want to compute the product ABC. Is
+  1244→there any difference in memory footprint and speed, depending on whether you compute
+  1245→(AB)C or A(BC). Why?
+  1246→11. Consider three large matrices, say A ∈R210×216, B ∈R216×25 and C ∈R25×216. Is there
+  1247→any difference in speed depending on whether you compute AB or AC⊤? Why? What
+  1248→changes if you initialize C = B⊤without cloning memory? Why?
+  1249→12. Consider three matrices, say A, B, C ∈R100×200. Construct a tensor with three axes by
+  1250→
+  1251→===== صفحة الكتاب 94 =====
+  1252→54
+  1253→Preliminaries
+  1254→55
+  1255→stacking [A, B, C]. What is the dimensionality? Slice out the second coordinate of the
+  1256→third axis to recover B. Check that your answer is correct.
+  1257→Discussions55.
+  1258→2.4 Calculus
+  1259→For a long time, how to calculate the area of a circle remained a mystery. Then, in Ancient
+  1260→Greece, the mathematician Archimedes came up with the clever idea to inscribe a series of
+  1261→polygons with increasing numbers of vertices on the inside of a circle (Fig. 2.4.1). For a
+  1262→polygon with 𝑛vertices, we obtain 𝑛triangles. The height of each triangle approaches the
+  1263→radius 𝑟as we partition the circle more finely. At the same time, its base approaches 2𝜋𝑟/𝑛,
+  1264→since the ratio between arc and secant approaches 1 for a large number of vertices. Thus,
+  1265→the area of the polygon approaches 𝑛· 𝑟· 1
+  1266→2 (2𝜋𝑟/𝑛) = 𝜋𝑟2.
+  1267→t
+  1268→Fig. 2.4.1
+  1269→Finding the area of a circle as a limit procedure.
+  1270→This limiting procedure is at the root of both differential calculus and integral calculus. The
+  1271→former can tell us how to increase or decrease a function’s value by manipulating its argu-
+  1272→ments. This comes in handy for the optimization problems that we face in deep learning,
+  1273→where we repeatedly update our parameters in order to decrease the loss function. Opti-
+  1274→mization addresses how to fit our models to training data, and calculus is its key prerequisite.
+  1275→However, do not forget that our ultimate goal is to perform well on previously unseen data.
+  1276→That problem is called generalization and will be a key focus of other chapters.
+  1277→%matplotlib inline
+  1278→import numpy as np
+  1279→from matplotlib_inline import backend_inline
+  1280→from d2l import torch as d2l
+  1281→2.4.1 Derivatives and Differentiation
+  1282→Put simply, a derivative is the rate of change in a function with respect to changes in its
+  1283→arguments. Derivatives can tell us how rapidly a loss function would increase or decrease
+  1284→were we to increase or decrease each parameter by an infinitesimally small amount. For-
+  1285→mally, for functions 𝑓: R →R, that map from scalars to scalars, the derivative of 𝑓at a
+  1286→point 𝑥is defined as
+  1287→𝑓′(𝑥) = lim
+  1288→ℎ→0
+  1289→𝑓(𝑥+ ℎ) −𝑓(𝑥)
+  1290→ℎ
+  1291→.
+  1292→(2.4.1)
+  1293→
+  1294→===== صفحة الكتاب 95 =====
+  1295→55
+  1296→Calculus
+  1297→This term on the right hand side is called a limit and it tells us what happens to the value of
+  1298→an expression as a specified variable approaches a particular value. This limit tells us what
+  1299→the ratio between a perturbation ℎand the change in the function value 𝑓(𝑥+ ℎ) −𝑓(𝑥)
+  1300→converges to as we shrink its size to zero.
+  1301→When 𝑓′(𝑥) exists, 𝑓is said to be differentiable at 𝑥; and when 𝑓′(𝑥) exists for all 𝑥on a
+  1302→set, e.g., the interval [𝑎, 𝑏], we say that 𝑓is differentiable on this set. Not all functions are
+  1303→differentiable, including many that we wish to optimize, such as accuracy and the area under
+  1304→the receiving operating characteristic (AUC). However, because computing the derivative
+  1305→of the loss is a crucial step in nearly all algorithms for training deep neural networks, we
+  1306→often optimize a differentiable surrogate instead.
+  1307→We can interpret the derivative 𝑓′(𝑥) as the instantaneous rate of change of 𝑓(𝑥) with
+  1308→respect to 𝑥. Let’s develop some intuition with an example. Define 𝑢= 𝑓(𝑥) = 3𝑥2 −
+  1309→4𝑥.
+  1310→def f(x):
+  1311→return 3 * x ** 2 - 4 * x
+  1312→Setting 𝑥= 1, we see that
+  1313→𝑓(𝑥+ℎ)−𝑓(𝑥)
+  1314→ℎ
+  1315→approaches 2 as ℎapproaches 0. While this ex-
+  1316→periment lacks the rigor of a mathematical proof, we can quickly see that indeed 𝑓′(1) =
+  1317→2.
+  1318→for h in 10.0**np.arange(-1, -6, -1):
+  1319→print(f'h={h:.5f}, numerical limit={(f(1+h)-f(1))/h:.5f}')
+  1320→h=0.10000, numerical limit=2.30000
+  1321→h=0.01000, numerical limit=2.03000
+  1322→h=0.00100, numerical limit=2.00300
+  1323→h=0.00010, numerical limit=2.00030
+  1324→h=0.00001, numerical limit=2.00003
+  1325→There are several equivalent notational conventions for derivatives. Given 𝑦= 𝑓(𝑥), the
+  1326→following expressions are equivalent:
+  1327→𝑓′(𝑥) = 𝑦′ = 𝑑𝑦
+  1328→𝑑𝑥= 𝑑𝑓
+  1329→𝑑𝑥= 𝑑
+  1330→𝑑𝑥𝑓(𝑥) = 𝐷𝑓(𝑥) = 𝐷𝑥𝑓(𝑥),
+  1331→(2.4.2)
+  1332→where the symbols
+  1333→𝑑
+  1334→𝑑𝑥and 𝐷are differentiation operators. Below, we present the deriva-
+  1335→tives of some common functions:
+  1336→𝑑
+  1337→𝑑𝑥𝐶= 0
+  1338→for any constant 𝐶
+  1339→𝑑
+  1340→𝑑𝑥𝑥𝑛= 𝑛𝑥𝑛−1
+  1341→for 𝑛≠0
+  1342→𝑑
+  1343→𝑑𝑥𝑒𝑥= 𝑒𝑥
+  1344→𝑑
+  1345→𝑑𝑥ln 𝑥= 𝑥−1.
+  1346→(2.4.3)
+  1347→
+  1348→===== صفحة الكتاب 96 =====
+  1349→56
+  1350→Preliminaries
+  1351→Functions composed from differentiable functions are often themselves differentiable. The
+  1352→following rules come in handy for working with compositions of any differentiable func-
+  1353→tions 𝑓and 𝑔, and constant 𝐶.
+  1354→𝑑
+  1355→𝑑𝑥[𝐶𝑓(𝑥)] = 𝐶𝑑
+  1356→𝑑𝑥𝑓(𝑥)
+  1357→Constant multiple rule
+  1358→𝑑
+  1359→𝑑𝑥[ 𝑓(𝑥) + 𝑔(𝑥)] = 𝑑
+  1360→𝑑𝑥𝑓(𝑥) + 𝑑
+  1361→𝑑𝑥𝑔(𝑥)
+  1362→Sum rule
+  1363→𝑑
+  1364→𝑑𝑥[ 𝑓(𝑥)𝑔(𝑥)] = 𝑓(𝑥) 𝑑
+  1365→𝑑𝑥𝑔(𝑥) + 𝑔(𝑥) 𝑑
+  1366→𝑑𝑥𝑓(𝑥)
+  1367→Product rule
+  1368→𝑑
+  1369→𝑑𝑥
+  1370→𝑓(𝑥)
+  1371→𝑔(𝑥) =
+  1372→𝑔(𝑥) 𝑑
+  1373→𝑑𝑥𝑓(𝑥) −𝑓(𝑥) 𝑑
+  1374→𝑑𝑥𝑔(𝑥)
+  1375→𝑔2(𝑥)
+  1376→Quotient rule
+  1377→(2.4.4)
+  1378→Using this, we can apply the rules to find the derivative of 3𝑥2 −4𝑥via
+  1379→𝑑
+  1380→𝑑𝑥[3𝑥2 −4𝑥] = 3 𝑑
+  1381→𝑑𝑥𝑥2 −4 𝑑
+  1382→𝑑𝑥𝑥= 6𝑥−4.
+  1383→(2.4.5)
+  1384→Plugging in 𝑥= 1 shows that, indeed, the derivative equals 2 at this location. Note that
+  1385→derivatives tell us the slope of a function at a particular location.
+  1386→2.4.2 Visualization Utilities
+  1387→We can visualize the slopes of functions using the matplotlib library. We need to de-
+  1388→fine a few functions. As its name indicates, use_svg_display tells matplotlib to output
+  1389→graphics in SVG format for crisper images. The comment #@save is a special modifier that
+  1390→allows us to save any function, class, or other code block to the d2l package so that we can
+  1391→invoke it later without repeating the code, e.g., via d2l.use_svg_display().
+  1392→def use_svg_display():
+  1393→#@save
+  1394→"""Use the svg format to display a plot in Jupyter."""
+  1395→backend_inline.set_matplotlib_formats('svg')
+  1396→Conveniently, we can set figure sizes with set_figsize. Since the import statement from
+  1397→matplotlib import pyplot as plt was marked via #@save in the d2l package, we can
+  1398→call d2l.plt.
+  1399→def set_figsize(figsize=(3.5, 2.5)):
+  1400→#@save
+  1401→"""Set the figure size for matplotlib."""
+  1402→use_svg_display()
+  1403→d2l.plt.rcParams['figure.figsize'] = figsize
+  1404→The set_axes function can associate axes with properties, including labels, ranges, and
+  1405→scales.
+  1406→#@save
+  1407→def set_axes(axes, xlabel, ylabel, xlim, ylim, xscale, yscale, legend):
+  1408→"""Set the axes for matplotlib."""
+  1409→axes.set_xlabel(xlabel), axes.set_ylabel(ylabel)
+  1410→(continues on next page)
+  1411→
+  1412→===== صفحة الكتاب 97 =====
+  1413→57
+  1414→Calculus
+  1415→(continued from previous page)
+  1416→axes.set_xscale(xscale), axes.set_yscale(yscale)
+  1417→axes.set_xlim(xlim),
+  1418→axes.set_ylim(ylim)
+  1419→if legend:
+  1420→axes.legend(legend)
+  1421→axes.grid()
+  1422→With these three functions, we can define a plot function to overlay multiple curves. Much
+  1423→of the code here is just ensuring that the sizes and shapes of inputs match.
+  1424→#@save
+  1425→def plot(X, Y=None, xlabel=None, ylabel=None, legend=[], xlim=None,
+  1426→ylim=None, xscale='linear', yscale='linear',
+  1427→fmts=('-', 'm--', 'g-.', 'r:'), figsize=(3.5, 2.5), axes=None):
+  1428→"""Plot data points."""
+  1429→def has_one_axis(X):
+  1430→# True if X (tensor or list) has 1 axis
+  1431→return (hasattr(X, "ndim") and X.ndim == 1 or isinstance(X, list)
+  1432→and not hasattr(X[0], "__len__"))
+  1433→if has_one_axis(X): X = [X]
+  1434→if Y is None:
+  1435→X, Y = [[]] * len(X), X
+  1436→elif has_one_axis(Y):
+  1437→Y = [Y]
+  1438→if len(X) != len(Y):
+  1439→X = X * len(Y)
+  1440→set_figsize(figsize)
+  1441→if axes is None:
+  1442→axes = d2l.plt.gca()
+  1443→axes.cla()
+  1444→for x, y, fmt in zip(X, Y, fmts):
+  1445→axes.plot(x,y,fmt) if len(x) else axes.plot(y,fmt)
+  1446→set_axes(axes, xlabel, ylabel, xlim, ylim, xscale, yscale, legend)
+  1447→Now we can plot the function 𝑢= 𝑓(𝑥) and its tangent line 𝑦= 2𝑥−3 at 𝑥= 1, where the
+  1448→coefficient 2 is the slope of the tangent line.
+  1449→x = np.arange(0, 3, 0.1)
+  1450→plot(x, [f(x), 2 * x - 3], 'x', 'f(x)', legend=['f(x)', 'Tangent line (x=1)'])
+  1451→
+  1452→===== صفحة الكتاب 98 =====
+  1453→58
+  1454→Preliminaries
+  1455→2.4.3 Partial Derivatives and Gradients
+  1456→Thus far, we have been differentiating functions of just one variable. In deep learning, we
+  1457→also need to work with functions of many variables. We briefly introduce notions of the
+  1458→derivative that apply to such multivariate functions.
+  1459→Let 𝑦= 𝑓(𝑥1, 𝑥2, . . . , 𝑥𝑛) be a function with 𝑛variables. The partial derivative of 𝑦with
+  1460→respect to its 𝑖th parameter 𝑥𝑖is
+  1461→𝜕𝑦
+  1462→𝜕𝑥𝑖
+  1463→= lim
+  1464→ℎ→0
+  1465→𝑓(𝑥1, . . . , 𝑥𝑖−1, 𝑥𝑖+ ℎ, 𝑥𝑖+1, . . . , 𝑥𝑛) −𝑓(𝑥1, . . . , 𝑥𝑖, . . . , 𝑥𝑛)
+  1466→ℎ
+  1467→.
+  1468→(2.4.6)
+  1469→To calculate 𝜕𝑦
+  1470→𝜕𝑥𝑖, we can treat 𝑥1, . . . , 𝑥𝑖−1, 𝑥𝑖+1, . . . , 𝑥𝑛as constants and calculate the deriva-
+  1471→tive of 𝑦with respect to 𝑥𝑖. The following notational conventions for partial derivatives are
+  1472→all common and all mean the same thing:
+  1473→𝜕𝑦
+  1474→𝜕𝑥𝑖
+  1475→= 𝜕𝑓
+  1476→𝜕𝑥𝑖
+  1477→= 𝜕𝑥𝑖𝑓= 𝜕𝑖𝑓= 𝑓𝑥𝑖= 𝑓𝑖= 𝐷𝑖𝑓= 𝐷𝑥𝑖𝑓.
+  1478→(2.4.7)
+  1479→We can concatenate partial derivatives of a multivariate function with respect to all its
+  1480→variables to obtain a vector that is called the gradient of the function. Suppose that the
+  1481→input of function 𝑓: R𝑛→R is an 𝑛-dimensional vector x = [𝑥1, 𝑥2, . . . , 𝑥𝑛]⊤and the
+  1482→output is a scalar. The gradient of the function 𝑓with respect to x is a vector of 𝑛partial
+  1483→derivatives:
+  1484→∇x 𝑓(x) =
+  1485→
+  1486→𝜕𝑥1 𝑓(x), 𝜕𝑥2 𝑓(x), . . . 𝜕𝑥𝑛𝑓(x)
+  1487→⊤.
+  1488→(2.4.8)
+  1489→When there is no ambiguity, ∇x 𝑓(x) is typically replaced by ∇𝑓(x). The following rules
+  1490→come in handy for differentiating multivariate functions:
+  1491→• For all A ∈R𝑚×𝑛we have ∇xAx = A⊤and ∇xx⊤A = A.
+  1492→• For square matrices A ∈R𝑛×𝑛we have that ∇xx⊤Ax = (A + A⊤)x and in particular
+  1493→∇x∥x∥2 = ∇xx⊤x = 2x.
+  1494→Similarly, for any matrix X, we have ∇X∥X∥2
+  1495→F = 2X.
+  1496→2.4.4 Chain Rule
+  1497→In deep learning, the gradients of concern are often difficult to calculate because we are
+  1498→working with deeply nested functions (of functions (of functions…)). Fortunately, the chain
+  1499→rule takes care of this. Returning to functions of a single variable, suppose that 𝑦= 𝑓(𝑔(𝑥))
+  1500→and that the underlying functions 𝑦= 𝑓(𝑢) and 𝑢= 𝑔(𝑥) are both differentiable. The chain
+  1501→rule states that
+  1502→𝑑𝑦
+  1503→𝑑𝑥= 𝑑𝑦
+  1504→𝑑𝑢
+  1505→𝑑𝑢
+  1506→𝑑𝑥.
+  1507→(2.4.9)
+  1508→Turning back to multivariate functions, suppose that 𝑦= 𝑓(u) has variables 𝑢1, 𝑢2, . . . , 𝑢𝑚,
+  1509→where each 𝑢𝑖= 𝑔𝑖(x) has variables 𝑥1, 𝑥2, . . . , 𝑥𝑛, i.e., u = 𝑔(x). Then the chain rule
+  1510→states that
+  1511→𝜕𝑦
+  1512→𝜕𝑥𝑖
+  1513→= 𝜕𝑦
+  1514→𝜕𝑢1
+  1515→𝜕𝑢1
+  1516→𝜕𝑥𝑖
+  1517→+ 𝜕𝑦
+  1518→𝜕𝑢2
+  1519→𝜕𝑢2
+  1520→𝜕𝑥𝑖
+  1521→+ . . . + 𝜕𝑦
+  1522→𝜕𝑢𝑚
+  1523→𝜕𝑢𝑚
+  1524→𝜕𝑥𝑖
+  1525→and so ∇x𝑦= A∇u𝑦,
+  1526→(2.4.10)
+  1527→
+  1528→===== صفحة الكتاب 99 =====
+  1529→59
+  1530→Calculus
+  1531→56
+  1532→where A ∈R𝑛×𝑚is a matrix that contains the derivative of vector u with respect to vector
+  1533→x. Thus, evaluating the gradient requires computing a vector–matrix product. This is one
+  1534→of the key reasons why linear algebra is such an integral building block in building deep
+  1535→learning systems.
+  1536→2.4.5 Discussion
+  1537→While we have just scratched the surface of a deep topic, a number of concepts already come
+  1538→into focus: first, the composition rules for differentiation can be applied routinely, enabling
+  1539→us to compute gradients automatically. This task requires no creativity and thus we can
+  1540→focus our cognitive powers elsewhere. Second, computing the derivatives of vector-valued
+  1541→functions requires us to multiply matrices as we trace the dependency graph of variables
+  1542→from output to input. In particular, this graph is traversed in a forward direction when
+  1543→we evaluate a function and in a backwards direction when we compute gradients. Later
+  1544→chapters will formally introduce backpropagation, a computational procedure for applying
+  1545→the chain rule.
+  1546→From the viewpoint of optimization, gradients allow us to determine how to move the pa-
+  1547→rameters of a model in order to lower the loss, and each step of the optimization algorithms
+  1548→used throughout this book will require calculating the gradient.
+  1549→2.4.6 Exercises
+  1550→1. So far we took the rules for derivatives for granted. Using the definition and limits prove
+  1551→the properties for (i) 𝑓(𝑥) = 𝑐, (ii) 𝑓(𝑥) = 𝑥𝑛, (iii) 𝑓(𝑥) = 𝑒𝑥and (iv) 𝑓(𝑥) = log 𝑥.
+  1552→2. In the same vein, prove the product, sum, and quotient rule from first principles.
+  1553→3. Prove that the constant multiple rule follows as a special case of the product rule.
+  1554→4. Calculate the derivative of 𝑓(𝑥) = 𝑥𝑥.
+  1555→5. What does it mean that 𝑓′(𝑥) = 0 for some 𝑥? Give an example of a function 𝑓and a
+  1556→location 𝑥for which this might hold.
+  1557→6. Plot the function 𝑦= 𝑓(𝑥) = 𝑥3 −1
+  1558→𝑥and plot its tangent line at 𝑥= 1.
+  1559→7. Find the gradient of the function 𝑓(x) = 3𝑥2
+  1560→1 + 5𝑒𝑥2.
+  1561→8. What is the gradient of the function 𝑓(x) = ∥x∥2? What happens for x = 0?
+  1562→9. Can you write out the chain rule for the case where 𝑢= 𝑓(𝑥, 𝑦, 𝑧) and 𝑥= 𝑥(𝑎, 𝑏),
+  1563→𝑦= 𝑦(𝑎, 𝑏), and 𝑧= 𝑧(𝑎, 𝑏)?
+  1564→10. Given a function 𝑓(𝑥) that is invertible, compute the derivative of its inverse 𝑓−1(𝑥).
+  1565→Here we have that 𝑓−1( 𝑓(𝑥)) = 𝑥and conversely 𝑓( 𝑓−1(𝑦)) = 𝑦. Hint: use these
+  1566→properties in your derivation.
+  1567→Discussions56.
+  1568→
+  1569→===== صفحة الكتاب 100 =====
+  1570→60
+  1571→Preliminaries
+  1572→2.5 Automatic Differentiation
+  1573→Recall from Section 2.4 that calculating derivatives is the crucial step in all the optimization
+  1574→algorithms that we will use to train deep networks. While the calculations are straightfor-
+  1575→ward, working them out by hand can be tedious and error-prone, and these issues only grow
+  1576→as our models become more complex.
+  1577→Fortunately all modern deep learning frameworks take this work off our plates by offering
+  1578→automatic differentiation (often shortened to autograd). As we pass data through each
+  1579→successive function, the framework builds a computational graph that tracks how each value
+  1580→depends on others. To calculate derivatives, automatic differentiation works backwards
+  1581→through this graph applying the chain rule. The computational algorithm for applying the
+  1582→chain rule in this fashion is called backpropagation.
+  1583→While autograd libraries have become a hot concern over the past decade, they have a
+  1584→long history. In fact the earliest references to autograd date back over half of a century
+  1585→(Wengert, 1964). The core ideas behind modern backpropagation date to a PhD thesis
+  1586→from 1980 (Speelpenning, 1980) and were further developed in the late 1980s (Griewank,
+  1587→1989). While backpropagation has become the default method for computing gradients,
+  1588→it is not the only option. For instance, the Julia programming language employs forward
+  1589→propagation (Revels et al., 2016). Before exploring methods, let’s first master the autograd
+  1590→package.
+  1591→import torch
+  1592→2.5.1 A Simple Function
+  1593→Let’s assume that we are interested in differentiating the function 𝑦= 2x⊤x with respect to
+  1594→the column vector x. To start, we assign x an initial value.
+  1595→x = torch.arange(4.0)
+  1596→x
+  1597→tensor([0., 1., 2., 3.])
+  1598→Before we calculate the gradient of 𝑦with respect to x, we need a place to store it. In
+  1599→general, we avoid allocating new memory every time we take a derivative because deep
+  1600→learning requires successively computing derivatives with respect to the same parameters
+  1601→a great many times, and we might risk running out of memory. Note that the gradient of
+  1602→a scalar-valued function with respect to a vector x is vector-valued with the same shape as
+  1603→x.
+  1604→
+  1605→===== صفحة الكتاب 101 =====
+  1606→61
+  1607→Automatic Differentiation
+  1608→# Can also create x = torch.arange(4.0, requires_grad=True)
+  1609→x.requires_grad_(True)
+  1610→x.grad
+  1611→# The gradient is None by default
+  1612→We now calculate our function of x and assign the result to y.
+  1613→y = 2 * torch.dot(x, x)
+  1614→y
+  1615→tensor(28., grad_fn=<MulBackward0>)
+  1616→We can now take the gradient of y with respect to x by calling its backward method. Next,
+  1617→we can access the gradient via x’s grad attribute.
+  1618→y.backward()
+  1619→x.grad
+  1620→tensor([ 0.,
+  1621→4.,
+  1622→8., 12.])
+  1623→We already know that the gradient of the function 𝑦= 2x⊤x with respect to x should be
+  1624→4x. We can now verify that the automatic gradient computation and the expected result are
+  1625→identical.
+  1626→x.grad == 4 * x
+  1627→tensor([True, True, True, True])
+  1628→Now let’s calculate another function of x and take its gradient. Note that PyTorch does not
+  1629→automatically reset the gradient buffer when we record a new gradient. Instead, the new
+  1630→gradient is added to the already-stored gradient. This behavior comes in handy when we
+  1631→want to optimize the sum of multiple objective functions. To reset the gradient buffer, we
+  1632→can call x.grad.zero_() as follows:
+  1633→x.grad.zero_()
+  1634→# Reset the gradient
+  1635→y = x.sum()
+  1636→y.backward()
+  1637→x.grad
+  1638→tensor([1., 1., 1., 1.])
+  1639→2.5.2 Backward for Non-Scalar Variables
+  1640→When y is a vector, the most natural representation of the derivative of y with respect
+  1641→to a vector x is a matrix called the Jacobian that contains the partial derivatives of each
+  1642→
+  1643→===== صفحة الكتاب 102 =====
+  1644→62
+  1645→Preliminaries
+  1646→57
+  1647→component of y with respect to each component of x. Likewise, for higher-order y and x,
+  1648→the result of differentiation could be an even higher-order tensor.
+  1649→While Jacobians do show up in some advanced machine learning techniques, more com-
+  1650→monly we want to sum up the gradients of each component of y with respect to the full
+  1651→vector x, yielding a vector of the same shape as x. For example, we often have a vector
+  1652→representing the value of our loss function calculated separately for each example among a
+  1653→batch of training examples. Here, we just want to sum up the gradients computed individ-
+  1654→ually for each example.
+  1655→Because deep learning frameworks vary in how they interpret gradients of non-scalar ten-
+  1656→sors, PyTorch takes some steps to avoid confusion. Invoking backward on a non-scalar
+  1657→elicits an error unless we tell PyTorch how to reduce the object to a scalar. More formally,
+  1658→we need to provide some vector v such that backward will compute v⊤𝜕xy rather than
+  1659→𝜕xy. This next part may be confusing, but for reasons that will become clear later, this
+  1660→argument (representing v) is named gradient. For a more detailed description, see Yang
+  1661→Zhang’s Medium post57.
+  1662→x.grad.zero_()
+  1663→y = x * x
+  1664→y.backward(gradient=torch.ones(len(y)))
+  1665→# Faster: y.sum().backward()
+  1666→x.grad
+  1667→tensor([0., 2., 4., 6.])
+  1668→2.5.3 Detaching Computation
+  1669→Sometimes, we wish to move some calculations outside of the recorded computational
+  1670→graph. For example, say that we use the input to create some auxiliary intermediate terms
+  1671→for which we do not want to compute a gradient. In this case, we need to detach the re-
+  1672→spective computational graph from the final result. The following toy example makes this
+  1673→clearer: suppose we have z = x * y and y = x * x but we want to focus on the direct
+  1674→influence of x on z rather than the influence conveyed via y. In this case, we can create a
+  1675→new variable u that takes the same value as y but whose provenance (how it was created)
+  1676→has been wiped out. Thus u has no ancestors in the graph and gradients do not flow through
+  1677→u to x. For example, taking the gradient of z = x * u will yield the result u, (not 3 * x
+  1678→* x as you might have expected since z = x * x * x).
+  1679→x.grad.zero_()
+  1680→y = x * x
+  1681→u = y.detach()
+  1682→z = u * x
+  1683→z.sum().backward()
+  1684→x.grad == u
+  1685→
+  1686→===== صفحة الكتاب 103 =====
+  1687→63
+  1688→Automatic Differentiation
+  1689→tensor([True, True, True, True])
+  1690→Note that while this procedure detaches y’s ancestors from the graph leading to z, the com-
+  1691→putational graph leading to y persists and thus we can calculate the gradient of y with
+  1692→respect to x.
+  1693→x.grad.zero_()
+  1694→y.sum().backward()
+  1695→x.grad == 2 * x
+  1696→tensor([True, True, True, True])
+  1697→2.5.4 Gradients and Python Control Flow
+  1698→So far we reviewed cases where the path from input to output was well defined via a func-
+  1699→tion such as z = x * x * x. Programming offers us a lot more freedom in how we
+  1700→compute results. For instance, we can make them depend on auxiliary variables or condi-
+  1701→tion choices on intermediate results. One benefit of using automatic differentiation is that
+  1702→even if building the computational graph of a function required passing through a maze
+  1703→of Python control flow (e.g., conditionals, loops, and arbitrary function calls), we can still
+  1704→calculate the gradient of the resulting variable. To illustrate this, consider the following
+  1705→code snippet where the number of iterations of the while loop and the evaluation of the if
+  1706→statement both depend on the value of the input a.
+  1707→def f(a):
+  1708→b = a * 2
+  1709→while b.norm() < 1000:
+  1710→b = b * 2
+  1711→if b.sum() > 0:
+  1712→c = b
+  1713→else:
+  1714→c = 100 * b
+  1715→return c
+  1716→Below, we call this function, passing in a random value, as input. Since the input is a
+  1717→random variable, we do not know what form the computational graph will take. However,
+  1718→whenever we execute f(a) on a specific input, we realize a specific computational graph
+  1719→and can subsequently run backward.
+  1720→a = torch.randn(size=(), requires_grad=True)
+  1721→d = f(a)
+  1722→d.backward()
+  1723→Even though our function f is, for demonstration purposes, a bit contrived, its dependence
+  1724→on the input is quite simple: it is a linear function of a with piecewise defined scale. As
+  1725→
+  1726→===== صفحة الكتاب 104 =====
+  1727→64
+  1728→Preliminaries
+  1729→such, f(a) / a is a vector of constant entries and, moreover, f(a) / a needs to match the
+  1730→gradient of f(a) with respect to a.
+  1731→a.grad == d / a
+  1732→tensor(True)
+  1733→Dynamic control flow is very common in deep learning. For instance, when processing
+  1734→text, the computational graph depends on the length of the input. In these cases, automatic
+  1735→differentiation becomes vital for statistical modeling since it is impossible to compute the
+  1736→gradient a priori.
+  1737→2.5.5 Discussion
+  1738→You have now gotten a taste of the power of automatic differentiation. The development of
+  1739→libraries for calculating derivatives both automatically and efficiently has been a massive
+  1740→productivity booster for deep learning practitioners, liberating them so they can focus on
+  1741→less menial. Moreover, autograd lets us design massive models for which pen and paper
+  1742→gradient computations would be prohibitively time consuming. Interestingly, while we use
+  1743→autograd to optimize models (in a statistical sense) the optimization of autograd libraries
+  1744→themselves (in a computational sense) is a rich subject of vital interest to framework design-
+  1745→ers. Here, tools from compilers and graph manipulation are leveraged to compute results
+  1746→in the most expedient and memory-efficient manner.
+  1747→For now, try to remember these basics: (i) attach gradients to those variables with respect
+  1748→to which we desire derivatives; (ii) record the computation of the target value; (iii) execute
+  1749→the backpropagation function; and (iv) access the resulting gradient.
+  1750→2.5.6 Exercises
+  1751→1. Why is the second derivative much more expensive to compute than the first derivative?
+  1752→2. After running the function for backpropagation, immediately run it again and see what
+  1753→happens. Investigate.
+  1754→3. In the control flow example where we calculate the derivative of d with respect to a,
+  1755→what would happen if we changed the variable a to a random vector or a matrix? At
+  1756→this point, the result of the calculation f(a) is no longer a scalar. What happens to the
+  1757→result? How do we analyze this?
+  1758→4. Let 𝑓(𝑥) = sin(𝑥). Plot the graph of 𝑓and of its derivative 𝑓′. Do not exploit the fact
+  1759→that 𝑓′(𝑥) = cos(𝑥) but rather use automatic differentiation to get the result.
+  1760→5. Let 𝑓(𝑥) = ((log 𝑥2) · sin 𝑥) + 𝑥−1. Write out a dependency graph tracing results from
+  1761→𝑥to 𝑓(𝑥).
+  1762→6. Use the chain rule to compute the derivative 𝑑𝑓
+  1763→𝑑𝑥of the aforementioned function, placing
+  1764→each term on the dependency graph that you constructed previously.
+  1765→
+  1766→===== صفحة الكتاب 105 =====
+  1767→65
+  1768→Probability and Statistics
+  1769→58
+  1770→7. Given the graph and the intermediate derivative results, you have a number of options
+  1771→when computing the gradient. Evaluate the result once starting from 𝑥to 𝑓and once
+  1772→from 𝑓tracing back to 𝑥. The path from 𝑥to 𝑓is commonly known as forward differ-
+  1773→entiation, whereas the path from 𝑓to 𝑥is known as backward differentiation.
+  1774→8. When might you want to use forward, and when backward, differentiation? Hint: con-
+  1775→sider the amount of intermediate data needed, the ability to parallelize steps, and the
+  1776→size of matrices and vectors involved.
+  1777→Discussions58.
+  1778→2.6 Probability and Statistics
+  1779→One way or another, machine learning is all about uncertainty. In supervised learning, we
+  1780→want to predict something unknown (the target) given something known (the features). De-
+  1781→pending on our objective, we might attempt to predict the most likely value of the target.
+  1782→Or we might predict the value with the smallest expected distance from the target. And
+  1783→sometimes we wish not only to predict a specific value but to quantify our uncertainty. For
+  1784→example, given some features describing a patient, we might want to know how likely they
+  1785→are to suffer a heart attack in the next year. In unsupervised learning, we often care about
+  1786→uncertainty. To determine whether a set of measurements are anomalous, it helps to know
+  1787→how likely one is to observe values in a population of interest. Furthermore, in reinforce-
+  1788→ment learning, we wish to develop agents that act intelligently in various environments.
+  1789→This requires reasoning about how an environment might be expected to change and what
+  1790→rewards one might expect to encounter in response to each of the available actions.
+  1791→Probability is the mathematical field concerned with reasoning under uncertainty. Given a
+  1792→probabilistic model of some process, we can reason about the likelihood of various events.
+  1793→The use of probabilities to describe the frequencies of repeatable events (like coin tosses) is
+  1794→fairly uncontroversial. In fact, frequentist scholars adhere to an interpretation of probability
+  1795→that applies only to such repeatable events. By contrast Bayesian scholars use the language
+  1796→of probability more broadly to formalize reasoning under uncertainty. Bayesian probability
+  1797→is characterized by two unique features: (i) assigning degrees of belief to non-repeatable
+  1798→events, e.g., what is the probability that a dam will collapse?; and (ii) subjectivity. While
+  1799→Bayesian probability provides unambiguous rules for how one should update their beliefs in
+  1800→light of new evidence, it allows for different individuals to start off with different prior be-
+  1801→liefs. Statistics helps us to reason backwards, starting off with collection and organization
+  1802→of data and backing out to what inferences we might draw about the process that generated
+  1803→the data. Whenever we analyze a dataset, hunting for patterns that we hope might charac-
+  1804→terize a broader population, we are employing statistical thinking. Many courses, majors,
+  1805→theses, careers, departments, companies, and institutions have been devoted to the study of
+  1806→probability and statistics. While this section only scratches the surface, we will provide the
+  1807→foundation that you need to begin building models.
+  1808→
+  1809→===== صفحة الكتاب 106 =====
+  1810→66
+  1811→Preliminaries
+  1812→%matplotlib inline
+  1813→import random
+  1814→import torch
+  1815→from torch.distributions.multinomial import Multinomial
+  1816→from d2l import torch as d2l
+  1817→2.6.1 A Simple Example: Tossing Coins
+  1818→Imagine that we plan to toss a coin and want to quantify how likely we are to see heads
+  1819→(vs. tails). If the coin is fair, then both outcomes (heads and tails), are equally likely.
+  1820→Moreover if we plan to toss the coin 𝑛times then the fraction of heads that we expect to
+  1821→see should exactly match the expected fraction of tails. One intuitive way to see this is
+  1822→by symmetry: for every possible outcome with 𝑛h heads and 𝑛t = (𝑛−𝑛h) tails, there is
+  1823→an equally likely outcome with 𝑛t heads and 𝑛h tails. Note that this is only possible if on
+  1824→average we expect to see 1/2 of tosses come up heads and 1/2 come up tails. Of course, if
+  1825→you conduct this experiment many times with 𝑛= 1000000 tosses each, you might never
+  1826→see a trial where 𝑛h = 𝑛t exactly.
+  1827→Formally, the quantity 1/2 is called a probability and here it captures the certainty with
+  1828→which any given toss will come up heads. Probabilities assign scores between 0 and 1 to
+  1829→outcomes of interest, called events. Here the event of interest is heads and we denote the
+  1830→corresponding probability 𝑃(heads). A probability of 1 indicates absolute certainty (imag-
+  1831→ine a trick coin where both sides were heads) and a probability of 0 indicates impossibility
+  1832→(e.g., if both sides were tails). The frequencies 𝑛h/𝑛and 𝑛t/𝑛are not probabilities but rather
+  1833→statistics. Probabilities are theoretical quantities that underly the data generating process.
+  1834→Here, the probability 1/2 is a property of the coin itself. By contrast, statistics are empirical
+  1835→quantities that are computed as functions of the observed data. Our interests in probabilis-
+  1836→tic and statistical quantities are inextricably intertwined. We often design special statistics
+  1837→called estimators that, given a dataset, produce estimates of model parameters such as prob-
+  1838→abilities. Moreover, when those estimators satisfy a nice property called consistency, our
+  1839→estimates will converge to the corresponding probability. In turn, these inferred probabili-
+  1840→ties tell about the likely statistical properties of data from the same population that we might
+
+[showing lines 1141-1840 of 2536; use offset=1841 with limit to continue reading]

@@ -1,0 +1,265 @@
+[
+ {
+  "lesson": "py4e.ch6.l1",
+  "id": "ex1.first-last",
+  "solution": "fruit = 'banana'\nprint(fruit[0])\nlast = fruit[len(fruit) - 1]\nprint(last)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "fruit تساوي banana",
+     "en": "fruit equals banana"
+    },
+    "code": "assert fruit == 'banana', 'expected: banana | actual: %r' % fruit",
+    "expected": "banana"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "last يساوي a",
+     "en": "last equals a"
+    },
+    "code": "assert last == 'a', 'expected: a | actual: %r' % last",
+    "expected": "a"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "يُطبع b ثم a",
+     "en": "b then a are printed"
+    },
+    "code": "assert 'b' in __learner_output__ and 'a' in __learner_output__, ('expected: b then a | actual: %r' % __learner_output__)",
+    "expected": "b\na"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch6.l2",
+  "id": "ex1.count-o",
+  "solution": "word = 'monty python'\ncount = 0\nfor letter in word:\n    if letter == 'o':\n        count = count + 1\nprint(count)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "count يساوي 2",
+     "en": "count equals 2"
+    },
+    "code": "assert count == 2, 'expected: 2 | actual: %r' % count",
+    "expected": "2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع 2",
+     "en": "2 is printed"
+    },
+    "code": "assert '2' in __learner_output__, ('expected: 2 | actual: %r' % __learner_output__)",
+    "expected": "2"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch6.l3",
+  "id": "ex1.slice-banana",
+  "solution": "word = 'banana'\nfirst = word[:3]\nrest = word[3:]\nprint(first)\nprint(rest)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "first يساوي ban",
+     "en": "first equals ban"
+    },
+    "code": "assert first == 'ban', 'expected: ban | actual: %r' % first",
+    "expected": "ban"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "rest يساوي ana",
+     "en": "rest equals ana"
+    },
+    "code": "assert rest == 'ana', 'expected: ana | actual: %r' % rest",
+    "expected": "ana"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "يُطبع ban ثم ana",
+     "en": "ban then ana are printed"
+    },
+    "code": "assert 'ban' in __learner_output__ and 'ana' in __learner_output__, ('expected: ban then ana | actual: %r' % __learner_output__)",
+    "expected": "ban\nana"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch6.l4",
+  "id": "ex1.in-checks",
+  "solution": "word = 'pineapple'\nprint('pine' in word)\nprint('apple' in word)\nprint('pear' in word)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "يُطبع True مرتين",
+     "en": "True is printed twice"
+    },
+    "code": "assert __learner_output__.count('True') == 2, ('expected: two True | actual: %r' % __learner_output__)",
+    "expected": "True\nTrue\nFalse"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع False مرة",
+     "en": "False is printed once"
+    },
+    "code": "assert __learner_output__.count('False') == 1, ('expected: one False | actual: %r' % __learner_output__)",
+    "expected": "True\nTrue\nFalse"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch6.l5",
+  "id": "ex1.find-positions",
+  "solution": "word = 'banana'\nprint(word.find('na'))\nprint(word.find('na', 3))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "يُطبع 2",
+     "en": "2 is printed"
+    },
+    "code": "assert '2' in __learner_output__, ('expected: 2 | actual: %r' % __learner_output__)",
+    "expected": "2\n4"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع 4",
+     "en": "4 is printed"
+    },
+    "code": "assert '4' in __learner_output__, ('expected: 4 | actual: %r' % __learner_output__)",
+    "expected": "2\n4"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch6.l6",
+  "id": "ex2.format-report",
+  "solution": "word = 'python'\nn = len(word)\nprint('Letters: %d' % n)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "n يساوي 6",
+     "en": "n equals 6"
+    },
+    "code": "assert n == 6, 'expected: 6 | actual: %r' % n",
+    "expected": "6"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع Letters: 6",
+     "en": "Letters: 6 is printed"
+    },
+    "code": "assert 'Letters: 6' in __learner_output__, ('expected: Letters: 6 | actual: %r' % __learner_output__)",
+    "expected": "Letters: 6"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch6.l6",
+  "id": "ex5.project-email-analyzer",
+  "solution": "emails = ['ahmed@example.com', 'sara@pypath.io', 'omar@mail.eg', 'lina@pypath.io']\ncount = 0\npypath_count = 0\nfor email in emails:\n    at = email.find('@')\n    user = email[:at]\n    domain = email[at + 1:]\n    print('%s -> %s' % (user, domain))\n    count = count + 1\n    if domain == 'pypath.io':\n        pypath_count = pypath_count + 1\nprint('Total: %d' % count)\nprint('pypath.io: %d' % pypath_count)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "user يبلغ lina بعد الحلقة",
+     "en": "user ends as lina after the loop"
+    },
+    "code": "assert user == 'lina', 'expected: lina | actual: %r' % user",
+    "expected": "lina"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "domain يبلغ pypath.io",
+     "en": "domain ends as pypath.io"
+    },
+    "code": "assert domain == 'pypath.io', 'expected: pypath.io | actual: %r' % domain",
+    "expected": "pypath.io"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "count يساوي 4",
+     "en": "count equals 4"
+    },
+    "code": "assert count == 4, 'expected: 4 | actual: %r' % count",
+    "expected": "4"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "pypath_count يساوي 2",
+     "en": "pypath_count equals 2"
+    },
+    "code": "assert pypath_count == 2, 'expected: 2 | actual: %r' % pypath_count",
+    "expected": "2"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "الأسطر المنسقة تُطبع",
+     "en": "The formatted lines are printed"
+    },
+    "code": "assert 'ahmed -> example.com' in __learner_output__ and 'omar -> mail.eg' in __learner_output__, ('expected: ahmed -> example.com and omar -> mail.eg | actual: %r' % __learner_output__)",
+    "expected": "ahmed -> example.com\nsara -> pypath.io\nomar -> mail.eg\nlina -> pypath.io"
+   },
+   {
+    "id": "t6",
+    "name": {
+     "ar": "التقرير الختامي يُطبع",
+     "en": "The closing report is printed"
+    },
+    "code": "assert 'Total: 4' in __learner_output__ and 'pypath.io: 2' in __learner_output__, ('expected: Total: 4 and pypath.io: 2 | actual: %r' % __learner_output__)",
+    "expected": "Total: 4\npypath.io: 2"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch6.l6",
+  "id": "ex6.debug-domain-slice",
+  "solution": "email = 'sara@pypath.io'\nat = email.find('@')\ndomain = email[at + 1:]\nprint('Domain: %s' % domain)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "domain يساوي pypath.io بعد الإصلاح",
+     "en": "domain equals pypath.io after the fix"
+    },
+    "code": "assert domain == 'pypath.io', 'expected: pypath.io | actual: %r' % domain",
+    "expected": "pypath.io"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "domain لا يبدأ بعلامة @",
+     "en": "domain does not start with @"
+    },
+    "code": "assert not domain.startswith('@'), 'expected: no leading @ | actual: %r' % domain",
+    "expected": "pypath.io"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "يُطبع Domain: pypath.io",
+     "en": "Domain: pypath.io is printed"
+    },
+    "code": "assert 'Domain: pypath.io' in __learner_output__, ('expected: Domain: pypath.io | actual: %r' % __learner_output__)",
+    "expected": "Domain: pypath.io"
+   }
+  ]
+ }
+]

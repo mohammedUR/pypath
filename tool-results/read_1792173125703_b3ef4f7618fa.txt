@@ -1,0 +1,416 @@
+     1→import type { Lesson } from '@/lib/content/schema';
+     2→
+     3→/**
+     4→ * py4e.ch7.l6 — "Chapter 7 Review and Project: File Notebook /
+     5→ * مراجعة الفصل 7 ومشروع: دفتر الملفات"
+     6→ * Aligned with PY4E ch7 s9 (التنقيح), s10 (فهرس المصطلحات), s11 (تمارين).
+     7→ * All expression is original.
+     8→ * Project: write a fixed list of notes to a file, close, reopen with a guard,
+     9→ * then print a %-formatted summary (ties ch6 format operator + ch5 loops +
+    10→ * ch3 try/except). Deterministic in-memory file lifecycle.
+    11→ */
+    12→const lesson = {
+    13→  id: 'py4e.ch7.l6',
+    14→  version: 1,
+    15→  part: 'I',
+    16→  track: 'P1',
+    17→  book: 'PY4E',
+    18→  chapter: 7,
+    19→  title: { ar: 'مراجعة الفصل 7 ومشروع: دفتر الملفات', en: 'Chapter 7 Review and Project: File Notebook' },
+    20→  estimatedMinutes: 25,
+    21→  prerequisites: ['py4e.ch7.l5'],
+    22→  blocks: [
+    23→    {
+    24→      kind: 'hook',
+    25→      text: {
+    26→        ar: 'أقفل الفصل السابع على خريطته كاملة: ذاكرة تنجو من الكهرباء، معرّف يفتح الباب، read وحلقة for تقرآن بطريقتين، بحث يصفّي الأسطر، وقلم \'w\' يكتب — ويمسح. ثم أول مشروع تخزين حقيقي لك: دفتر ملفات يكتب ملاحظاتك في ملف، يغلقه، يعيد فتحه محميًا، ويستخرج تقريرًا كاملًا بعامل التنسيق من الفصل السادس. بنهاية الدرس ستكون قادرًا على: تركيب دورة الكتابة والقراءة في برنامج واحد، وتشخيص أعطال الملفات الشائعة.',
+    27→        en: 'Chapter 7 closes on its full map: memory that survives a power cut, a handle that opens the door, read and a for loop reading two ways, a search that filters lines, and the \'w\' pen that writes — and wipes. Then your first real storage project: a file notebook that writes your notes to a file, closes it, reopens it guarded, and extracts a full report with the chapter-6 format operator. By the end of this lesson you will be able to: compose the write-and-read cycle into one program, and diagnose the common file failures.',
+    28→      },
+    29→    },
+    30→    {
+    31→      kind: 'predict',
+    32→      code: "out = open('notes.txt', 'w')\nout.write('a\\nb\\n')\nout.close()\n\nout2 = open('notes.txt', 'w')\nout2.close()\n\nfhand = open('notes.txt')\ndata = fhand.read()\nfhand.close()\nprint(data == '')",
+    33→      question: {
+    34→        ar: 'كتبنا ملاحظتين ثم أغلقنا الملف. ثم فتحنا الملف نفسه بوضع \'w\' مرة ثانية وأغلقناه دون كتابة شيء. هل بقي فيه شيء؟',
+    35→        en: "We wrote two notes and closed the file. Then we opened the same file in 'w' mode a second time and closed it without writing anything. Is anything left inside?",
+    36→      },
+    37→      reveal: {
+    38→        ar: 'يطبع True — الملف أصبح فارغًا. مجرد فتح بوضع \'w\' يمسح المحتوى القديم لحظة الفتح قبل أي كتابة. هذا أشهر أمراض ملفات المبتدئين، وهو نصيبنا من درس التنقيح اليوم.',
+    39→        en: "It prints True — the file is now empty. Merely opening in 'w' mode wipes the old content at the moment of opening, before any writing. This is the beginner’s most common file ailment — and our share of today’s debugging lesson.",
+    40→      },
+    41→    },
+    42→    {
+    43→      kind: 'concept',
+    44→      heading: { ar: 'التنقيح: حيث تمرض برامج الملفات', en: 'Debugging: where file programs fall ill' },
+    45→      chunks: [
+    46→        {
+    47→          ar: 'ثلاثة أعطال تتكرر في كل برنامج ملفات: الأول اسم خاطئ فيرمي FileNotFoundError — واقرأ سطر التتبع الأخير فهو يسمي الملف والسبب (الفصل الثالث). الثاني بيانات كتبتها ولا تظهر: نسيت close فبقيت في المخزن المؤقت لم تصل الملف. الثالث ملف صار فجأة فارغًا: فتحته بوضع \'w\' وأنت تظن أنك تفتحه للقراءة — كما في التنبؤ.',
+    48→          en: 'Three failures recur in every file program: the first is a wrong name throwing FileNotFoundError — read the last traceback line, it names the file and the cause (chapter 3). The second is data you wrote that never shows: you forgot close, so it stayed in the buffer and never reached the file. The third is a file suddenly empty: you opened it in \'w\' mode believing you were opening it for reading — as in the prediction.',
+    49→        },
+    50→        {
+    51→          ar: 'وأدواتك كما دربتها في الفصل الخامس: اطبع في كل دورة من الحلقة len(line) وراقب المحارف تمر، وافحص len(data) بعد القراءة، وتذكّر أن رسالة انتهاء المهلة تعني غالبًا حلقة لا تتوقف. والاختبار الذهبي: اكتب، أغلق، أعد القراءة — دورة كاملة تصرّخ عند أول حلقة مكسورة.',
+    52→          en: 'Your tools are the ones trained in chapter 5: print len(line) on every loop pass and watch the characters flow, check len(data) after reading, and remember that the timeout message usually means a loop that never stops. And the golden test: write, close, re-read — a full cycle that screams at the first broken link.',
+    53→        },
+    54→      ],
+    55→    },
+    56→    {
+    57→      kind: 'concept',
+    58→      heading: { ar: 'فهرس مصطلحات الفصل', en: 'The chapter glossary' },
+    59→      chunks: [
+    60→        {
+    61→          ar: 'من عالم الملفات: الذاكرة الثانوية (secondary memory) وسيط التخزين الدائم كالأقراص وذاكرة USB؛ والملف (file) سلسلة بيانات مسماة تسكنها؛ ومعرّف الملف (file handle) الواجهة التي يعيدها open للوصول إلى بيانات الملف؛ ومحرف السطر الجديد (newline) المحرف الواحد \\n الذي يقسم الملف إلى أسطر.',
+    62→          en: 'From the file world: secondary memory is the permanent storage medium like disks and USB drives; a file is a named sequence of data living on it; the file handle is the interface open returns for reaching the file data; and the newline is the single character \\n that splits a file into lines.',
+    63→        },
+    64→        {
+    65→          ar: 'ومن عالم الأنماط: البحث (searching) مرور على الأسطر واختيار المهمة منها؛ والتخلص من المسافات (stripping) تنظيف أطراف السلسلة بـ rstrip؛ والتصفية (filtering) تخطي الأسطر غير المطابقة بـ continue؛ والتنقيح (debugging) فن تتبع الخلل حتى مصدره. احفظها بأسمائها الإنجليزية فهي لغة الوثائق والفرق.',
+    66→          en: 'And from the pattern world: searching walks the lines and picks the interesting ones; stripping cleans the string edges with rstrip; filtering skips the non-matching lines with continue; and debugging is the craft of tracing a bug to its source. Memorize their English names — that is the language of docs and teams.',
+    67→        },
+    68→      ],
+    69→    },
+    70→    {
+    71→      kind: 'concept',
+    72→      heading: { ar: 'المشروع: دفتر الملفات', en: 'The project: the file notebook' },
+    73→      chunks: [
+    74→        {
+    75→          ar: "الوظيفة على مرحلتين. مرحلة الكتابة: القائمة notes تحوي أربعة أسطر جاهزة كل منها بمحرف \\n — حلقة for تكتبها كلها في notebook.txt ثم close. مرحلة التحليل: نحمي الفتح الثاني بـ try/except مع عَلَم None من الدرس الرابع، ثم حلقة واحدة على المعرّف تطبق أنماط الفصل الخامس: عدّ الأسطر في lines، وعدّ المحارف len(line) في chars، وعدّ الأسطر التي تحوي الكلمة المفتاحية files بعامل in من الفصل السادس في hits.",
+    76→          en: 'The job has two phases. Writing phase: the list notes holds four ready lines each carrying its \\n — a for loop writes them all into notebook.txt then closes it. Analysis phase: we guard the second opening with try/except and the None flag from lesson four, then a single loop over the handle applies the chapter-5 patterns: counting lines into lines, counting characters len(line) into chars, and counting lines containing the keyword files with the chapter-6 in operator into hits.',
+    77→        },
+    78→        {
+    79→          ar: "التقرير الأخير يجمع الفصل السادس: ثلاثة أسطر بعامل التنسيق % — print('lines: %d' % lines) ثم مثلها لchars ولhits. تلاحظ التكامل: حلقات من الفصل الخامس، وحماية من الثالث، وتنسيق من السادس، وملفات من السابع — أربعة فصول في عشرين سطرًا. هذا حجم البرنامج الحقيقي: كلما تعلمت فصلًا صار برنامجك الأكبر أقصر.",
+    80→          en: "The final report collects chapter 6: three lines with the % format operator — print('lines: %d' % lines) and the like for chars and hits. Watch the integration: loops from chapter 5, a guard from chapter 3, formatting from chapter 6, files from chapter 7 — four chapters in twenty lines. That is what real programs are: every chapter you learn makes your biggest program shorter.",
+    81→        },
+    82→      ],
+    83→    },
+    84→    {
+    85→      kind: 'worked',
+    86→      title: { ar: 'الدفتر كاملًا أمامك', en: 'The notebook, whole and working' },
+    87→      code: "notes = ['learning files\\n', 'files remember\\n', 'py4e rocks\\n', 'close your files\\n']\nout = open('notebook.txt', 'w')\nfor note in notes:\n    out.write(note)\nout.close()\n\nfhand = None\ntry:\n    fhand = open('notebook.txt')\nexcept:\n    print('File cannot be opened: notebook.txt')\nif fhand is not None:\n    lines = 0\n    chars = 0\n    hits = 0\n    for line in fhand:\n        lines = lines + 1\n        chars = chars + len(line)\n        if 'files' in line:\n            hits = hits + 1\n    fhand.close()\n    print('lines: %d' % lines)\n    print('chars: %d' % chars)\n    print('keyword hits: %d' % hits)",
+    88→      explanation: {
+    89→        ar: 'المرحلة الأولى كتبت أربعة أسطر وأغلقت. المرحلة الثانية فتحت محمية فعامت الحلقة: 4 أسطر و58 محرفًا — محارف \\n تعدّ كغيرها — و3 أسطر تحوي files. لو غاب close الأول لربما قرأنا ملفًا ناقصًا، ولو فُتح بـ \'w\' في التحليل لصار الدفتر فارغًا. دورة حياة الملف كلها في 20 سطرًا.',
+    90→        en: 'Phase one wrote four lines and closed. Phase two opened guarded and the loop reported: 4 lines and 58 characters — the \\n helpers counted like the rest — and 3 lines containing files. Had the first close been missing we might have read a partial file, and had the analysis opened with \'w\' the notebook would be empty. The whole file lifecycle in 20 lines.',
+    91→      },
+    92→    },
+    93→    {
+    94→      kind: 'exercise',
+    95→      id: 'ex1.trace-notebook',
+    96→      exKind: 'trace_output',
+    97→      required: true,
+    98→      prompt: {
+    99→        ar: 'اقرأ الكود وتوقّع خرْجه بالضبط — سطرًا لكل طباعة.',
+   100→        en: 'Read the code and predict its exact output — one line per print.',
+   101→      },
+   102→      code: "out = open('tinybook.txt', 'w')\nout.write('hi\\n')\nout.write('bye\\n')\nout.close()\nfhand = open('tinybook.txt')\ndata = fhand.read()\nfhand.close()\nprint(len(data))\nprint(data)",
+   103→      solution: '7\nhi\nbye',
+   104→      answer: '7\nhi\nbye',
+   105→      hints: [
+   106→        { ar: 'عدّ محارف السطرين مع محرفي السطر الجديد.', en: 'Count the two lines characters with their two newlines.' },
+   107→        { ar: 'len يعدّ المحارف — وread جمع الملف كله.', en: 'len counts characters — and read gathered the whole file.' },
+   108→        { ar: 'print(data) يترجم \\n إلى سطرين حقيقيين.', en: 'print(data) translates the \\n into two real lines.' },
+   109→        { ar: 'الخرْج:\n7\nhi\nbye', en: 'The output:\n7\nhi\nbye' },
+   110→      ],
+   111→    },
+   112→    {
+   113→      kind: 'exercise',
+   114→      id: 'ex2.file-notebook',
+   115→      exKind: 'write_code',
+   116→      required: true,
+   117→      prompt: {
+   118→        ar: "مشروع الفصل السابع — دفتر الملفات: القائمة notes معطاة في المحرر (أربعة أسطر كل منها بمحرف \\n). المرحلة الأولى: بحلقة for اكتب كل عنصر في ملف notebook.txt بوضع 'w' ثم أغلق الملف. المرحلة الثانية: افتح notebook.txt داخل try مع عَلَم None (وفي except اطبع 'File cannot be opened: notebook.txt')، ثم بحلقة for على المعرّف احسب: lines = عدد الأسطر، وchars = مجموع len(line)، وhits = عدد الأسطر التي تحوي الكلمة 'files' (بعامل in). أغلق الملف ثم اطبع ثلاثة أسطر بعامل التنسيق % بالضبط: 'lines: %d' % lines ثم 'chars: %d' % chars ثم 'keyword hits: %d' % hits. المتوقع: lines: 4 وchars: 48 وkeyword hits: 2.",
+   119→        en: "Chapter 7 project — the file notebook: the list notes is given in the editor (four lines, each with its \\n). Phase one: with a for loop write every element into the file notebook.txt in 'w' mode, then close the file. Phase two: open notebook.txt inside try with a None flag (in except print 'File cannot be opened: notebook.txt'), then with a for loop over the handle compute: lines = the number of lines, chars = the sum of len(line), and hits = the number of lines containing the word 'files' (with the in operator). Close the file, then print exactly three lines with the % format operator: 'lines: %d' % lines, then 'chars: %d' % chars, then 'keyword hits: %d' % hits. Expected: lines: 4, chars: 48, keyword hits: 2.",
+   120→      },
+   121→      starterCode: "notes = ['note one\\n', 'files in memory\\n', 'note three\\n', 'files again\\n']\n# المرحلة 1: اكتب الملاحظات في notebook.txt ثم أغلق / phase 1: write the notes then close\n# المرحلة 2: افتح محميًا وعدّ lines وchars وhits / phase 2: open guarded, count lines, chars, hits\n# التقرير: ثلاثة أسطر بعامل التنسيق % / the report: three %-formatted lines\n",
+   122→      solution: "notes = ['note one\\n', 'files in memory\\n', 'note three\\n', 'files again\\n']\nout = open('notebook.txt', 'w')\nfor note in notes:\n    out.write(note)\nout.close()\nfhand = None\ntry:\n    fhand = open('notebook.txt')\nexcept:\n    print('File cannot be opened: notebook.txt')\nif fhand is not None:\n    lines = 0\n    chars = 0\n    hits = 0\n    for line in fhand:\n        lines = lines + 1\n        chars = chars + len(line)\n        if 'files' in line:\n            hits = hits + 1\n    fhand.close()\n    print('lines: %d' % lines)\n    print('chars: %d' % chars)\n    print('keyword hits: %d' % hits)",
+   123→      tests: [
+   124→        {
+   125→          id: 't1',
+   126→          name: { ar: 'lines يساوي 4', en: 'lines equals 4' },
+   127→          code: "assert lines == 4, 'expected: 4 | actual: %r' % lines",
+   128→          expected: '4',
+   129→        },
+   130→        {
+   131→          id: 't2',
+   132→          name: { ar: 'chars يساوي 48', en: 'chars equals 48' },
+   133→          code: "assert chars == 48, 'expected: 48 | actual: %r' % chars",
+   134→          expected: '48',
+   135→        },
+   136→        {
+   137→          id: 't3',
+   138→          name: { ar: 'hits يساوي 2', en: 'hits equals 2' },
+   139→          code: "assert hits == 2, 'expected: 2 | actual: %r' % hits",
+   140→          expected: '2',
+   141→        },
+   142→        {
+   143→          id: 't4',
+   144→          name: { ar: 'التقرير مطبوع بثلاثة أسطر موقّعة بعامل %', en: 'The report prints as three %-formatted labeled lines' },
+   145→          code: "assert 'lines: 4' in __learner_output__ and 'chars: 48' in __learner_output__ and 'keyword hits: 2' in __learner_output__, ('expected: lines: 4, chars: 48, keyword hits: 2 | actual: %r' % __learner_output__)",
+   146→          expected: 'lines: 4 / chars: 48 / keyword hits: 2',
+   147→        },
+   148→        {
+   149→          id: 't5',
+   150→          name: { ar: 'الملف نفسه يحوي الملاحظات الأربع', en: 'The file itself holds the four notes' },
+   151→          code: "chk = open('notebook.txt')\ncontent = chk.read()\nchk.close()\nassert content == ''.join(notes), 'expected: file mirrors the notes list | actual: %r' % content",
+   152→          expected: 'file mirrors the notes list',
+   153→        },
+   154→      ],
+   155→      hints: [
+   156→        { ar: 'مرحلتان لا ثالث لهما: كل write داخل حلقة الكتابة، وكل count داخل حلقة التحليل.', en: 'Two phases, no third: every write lives in the writing loop, every count in the analysis loop.' },
+   157→        { ar: 'عامل in يجيب: هل الكلمة داخل السطر؟ if \'files\' in line: hits = hits + 1', en: "The in operator answers: is the word inside the line? if 'files' in line: hits = hits + 1" },
+   158→        { ar: 'الهيكل:\nout = open(\'notebook.txt\', \'w\')\nfor note in notes:\n    out.write(note)\nout.close()\nfhand = None\ntry:\n    fhand = open(\'notebook.txt\')\nexcept:\n    print(\'File cannot be opened: notebook.txt\')\nif fhand is not None:\n    lines = 0\n    chars = 0\n    hits = 0\n    for line in fhand:\n        lines = lines + 1\n        chars = chars + len(line)\n        if \'files\' in line:\n            hits = hits + 1\n    fhand.close()\n    print(\'lines: %d\' % lines)\n    print(\'chars: %d\' % chars)\n    print(\'keyword hits: %d\' % hits)', en: "The skeleton:\nout = open('notebook.txt', 'w')\nfor note in notes:\n    out.write(note)\nout.close()\nfhand = None\ntry:\n    fhand = open('notebook.txt')\nexcept:\n    print('File cannot be opened: notebook.txt')\nif fhand is not None:\n    lines = 0\n    chars = 0\n    hits = 0\n    for line in fhand:\n        lines = lines + 1\n        chars = chars + len(line)\n        if 'files' in line:\n            hits = hits + 1\n    fhand.close()\n    print('lines: %d' % lines)\n    print('chars: %d' % chars)\n    print('keyword hits: %d' % hits)" },
+   159→        { ar: 'الأسطر الأربعة مجموع محارفها 48 — إذا ظهر لك رقم آخر فافحص: هل كتبت \\n؟ هل أغلقت قبل الفتح الثاني؟', en: 'The four lines total 48 characters — if another number appears, check: did you write the \\n? Did you close before the second opening?' },
+   160→      ],
+   161→    },
+   162→    {
+   163→      kind: 'exercise',
+   164→      id: 'ex3.mcq-wipe',
+   165→      exKind: 'mcq',
+   166→      required: true,
+   167→      prompt: {
+   168→        ar: 'ومن درس التنقيح: زميلك فتح ملف ملاحظاته بوضع \'w\' واثقًا أنه سيقرأه، ثم أغلقنه وقرأه. ماذا وجد؟',
+   169→        en: "From the debugging lesson: your friend opened his notes file in 'w' mode sure he was reading it, then closed and read it. What did he find?",
+   170→      },
+   171→      options: [
+   172→        { id: 'a', text: { ar: 'ملفًا فارغًا — مجرد الفتح بـ \'w\' مسح المحتوى', en: "An empty file — merely opening with 'w' wiped the content" } },
+   173→        { id: 'b', text: { ar: 'ملاحظاته سليمة — القراءة لا تغيّر شيئًا', en: 'His notes intact — reading changes nothing' } },
+   174→        { id: 'c', text: { ar: 'تقرير FileNotFoundError ولم يُقرأ الملف', en: 'A FileNotFoundError and the file was never read' } },
+   175→      ],
+   176→      answer: 'a',
+   177→      solution: 'a',
+   178→      hints: [
+   179→        { ar: 'هذا بالضبط سيناريو التنبؤ في أول الدرس.', en: 'This is exactly the prediction scenario at the top of the lesson.' },
+   180→        { ar: 'الوضع يُحدد سلوك الفتح لا ما تكتبه بعده.', en: 'The mode defines the opening behavior, not what you write afterward.' },
+   181→        { ar: 'للقراءة: افتح بلا وضع أو بـ \'r\' صراحة.', en: "For reading: open with no mode or explicitly 'r'." },
+   182→        { ar: 'الجواب: أ — الملف ولد فارغًا لحظة الفتح.', en: 'Answer: a — the file was reborn empty at the moment of opening.' },
+   183→      ],
+   184→    },
+   185→    {
+   186→      kind: 'exercise',
+   187→      id: 'ex4.numeric-no-trailing',
+   188→      exKind: 'numeric',
+   189→      required: true,
+   190→      prompt: {
+   191→        ar: "بلا تشغيل: كُتب في ملف السلسلة 'X\\nY\\nZ' (بلا محرف سطر جديد في النهاية!) ثم قُرئ كله بـ read(). كم يطبع print(len(data))؟",
+   192→        en: "Without running: the string 'X\\nY\\nZ' (no trailing newline!) was written to a file, then read back fully with read(). What does print(len(data)) show?",
+   193→      },
+   194→      answer: '5',
+   195→      solution: '5',
+   196→      tolerance: 0,
+   197→      hints: [
+   198→        { ar: 'عدّها حرفًا حرفًا: X ثم \\n ثم Y ثم \\n ثم Z.', en: 'Count one by one: X, then \\n, then Y, then \\n, then Z.' },
+   199→        { ar: 'هنا لا محرف سطر جديد في النهاية — لا تفترضه.', en: 'Here there is no trailing newline — never assume one.' },
+   200→        { ar: 'نفس مبدأ len(\'X\\nY\') من الدرس الثاني مع محرف إضافي.', en: "Same principle as len('X\\nY') from lesson two, plus one more character." },
+   201→        { ar: 'الجواب: 5', en: 'Answer: 5' },
+   202→      ],
+   203→    },
+   204→    {
+   205→      kind: 'debug',
+   206→      id: 'ex5.debug-reopen-w',
+   207→      required: true,
+   208→      brokenCode: "notes = ['first note\\n', 'second note\\n']\nout = open('mybook.txt', 'w')\nfor note in notes:\n    out.write(note)\nout.close()\n\n# أردت التأكد أن الملف جاهز — فتحته مرة ثانية / wanted to be sure the file is ready — reopened it\nout = open('mybook.txt', 'w')\nout.close()\n\nfhand = open('mybook.txt')\ndata = fhand.read()\nfhand.close()\nprint('chars: %d' % len(data))",
+   209→      prompt: {
+   210→        ar: "تقرير الدفتر يطبع chars: 0 رغم كتابة ملاحظتين (مجموع محارفهما 23). شغّل الكود المعطوب ثم اتبع دورة التنقيح: أين فُتح الملف بوضع كتابة بلا داعٍ؟ ماذا فعل ذلك الفتح بالمحتوى؟ اكتشف الخلل وأصلحه ليطبع التقرير chars: 23 ويبقى الملف محتفظًا بملاحظتيه.",
+   211→        en: "The notebook report prints chars: 0 although two notes were written (23 characters in total). Run the broken code, then follow the debugging cycle: where was the file opened in write mode needlessly? What did that opening do to the content? Find the bug and fix it so the report prints chars: 23 and the file keeps its two notes.",
+   212→      },
+   213→      solution: "notes = ['first note\\n', 'second note\\n']\nout = open('mybook.txt', 'w')\nfor note in notes:\n    out.write(note)\nout.close()\n\nfhand = open('mybook.txt')\ndata = fhand.read()\nfhand.close()\nprint('chars: %d' % len(data))",
+   214→      tests: [
+   215→        {
+   216→          id: 't1',
+   217→          name: { ar: 'data يحمل الملاحظتين كاملتين', en: 'data carries both complete notes' },
+   218→          code: "assert data == 'first note\\nsecond note\\n', 'expected: both notes | actual: %r' % data",
+   219→          expected: 'first note / second note',
+   220→        },
+   221→        {
+   222→          id: 't2',
+   223→          name: { ar: 'التقرير يطبع chars: 23', en: 'The report prints chars: 23' },
+   224→          code: "assert 'chars: 23' in __learner_output__, ('expected: chars: 23 | actual: %r' % __learner_output__)",
+   225→          expected: 'chars: 23',
+   226→        },
+   227→        {
+   228→          id: 't3',
+   229→          name: { ar: 'الملف نفسه احتفظ بالملاحظات', en: 'The file itself kept the notes' },
+   230→          code: "chk = open('mybook.txt')\ncontent = chk.read()\nchk.close()\nassert content == 'first note\\nsecond note\\n', 'expected: file intact | actual: %r' % content",
+   231→          expected: 'file intact',
+   232→        },
+   233→      ],
+   234→      hints: [
+   235→        { ar: 'الملاحظة الكسرة هي التعليق في المنتصف: فتح ثانٍ بوضع \'w\'.', en: 'The breaking note is the comment in the middle: a second opening in \'w\' mode.' },
+   236→        { ar: 'الفتح بـ \'w\' يمسح لحظة فتحه — حتى بلا أي write بعده.', en: "Opening with 'w' wipes at the moment of opening — even with no write afterward." },
+   237→        { ar: 'التحقق يتطلب فتحًا للقراءة لا للكتابة: احذف السطرين المكسرين وأبقِ القارئ.', en: 'Verification needs a reading opening, not a writing one: delete the two broken lines and keep the reader.' },
+   238→        { ar: "notes = ['first note\\n', 'second note\\n']\nout = open('mybook.txt', 'w')\nfor note in notes:\n    out.write(note)\nout.close()\n\nfhand = open('mybook.txt')\ndata = fhand.read()\nfhand.close()\nprint('chars: %d' % len(data))", en: "notes = ['first note\\n', 'second note\\n']\nout = open('mybook.txt', 'w')\nfor note in notes:\n    out.write(note)\nout.close()\n\nfhand = open('mybook.txt')\ndata = fhand.read()\nfhand.close()\nprint('chars: %d' % len(data))" },
+   239→      ],
+   240→    },
+   241→    {
+   242→      kind: 'sandbox',
+   243→      starterCode: '# ملعبك الحرّ — دفترك الخاص\n# Your playground — your very own notebook\n\nnotes = ["day 1: files breathe\\n", "day 2: python loops\\n", "day 3: try guards me\\n"]\nout = open("journal.txt", "w")\nfor note in notes:\n    out.write(note)\nout.close()\n\nfhand = open("journal.txt")\nlines = 0\nhits = 0\nfor line in fhand:\n    lines = lines + 1\n    if "python" in line:\n        hits = hits + 1\nfhand.close()\nprint("lines: %d" % lines)\nprint("python hits: %d" % hits)',
+   244→      prompt: {
+   245→        ar: 'جرّب بنفسك: أضف ملاحظات جديدة، وغيّر الكلمة المفتاحية، ثم جرّب الفكرة القاتلة: أضف فتح journal.txt بـ \'w\' قبل التحليل وراقب lines تصفر. ثم أعد بناء البرنامج سليمًا. لا اختبار هنا — فضولك فقط.',
+   246→        en: 'Try it yourself: add new notes, change the keyword, then try the fatal idea: open journal.txt with \'w\' before the analysis and watch lines collapse to zero. Then rebuild it right. No tests here — just your curiosity.',
+   247→      },
+   248→    },
+   249→    {
+   250→      kind: 'quiz',
+   251→      id: 'quiz1',
+   252→      items: [
+   253→        {
+   254→          id: 'q1',
+   255→          question: {
+   256→            ar: 'ومن الفصل الأول: لماذا تستخدم البرامج الملفات بدل الاكتفاء بالذاكرة الرئيسية؟',
+   257→            en: 'From chapter 1: why do programs use files instead of relying on main memory alone?',
+   258→          },
+   259→          options: [
+   260→            { id: 'a', text: { ar: 'لأن الذاكرة الثانوية تحفظ البيانات بعد انطفاء الجهاز', en: 'Because secondary memory keeps the data after the machine goes off' } },
+   261→            { id: 'b', text: { ar: 'لأن الملفات تُنفَّذ أسرع من المتغيرات', en: 'Because files run faster than variables' } },
+   262→            { id: 'c', text: { ar: 'لأن الذاكرة الرئيسية لا تحمل أرقامًا', en: 'Because main memory cannot hold numbers' } },
+   263→          ],
+   264→          answer: 'a',
+   265→          explanation: {
+   266→            ar: 'وحدة المعالجة والذاكرة الرئيسية مكان التفكير المؤقت؛ الإصرار يسكن الذاكرة الثانوية — أول درس في هذا الفصل.',
+   267→            en: 'CPU and main memory are the temporary thinking place; persistence lives in secondary memory — the first lesson of this chapter.',
+   268→          },
+   269→        },
+   270→        {
+   271→          id: 'q2',
+   272→          question: {
+   273→            ar: 'ومن الفصل الثاني: input() يعيد ما يكتبه المستخدم كنص. وبالمقابل، read() يعيد الملف المقروء على هيئة…',
+   274→            en: 'From chapter 2: input() returns what the user typed as text. In parallel, read() returns the file it read as…',
+   275→          },
+   276→          options: [
+   277→            { id: 'a', text: { ar: 'سلسلة نصية واحدة فيها كل المحارف حتى محارف الأسطر', en: 'One string holding every character, newlines included' } },
+   278→            { id: 'b', text: { ar: 'قائمة أسطر منفصلة', en: 'A list of separate lines' } },
+   279→            { id: 'c', text: { ar: 'معرّف ملف جديد', en: 'A new file handle' } },
+   280→          ],
+   281→          answer: 'a',
+   282→          explanation: {
+   283→            ar: 'read يجمع الملف كله سلسلة واحدة — والأسطر تبقى قابلة للاستخراج لأن محارف \\n ما تزال فيها. أما القوائم فلم نصل إليها بعد.',
+   284→            en: 'read gathers the whole file into one string — lines remain extractable because their \\n characters are still inside. Lists are a bridge for later.',
+   285→          },
+   286→        },
+   287→        {
+   288→          id: 'q3',
+   289→          question: {
+   290→            ar: 'ومن الفصل الثالث: لماذا وضعنا open في مشروع الدفتر داخل try؟',
+   291→            en: 'From chapter 3: why did we put the notebook open inside try?',
+   292→          },
+   293→          options: [
+   294→            { id: 'a', text: { ar: 'لأن الفتح قد يفشل — فنرد برسالة بدل تقرير خطأ', en: 'Because the opening can fail — we answer with a message instead of a traceback' } },
+   295→            { id: 'b', text: { ar: 'لأن try يجعل القراءة أسرع', en: 'Because try makes reading faster' } },
+   296→            { id: 'c', text: { ar: 'لأن try يحذف الملف القديم بأمان', en: 'Because try safely deletes the old file' } },
+   297→          ],
+   298→          answer: 'a',
+   299→          explanation: {
+   300→            ar: 'شيفرة الاستعادة نفسها: السطر الخطر مغلّف، والاستثناء الملتقط يفتح رسالة File cannot be opened — من درس اختيار الملف.',
+   301→            en: 'The same recovery code: the risky line wrapped, the caught exception opens a File cannot be opened message — from the file-choice lesson.',
+   302→          },
+   303→        },
+   304→        {
+   305→          id: 'q4',
+   306→          question: {
+   307→            ar: 'ومن الفصل الرابع: write() تعيد عدد المحارف المكتوبة — فما تصنيفها الصحيح؟',
+   308→            en: 'From chapter 4: write() returns the number of characters written — so what is its proper classification?',
+   309→          },
+   310→          options: [
+   311→            { id: 'a', text: { ar: 'تابع مُنتج: استدعاؤه تعبير قيمته هي الناتج المُعاد', en: 'A fruitful function: its call is an expression whose value is the returned result' } },
+   312→            { id: 'b', text: { ar: 'تابع خالي: ينفذ ويهمل العودة', en: 'A void function: it acts and ignores returning' } },
+   313→            { id: 'c', text: { ar: 'إجراء نظام لا يمكن استدعاؤه مرتين', en: 'A system procedure that cannot be called twice' } },
+   314→          ],
+   315→          answer: 'a',
+   316→          explanation: {
+   317→            ar: 'قيمة العودة وصلت إلى n في مثالنا — تعريف التوابع المُنتجة بالحرف، وقد استفدنا منها في عدّ المحارف.',
+   318→            en: 'The return value landed in n in our example — the fruitful definition to the letter, and we used it to count characters.',
+   319→          },
+   320→        },
+   321→        {
+   322→          id: 'q5',
+   323→          question: {
+   324→            ar: 'ومن الفصل الخامس: في for line in fhand: — ما دور line وكم مرة يُنفَّذ الجسم لملف من 4 أسطر؟',
+   325→            en: 'From chapter 5: in for line in fhand: — what is the role of line, and how many times does the body run for a 4-line file?',
+   326→          },
+   327→          options: [
+   328→            { id: 'a', text: { ar: 'متغيّر تكرار يأخذ سطرًا في كل دورة — والجسم 4 مرات', en: 'An iteration variable taking one line per pass — the body runs 4 times' } },
+   329→            { id: 'b', text: { ar: 'ثابت محجوز يطبع السطر الأول فقط', en: 'A reserved constant printing only the first line' } },
+   330→            { id: 'c', text: { ar: 'اسم الملف — والجسم مرة واحدة', en: 'The file name — the body runs once' } },
+   331→          ],
+   332→          answer: 'a',
+   333→          explanation: {
+   334→            ar: 'نمط for المحدد: دورة لكل عنصر — وكل عنصر هنا سطر يحمل \\n في آخره. بهذا العدّ بنينا كل إحصاءات المشروع.',
+   335→            en: 'The definite for pattern: one pass per item — and each item here is a line trailing its \\n. Every statistic in the project leans on it.',
+   336→          },
+   337→        },
+   338→        {
+   339→          id: 'q6',
+   340→          question: {
+   341→            ar: 'وسؤال الفصل السابع نفسه: لماذا تفشل المقارنة line == \'note one\' على سطر قادم من الملف؟',
+   342→            en: "And a chapter-7 question: why does the comparison line == 'note one' fail on a line read from a file?",
+   343→          },
+   344→          options: [
+   345→            { id: 'a', text: { ar: 'لأن السطر ينتهي بمحرف \\n فالسلسلتان مختلفتان — وrstrip يحل ذلك', en: 'Because the line ends with \\n so the strings differ — rstrip fixes it' } },
+   346→            { id: 'b', text: { ar: 'لأن == لا تعمل على أسطر الملفات', en: 'Because == does not work on file lines' } },
+   347→            { id: 'c', text: { ar: 'لأن الملفات تُقرأ بترتيب معكوس', en: 'Because files are read in reverse order' } },
+   348→          ],
+   349→          answer: 'a',
+   350→          explanation: {
+   351→            ar: 'كل سطر ملف يخرج بحمولته زائد محرف السطر الجديد. نظّفه بـ rstrip أو قارن بـ startswith — وإلا فالمقارنة تفشل بصمت.',
+   352→            en: 'Every file line comes out carrying its payload plus the newline. Clean it with rstrip or compare with startswith — otherwise the comparison fails silently.',
+   353→          },
+   354→        },
+   355→      ],
+   356→    },
+   357→    {
+   358→      kind: 'pitfalls',
+   359→      items: [
+   360→        {
+   361→          wrong: "out = open('notebook.txt', 'w')\nout.write('my notes\\n')\nfhand = open('notebook.txt')\nprint(fhand.read())",
+   362→          right: "out = open('notebook.txt', 'w')\nout.write('my notes\\n')\nout.close()\nfhand = open('notebook.txt')\nprint(fhand.read())\nfhand.close()",
+   363→          note: {
+   364→            ar: 'بلا close قد تبقى البيانات في المخزن المؤقت فيقرأ القارئ ملفًا فارغًا أو ناقصًا. القاعدة الذهبية: أغلق الكاتب قبل أن تفتح القارئ.',
+   365→            en: 'Without close the data may still sit in the buffer and the reader finds an empty or partial file. Golden rule: close the writer before you open the reader.',
+   366→          },
+   367→        },
+   368→        {
+   369→          wrong: "out.write('total lines: 4')\nout.write('total chars: 48')",
+   370→          right: "out.write('total lines: 4\\n')\nout.write('total chars: 48\\n')",
+   371→          note: {
+   372→            ar: 'سطران مكتوبان بلا \\n يصيران سطرًا واحدًا ملتصقًا — وعدّاداتك في المشروع ستحسب أسطرًا أقل ومحارف بلا فواصل. \\n قرارك أنت في write.',
+   373→            en: 'Two writes without \\n become one glued line — and your project counters will count fewer lines and blur chars. In write, \\n is your decision.',
+   374→          },
+   375→        },
+   376→        {
+   377→          wrong: 'fhand = open("notebook.txt")\ndata = fhand.read()\nlines = len(data)',
+   378→          right: 'fhand = open("notebook.txt")\nlines = 0\nfor line in fhand:\n    lines = lines + 1\nfhand.close()',
+   379→          note: {
+   380→            ar: 'len(data) يعطي المحارف لا الأسطر — 48 ليس 4. لعدّ الأسطر حلقة على المعرّف، أو عُدّ محارف \\n في data بحلقة من الفصل الخامس.',
+   381→            en: 'len(data) gives characters, not lines — 48 is not 4. To count lines loop over the handle, or count the \\n characters in data with a chapter-5 loop.',
+   382→          },
+   383→        },
+   384→      ],
+   385→    },
+   386→    {
+   387→      kind: 'summary',
+   388→      bullets: [
+   389→        { ar: 'الذاكرة الثانوية تحفظ بعد الانطفاء، وopen يعيد معرّفًا لا بيانات — والمعرّف باب القراءة والكتابة معًا.', en: 'Secondary memory persists after shutdown, and open returns a handle, not data — the handle is the door for both reading and writing.' },
+   390→        { ar: 'قراءتان: read يجمع الملف سلسلة واحدة، وfor line in fhand يمشي سطرًا سطرًا — والبحث يصفّي بـ startswith وfind وrstrip وcontinue.', en: 'Two readings: read gathers the file as one string, for line in fhand walks line by line — and searching filters with startswith, find, rstrip and continue.' },
+   391→        { ar: "الكتابة بوضع 'w' تمسح الموجود لحظة الفتح، وwrite يعيد عدد المحارف ولا يضيف أسطرًا، وclose يودع البيانات في الملف.", en: "Writing in 'w' mode wipes on opening, write returns the character count and adds no newlines, and close deposits the data into the file." },
+   392→        { ar: 'التنقيح: اسم خاطئ يرمي FileNotFoundError، ونسيان close يخفي البيانات، وفتح \'w\' ثانٍ يمسح — ودورتك الذهبية: اكتب، أغلق، أعد القراءة.', en: 'Debugging: a wrong name throws FileNotFoundError, a forgotten close hides data, a second \'w\' opening wipes — and your golden cycle: write, close, re-read.' },
+   393→      ],
+   394→      reflectPrompt: {
+   395→        ar: 'اكتب بخطك ثلاث أسطر تلخص الفصل السابع لمبرمج مستقبلي — ثم اجعلها أول ملاحظات في دفتر ملفات حقيقي ستكتبه بنفسك خارج المنصة.',
+   396→        en: 'Write three lines in your own words summarizing chapter 7 for a future programmer — then make them the first notes of a real file notebook you build outside the platform.',
+   397→      },
+   398→    },
+   399→    {
+   400→      kind: 'sources',
+   401→      items: [
+   402→        { book: 'PY4E', section: 'py4e.ch7.s9', pages: 'ص114 / pp.114' },
+   403→        { book: 'PY4E', section: 'py4e.ch7.s10', pages: 'ص115 / pp.115' },
+   404→        { book: 'PY4E', section: 'py4e.ch7.s11', pages: 'ص116 / pp.116' },
+   405→      ],
+   406→    },
+   407→  ],
+   408→  sources: [
+   409→    { book: 'PY4E', section: 'py4e.ch7.s9', pages: 'ص114 / pp.114' },
+   410→    { book: 'PY4E', section: 'py4e.ch7.s10', pages: 'ص115 / pp.115' },
+   411→    { book: 'PY4E', section: 'py4e.ch7.s11', pages: 'ص116 / pp.116' },
+   412→  ],
+   413→} satisfies Lesson;
+   414→
+   415→export default lesson;
+   416→

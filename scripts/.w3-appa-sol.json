@@ -1,0 +1,163 @@
+[
+ {
+  "lesson": "swe.appa.l1",
+  "id": "ex1.pitch-check",
+  "solution": "PITCH_FIELDS = ['problem', 'appetite', 'rough_solution', 'rabbit_holes', 'no_gos', 'customer_contact']\npitch = {\n    'problem': 'tutor pairings take a week of email tag',\n    'appetite': 'one term, MVP-first',\n    'rough_solution': 'a matching board with one-click pairing',\n    'rabbit_holes': 'do not build a full chat system',\n    'no_gos': '',\n    'customer_contact': 'sara answers in channel tutor-swap',\n}\nmissing = []\nfor field in PITCH_FIELDS:\n    if not pitch[field]:\n        missing.append(field)\nprint('missing: ' + str(missing))\nprint('strangers can build: ' + ('yes' if not missing else 'no'))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "قائمة missing صحيحة",
+     "en": "missing list is correct"
+    },
+    "code": "assert missing == ['no_gos'], 'expected missing == [no_gos], got %r' % (missing,)",
+    "expected": "['no_gos']"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "سطر الحكم",
+     "en": "verdict line"
+    },
+    "code": "assert 'strangers can build: no' in __learner_output__, 'expected: strangers can build: no | actual: %r' % __learner_output__",
+    "expected": "strangers can build: no"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الحقل الناقص مذكور",
+     "en": "missing field is listed"
+    },
+    "code": "assert 'no_gos' in __learner_output__, 'expected: no_gos | actual: %r' % __learner_output__",
+    "expected": "no_gos"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.appa.l2",
+  "id": "ex1.status-score",
+  "solution": "report = {\n    'features': [\n        ('book a visit', 'Done', 'URL + test'),\n        ('cancel a visit', 'Done', 'URL + test'),\n        ('email reminders', 'Partial', 'screenshot only'),\n        ('admin dashboard', 'Not started', ''),\n    ],\n    'coverage': 62,\n}\nfor name, status, evidence in report['features']:\n    print(name + ': ' + status.lower())\ndone = sum(1 for f in report['features'] if f[1] == 'Done')\nprint('stories done:', done)\nweak = [f[0] for f in report['features'] if f[1] != 'Done' and f[2] == '']\nprint('evidence missing:', weak)\nprint('coverage:', report['coverage'])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "عدد المكتمل",
+     "en": "done count"
+    },
+    "code": "assert 'stories done: 2' in __learner_output__, 'expected: stories done: 2 | actual: %r' % __learner_output__",
+    "expected": "stories done: 2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الأدلة الناقصة",
+     "en": "missing evidence"
+    },
+    "code": "assert \"evidence missing: ['admin dashboard']\" in __learner_output__, 'expected: evidence missing: [admin dashboard] | actual: %r' % __learner_output__",
+    "expected": "evidence missing: ['admin dashboard']"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سطر التغطية",
+     "en": "coverage line"
+    },
+    "code": "assert 'coverage: 62' in __learner_output__, 'expected: coverage: 62 | actual: %r' % __learner_output__",
+    "expected": "coverage: 62"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.appa.l3",
+  "id": "ex1.evidence-audit",
+  "solution": "CLAIMS = [\n    ('users can book online', 'deployed URL works'),\n    ('coverage 80 percent', 'CI report'),\n    ('CD deploys every merge', ''),\n    ('defects down to 3', 'tracker export'),\n    ('AI use documented', ''),\n]\nunbacked = []\nfor claim, evidence in CLAIMS:\n    state = 'backed' if evidence else 'unbacked'\n    print(claim + ': ' + state)\n    if not evidence:\n        unbacked.append(claim)\nprint('unbacked:', len(unbacked))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "عدد غير المدعوم",
+     "en": "unbacked count"
+    },
+    "code": "assert 'unbacked: 2' in __learner_output__, 'expected: unbacked: 2 | actual: %r' % __learner_output__",
+    "expected": "unbacked: 2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "ادعاء CD غير مدعوم",
+     "en": "CD claim is unbacked"
+    },
+    "code": "assert 'CD deploys every merge: unbacked' in __learner_output__, 'expected: CD deploys every merge: unbacked | actual: %r' % __learner_output__",
+    "expected": "CD deploys every merge: unbacked"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "ادعاء مدعوم صحيح",
+     "en": "a backed claim is marked"
+    },
+    "code": "assert 'coverage 80 percent: backed' in __learner_output__, 'expected: coverage 80 percent: backed | actual: %r' % __learner_output__",
+    "expected": "coverage 80 percent: backed"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.appa.l4",
+  "id": "ex1.delivery-map",
+  "solution": "REQS = [\n    ('R1', 'book a visit', 'Must', 'mina', 5),\n    ('R2', 'cancel a visit', 'Must', 'mina', 3),\n    ('R3', 'email reminders', 'Should', '', 3),\n    ('R4', 'admin dashboard', 'Should', '', 5),\n    ('R5', 'walk-in queue', 'Must', 'leo', 4),\n]\nSTATUS = {'R1': 'done', 'R2': 'done', 'R3': 'not started', 'R4': 'not started', 'R5': 'partial'}\nMILESTONES = [\n    ('proposal', 0, []),\n    ('skeletal', 0, ['R1']),\n    ('viable', 2, ['R1', 'R2', 'R5']),\n    ('final', 4, ['R1', 'R2', 'R3', 'R4', 'R5']),\n]\nSPRINT = 2\nVELOCITY = 9\n\nfor i, (name, due, needs) in enumerate(MILESTONES, start=1):\n    if SPRINT < due:\n        print('milestone ' + str(i) + ': ' + name + ' - upcoming')\n    elif all(STATUS[rid] == 'done' for rid in needs):\n        print('milestone ' + str(i) + ': ' + name + ' - ready')\n    else:\n        blocked = [rid for rid in needs if STATUS[rid] != 'done']\n        print('milestone ' + str(i) + ': ' + name + ' - blocked (' + ' '.join(blocked) + ')')\n\nunassigned = [r[0] for r in REQS if r[3] == '']\nprint('risk: ' + str(len(unassigned)) + ' requirements unassigned')\nunfinished_musts = [r[0] for r in REQS if r[2] == 'Must' and STATUS[r[0]] != 'done']\nprint('risk: ' + str(len(unfinished_musts)) + ' Must not done')\nmust_total = sum(r[4] for r in REQS if r[2] == 'Must')\nmust_done = sum(r[4] for r in REQS if r[2] == 'Must' and STATUS[r[0]] == 'done')\nprint('must points: ' + str(must_done) + '/' + str(must_total) + ' done at velocity ' + str(VELOCITY) + '/sprint')",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "بوابة viable مسدودة",
+     "en": "viable gate is blocked"
+    },
+    "code": "assert 'milestone 3: viable - blocked (R5)' in __learner_output__, 'expected: milestone 3: viable - blocked (R5) | actual: %r' % __learner_output__",
+    "expected": "milestone 3: viable - blocked (R5)"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "علم المخاطر",
+     "en": "risk flag"
+    },
+    "code": "assert 'risk: 2 requirements unassigned' in __learner_output__, 'expected: risk: 2 requirements unassigned | actual: %r' % __learner_output__",
+    "expected": "risk: 2 requirements unassigned"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سطر نقاط الـ Must",
+     "en": "must points line"
+    },
+    "code": "assert 'must points: 8/12 done at velocity 9/sprint' in __learner_output__, 'expected: must points: 8/12 done at velocity 9/sprint | actual: %r' % __learner_output__",
+    "expected": "must points: 8/12 done at velocity 9/sprint"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.appa.l4",
+  "id": "ex5.debug-optimistic-map",
+  "solution": "REQS = [\n    ('R1', 'book a visit', 'Must', 'mina', 5),\n    ('R2', 'cancel a visit', 'Must', 'mina', 3),\n    ('R3', 'email reminders', 'Should', '', 3),\n    ('R4', 'admin dashboard', 'Should', '', 5),\n    ('R5', 'walk-in queue', 'Must', 'leo', 4),\n]\nSTATUS = {'R1': 'done', 'R2': 'done', 'R3': 'not started', 'R4': 'not started', 'R5': 'partial'}\nMILESTONES = [\n    ('proposal', 0, []),\n    ('skeletal', 0, ['R1']),\n    ('viable', 2, ['R1', 'R2', 'R5']),\n    ('final', 4, ['R1', 'R2', 'R3', 'R4', 'R5']),\n]\nSPRINT = 2\n\nfor i, (name, due, needs) in enumerate(MILESTONES, start=1):\n    if SPRINT < due:\n        print('milestone ' + str(i) + ': ' + name + ' - upcoming')\n    elif all(STATUS[rid] == 'done' for rid in needs):\n        print('milestone ' + str(i) + ': ' + name + ' - ready')\n    else:\n        blocked = [rid for rid in needs if STATUS[rid] != 'done']\n        print('milestone ' + str(i) + ': ' + name + ' - blocked (' + ' '.join(blocked) + ')')\n\nunassigned = [r[0] for r in REQS if r[3] == '']\nprint('risk: ' + str(len(unassigned)) + ' requirements unassigned')",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "المرحلة المسدودة تُعلن",
+     "en": "blocked state is declared"
+    },
+    "code": "assert 'milestone 3: viable - blocked (R5)' in __learner_output__, 'expected: milestone 3: viable - blocked (R5) | actual: %r' % __learner_output__",
+    "expected": "milestone 3: viable - blocked (R5)"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "لا أخضر كاذب",
+     "en": "no false green"
+    },
+    "code": "assert 'milestone 3: viable - ready' not in __learner_output__, 'expected: no false green for viable | actual: %r' % __learner_output__",
+    "expected": "no false green"
+   }
+  ]
+ }
+]

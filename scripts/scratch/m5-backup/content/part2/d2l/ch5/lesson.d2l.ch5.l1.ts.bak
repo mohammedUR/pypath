@@ -1,0 +1,212 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * d2l.ch5.l1 — "Multilayer Perceptrons"
+ * البيرسبترون متعدد الطبقات
+ * Aligned with D2L ch5 s1 (Multilayer Perceptrons) + s2 (Implementation of
+ * Multilayer Perceptrons). All expression is original — a paraphrase of the
+ * source's ideas, never a verbatim translation. Runnable design: a 2-2-1 MLP
+ * forward pass with ReLU on fixed inputs, the affine-collapse demonstration
+ * (with vs without activation), and an activation-function table
+ * (relu/sigmoid/tanh + sigmoid derivative). Every printed literal verified
+ * under CPython 3. Deterministic only.
+ */
+const lesson = {
+  id: 'd2l.ch5.l1',
+  version: 1,
+  part: 'II',
+  track: 'A3',
+  book: 'D2L',
+  chapter: 5,
+  title: {
+    ar: 'البيرسبترون متعدد الطبقات',
+    en: 'Multilayer Perceptrons',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['d2l.ch4.l3'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'كل ما بنيناه حتى الآن خطي: سطوع بكسل يزيد فيزيد الاحتمال أو ينقص إلى الأبد. لكن هل يزيد احتمال أن الصورة كلب بزيادة سطوع بكسل واحد دوماً؟ هنا تنهار الخطية، وهنا يبدأ التعلم العميق فعلاً: نضيف طبقة خفية بدالة تنشيط، فتصبح الشبكة قادرة على تعلم التمثيل نفسه. في هذا الدرس تدفع بياناتك عبر أول شبكة عميقة حقاً وتشاهد بالأرقام لماذا لا قيمة لطبقات إضافية بلا لاخطية.',
+        en: 'Everything we built so far is linear: raise one pixel brightness and the prediction only ever rises or falls. But should a single brighter pixel always push the dog probability up? That is where linearity breaks and deep learning truly begins: add a hidden layer with an activation function and the network can learn the representation itself. In this lesson you push data through your first genuinely deep network and watch — in numbers — why extra layers are worthless without nonlinearity.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الطبقة الخفية والدوال المنشّطة ثم التنفيذ', en: 'Hidden layers and activations, then the implementation' },
+      chunks: [
+        {
+          ar: 'خطية النموذج الأفيني تعني رتابة: زيادة الخاصية تزيد الناتج أو تنقصه دوماً، وهذا يفشل حتى في «الصحة كدالة لحرارة الجسم». الحل: طبقة خفية بين المدخلات والمخرجات: H = σ(XW⁽¹⁾ + b⁽¹⁾) ثم O = HW⁽²⁾ + b⁽²⁾ — لكن بلا σ ترد الشبكة إلى نموذج أفيني واحد لأن دالة أفينية من دالة أفينية أفينية: يكفي طي الطبقتين في W = W⁽¹⁾W⁽²⁾ وb = b⁽¹⁾W⁽²⁾ + b⁽²⁾. الدوال المنشّطة الشائعة: ReLU(x) = max(0, x) الافتراضي لمشتقاته النظيفة، وsigmoid التي تضغط إلى (0,1) لكن مشتقتها لا تتجاوز 0.25 فتسبب تلاشي التدرجات، وtanh المتماثل حول الصفر. شبكة بطبقة خفية تقريبات شاملة نظرياً، لكن تعلم الدالة هو الصعب — وغالباً الأعمق أضيق أفاضل من الأوسع الأضحق.',
+          en: 'An affine model implies monotonicity: raising a feature always raises (or always lowers) the output, and that fails even for health as a function of body temperature. The fix: a hidden layer between inputs and outputs, H = σ(XW⁽¹⁾ + b⁽¹⁾) then O = HW⁽²⁾ + b⁽²⁾ — but without σ the stack collapses back to one affine model, because an affine function of an affine function is affine: fold the layers into W = W⁽¹⁾W⁽²⁾ and b = b⁽¹⁾W⁽²⁾ + b⁽²⁾. Common activations: ReLU(x) = max(0, x), the default thanks to clean derivatives; sigmoid squashing into (0,1) but with a derivative capped at 0.25, which fuels vanishing gradients; and tanh, symmetric about zero. A one-hidden-layer network is a universal approximator in theory, but learning the function is the hard part — and deeper-narrower often beats wider-shallower.',
+        },
+        {
+          ar: 'التنفيذ من الصفر يبقى قريباً من انحدار softmax: معاملات W1 وb1 وW2 وb2، ودالة relu نكتبها بأنفسنا، وforward يسطّح الصورة ثم يضاعف ويطبق التنشيط. النسخة المختصرة في الكتاب: `nn.Sequential(nn.Flatten(), nn.LazyLinear(num_hiddens), nn.ReLU(), nn.LazyLinear(num_outputs))` — فرق واحد عن softmax: طبقة خفية إضافية. حلقة التدريب لا تتغير إطلاقاً، واختيار عرض الطبقة قوة من مضاعفات 2 (مثل 256) كفاءة عتادياً. في الكتاب تُدار المعاملات عبر `nn.Parameter` ليُسجّلها autograd.',
+          en: 'The scratch implementation stays close to softmax regression: parameters W1, b1, W2, b2, a relu function we write ourselves, and a forward that flattens the image then multiplies and activates. The book concise version is `nn.Sequential(nn.Flatten(), nn.LazyLinear(num_hiddens), nn.ReLU(), nn.LazyLinear(num_outputs))` — one difference from softmax: an extra hidden layer. The training loop does not change at all, and layer widths divisible by large powers of 2 (like 256) are hardware-friendly. In the book parameters are wrapped in `nn.Parameter` so autograd tracks them.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: {
+        ar: 'تمرير أمامي 2-2-1 + إثبات الانهيار الأفيني + جدول التنشيطات',
+        en: 'A 2-2-1 forward pass + the affine-collapse proof + the activation table',
+      },
+      code: "def relu(v):\n    return [max(0.0, x) for x in v]\n\nW1 = [[1.0, -1.0], [0.5, 2.0]]   # 2 hidden units x 2 inputs\nb1 = [0.0, 1.0]\nW2 = [1.0, 3.0]                  # 1 output x 2 hidden\nb2 = -1.0\n\ndef mlp_forward(x, use_relu=True):\n    z = [sum(x[i] * W1[i][j] for i in range(2)) + b1[j] for j in range(2)]\n    h = relu(z) if use_relu else z\n    return sum(h[i] * W2[i] for i in range(2)) + b2\n\nfor x in ([2.0, 1.0], [0.0, 0.0], [0.0, -2.0]):\n    z = [sum(x[i] * W1[i][j] for i in range(2)) + b1[j] for j in range(2)]\n    print('x=%s z=%s h=%s | o(relu)=%.1f o(no-act)=%.1f'\n          % (x, z, relu(z), mlp_forward(x, True), mlp_forward(x, False)))\n\nWc = [sum(W1[i][k] * W2[k] for k in range(2)) for i in range(2)]\nbc = sum(b1[k] * W2[k] for k in range(2)) + b2\nprint('collapsed into one layer: W=%s b=%.1f' % (Wc, bc))\n\nimport math\nxs = [-2.0, -1.0, 0.0, 1.0, 2.0]\nsig = [1.0 / (1.0 + math.exp(-v)) for v in xs]\ntah = [math.tanh(v) for v in xs]\nprint('x      :', xs)\nprint('relu   :', relu(xs))\nprint('sigmoid:', ['%.4f' % v for v in sig])\nprint('tanh   :', ['%.4f' % v for v in tah])\ns4 = (1.0 / (1.0 + math.exp(-4.0))) * (1.0 - 1.0 / (1.0 + math.exp(-4.0)))\nprint('sigmoid grad @0 = %.2f | @4 = %.4f' % (0.25, s4))\nprint('params: W1(4) + b1(2) + W2(2) + b2(1) = %d' % (4 + 2 + 2 + 1))",
+      explanation: {
+        ar: 'المدخل [2, 1] ينتج z=[2.5, 1.0] وh=[2.5, 1.0] والناتج 4.5 — وبدون تنشيط الناتج نفسه هنا لأن z موجبة فReLU شفافة. لكن عند [0, −2] يظهر الفرق القاتل: z=[−1.0, −3.0]، فReLU يطفئها إلى h=[0, 0] والناتج −1.0، بينما الشبكة الأفينية تعطي −11.0. والطي ممكن رياضياً: W=W⁽¹⁾W⁽²⁾=[−2.0, 6.5] وb=2.0 يعيدان الناتج الأفيني نفسه من طبقة واحدة. جدول التنشيطات يظهر sigmoid يتشبع ومشتقه 0.25 كحد أقصى عند الصفر و0.0177 عند 4 — بذرة مشكلة تلاشي التدرجات في الدرس القادم. الشبكة كلها 9 معاملات.',
+        en: 'Input [2, 1] produces z=[2.5, 1.0], h=[2.5, 1.0] and output 4.5 — identical without activation here because z is positive and ReLU is transparent. But at [0, −2] the fatal difference appears: z=[−1.0, −3.0], ReLU shuts them off to h=[0, 0] and the output is −1.0, while the affine network returns −11.0. Folding is possible mathematically: W=W⁽¹⁾W⁽²⁾=[−2.0, 6.5] and b=2.0 reproduce the same affine output from a single layer. The activation table shows sigmoid saturating with a derivative capped at 0.25 at zero and 0.0177 at 4 — the seed of next lesson vanishing-gradient story. The whole network has 9 parameters.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.relu-and-forward',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفّذ دالتين: relu(v) تطبق max(0, x) على كل عنصر؛ وmlp_forward(x, W1, b1, W2, b2) تنفذ تمريراً أمامياً بطبقة خفية واحدة مع ReLU: z = W1·x + b1 ثم h = relu(z) ثم الناتج W2·h + b2.',
+        en: 'Implement two functions: relu(v) applies max(0, x) elementwise; and mlp_forward(x, W1, b1, W2, b2) runs a one-hidden-layer forward with ReLU: z = W1·x + b1, then h = relu(z), then output W2·h + b2.',
+      },
+      starterCode: "def relu(v):\n    ...  # TODO: max(0, x) elementwise\n\ndef mlp_forward(x, W1, b1, W2, b2):\n    ...  # TODO: z -> relu -> output dot product\n",
+      solution: "def relu(v):\n    return [max(0.0, x) for x in v]\n\ndef mlp_forward(x, W1, b1, W2, b2):\n    z = [sum(x[i] * W1[i][j] for i in range(len(x))) + b1[j] for j in range(len(b1))]\n    h = relu(z)\n    return sum(h[i] * W2[i] for i in range(len(W2))) + b2",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'ReLLU يسكت السالب ويُمر الموجب', en: 'ReLU silences negatives, passes positives' },
+          code: "r = relu([-1.0, 0.0, 2.0])\nassert r == [0.0, 0.0, 2.0], 'expected [0.0, 0.0, 2.0] | actual: %r' % (r,)",
+          expected: '[0.0, 0.0, 2.0]',
+        },
+        {
+          id: 't2',
+          name: { ar: 'التمرير الأمامي للشبكة المرجعية', en: 'Forward pass of the reference net' },
+          code: "W1 = [[1.0, -1.0], [0.5, 2.0]]\no = mlp_forward([2.0, 1.0], W1, [0.0, 1.0], [1.0, 3.0], -1.0)\nassert abs(o - 4.5) < 1e-9, 'expected 4.5 | actual: %r' % o",
+          expected: '4.5',
+        },
+        {
+          id: 't3',
+          name: { ar: 'الوحدة الخفية تنطفئ عند القيم السالبة', en: 'Hidden units shut off on negatives' },
+          code: "W1 = [[1.0, -1.0], [0.5, 2.0]]\no = mlp_forward([0.0, -2.0], W1, [0.0, 1.0], [1.0, 3.0], -1.0)\nassert abs(o + 1.0) < 1e-9, 'expected -1.0 | actual: %r' % o",
+          expected: '-1.0',
+        },
+      ],
+      hints: [
+        { ar: 'z له طول عدد الوحدات الخفية: العنصر j هو Σᵢ x[i]·W1[i][j] + b1[j].', en: 'z has one entry per hidden unit: entry j is Σᵢ x[i]·W1[i][j] + b1[j].' },
+        { ar: 'الناتج مجموع h[i]·W2[i] زائد b2 — W2 متجه لا مصفوفة هنا.', en: 'The output is Σ h[i]·W2[i] plus b2 — W2 is a vector here, not a matrix.' },
+        { ar: 'قيم تحقق على شبكة الدرس: [2,1] تعطي 4.5 و[0,−2] تعطي −1.0 لأن الوحدتين تنطفئان.', en: 'Sanity on the lesson net: [2,1] gives 4.5 and [0,−2] gives −1.0 because both units shut off.' },
+        { ar: 'استخدم max(0.0, x) لا abs — القيم الموجبة تمر كما هي.', en: 'Use max(0.0, x), not abs — positives pass through untouched.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.mcq-collapse',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'ركبنا طبقتين كثيفتين بلا دالة تنشيط بينهما. ماذا حصلنا فعلياً؟',
+        en: 'We stacked two dense layers with no activation in between. What did we actually get?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'نموذجاً أعمق وأقوى لأن المعاملات تتضاعف', en: 'A deeper, stronger model because parameters multiply' } },
+        { id: 'b', text: { ar: 'نموذجاً أفينياً واحداً مكافئاً — W = W⁽¹⁾W⁽²⁾ وb = b⁽¹⁾W⁽²⁾ + b⁽²⁾', en: 'One equivalent affine model — W = W⁽¹⁾W⁽²⁾ and b = b⁽¹⁾W⁽²⁾ + b⁽²⁾' } },
+        { id: 'c', text: { ar: 'نموذجاً لا يمكن تدريبه بالتدرج', en: 'A model that cannot be trained by gradient descent' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'افرد الحدوث: (XW⁽¹⁾ + b⁽¹⁾)W⁽²⁾ + b⁽²⁾ = X(W⁽¹⁾W⁽²⁾) + b⁽¹⁾W⁽²⁾ + b⁽²⁾.', en: 'Expand the composition: (XW⁽¹⁾ + b⁽¹⁾)W⁽²⁾ + b⁽²⁾ = X(W⁽¹⁾W⁽²⁾) + b⁽¹⁾W⁽²⁾ + b⁽²⁾.' },
+        { ar: 'في مثالنا: [2,1] أعطى 4.5 من الطبقتين ومن الطبقة المطوية على السواء.', en: 'In our example: [2,1] gave 4.5 from both the two layers and the folded one.' },
+        { ar: 'الطي ممكن دائماً لأن تركيب التحويلات الخطية تحويل خطي.', en: 'Folding is always possible because composing linear maps is a linear map.' },
+        { ar: 'الجواب: b — بلا σ لا شيء جديد، والدالة المنشّطة هي كل الفرق.', en: 'Answer: b — without σ nothing is gained; the activation is the whole point.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "import math\n\ndef relu(v):\n    return [max(0.0, x) for x in v]\n\ndef sigmoid(v):\n    return 1.0 / (1.0 + math.exp(-v))\n\n# derivative check: sigmoid'(x) = s(x)*(1-s(x)) <= 0.25\nfor v in (-4.0, -1.0, 0.0, 1.0, 4.0):\n    s = sigmoid(v)\n    print('x=%5.1f sigmoid=%.4f grad=%.4f' % (v, s, s * (1 - s)))\n\n# a 2-2-1 net with sigmoid hidden units\nW1 = [[1.0, -1.0], [0.5, 2.0]]\nb1 = [0.0, 1.0]\nW2 = [1.0, 3.0]\nb2 = -1.0\nfor x in ([2.0, 1.0], [0.0, -2.0]):\n    z = [sum(x[i] * W1[i][j] for i in range(2)) + b1[j] for j in range(2)]\n    h = [sigmoid(v) for v in z]\n    o = sum(h[i] * W2[i] for i in range(2)) + b2\n    print('x=%s z=%s h(sig)=%s o=%.4f' % (x, z, ['%.4f' % v for v in h], o))\n\n# جرّب: بدّل sigmoid بـ relu في نفس الشبكة وقارن المخرجات — أيهما يتشبع؟\n# try: swap sigmoid for relu in the same net and compare outputs — which one saturates?\n# جرّب: اضرب W2 في 10 وأعد التمرير: هل تتفاقم مشكلة التشبع مع الأوزان الكبيرة؟\n# try: multiply W2 by 10 and rerun: does saturation worsen with larger weights?\n",
+      prompt: {
+        ar: 'الملعب يقيس مشتقة sigmoid فعلياً (0.25 كحد أقصى) ثم يشغّل الشبكة نفسها بوحدات sigmoid بدل ReLU لتشعر بالتشبع مباشرة.',
+        en: 'The sandbox measures the sigmoid derivative directly (capped at 0.25) then runs the same network with sigmoid units instead of ReLU so you feel the saturation firsthand.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ما مشتقة ReLU عندما يكون مدخلها سالباً؟',
+            en: 'What is the derivative of ReLU when its input is negative?',
+          },
+          options: [
+            { id: 'a', text: { ar: '0 — الإشارة تنقطع تماماً', en: '0 — the signal is cut off entirely' } },
+            { id: 'b', text: { ar: '1 — يمر كما في الموجب', en: '1 — it passes through as for positives' } },
+            { id: 'c', text: { ar: '0.25 كأقصى حد', en: '0.25 at most' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'ReLU(x) = max(0, x): يساوي صفراً للسالب فمشتقته 0 هناك و1 للموجب — إما أن يمر الإشارة كاملة أو ينقطع. هذه الندرة النظيفة سر سرعة تقاربه مقارنة بـ sigmoid.',
+            en: 'ReLU(x) = max(0, x): zero for negatives, so its derivative is 0 there and 1 for positives — the signal either passes fully or is cut. This clean sparsity is why it optimizes faster than sigmoid.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'لماذا تسبب sigmoid تلاشي التدرجات في الشبكات العميقة؟',
+            en: 'Why does sigmoid cause vanishing gradients in deep networks?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأن مخرجاتها سالبة دائماً', en: 'Because its outputs are always negative' } },
+            { id: 'b', text: { ar: 'لأنها غير قابلة للتفريق', en: 'Because it is not differentiable' } },
+            { id: 'c', text: { ar: 'لأن مشتقتها s(1−s) لا تتجاوز 0.25 وتقترب من الصفر بعيداً عن الصفر — فتتضاعف أصفاراً صغيرة عبر الطبقات', en: 'Because its derivative s(1−s) is capped at 0.25 and approaches 0 far from zero — tiny factors multiply across layers' } },
+          ],
+          answer: 'c',
+          explanation: {
+            ar: 'الانتشار الخلفي يضرب مشتقات الطبقات: عوامل ≤ 0.25 في كل طبقة تتبخر بعد بضع طبقات (0.25⁵ ≈ 0.00098). ReLU بمشتقته 1 للموجب يقطع هذا التحلل — لهذا صار الافتراضي.',
+            en: 'Backpropagation multiplies layer derivatives: factors ≤ 0.25 per layer evaporate within a few layers (0.25⁵ ≈ 0.00098). ReLU with its derivative of 1 for positives cuts this decay — hence its default status.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'شبكة فيها طبقة مدخلات وطبقة خفية وطبقة إخراج: كم طبقة محسوبة لها وفق اصطلاح الكتاب؟',
+            en: 'A network with an input layer, one hidden layer and an output layer: how many computed layers does it have per the book convention?',
+          },
+          options: [
+            { id: 'a', text: { ar: '1 — المدخل وحده يحسب', en: '1 — only the input computes' } },
+            { id: 'b', text: { ar: '2 — الخفية والإخراج، لأن طبقة المدخل لا تجرى فيها عمليات', en: '2 — hidden and output, since the input layer performs no computation' } },
+            { id: 'c', text: { ar: '3 — كل طبقة تُعدّ', en: '3 — every layer counts' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'قيم المدخل معطاة ولا يحسب فيها شيء، لذا يعد الكتاب الطبقات المحسوبة فقط: خفية + إخراج = 2. هذا الاصطلاح يفسر لماذا نسمي الشبكة ذات طبقة خفية واحدة «شبكة من طبقتين».',
+            en: 'Input values are given and nothing computes there, so the book counts computed layers only: hidden + output = 2. This convention explains why a one-hidden-layer net is called a two-layer network.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'الطبقة الخفية مع دالة تنشيط σ هي ما يكسر الانهيار الأفيني: بلا σ تطوى الشبكة إلى نموذج أفيني واحد؛ وReLU الافتراضي لأن مشتقاته 0 أو 1 (الهدف من s1 البيرسبترون متعدد الطبقات).', en: 'The hidden layer with an activation σ is what breaks the affine collapse: without σ the network folds into one affine model; ReLU is the default with derivatives of 0 or 1 (goal of s1 Multilayer Perceptrons).' },
+        { ar: 'التنفيذ من الصفر معاملات أربع ودالة relu يدوية، والمختصر `nn.Sequential` بإضافة طبقة خفية فقط — وحلقة التدريب تبقى كما هي (الهدف من s2 تنفيذ MLP).', en: 'The scratch model is four parameter tensors plus a hand-written relu, and the concise `nn.Sequential` merely adds a hidden layer — the training loop is unchanged (goal of s2 Implementation of MLPs).' },
+      ],
+      reflectPrompt: {
+        ar: 'أثبتنا بالأرقام أن طبقتين أفينيتين تساويان طبقة واحدة. متى تكون «الشبكة الأعمق» مجرد إعادة تسمية لنموذج أقدم، وأين يضيع الفرق الحقيقي؟',
+        en: 'We proved numerically that two affine layers equal one. When is a deeper network just a relabeled older model — and where does the real difference live?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'D2L', section: 'd2l.ch5.s1' },
+        { book: 'D2L', section: 'd2l.ch5.s2' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'D2L', section: 'd2l.ch5.s1' },
+    { book: 'D2L', section: 'd2l.ch5.s2' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

@@ -1,0 +1,1402 @@
+
+===== صفحة الكتاب 784 =====
+16
+Natural Language Processing:
+Applications
+We have seen how to represent tokens in text sequences and train their representations in
+Chapter 15. Such pretrained text representations can be fed to various models for different
+downstream natural language processing tasks.
+In fact, earlier chapters have already discussed some natural language processing applica-
+tions without pretraining, just for explaining deep learning architectures. For instance, in
+Chapter 9, we have relied on RNNs to design language models to generate novella-like text.
+In Chapter 10 and Chapter 11, we have also designed models based on RNNs and attention
+mechanisms for machine translation.
+However, this book does not intend to cover all such applications in a comprehensive man-
+ner. Instead, our focus is on how to apply (deep) representation learning of languages to
+addressing natural language processing problems. Given pretrained text representations,
+this chapter will explore two popular and representative downstream natural language pro-
+cessing tasks: sentiment analysis and natural language inference, which analyze single text
+and relationships of text pairs, respectively.
+t
+Fig. 16.1
+Pretrained text representations can be fed to various deep learning architectures for
+different downstream natural language processing applications. This chapter focuses on
+how to design models for different downstream natural language processing applications.
+As depicted in Fig. 16.1, this chapter focuses on describing the basic ideas of designing nat-
+ural language processing models using different types of deep learning architectures, such
+as MLPs, CNNs, RNNs, and attention. Though it is possible to combine any pretrained
+text representations with any architecture for either application in Fig. 16.1, we select a few
+representative combinations. Specifically, we will explore popular architectures based on
+RNNs and CNNs for sentiment analysis. For natural language inference, we choose atten-
+744
+
+===== صفحة الكتاب 785 =====
+745
+Sentiment Analysis and the Dataset
+241
+tion and MLPs to demonstrate how to analyze text pairs. In the end, we introduce how to
+fine-tune a pretrained BERT model for a wide range of natural language processing appli-
+cations, such as on a sequence level (single text classification and text pair classification)
+and a token level (text tagging and question answering). As a concrete empirical case, we
+will fine-tune BERT for natural language inference.
+As we have introduced in Section 15.8, BERT requires minimal architecture changes for a
+wide range of natural language processing applications. However, this benefit comes at the
+cost of fine-tuning a huge number of BERT parameters for the downstream applications.
+When space or time is limited, those crafted models based on MLPs, CNNs, RNNs, and
+attention are more feasible. In the following, we start by the sentiment analysis application
+and illustrate the model design based on RNNs and CNNs, respectively.
+16.1 Sentiment Analysis and the Dataset
+With the proliferation of online social media and review platforms, a plethora of opinion-
+ated data has been logged, bearing great potential for supporting decision making processes.
+Sentiment analysis studies people’s sentiments in their produced text, such as product re-
+views, blog comments, and forum discussions. It enjoys wide applications to fields as
+diverse as politics (e.g., analysis of public sentiments towards policies), finance (e.g., anal-
+ysis of sentiments of the market), and marketing (e.g., product research and brand manage-
+ment).
+Since sentiments can be categorized as discrete polarities or scales (e.g., positive and neg-
+ative), we can consider sentiment analysis as a text classification task, which transforms a
+varying-length text sequence into a fixed-length text category. In this chapter, we will use
+Stanford’s large movie review dataset241 for sentiment analysis. It consists of a training set
+and a testing set, either containing 25000 movie reviews downloaded from IMDb. In both
+datasets, there are equal number of “positive” and “negative” labels, indicating different
+sentiment polarities.
+import os
+import torch
+from torch import nn
+from d2l import torch as d2l
+16.1.1 Reading the Dataset
+First, download and extract this IMDb review dataset in the path ../data/aclImdb.
+#@save
+d2l.DATA_HUB['aclImdb'] = (d2l.DATA_URL + 'aclImdb_v1.tar.gz',
+'01ada507287d82875905620988597833ad4e0903')
+(continues on next page)
+
+===== صفحة الكتاب 786 =====
+746
+Natural Language Processing: Applications
+(continued from previous page)
+data_dir = d2l.download_extract('aclImdb', 'aclImdb')
+Downloading ../data/aclImdb_v1.tar.gz from http://d2l-data.s3-accelerate.
+↩→amazonaws.com/aclImdb_v1.tar.gz...
+Next, read the training and test datasets. Each example is a review and its label: 1 for
+“positive” and 0 for “negative”.
+#@save
+def read_imdb(data_dir, is_train):
+"""Read the IMDb review dataset text sequences and labels."""
+data, labels = [], []
+for label in ('pos', 'neg'):
+folder_name = os.path.join(data_dir, 'train' if is_train else 'test',
+label)
+for file in os.listdir(folder_name):
+with open(os.path.join(folder_name, file), 'rb') as f:
+review = f.read().decode('utf-8').replace('\n', '')
+data.append(review)
+labels.append(1 if label == 'pos' else 0)
+return data, labels
+train_data = read_imdb(data_dir, is_train=True)
+print('# trainings:', len(train_data[0]))
+for x, y in zip(train_data[0][:3], train_data[1][:3]):
+print('label:', y, 'review:', x[:60])
+# trainings: 25000
+label: 1 review: Zentropa has much in common with The Third Man, another noir
+label: 1 review: Zentropa is the most original movie I've seen in years. If y
+label: 1 review: Lars Von Trier is never backward in trying out new technique
+16.1.2 Preprocessing the Dataset
+Treating each word as a token and filtering out words that appear less than 5 times, we
+create a vocabulary out of the training dataset.
+train_tokens = d2l.tokenize(train_data[0], token='word')
+vocab = d2l.Vocab(train_tokens, min_freq=5, reserved_tokens=['<pad>'])
+After tokenization, let’s plot the histogram of review lengths in tokens.
+d2l.set_figsize()
+d2l.plt.xlabel('# tokens per review')
+d2l.plt.ylabel('count')
+d2l.plt.hist([len(line) for line in train_tokens], bins=range(0, 1000, 50));
+
+===== صفحة الكتاب 787 =====
+747
+Sentiment Analysis and the Dataset
+As we expected, the reviews have varying lengths. To process a minibatch of such reviews
+at each time, we set the length of each review to 500 with truncation and padding, which is
+similar to the preprocessing step for the machine translation dataset in Section 10.5.
+num_steps = 500
+# sequence length
+train_features = torch.tensor([d2l.truncate_pad(
+vocab[line], num_steps, vocab['<pad>']) for line in train_tokens])
+print(train_features.shape)
+torch.Size([25000, 500])
+16.1.3 Creating Data Iterators
+Now we can create data iterators. At each iteration, a minibatch of examples are returned.
+train_iter = d2l.load_array((train_features, torch.tensor(train_data[1])), 64)
+for X, y in train_iter:
+print('X:', X.shape, ', y:', y.shape)
+break
+print('# batches:', len(train_iter))
+X: torch.Size([64, 500]) , y: torch.Size([64])
+# batches: 391
+16.1.4 Putting It All Together
+Last, we wrap up the above steps into the load_data_imdb function. It returns training
+and test data iterators and the vocabulary of the IMDb review dataset.
+#@save
+def load_data_imdb(batch_size, num_steps=500):
+"""Return data iterators and the vocabulary of the IMDb review dataset."""
+data_dir = d2l.download_extract('aclImdb', 'aclImdb')
+train_data = read_imdb(data_dir, True)
+test_data = read_imdb(data_dir, False)
+(continues on next page)
+
+===== صفحة الكتاب 788 =====
+748
+Natural Language Processing: Applications
+242
+243
+(continued from previous page)
+train_tokens = d2l.tokenize(train_data[0], token='word')
+test_tokens = d2l.tokenize(test_data[0], token='word')
+vocab = d2l.Vocab(train_tokens, min_freq=5)
+train_features = torch.tensor([d2l.truncate_pad(
+vocab[line], num_steps, vocab['<pad>']) for line in train_tokens])
+test_features = torch.tensor([d2l.truncate_pad(
+vocab[line], num_steps, vocab['<pad>']) for line in test_tokens])
+train_iter = d2l.load_array((train_features, torch.tensor(train_data[1])),
+batch_size)
+test_iter = d2l.load_array((test_features, torch.tensor(test_data[1])),
+batch_size,
+is_train=False)
+return train_iter, test_iter, vocab
+16.1.5 Summary
+• Sentiment analysis studies people’s sentiments in their produced text, which is consid-
+ered as a text classification problem that transforms a varying-length text sequence
+into a fixed-length text category.
+• After preprocessing, we can load Stanford’s large movie review dataset (IMDb review
+dataset) into data iterators with a vocabulary.
+16.1.6 Exercises
+1. What hyperparameters in this section can we modify to accelerate training sentiment
+analysis models?
+2. Can you implement a function to load the dataset of Amazon reviews 242 into data
+iterators and labels for sentiment analysis?
+Discussions243.
+16.2 Sentiment Analysis: Using Recurrent Neural
+Networks
+Like word similarity and analogy tasks, we can also apply pretrained word vectors to sen-
+timent analysis. Since the IMDb review dataset in Section 16.1 is not very big, using text
+representations that were pretrained on large-scale corpora may reduce overfitting of the
+model. As a specific example illustrated in Fig. 16.2.1, we will represent each token using
+the pretrained GloVe model, and feed these token representations into a multilayer bidi-
+rectional RNN to obtain the text sequence representation, which will be transformed into
+sentiment analysis outputs (Maas et al., 2011). For the same downstream application, we
+will consider a different architectural choice later.
+
+===== صفحة الكتاب 789 =====
+749
+Sentiment Analysis: Using Recurrent Neural Networks
+t
+Fig. 16.2.1
+This section feeds pretrained GloVe to an RNN-based architecture for sentiment analysis.
+import torch
+from torch import nn
+from d2l import torch as d2l
+batch_size = 64
+train_iter, test_iter, vocab = d2l.load_data_imdb(batch_size)
+16.2.1 Representing Single Text with RNNs
+In text classifications tasks, such as sentiment analysis, a varying-length text sequence will
+be transformed into fixed-length categories. In the following BiRNN class, while each token
+of a text sequence gets its individual pretrained GloVe representation via the embedding
+layer (self.embedding), the entire sequence is encoded by a bidirectional RNN (self.
+encoder). More concretely, the hidden states (at the last layer) of the bidirectional LSTM
+at both the initial and final time steps are concatenated as the representation of the text
+sequence. This single text representation is then transformed into output categories by a
+fully connected layer (self.decoder) with two outputs (“positive” and “negative”).
+class BiRNN(nn.Module):
+def __init__(self, vocab_size, embed_size, num_hiddens,
+num_layers, **kwargs):
+super(BiRNN, self).__init__(**kwargs)
+self.embedding = nn.Embedding(vocab_size, embed_size)
+# Set `bidirectional` to True to get a bidirectional RNN
+self.encoder = nn.LSTM(embed_size, num_hiddens, num_layers=num_layers,
+bidirectional=True)
+self.decoder = nn.Linear(4 * num_hiddens, 2)
+def forward(self, inputs):
+# The shape of `inputs` is (batch size, no. of time steps). Because
+# LSTM requires its input's first dimension to be the temporal
+# dimension, the input is transposed before obtaining token
+# representations. The output shape is (no. of time steps, batch size,
+# word vector dimension)
+embeddings = self.embedding(inputs.T)
+self.encoder.flatten_parameters()
+# Returns hidden states of the last hidden layer at different time
+(continues on next page)
+
+===== صفحة الكتاب 790 =====
+750
+Natural Language Processing: Applications
+(continued from previous page)
+# steps. The shape of `outputs` is (no. of time steps, batch size,
+# 2 * no. of hidden units)
+outputs, _ = self.encoder(embeddings)
+# Concatenate the hidden states at the initial and final time steps as
+# the input of the fully connected layer. Its shape is (batch size,
+# 4 * no. of hidden units)
+encoding = torch.cat((outputs[0], outputs[-1]), dim=1)
+outs = self.decoder(encoding)
+return outs
+Let’s construct a bidirectional RNN with two hidden layers to represent single text for sen-
+timent analysis.
+embed_size, num_hiddens, num_layers, devices = 100, 100, 2, d2l.try_all_gpus()
+net = BiRNN(len(vocab), embed_size, num_hiddens, num_layers)
+def init_weights(module):
+if type(module) == nn.Linear:
+nn.init.xavier_uniform_(module.weight)
+if type(module) == nn.LSTM:
+for param in module._flat_weights_names:
+if "weight" in param:
+nn.init.xavier_uniform_(module._parameters[param])
+net.apply(init_weights);
+16.2.2 Loading Pretrained Word Vectors
+Below we load the pretrained 100-dimensional (needs to be consistent with embed_size)
+GloVe embeddings for tokens in the vocabulary.
+glove_embedding = d2l.TokenEmbedding('glove.6b.100d')
+Print the shape of the vectors for all the tokens in the vocabulary.
+embeds = glove_embedding[vocab.idx_to_token]
+embeds.shape
+torch.Size([49346, 100])
+We use these pretrained word vectors to represent tokens in the reviews and will not update
+these vectors during training.
+net.embedding.weight.data.copy_(embeds)
+net.embedding.weight.requires_grad = False
+16.2.3 Training and Evaluating the Model
+
+===== صفحة الكتاب 791 =====
+751
+Sentiment Analysis: Using Recurrent Neural Networks
+Now we can train the bidirectional RNN for sentiment analysis.
+lr, num_epochs = 0.01, 5
+trainer = torch.optim.Adam(net.parameters(), lr=lr)
+loss = nn.CrossEntropyLoss(reduction="none")
+d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
+loss 0.277, train acc 0.884, test acc 0.861
+2608.4 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+↩→index=1)]
+We define the following function to predict the sentiment of a text sequence using the trained
+model net.
+#@save
+def predict_sentiment(net, vocab, sequence):
+"""Predict the sentiment of a text sequence."""
+sequence = torch.tensor(vocab[sequence.split()], device=d2l.try_gpu())
+label = torch.argmax(net(sequence.reshape(1, -1)), dim=1)
+return 'positive' if label == 1 else 'negative'
+Finally, let’s use the trained model to predict the sentiment for two simple sentences.
+predict_sentiment(net, vocab, 'this movie is so great')
+'positive'
+predict_sentiment(net, vocab, 'this movie is so bad')
+'negative'
+16.2.4 Summary
+• Pretrained word vectors can represent individual tokens in a text sequence.
+
+===== صفحة الكتاب 792 =====
+752
+Natural Language Processing: Applications
+244
+• Bidirectional RNNs can represent a text sequence, such as via the concatenation of its
+hidden states at the initial and final time steps. This single text representation can be
+transformed into categories using a fully connected layer.
+16.2.5 Exercises
+1. Increase the number of epochs. Can you improve the training and testing accuracies?
+How about tuning other hyperparameters?
+2. Use larger pretrained word vectors, such as 300-dimensional GloVe embeddings. Does
+it improve classification accuracy?
+3. Can we improve the classification accuracy by using the spaCy tokenization? You need
+to install spaCy (pip install spacy) and install the English package (python -m
+spacy download en). In the code, first, import spaCy (import spacy). Then, load
+the spaCy English package (spacy_en = spacy.load('en')). Finally, define the
+function def tokenizer(text):
+return [tok.text for tok in spacy_en.
+tokenizer(text)] and replace the original tokenizer function. Note the different
+forms of phrase tokens in GloVe and spaCy. For example, the phrase token “new york”
+takes the form of “new-york” in GloVe and the form of “new york” after the spaCy
+tokenization.
+Discussions244.
+16.3 Sentiment Analysis: Using Convolutional
+Neural Networks
+In Chapter 7, we investigated mechanisms for processing two-dimensional image data with
+two-dimensional CNNs, which were applied to local features such as adjacent pixels. Though
+originally designed for computer vision, CNNs are also widely used for natural language
+processing. Simply put, just think of any text sequence as a one-dimensional image. In this
+way, one-dimensional CNNs can process local features such as 𝑛-grams in text.
+In this section, we will use the textCNN model to demonstrate how to design a CNN ar-
+chitecture for representing single text (Kim, 2014). Compared with Fig. 16.2.1 that uses
+an RNN architecture with GloVe pretraining for sentiment analysis, the only difference in
+Fig. 16.3.1 lies in the choice of the architecture.
+import torch
+from torch import nn
+from d2l import torch as d2l
+batch_size = 64
+train_iter, test_iter, vocab = d2l.load_data_imdb(batch_size)
+
+===== صفحة الكتاب 793 =====
+753
+Sentiment Analysis: Using Convolutional Neural Networks
+t
+Fig. 16.3.1
+This section feeds pretrained GloVe to a CNN-based architecture for sentiment analysis.
+16.3.1 One-Dimensional Convolutions
+Before introducing the model, let’s see how a one-dimensional convolution works. Bear
+in mind that it is just a special case of a two-dimensional convolution based on the cross-
+correlation operation.
+t
+Fig. 16.3.2
+One-dimensional cross-correlation operation. The shaded portions are the ﬁrst output
+element as well as the input and kernel tensor elements used for the output computation:
+0 × 1 + 1 × 2 = 2.
+As shown in Fig. 16.3.2, in the one-dimensional case, the convolution window slides from
+left to right across the input tensor. During sliding, the input subtensor (e.g., 0 and 1 in
+Fig. 16.3.2) contained in the convolution window at a certain position and the kernel tensor
+(e.g., 1 and 2 in Fig. 16.3.2) are multiplied elementwise. The sum of these multiplications
+gives the single scalar value (e.g., 0 × 1 + 1 × 2 = 2 in Fig. 16.3.2) at the corresponding
+position of the output tensor.
+We implement one-dimensional cross-correlation in the following corr1d function. Given
+an input tensor X and a kernel tensor K, it returns the output tensor Y.
+def corr1d(X, K):
+w = K.shape[0]
+Y = torch.zeros((X.shape[0] - w + 1))
+for i in range(Y.shape[0]):
+Y[i] = (X[i: i + w] * K).sum()
+return Y
+We can construct the input tensor X and the kernel tensor K from Fig. 16.3.2 to validate the
+output of the above one-dimensional cross-correlation implementation.
+X, K = torch.tensor([0, 1, 2, 3, 4, 5, 6]), torch.tensor([1, 2])
+corr1d(X, K)
+
+===== صفحة الكتاب 794 =====
+754
+Natural Language Processing: Applications
+tensor([ 2.,
+5.,
+8., 11., 14., 17.])
+For any one-dimensional input with multiple channels, the convolution kernel needs to have
+the same number of input channels. Then for each channel, perform a cross-correlation
+operation on the one-dimensional tensor of the input and the one-dimensional tensor of
+the convolution kernel, summing the results over all the channels to produce the one-
+dimensional output tensor. Fig. 16.3.3 shows a one-dimensional cross-correlation oper-
+ation with 3 input channels.
+t
+Fig. 16.3.3
+One-dimensional cross-correlation operation with 3 input channels. The shaded portions
+are the ﬁrst output element as well as the input and kernel tensor elements used for the
+output computation: 0 × 1 + 1 × 2 + 1 × 3 + 2 × 4 + 2 × (−1) + 3 × (−3) = 2.
+We can implement the one-dimensional cross-correlation operation for multiple input chan-
+nels and validate the results in Fig. 16.3.3.
+def corr1d_multi_in(X, K):
+# First, iterate through the 0th dimension (channel dimension) of `X` and
+# `K`. Then, add them together
+return sum(corr1d(x, k) for x, k in zip(X, K))
+X = torch.tensor([[0, 1, 2, 3, 4, 5, 6],
+[1, 2, 3, 4, 5, 6, 7],
+[2, 3, 4, 5, 6, 7, 8]])
+K = torch.tensor([[1, 2], [3, 4], [-1, -3]])
+corr1d_multi_in(X, K)
+tensor([ 2.,
+8., 14., 20., 26., 32.])
+Note that multi-input-channel one-dimensional cross-correlations are equivalent to single-
+input-channel two-dimensional cross-correlations. To illustrate, an equivalent form of the
+multi-input-channel one-dimensional cross-correlation in Fig. 16.3.3 is the single-input-
+channel two-dimensional cross-correlation in Fig. 16.3.4, where the height of the convolu-
+tion kernel has to be the same as that of the input tensor.
+Both the outputs in Fig. 16.3.2 and Fig. 16.3.3 have only one channel. Same as two-
+dimensional convolutions with multiple output channels described in Section 7.4.2, we
+can also specify multiple output channels for one-dimensional convolutions.
+16.3.2 Max-Over-Time Pooling
+Similarly, we can use pooling to extract the highest value from sequence representations as
+the most important feature across time steps. The max-over-time pooling used in textCNN
+
+===== صفحة الكتاب 795 =====
+755
+Sentiment Analysis: Using Convolutional Neural Networks
+t
+Fig. 16.3.4
+Two-dimensional cross-correlation operation with a single input channel. The shaded
+portions are the ﬁrst output element as well as the input and kernel tensor elements used
+for the output computation: 2 × (−1) + 3 × (−3) + 1 × 3 + 2 × 4 + 0 × 1 + 1 × 2 = 2.
+works like the one-dimensional global max-pooling (Collobert et al., 2011). For a multi-
+channel input where each channel stores values at different time steps, the output at each
+channel is the maximum value for that channel. Note that the max-over-time pooling allows
+different numbers of time steps at different channels.
+16.3.3 The textCNN Model
+Using the one-dimensional convolution and max-over-time pooling, the textCNN model
+takes individual pretrained token representations as input, then obtains and transforms se-
+quence representations for the downstream application.
+For a single text sequence with 𝑛tokens represented by 𝑑-dimensional vectors, the width,
+height, and number of channels of the input tensor are 𝑛, 1, and 𝑑, respectively. The
+textCNN model transforms the input into the output as follows:
+1. Define multiple one-dimensional convolution kernels and perform convolution opera-
+tions separately on the inputs. Convolution kernels with different widths may capture
+local features among different numbers of adjacent tokens.
+2. Perform max-over-time pooling on all the output channels, and then concatenate all the
+scalar pooling outputs as a vector.
+3. Transform the concatenated vector into the output categories using the fully connected
+layer. Dropout can be used for reducing overfitting.
+Fig. 16.3.5 illustrates the model architecture of textCNN with a concrete example. The input
+is a sentence with 11 tokens, where each token is represented by a 6-dimensional vectors.
+So we have a 6-channel input with width 11. Define two one-dimensional convolution
+kernels of widths 2 and 4, with 4 and 5 output channels, respectively. They produce 4 output
+channels with width 11−2+1 = 10 and 5 output channels with width 11−4+1 = 8. Despite
+different widths of these 9 channels, the max-over-time pooling gives a concatenated 9-
+dimensional vector, which is finally transformed into a 2-dimensional output vector for
+binary sentiment predictions.
+Defining the Model
+We implement the textCNN model in the following class. Compared with the bidirectional
+RNN model in Section 16.2, besides replacing recurrent layers with convolutional layers,
+
+===== صفحة الكتاب 796 =====
+756
+Natural Language Processing: Applications
+t
+Fig. 16.3.5
+The model architecture of textCNN.
+we also use two embedding layers: one with trainable weights and the other with fixed
+weights.
+class TextCNN(nn.Module):
+def __init__(self, vocab_size, embed_size, kernel_sizes, num_channels,
+**kwargs):
+super(TextCNN, self).__init__(**kwargs)
+self.embedding = nn.Embedding(vocab_size, embed_size)
+# The embedding layer not to be trained
+self.constant_embedding = nn.Embedding(vocab_size, embed_size)
+self.dropout = nn.Dropout(0.5)
+self.decoder = nn.Linear(sum(num_channels), 2)
+# The max-over-time pooling layer has no parameters, so this instance
+# can be shared
+self.pool = nn.AdaptiveAvgPool1d(1)
+self.relu = nn.ReLU()
+# Create multiple one-dimensional convolutional layers
+self.convs = nn.ModuleList()
+for c, k in zip(num_channels, kernel_sizes):
+self.convs.append(nn.Conv1d(2 * embed_size, c, k))
+def forward(self, inputs):
+# Concatenate two embedding layer outputs with shape (batch size, no.
+# of tokens, token vector dimension) along vectors
+embeddings = torch.cat((
+self.embedding(inputs), self.constant_embedding(inputs)), dim=2)
+# Per the input format of one-dimensional convolutional layers,
+# rearrange the tensor so that the second dimension stores channels
+embeddings = embeddings.permute(0, 2, 1)
+# For each one-dimensional convolutional layer, after max-over-time
+# pooling, a tensor of shape (batch size, no. of channels, 1) is
+# obtained. Remove the last dimension and concatenate along channels
+encoding = torch.cat([
+(continues on next page)
+
+===== صفحة الكتاب 797 =====
+757
+Sentiment Analysis: Using Convolutional Neural Networks
+(continued from previous page)
+torch.squeeze(self.relu(self.pool(conv(embeddings))), dim=-1)
+for conv in self.convs], dim=1)
+outputs = self.decoder(self.dropout(encoding))
+return outputs
+Let’s create a textCNN instance. It has 3 convolutional layers with kernel widths of 3, 4,
+and 5, all with 100 output channels.
+embed_size, kernel_sizes, nums_channels = 100, [3, 4, 5], [100, 100, 100]
+devices = d2l.try_all_gpus()
+net = TextCNN(len(vocab), embed_size, kernel_sizes, nums_channels)
+def init_weights(module):
+if type(module) in (nn.Linear, nn.Conv1d):
+nn.init.xavier_uniform_(module.weight)
+net.apply(init_weights);
+Loading Pretrained Word Vectors
+Same as Section 16.2, we load pretrained 100-dimensional GloVe embeddings as the ini-
+tialized token representations. These token representations (embedding weights) will be
+trained in embedding and fixed in constant_embedding.
+glove_embedding = d2l.TokenEmbedding('glove.6b.100d')
+embeds = glove_embedding[vocab.idx_to_token]
+net.embedding.weight.data.copy_(embeds)
+net.constant_embedding.weight.data.copy_(embeds)
+net.constant_embedding.weight.requires_grad = False
+Training and Evaluating the Model
+Now we can train the textCNN model for sentiment analysis.
+lr, num_epochs = 0.001, 5
+trainer = torch.optim.Adam(net.parameters(), lr=lr)
+loss = nn.CrossEntropyLoss(reduction="none")
+d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
+loss 0.066, train acc 0.979, test acc 0.868
+4354.2 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+↩→index=1)]
+Below we use the trained model to predict the sentiment for two simple sentences.
+d2l.predict_sentiment(net, vocab, 'this movie is so great')
+
+===== صفحة الكتاب 798 =====
+758
+Natural Language Processing: Applications
+245
+'positive'
+d2l.predict_sentiment(net, vocab, 'this movie is so bad')
+'negative'
+16.3.4 Summary
+• One-dimensional CNNs can process local features such as 𝑛-grams in text.
+• Multi-input-channel one-dimensional cross-correlations are equivalent to single-input-
+channel two-dimensional cross-correlations.
+• The max-over-time pooling allows different numbers of time steps at different channels.
+• The textCNN model transforms individual token representations into downstream appli-
+cation outputs using one-dimensional convolutional layers and max-over-time pooling
+layers.
+16.3.5 Exercises
+1. Tune hyperparameters and compare the two architectures for sentiment analysis in Sec-
+tion 16.2 and in this section, such as in classification accuracy and computational effi-
+ciency.
+2. Can you further improve the classification accuracy of the model by using the methods
+introduced in the exercises of Section 16.2?
+3. Add positional encoding in the input representations. Does it improve the classification
+accuracy?
+Discussions245.
+
+===== صفحة الكتاب 799 =====
+759
+Natural Language Inference and the Dataset
+16.4 Natural Language Inference and the Dataset
+In Section 16.1, we discussed the problem of sentiment analysis. This task aims to clas-
+sify a single text sequence into predefined categories, such as a set of sentiment polarities.
+However, when there is a need to decide whether one sentence can be inferred form an-
+other, or eliminate redundancy by identifying sentences that are semantically equivalent,
+knowing how to classify one text sequence is insufficient. Instead, we need to be able to
+reason over pairs of text sequences.
+16.4.1 Natural Language Inference
+Natural language inference studies whether a hypothesis can be inferred from a premise,
+where both are a text sequence. In other words, natural language inference determines the
+logical relationship between a pair of text sequences. Such relationships usually fall into
+three types:
+• Entailment: the hypothesis can be inferred from the premise.
+• Contradiction: the negation of the hypothesis can be inferred from the premise.
+• Neutral: all the other cases.
+Natural language inference is also known as the recognizing textual entailment task. For
+example, the following pair will be labeled as entailment because “showing affection” in
+the hypothesis can be inferred from “hugging one another” in the premise.
+Premise: Two women are hugging each other.
+Hypothesis: Two women are showing affection.
+The following is an example of contradiction as “running the coding example” indicates
+“not sleeping” rather than “sleeping”.
+Premise: A man is running the coding example from Dive into Deep Learning.
+Hypothesis: The man is sleeping.
+The third example shows a neutrality relationship because neither “famous” nor “not fa-
+mous” can be inferred from the fact that “are performing for us”.
+Premise: The musicians are performing for us.
+Hypothesis: The musicians are famous.
+Natural language inference has been a central topic for understanding natural language.
+It enjoys wide applications ranging from information retrieval to open-domain question
+answering. To study this problem, we will begin by investigating a popular natural language
+inference benchmark dataset.
+
+===== صفحة الكتاب 800 =====
+760
+Natural Language Processing: Applications
+16.4.2 The Stanford Natural Language Inference (SNLI) Dataset
+Stanford Natural Language Inference (SNLI) Corpus is a collection of over 500000 labeled
+English sentence pairs (Bowman et al., 2015). We download and store the extracted SNLI
+dataset in the path ../data/snli_1.0.
+import os
+import re
+import torch
+from torch import nn
+from d2l import torch as d2l
+#@save
+d2l.DATA_HUB['SNLI'] = (
+'https://nlp.stanford.edu/projects/snli/snli_1.0.zip',
+'9fcde07509c7e87ec61c640c1b2753d9041758e4')
+data_dir = d2l.download_extract('SNLI')
+Reading the Dataset
+The original SNLI dataset contains much richer information than what we really need in
+our experiments. Thus, we define a function read_snli to only extract part of the dataset,
+then return lists of premises, hypotheses, and their labels.
+#@save
+def read_snli(data_dir, is_train):
+"""Read the SNLI dataset into premises, hypotheses, and labels."""
+def extract_text(s):
+# Remove information that will not be used by us
+s = re.sub('\\(', '', s)
+s = re.sub('\\)', '', s)
+# Substitute two or more consecutive whitespace with space
+s = re.sub('\\s{2,}', ' ', s)
+return s.strip()
+label_set = {'entailment': 0, 'contradiction': 1, 'neutral': 2}
+file_name = os.path.join(data_dir, 'snli_1.0_train.txt'
+if is_train else 'snli_1.0_test.txt')
+with open(file_name, 'r') as f:
+rows = [row.split('\t') for row in f.readlines()[1:]]
+premises = [extract_text(row[1]) for row in rows if row[0] in label_set]
+hypotheses = [extract_text(row[2]) for row in rows if row[0] in label_set]
+labels = [label_set[row[0]] for row in rows if row[0] in label_set]
+return premises, hypotheses, labels
+Now let’s print the first 3 pairs of premise and hypothesis, as well as their labels (“0”, “1”,
+and “2” correspond to “entailment”, “contradiction”, and “neutral”, respectively ).
+train_data = read_snli(data_dir, is_train=True)
+for x0, x1, y in zip(train_data[0][:3], train_data[1][:3], train_data[2][:3]):
+print('premise:', x0)
+(continues on next page)
+
+===== صفحة الكتاب 801 =====
+761
+Natural Language Inference and the Dataset
+(continued from previous page)
+print('hypothesis:', x1)
+print('label:', y)
+premise: A person on a horse jumps over a broken down airplane .
+hypothesis: A person is training his horse for a competition .
+label: 2
+premise: A person on a horse jumps over a broken down airplane .
+hypothesis: A person is at a diner , ordering an omelette .
+label: 1
+premise: A person on a horse jumps over a broken down airplane .
+hypothesis: A person is outdoors , on a horse .
+label: 0
+The training set has about 550000 pairs, and the testing set has about 10000 pairs. The fol-
+lowing shows that the three labels “entailment”, “contradiction”, and “neutral” are balanced
+in both the training set and the testing set.
+test_data = read_snli(data_dir, is_train=False)
+for data in [train_data, test_data]:
+print([[row for row in data[2]].count(i) for i in range(3)])
+[183416, 183187, 182764]
+[3368, 3237, 3219]
+Defining a Class for Loading the Dataset
+Below we define a class for loading the SNLI dataset by inheriting from the Dataset class
+in Gluon. The argument num_steps in the class constructor specifies the length of a text
+sequence so that each minibatch of sequences will have the same shape. In other words,
+tokens after the first num_steps ones in longer sequence are trimmed, while special tokens
+“<pad>” will be appended to shorter sequences until their length becomes num_steps. By
+implementing the __getitem__ function, we can arbitrarily access the premise, hypothesis,
+and label with the index idx.
+#@save
+class SNLIDataset(torch.utils.data.Dataset):
+"""A customized dataset to load the SNLI dataset."""
+def __init__(self, dataset, num_steps, vocab=None):
+self.num_steps = num_steps
+all_premise_tokens = d2l.tokenize(dataset[0])
+all_hypothesis_tokens = d2l.tokenize(dataset[1])
+if vocab is None:
+self.vocab = d2l.Vocab(all_premise_tokens + all_hypothesis_tokens,
+min_freq=5, reserved_tokens=['<pad>'])
+else:
+self.vocab = vocab
+self.premises = self._pad(all_premise_tokens)
+(continues on next page)
+
+===== صفحة الكتاب 802 =====
+762
+Natural Language Processing: Applications
+(continued from previous page)
+self.hypotheses = self._pad(all_hypothesis_tokens)
+self.labels = torch.tensor(dataset[2])
+print('read ' + str(len(self.premises)) + ' examples')
+def _pad(self, lines):
+return torch.tensor([d2l.truncate_pad(
+self.vocab[line], self.num_steps, self.vocab['<pad>'])
+for line in lines])
+def __getitem__(self, idx):
+return (self.premises[idx], self.hypotheses[idx]), self.labels[idx]
+def __len__(self):
+return len(self.premises)
+Putting It All Together
+Now we can invoke the read_snli function and the SNLIDataset class to download the
+SNLI dataset and return DataLoader instances for both training and testing sets, together
+with the vocabulary of the training set. It is noteworthy that we must use the vocabulary
+constructed from the training set as that of the testing set. As a result, any new token from
+the testing set will be unknown to the model trained on the training set.
+#@save
+def load_data_snli(batch_size, num_steps=50):
+"""Download the SNLI dataset and return data iterators and vocabulary."""
+num_workers = d2l.get_dataloader_workers()
+data_dir = d2l.download_extract('SNLI')
+train_data = read_snli(data_dir, True)
+test_data = read_snli(data_dir, False)
+train_set = SNLIDataset(train_data, num_steps)
+test_set = SNLIDataset(test_data, num_steps, train_set.vocab)
+train_iter = torch.utils.data.DataLoader(train_set, batch_size,
+shuffle=True,
+num_workers=num_workers)
+test_iter = torch.utils.data.DataLoader(test_set, batch_size,
+shuffle=False,
+num_workers=num_workers)
+return train_iter, test_iter, train_set.vocab
+Here we set the batch size to 128 and sequence length to 50, and invoke the load_data_snli
+function to get the data iterators and vocabulary. Then we print the vocabulary size.
+train_iter, test_iter, vocab = load_data_snli(128, 50)
+len(vocab)
+read 549367 examples
+read 9824 examples
+
+===== صفحة الكتاب 803 =====
+763
+Natural Language Inference: Using Attention
+246
+18678
+Now we print the shape of the first minibatch. Contrary to sentiment analysis, we have two
+inputs X[0] and X[1] representing pairs of premises and hypotheses.
+for X, Y in train_iter:
+print(X[0].shape)
+print(X[1].shape)
+print(Y.shape)
+break
+torch.Size([128, 50])
+torch.Size([128, 50])
+torch.Size([128])
+16.4.3 Summary
+• Natural language inference studies whether a hypothesis can be inferred from a premise,
+where both are a text sequence.
+• In natural language inference, relationships between premises and hypotheses include
+entailment, contradiction, and neutral.
+• Stanford Natural Language Inference (SNLI) Corpus is a popular benchmark dataset of
+natural language inference.
+16.4.4 Exercises
+1. Machine translation has long been evaluated based on superficial 𝑛-gram matching be-
+tween an output translation and a ground-truth translation. Can you design a measure
+for evaluating machine translation results by using natural language inference?
+2. How can we change hyperparameters to reduce the vocabulary size?
+Discussions246.
+16.5 Natural Language Inference: Using Attention
+We introduced the natural language inference task and the SNLI dataset in Section 16.4. In
+view of many models that are based on complex and deep architectures, Parikh et al. (2016)
+proposed to address natural language inference with attention mechanisms and called it a
+“decomposable attention model”. This results in a model without recurrent or convolutional
+layers, achieving the best result at the time on the SNLI dataset with much fewer parameters.
+
+===== صفحة الكتاب 804 =====
+764
+Natural Language Processing: Applications
+In this section, we will describe and implement this attention-based method (with MLPs)
+for natural language inference, as depicted in Fig. 16.5.1.
+t
+Fig. 16.5.1
+This section feeds pretrained GloVe to an architecture based on attention and MLPs for
+natural language inference.
+16.5.1 The Model
+Simpler than preserving the order of tokens in premises and hypotheses, we can just align
+tokens in one text sequence to every token in the other, and vice versa, then compare and
+aggregate such information to predict the logical relationships between premises and hy-
+potheses. Similar to alignment of tokens between source and target sentences in machine
+translation, the alignment of tokens between premises and hypotheses can be neatly accom-
+plished by attention mechanisms.
+t
+Fig. 16.5.2
+Natural language inference using attention mechanisms.
+Fig. 16.5.2 depicts the natural language inference method using attention mechanisms. At a
+high level, it consists of three jointly trained steps: attending, comparing, and aggregating.
+We will illustrate them step by step in the following.
+import torch
+from torch import nn
+from torch.nn import functional as F
+from d2l import torch as d2l
+
+===== صفحة الكتاب 805 =====
+765
+Natural Language Inference: Using Attention
+Attending
+The first step is to align tokens in one text sequence to each token in the other sequence.
+Suppose that the premise is “i do need sleep” and the hypothesis is “i am tired”. Due to
+semantical similarity, we may wish to align “i” in the hypothesis with “i” in the premise,
+and align “tired” in the hypothesis with “sleep” in the premise. Likewise, we may wish
+to align “i” in the premise with “i” in the hypothesis, and align “need” and “sleep” in the
+premise with “tired” in the hypothesis. Note that such alignment is soft using weighted
+average, where ideally large weights are associated with the tokens to be aligned. For ease
+of demonstration, Fig. 16.5.2 shows such alignment in a hard way.
+Now we describe the soft alignment using attention mechanisms in more detail. Denote
+by A = (a1, . . . , a𝑚) and B = (b1, . . . , b𝑛) the premise and hypothesis, whose number
+of tokens are 𝑚and 𝑛, respectively, where a𝑖, b 𝑗∈R𝑑(𝑖= 1, . . . , 𝑚, 𝑗= 1, . . . , 𝑛) is a
+𝑑-dimensional word vector. For soft alignment, we compute the attention weights 𝑒𝑖𝑗∈R
+as
+𝑒𝑖𝑗= 𝑓(a𝑖)⊤𝑓(b 𝑗),
+(16.5.1)
+where the function 𝑓is an MLP defined in the following mlp function. The output dimen-
+sion of 𝑓is specified by the num_hiddens argument of mlp.
+def mlp(num_inputs, num_hiddens, flatten):
+net = []
+net.append(nn.Dropout(0.2))
+net.append(nn.Linear(num_inputs, num_hiddens))
+net.append(nn.ReLU())
+if flatten:
+net.append(nn.Flatten(start_dim=1))
+net.append(nn.Dropout(0.2))
+net.append(nn.Linear(num_hiddens, num_hiddens))
+net.append(nn.ReLU())
+if flatten:
+net.append(nn.Flatten(start_dim=1))
+return nn.Sequential(*net)
+It should be highlighted that, in (16.5.1) 𝑓takes inputs a𝑖and b 𝑗separately rather than
+takes a pair of them together as input. This decomposition trick leads to only 𝑚+𝑛applica-
+tions (linear complexity) of 𝑓rather than 𝑚𝑛applications (quadratic complexity).
+Normalizing the attention weights in (16.5.1), we compute the weighted average of all
+the token vectors in the hypothesis to obtain representation of the hypothesis that is softly
+aligned with the token indexed by 𝑖in the premise:
+𝜷𝑖=
+𝑛
+Õ
+𝑗=1
+exp(𝑒𝑖𝑗)
+Í𝑛
+𝑘=1 exp(𝑒𝑖𝑘) b 𝑗.
+(16.5.2)
+Likewise, we compute soft alignment of premise tokens for each token indexed by 𝑗in the
+
+===== صفحة الكتاب 806 =====
+766
+Natural Language Processing: Applications
+hypothesis:
+𝜶𝑗=
+𝑚
+Õ
+𝑖=1
+exp(𝑒𝑖𝑗)
+Í𝑚
+𝑘=1 exp(𝑒𝑘𝑗) a𝑖.
+(16.5.3)
+Below we define the Attend class to compute the soft alignment of hypotheses (beta) with
+input premises A and soft alignment of premises (alpha) with input hypotheses B.
+class Attend(nn.Module):
+def __init__(self, num_inputs, num_hiddens, **kwargs):
+super(Attend, self).__init__(**kwargs)
+self.f = mlp(num_inputs, num_hiddens, flatten=False)
+def forward(self, A, B):
+# Shape of `A`/`B`: (`batch_size`, no. of tokens in sequence A/B,
+# `embed_size`)
+# Shape of `f_A`/`f_B`: (`batch_size`, no. of tokens in sequence A/B,
+# `num_hiddens`)
+f_A = self.f(A)
+f_B = self.f(B)
+# Shape of `e`: (`batch_size`, no. of tokens in sequence A,
+# no. of tokens in sequence B)
+e = torch.bmm(f_A, f_B.permute(0, 2, 1))
+# Shape of `beta`: (`batch_size`, no. of tokens in sequence A,
+# `embed_size`), where sequence B is softly aligned with each token
+# (axis 1 of `beta`) in sequence A
+beta = torch.bmm(F.softmax(e, dim=-1), B)
+# Shape of `alpha`: (`batch_size`, no. of tokens in sequence B,
+# `embed_size`), where sequence A is softly aligned with each token
+# (axis 1 of `alpha`) in sequence B
+alpha = torch.bmm(F.softmax(e.permute(0, 2, 1), dim=-1), A)
+return beta, alpha
+Comparing
+In the next step, we compare a token in one sequence with the other sequence that is softly
+aligned with that token. Note that in soft alignment, all the tokens from one sequence,
+though with probably different attention weights, will be compared with a token in the
+other sequence. For easy of demonstration, Fig. 16.5.2 pairs tokens with aligned tokens
+in a hard way. For example, suppose that the attending step determines that “need” and
+“sleep” in the premise are both aligned with “tired” in the hypothesis, the pair “tired–need
+sleep” will be compared.
+In the comparing step, we feed the concatenation (operator [·, ·]) of tokens from one se-
+quence and aligned tokens from the other sequence into a function 𝑔(an MLP):
+v𝐴,𝑖= 𝑔([a𝑖, 𝜷𝑖]), 𝑖= 1, . . . , 𝑚
+v𝐵, 𝑗= 𝑔([b 𝑗, 𝜶𝑗]), 𝑗= 1, . . . , 𝑛.
+(16.5.4)
+In (16.5.4), v𝐴,𝑖is the comparison between token 𝑖in the premise and all the hypothesis
+tokens that are softly aligned with token 𝑖; while v𝐵, 𝑗is the comparison between token 𝑗in
+
+===== صفحة الكتاب 807 =====
+767
+Natural Language Inference: Using Attention
+the hypothesis and all the premise tokens that are softly aligned with token 𝑗. The following
+Compare class defines such as comparing step.
+class Compare(nn.Module):
+def __init__(self, num_inputs, num_hiddens, **kwargs):
+super(Compare, self).__init__(**kwargs)
+self.g = mlp(num_inputs, num_hiddens, flatten=False)
+def forward(self, A, B, beta, alpha):
+V_A = self.g(torch.cat([A, beta], dim=2))
+V_B = self.g(torch.cat([B, alpha], dim=2))
+return V_A, V_B
+Aggregating
+With two sets of comparison vectors v𝐴,𝑖(𝑖= 1, . . . , 𝑚) and v𝐵, 𝑗(𝑗= 1, . . . , 𝑛) on hand,
+in the last step we will aggregate such information to infer the logical relationship. We
+begin by summing up both sets:
+v𝐴=
+𝑚
+Õ
+𝑖=1
+v𝐴,𝑖,
+v𝐵=
+𝑛
+Õ
+𝑗=1
+v𝐵, 𝑗.
+(16.5.5)
+Next we feed the concatenation of both summarization results into function ℎ(an MLP) to
+obtain the classification result of the logical relationship:
+ˆy = ℎ([v𝐴, v𝐵]).
+(16.5.6)
+The aggregation step is defined in the following Aggregate class.
+class Aggregate(nn.Module):
+def __init__(self, num_inputs, num_hiddens, num_outputs, **kwargs):
+super(Aggregate, self).__init__(**kwargs)
+self.h = mlp(num_inputs, num_hiddens, flatten=True)
+self.linear = nn.Linear(num_hiddens, num_outputs)
+def forward(self, V_A, V_B):
+# Sum up both sets of comparison vectors
+V_A = V_A.sum(dim=1)
+V_B = V_B.sum(dim=1)
+# Feed the concatenation of both summarization results into an MLP
+Y_hat = self.linear(self.h(torch.cat([V_A, V_B], dim=1)))
+return Y_hat
+Putting It All Together
+By putting the attending, comparing, and aggregating steps together, we define the decom-
+posable attention model to jointly train these three steps.
+
+===== صفحة الكتاب 808 =====
+768
+Natural Language Processing: Applications
+class DecomposableAttention(nn.Module):
+def __init__(self, vocab, embed_size, num_hiddens, num_inputs_attend=100,
+num_inputs_compare=200, num_inputs_agg=400, **kwargs):
+super(DecomposableAttention, self).__init__(**kwargs)
+self.embedding = nn.Embedding(len(vocab), embed_size)
+self.attend = Attend(num_inputs_attend, num_hiddens)
+self.compare = Compare(num_inputs_compare, num_hiddens)
+# There are 3 possible outputs: entailment, contradiction, and neutral
+self.aggregate = Aggregate(num_inputs_agg, num_hiddens, num_outputs=3)
+def forward(self, X):
+premises, hypotheses = X
+A = self.embedding(premises)
+B = self.embedding(hypotheses)
+beta, alpha = self.attend(A, B)
+V_A, V_B = self.compare(A, B, beta, alpha)
+Y_hat = self.aggregate(V_A, V_B)
+return Y_hat
+16.5.2 Training and Evaluating the Model
+Now we will train and evaluate the defined decomposable attention model on the SNLI
+dataset. We begin by reading the dataset.
+Reading the dataset
+We download and read the SNLI dataset using the function defined in Section 16.4. The
+batch size and sequence length are set to 256 and 50, respectively.
+batch_size, num_steps = 256, 50
+train_iter, test_iter, vocab = d2l.load_data_snli(batch_size, num_steps)
+Downloading ../data/snli_1.0.zip from https://nlp.stanford.edu/projects/snli/
+↩→snli_1.0.zip...
+read 549367 examples
+read 9824 examples
+Creating the Model
+We use the pretrained 100-dimensional GloVe embedding to represent the input tokens.
+Thus, we predefine the dimension of vectors a𝑖and b 𝑗in (16.5.1) as 100. The output
+dimension of functions 𝑓in (16.5.1) and 𝑔in (16.5.4) is set to 200. Then we create a
+model instance, initialize its parameters, and load the GloVe embedding to initialize vectors
+of input tokens.
+embed_size, num_hiddens, devices = 100, 200, d2l.try_all_gpus()
+net = DecomposableAttention(vocab, embed_size, num_hiddens)
+(continues on next page)
+
+===== صفحة الكتاب 809 =====
+769
+Natural Language Inference: Using Attention
+(continued from previous page)
+glove_embedding = d2l.TokenEmbedding('glove.6b.100d')
+embeds = glove_embedding[vocab.idx_to_token]
+net.embedding.weight.data.copy_(embeds);
+Downloading ../data/glove.6B.100d.zip from http://d2l-data.s3-accelerate.
+↩→amazonaws.com/glove.6B.100d.zip...
+Training and Evaluating the Model
+In contrast to the split_batch function in Section 13.5 that takes single inputs such as text
+sequences (or images), we define a split_batch_multi_inputs function to take multiple
+inputs such as premises and hypotheses in minibatches.
+Now we can train and evaluate the model on the SNLI dataset.
+lr, num_epochs = 0.001, 4
+trainer = torch.optim.Adam(net.parameters(), lr=lr)
+loss = nn.CrossEntropyLoss(reduction="none")
+d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
+loss 0.496, train acc 0.805, test acc 0.828
+20383.2 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+↩→index=1)]
+Using the Model
+Finally, define the prediction function to output the logical relationship between a pair of
+premise and hypothesis.
+#@save
+def predict_snli(net, vocab, premise, hypothesis):
+"""Predict the logical relationship between the premise and hypothesis."""
+net.eval()
+premise = torch.tensor(vocab[premise], device=d2l.try_gpu())
+(continues on next page)
+
+===== صفحة الكتاب 810 =====
+770
+Natural Language Processing: Applications
+247
+(continued from previous page)
+hypothesis = torch.tensor(vocab[hypothesis], device=d2l.try_gpu())
+label = torch.argmax(net([premise.reshape((1, -1)),
+hypothesis.reshape((1, -1))]), dim=1)
+return 'entailment' if label == 0 else 'contradiction' if label == 1 \
+else 'neutral'
+We can use the trained model to obtain the natural language inference result for a sample
+pair of sentences.
+predict_snli(net, vocab, ['he', 'is', 'good', '.'], ['he', 'is', 'bad', '.'])
+'contradiction'
+16.5.3 Summary
+• The decomposable attention model consists of three steps for predicting the logical rela-
+tionships between premises and hypotheses: attending, comparing, and aggregating.
+• With attention mechanisms, we can align tokens in one text sequence to every token in
+the other, and vice versa. Such alignment is soft using weighted average, where ideally
+large weights are associated with the tokens to be aligned.
+• The decomposition trick leads to a more desirable linear complexity than quadratic com-
+plexity when computing attention weights.
+• We can use pretrained word vectors as the input representation for downstream natural
+language processing task such as natural language inference.
+16.5.4 Exercises
+1. Train the model with other combinations of hyperparameters. Can you get better accu-
+racy on the test set?
+2. What are major drawbacks of the decomposable attention model for natural language
+inference?
+3. Suppose that we want to get the level of semantical similarity (e.g., a continuous value
+between 0 and 1) for any pair of sentences. How shall we collect and label the dataset?
+Can you design a model with attention mechanisms?
+Discussions247.
+
+===== صفحة الكتاب 811 =====
+771
+Fine-Tuning BERT for Sequence-Level and Token-Level Applications
+16.6 Fine-Tuning BERT for Sequence-Level and
+Token-Level Applications
+In the previous sections of this chapter, we have designed different models for natural lan-
+guage processing applications, such as based on RNNs, CNNs, attention, and MLPs. These
+models are helpful when there is space or time constraint, however, crafting a specific model
+for every natural language processing task is practically infeasible. In Section 15.8, we in-
+troduced a pretraining model, BERT, that requires minimal architecture changes for a wide
+range of natural language processing tasks. On the one hand, at the time of its proposal,
+BERT improved the state of the art on various natural language processing tasks. On the
+other hand, as noted in Section 15.10, the two versions of the original BERT model come
+with 110 million and 340 million parameters. Thus, when there are sufficient computational
+resources, we may consider fine-tuning BERT for downstream natural language processing
+applications.
+In the following, we generalize a subset of natural language processing applications as
+sequence-level and token-level. On the sequence level, we introduce how to transform the
+BERT representation of the text input to the output label in single text classification and
+text pair classification or regression. On the token level, we will briefly introduce new ap-
+plications such as text tagging and question answering and shed light on how BERT can
+represent their inputs and get transformed into output labels. During fine-tuning, the “mini-
+mal architecture changes” required by BERT across different applications are the extra fully
+connected layers. During supervised learning of a downstream application, parameters of
+the extra layers are learned from scratch while all the parameters in the pretrained BERT
+model are fine-tuned.
+16.6.1 Single Text Classification
+Single text classification takes a single text sequence as input and outputs its classification
+result. Besides sentiment analysis that we have studied in this chapter, the Corpus of Lin-
+guistic Acceptability (CoLA) is also a dataset for single text classification, judging whether
+a given sentence is grammatically acceptable or not (Warstadt et al., 2019). For instance,
+“I should study.” is acceptable but “I should studying.” is not.
+Section 15.8 describes the input representation of BERT. The BERT input sequence unam-
+biguously represents both single text and text pairs, where the special classification token
+“<cls>” is used for sequence classification and the special classification token “<sep>”
+marks the end of single text or separates a pair of text. As shown in Fig. 16.6.1, in single
+text classification applications, the BERT representation of the special classification token
+“<cls>” encodes the information of the entire input text sequence. As the representation of
+the input single text, it will be fed into a small MLP consisting of fully connected (dense)
+layers to output the distribution of all the discrete label values.
+16.6.2 Text Pair Classification or Regression
+
+===== صفحة الكتاب 812 =====
+772
+Natural Language Processing: Applications
+t
+Fig. 16.6.1
+Fine-tuning BERT for single text classiﬁcation applications, such as sentiment analysis
+and testing linguistic acceptability. Suppose that the input single text has six tokens.
+We have also examined natural language inference in this chapter. It belongs to text pair
+classification, a type of application classifying a pair of text.
+Taking a pair of text as input but outputting a continuous value, semantic textual similarity
+is a popular text pair regression task. This task measures semantic similarity of sentences.
+For instance, in the Semantic Textual Similarity Benchmark dataset, the similarity score of
+a pair of sentences is an ordinal scale ranging from 0 (no meaning overlap) to 5 (meaning
+equivalence) (Cer et al., 2017). The goal is to predict these scores. Examples from the
+Semantic Textual Similarity Benchmark dataset include (sentence 1, sentence 2, similarity
+score):
+• “A plane is taking off.”, “An air plane is taking off.”, 5.000;
+• “A woman is eating something.”, “A woman is eating meat.”, 3.000;
+• “A woman is dancing.”, “A man is talking.”, 0.000.
+t
+Fig. 16.6.2
+Fine-tuning BERT for text pair classiﬁcation or regression applications, such as natural
+language inference and semantic textual similarity. Suppose that the input text pair has
+two and three tokens.
+Comparing with single text classification in Fig. 16.6.1, fine-tuning BERT for text pair
+classification in Fig. 16.6.2 is different in the input representation. For text pair regression
+tasks such as semantic textual similarity, trivial changes can be applied such as outputting
+
+===== صفحة الكتاب 813 =====
+773
+Fine-Tuning BERT for Sequence-Level and Token-Level Applications
+a continuous label value and using the mean squared loss: they are common for regres-
+sion.
+16.6.3 Text Tagging
+Now let’s consider token-level tasks, such as text tagging, where each token is assigned a
+label. Among text tagging tasks, part-of-speech tagging assigns each word a part-of-speech
+tag (e.g., adjective and determiner) according to the role of the word in the sentence. For
+example, according to the Penn Treebank II tag set, the sentence “John Smith ’s car is
+new” should be tagged as “NNP (noun, proper singular) NNP POS (possessive ending)
+NN (noun, singular or mass) VB (verb, base form) JJ (adjective)”.
+t
+Fig. 16.6.3
+Fine-tuning BERT for text tagging applications, such as part-of-speech tagging. Suppose
+that the input single text has six tokens.
+Fine-tuning BERT for text tagging applications is illustrated in Fig. 16.6.3. Comparing
+with Fig. 16.6.1, the only distinction lies in that in text tagging, the BERT representation
+of every token of the input text is fed into the same extra fully connected layers to output
+the label of the token, such as a part-of-speech tag.
+16.6.4 Question Answering
+As another token-level application, question answering reflects capabilities of reading com-
+prehension. For example, the Stanford Question Answering Dataset (SQuAD v1.1) consists
+of reading passages and questions, where the answer to every question is just a segment of
+text (text span) from the passage that the question is about (Rajpurkar et al., 2016). To
+explain, consider a passage “Some experts report that a mask’s efficacy is inconclusive.
+However, mask makers insist that their products, such as N95 respirator masks, can guard
+against the virus.” and a question “Who say that N95 respirator masks can guard against
+the virus?”. The answer should be the text span “mask makers” in the passage. Thus, the
+goal in SQuAD v1.1 is to predict the start and end of the text span in the passage given a
+pair of question and passage.
+To fine-tune BERT for question answering, the question and passage are packed as the first
+and second text sequence, respectively, in the input of BERT. To predict the position of the
+start of the text span, the same additional fully connected layer will transform the BERT
+
+===== صفحة الكتاب 814 =====
+774
+Natural Language Processing: Applications
+t
+Fig. 16.6.4
+Fine-tuning BERT for question answering. Suppose that the input text pair has two and
+three tokens.
+representation of any token from the passage of position 𝑖into a scalar score 𝑠𝑖. Such scores
+of all the passage tokens are further transformed by the softmax operation into a probability
+distribution, so that each token position 𝑖in the passage is assigned a probability 𝑝𝑖of being
+the start of the text span. Predicting the end of the text span is the same as above, except that
+parameters in its additional fully connected layer are independent from those for predicting
+the start. When predicting the end, any passage token of position 𝑖is transformed by the
+same fully connected layer into a scalar score 𝑒𝑖. Fig. 16.6.4 depicts fine-tuning BERT for
+question answering.
+For question answering, the supervised learning’s training objective is as straightforward as
+maximizing the log-likelihoods of the ground-truth start and end positions. When predict-
+ing the span, we can compute the score 𝑠𝑖+ 𝑒𝑗for a valid span from position 𝑖to position
+𝑗(𝑖≤𝑗), and output the span with the highest score.
+16.6.5 Summary
+• BERT requires minimal architecture changes (extra fully connected layers) for sequence-
+level and token-level natural language processing applications, such as single text clas-
+sification (e.g., sentiment analysis and testing linguistic acceptability), text pair classi-
+fication or regression (e.g., natural language inference and semantic textual similarity),
+text tagging (e.g., part-of-speech tagging), and question answering.
+• During supervised learning of a downstream application, parameters of the extra layers
+are learned from scratch while all the parameters in the pretrained BERT model are
+fine-tuned.
+16.6.6 Exercises
+1. Let’s design a search engine algorithm for news articles. When the system receives an
+query (e.g., “oil industry during the coronavirus outbreak”), it should return a ranked
+list of news articles that are most relevant to the query. Suppose that we have a huge pool
+of news articles and a large number of queries. To simplify the problem, suppose that
+the most relevant article has been labeled for each query. How can we apply negative
+sampling (see Section 15.2.1) and BERT in the algorithm design?
+
+===== صفحة الكتاب 815 =====
+775
+Natural Language Inference: Fine-Tuning BERT
+248
+2. How can we leverage BERT in training language models?
+3. Can we leverage BERT in machine translation?
+Discussions248.
+16.7 Natural Language Inference: Fine-Tuning
+BERT
+In earlier sections of this chapter, we have designed an attention-based architecture (in
+Section 16.5) for the natural language inference task on the SNLI dataset (as described
+in Section 16.4). Now we revisit this task by fine-tuning BERT. As discussed in Section
+16.6, natural language inference is a sequence-level text pair classification problem, and
+fine-tuning BERT only requires an additional MLP-based architecture, as illustrated in Fig.
+16.7.1.
+t
+Fig. 16.7.1
+This section feeds pretrained BERT to an MLP-based architecture for natural language
+inference.
+In this section, we will download a pretrained small version of BERT, then fine-tune it for
+natural language inference on the SNLI dataset.
+import json
+import multiprocessing
+import os
+import torch
+from torch import nn
+from d2l import torch as d2l
+16.7.1 Loading Pretrained BERT
+We have explained how to pretrain BERT on the WikiText-2 dataset in Section 15.9 and
+Section 15.10 (note that the original BERT model is pretrained on much bigger corpora).
+As discussed in Section 15.10, the original BERT model has hundreds of millions of param-
+eters. In the following, we provide two versions of pretrained BERT: “bert.base” is about
+
+===== صفحة الكتاب 816 =====
+776
+Natural Language Processing: Applications
+as big as the original BERT base model that requires a lot of computational resources to
+fine-tune, while “bert.small” is a small version to facilitate demonstration.
+d2l.DATA_HUB['bert.base'] = (d2l.DATA_URL + 'bert.base.torch.zip',
+'225d66f04cae318b841a13d32af3acc165f253ac')
+d2l.DATA_HUB['bert.small'] = (d2l.DATA_URL + 'bert.small.torch.zip',
+'c72329e68a732bef0452e4b96a1c341c8910f81f')
+Either pretrained BERT model contains a “vocab.json” file that defines the vocabulary set
+and a “pretrained.params” file of the pretrained parameters. We implement the following
+load_pretrained_model function to load pretrained BERT parameters.
+def load_pretrained_model(pretrained_model, num_hiddens, ffn_num_hiddens,
+num_heads, num_blks, dropout, max_len, devices):
+data_dir = d2l.download_extract(pretrained_model)
+# Define an empty vocabulary to load the predefined vocabulary
+vocab = d2l.Vocab()
+vocab.idx_to_token = json.load(open(os.path.join(data_dir, 'vocab.json')))
+vocab.token_to_idx = {token: idx for idx, token in enumerate(
+vocab.idx_to_token)}
+bert = d2l.BERTModel(
+len(vocab), num_hiddens, ffn_num_hiddens=ffn_num_hiddens, num_heads=4,
+num_blks=2, dropout=0.2, max_len=max_len)
+# Load pretrained BERT parameters
+bert.load_state_dict(torch.load(os.path.join(data_dir,
+'pretrained.params')))
+return bert, vocab
+To facilitate demonstration on most of machines, we will load and fine-tune the small ver-
+sion (“bert.small”) of the pretrained BERT in this section. In the exercise, we will show
+how to fine-tune the much larger “bert.base” to significantly improve the testing accu-
+racy.
+devices = d2l.try_all_gpus()
+bert, vocab = load_pretrained_model(
+'bert.small', num_hiddens=256, ffn_num_hiddens=512, num_heads=4,
+num_blks=2, dropout=0.1, max_len=512, devices=devices)
+Downloading ../data/bert.small.torch.zip from http://d2l-data.s3-accelerate.
+↩→amazonaws.com/bert.small.torch.zip...
+16.7.2 The Dataset for Fine-Tuning BERT
+For the downstream task natural language inference on the SNLI dataset, we define a cus-
+tomized dataset class SNLIBERTDataset. In each example, the premise and hypothesis
+form a pair of text sequence and is packed into one BERT input sequence as depicted in
+Fig. 16.6.2. Recall Section 15.8.4 that segment IDs are used to distinguish the premise
+and the hypothesis in a BERT input sequence. With the predefined maximum length of a
+BERT input sequence (max_len), the last token of the longer of the input text pair keeps
+
+===== صفحة الكتاب 817 =====
+777
+Natural Language Inference: Fine-Tuning BERT
+getting removed until max_len is met. To accelerate generation of the SNLI dataset for
+fine-tuning BERT, we use 4 worker processes to generate training or testing examples in
+parallel.
+class SNLIBERTDataset(torch.utils.data.Dataset):
+def __init__(self, dataset, max_len, vocab=None):
+all_premise_hypothesis_tokens = [[
+p_tokens, h_tokens] for p_tokens, h_tokens in zip(
+*[d2l.tokenize([s.lower() for s in sentences])
+for sentences in dataset[:2]])]
+self.labels = torch.tensor(dataset[2])
+self.vocab = vocab
+self.max_len = max_len
+(self.all_token_ids, self.all_segments,
+self.valid_lens) = self._preprocess(all_premise_hypothesis_tokens)
+print('read ' + str(len(self.all_token_ids)) + ' examples')
+def _preprocess(self, all_premise_hypothesis_tokens):
+pool = multiprocessing.Pool(4)
+# Use 4 worker processes
+out = pool.map(self._mp_worker, all_premise_hypothesis_tokens)
+all_token_ids = [
+token_ids for token_ids, segments, valid_len in out]
+all_segments = [segments for token_ids, segments, valid_len in out]
+valid_lens = [valid_len for token_ids, segments, valid_len in out]
+return (torch.tensor(all_token_ids, dtype=torch.long),
+torch.tensor(all_segments, dtype=torch.long),
+torch.tensor(valid_lens))
+def _mp_worker(self, premise_hypothesis_tokens):
+p_tokens, h_tokens = premise_hypothesis_tokens
+self._truncate_pair_of_tokens(p_tokens, h_tokens)
+tokens, segments = d2l.get_tokens_and_segments(p_tokens, h_tokens)
+token_ids = self.vocab[tokens] + [self.vocab['<pad>']] \
+* (self.max_len - len(tokens))
+segments = segments + [0] * (self.max_len - len(segments))
+valid_len = len(tokens)
+return token_ids, segments, valid_len
+def _truncate_pair_of_tokens(self, p_tokens, h_tokens):
+# Reserve slots for '<CLS>', '<SEP>', and '<SEP>' tokens for the BERT
+# input
+while len(p_tokens) + len(h_tokens) > self.max_len - 3:
+if len(p_tokens) > len(h_tokens):
+p_tokens.pop()
+else:
+h_tokens.pop()
+def __getitem__(self, idx):
+return (self.all_token_ids[idx], self.all_segments[idx],
+self.valid_lens[idx]), self.labels[idx]
+def __len__(self):
+return len(self.all_token_ids)
+After downloading the SNLI dataset, we generate training and testing examples by instan-
+
+===== صفحة الكتاب 818 =====
+778
+Natural Language Processing: Applications
+tiating the SNLIBERTDataset class. Such examples will be read in minibatches during
+training and testing of natural language inference.
+# Reduce `batch_size` if there is an out of memory error. In the original BERT
+# model, `max_len` = 512
+batch_size, max_len, num_workers = 512, 128, d2l.get_dataloader_workers()
+data_dir = d2l.download_extract('SNLI')
+train_set = SNLIBERTDataset(d2l.read_snli(data_dir, True), max_len, vocab)
+test_set = SNLIBERTDataset(d2l.read_snli(data_dir, False), max_len, vocab)
+train_iter = torch.utils.data.DataLoader(train_set, batch_size, shuffle=True,
+num_workers=num_workers)
+test_iter = torch.utils.data.DataLoader(test_set, batch_size,
+num_workers=num_workers)
+read 549367 examples
+read 9824 examples
+16.7.3 Fine-Tuning BERT
+As Fig. 16.6.2 indicates, fine-tuning BERT for natural language inference requires only an
+extra MLP consisting of two fully connected layers (see self.hidden and self.output
+in the following BERTClassifier class). This MLP transforms the BERT representation
+of the special “<cls>” token, which encodes the information of both the premise and the
+hypothesis, into three outputs of natural language inference: entailment, contradiction, and
+neutral.
+class BERTClassifier(nn.Module):
+def __init__(self, bert):
+super(BERTClassifier, self).__init__()
+self.encoder = bert.encoder
+self.hidden = bert.hidden
+self.output = nn.LazyLinear(3)
+def forward(self, inputs):
+tokens_X, segments_X, valid_lens_x = inputs
+encoded_X = self.encoder(tokens_X, segments_X, valid_lens_x)
+return self.output(self.hidden(encoded_X[:, 0, :]))
+In the following, the pretrained BERT model bert is fed into the BERTClassifier instance
+net for the downstream application. In common implementations of BERT fine-tuning,
+only the parameters of the output layer of the additional MLP (net.output) will be learned
+from scratch. All the parameters of the pretrained BERT encoder (net.encoder) and the
+hidden layer of the additional MLP (net.hidden) will be fine-tuned.
+net = BERTClassifier(bert)
+Recall that in Section 15.8 both the MaskLM class and the NextSentencePred class have
+parameters in their employed MLPs. These parameters are part of those in the pretrained
+BERT model bert, and thus part of parameters in net. However, such parameters are
+
+===== صفحة الكتاب 819 =====
+779
+Natural Language Inference: Fine-Tuning BERT
+only for computing the masked language modeling loss and the next sentence prediction
+loss during pretraining. These two loss functions are irrelevant to fine-tuning downstream
+applications, thus the parameters of the employed MLPs in MaskLM and NextSentencePred
+are not updated (staled) when BERT is fine-tuned.
+To allow parameters with stale gradients, the flag ignore_stale_grad=True is set in the
+step function of d2l.train_batch_ch13. We use this function to train and evaluate the
+model net using the training set (train_iter) and the testing set (test_iter) of SNLI.
+Due to the limited computational resources, the training and testing accuracy can be further
+improved: we leave its discussions in the exercises.
+lr, num_epochs = 1e-4, 5
+trainer = torch.optim.Adam(net.parameters(), lr=lr)
+loss = nn.CrossEntropyLoss(reduction='none')
+net(next(iter(train_iter))[0])
+d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
+loss 0.520, train acc 0.791, test acc 0.786
+10588.8 examples/sec on [device(type='cuda', index=0), device(type='cuda',␣
+↩→index=1)]
+16.7.4 Summary
+• We can fine-tune the pretrained BERT model for downstream applications, such as nat-
+ural language inference on the SNLI dataset.
+• During fine-tuning, the BERT model becomes part of the model for the downstream
+application. Parameters that are only related to pretraining loss will not be updated
+during fine-tuning.
+16.7.5 Exercises
+1. Fine-tune a much larger pretrained BERT model that is about as big as the original BERT
+base model if your computational resource allows. Set arguments in the load_pretrained_model
+function as: replacing ‘bert.small’ with ‘bert.base’, increasing values of num_hiddens=256,
+ffn_num_hiddens=512, num_heads=4, and num_blks=2 to 768, 3072, 12, and 12, re-
+
+===== صفحة الكتاب 820 =====
+780
+Natural Language Processing: Applications
+249
+spectively. By increasing fine-tuning epochs (and possibly tuning other hyperparame-
+ters), can you get a testing accuracy higher than 0.86?
+2. How to truncate a pair of sequences according to their ratio of length? Compare this
+pair truncation method and the one used in the SNLIBERTDataset class. What are their
+pros and cons?
+Discussions249.

@@ -1,0 +1,195 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch14.l1",
+   "id": "ex2.trace-verdict",
+   "code": "stages = ['build', 'static', 'test']\ncommit = {'build': 'ok', 'static': 'FAIL', 'test': 'ok'}\nverdict = 'green'\nfor s in stages:\n    print('%s: %s' % (s, commit[s]))\n    if commit[s] != 'ok':\n        verdict = 'red'\nprint(verdict)",
+   "answer": "build: ok\nstatic: FAIL\ntest: ok\nred"
+  },
+  {
+   "lesson": "swe.ch14.l2",
+   "id": "ex2.trace-blueroll",
+   "code": "serving = 'green'\nerrors = [7, 9, 8]\nlimit = 5\nif max(errors) > limit:\n    serving = 'blue'\nprint('serving: %s' % serving)",
+   "answer": "serving: blue"
+  },
+  {
+   "lesson": "swe.ch14.l3",
+   "id": "ex2.trace-records",
+   "code": "records = {\n    'clinic.example.com': ('A', '203.0.113.143'),\n    'www.example.com': ('CNAME', 'clinic.example.com'),\n}\nfor name, (rtype, value) in records.items():\n    print('%s %s -> %s' % (rtype, name, value))",
+   "answer": "A clinic.example.com -> 203.0.113.143\nCNAME www.example.com -> clinic.example.com"
+  },
+  {
+   "lesson": "swe.ch14.l4",
+   "id": "ex2.trace-sca",
+   "code": "manifest = {'flask': '2.0.1', 'requests': '2.25.1'}\nknown = ['requests 2.25.1']\nfor pkg in manifest:\n    line = '%s %s' % (pkg, manifest[pkg])\n    if line in known:\n        print('vulnerable: %s' % line)\n    else:\n        print('clean: %s' % line)",
+   "answer": "clean: flask 2.0.1\nvulnerable: requests 2.25.1"
+  },
+  {
+   "lesson": "swe.ch14.l5",
+   "id": "ex2.trace-verdict",
+   "code": "statuses = ['ok', 'ok', 'FAIL']\npassed = 0\nfor s in statuses:\n    if s != 'ok':\n        break\n    passed += 1\nprint('passed: %d of %d' % (passed, len(statuses)))\nprint('decision: %s' % ('promote' if passed == len(statuses) else 'rollback'))",
+   "answer": "passed: 2 of 3\ndecision: rollback"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch14.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "commits = {'c1': {'build': 'ok', 'test': 'ok'}, 'c2': {'build': 'ok', 'test': 'FAIL'}}\nfor cid in ['c1', 'c2']:\n    ok = 0\n    for stage in commits[cid]:\n        if commits[cid][stage] == 'ok':\n            ok += 1\n    print('%s stages: %d' % (cid, ok))"
+  },
+  {
+   "lesson": "swe.ch14.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "stages = ['build', 'static', 'test', 'package']\n\ncommits = {\n    'c1': {'build': 'ok', 'static': 'ok', 'test': 'FAIL', 'package': 'ok'},\n    'c2': {'build': 'ok', 'static': 'ok', 'test': 'ok', 'package': 'ok'},\n}\n\ndef run_pipeline(cid):\n    commit = commits[cid]\n    for stage in stages:\n        status = commit[stage]\n        print('%s: %s' % (stage, status))\n        if status == 'FAIL':\n            print('pipeline: red')\n            return 'red'\n    print('pipeline: green')\n    return 'green'\n\nrun_pipeline('c1')\nrun_pipeline('c2')"
+  },
+  {
+   "lesson": "swe.ch14.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "stages = ['build', 'static', 'test', 'package']\ncommits = {\n    'c1': {'build': 'ok', 'static': 'ok', 'test': 'ok', 'package': 'ok'},\n    'c2': {'build': 'ok', 'static': 'ok', 'test': 'FAIL', 'package': 'ok'},\n}\n\ndef run_pipeline(cid):\n    commit = commits[cid]\n    for stage in stages:\n        status = commit[stage]\n        print('%s: %s' % (stage, status))\n        if status == 'FAIL':\n            print('pipeline: red')\n            return 'red'\n    print('pipeline: green')\n    return 'green'\n\nrun_pipeline('c1')\nrun_pipeline('c2')\n\n# جرّب: انقل FAIL إلى build في c2 ولاحظ أقصر سجل ممكن — هذا معنى «أرخص فحص أولًا»\n# try: move the FAIL into c2's build and watch the shortest possible log — that is \"cheapest check first\"\n# جرّب: احذف سطري print('pipeline: red') وreturn 'red' وضع مكانها verdict = 'red' وطبع الحكم بعد الحلقة — ماذا يحدث لسجل c2؟\n# try: replace the pipeline: red print + return pair with verdict = 'red' printed after the loop — what happens to c2's log?\n# جرّب: أضف التزامًا ثالثًا فيه package وحدها FAIL — هل يصل الأثر إلى مرحلة الحزمة أصلًا؟\n# try: add a third commit failing only at package — does the artifact stage ever get reached?"
+  },
+  {
+   "lesson": "swe.ch14.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "pipeline = 'green'\nartifact = 'clinic-app:1.4.3'\nreleased = False\nartifact_ready = False\nif pipeline == 'green':\n    artifact_ready = True\nprint('artifact ready: %s' % artifact_ready)\nprint('released: %s' % released)"
+  },
+  {
+   "lesson": "swe.ch14.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "from zlib import crc32\n\nusers = ['ana', 'basil', 'maya', 'omar', 'dmitri', 'yara']\nfor u in users:\n    b = crc32(u.encode()) % 100\n    where = 'canary' if b < 10 else 'stable'\n    print('%s: bucket %d -> %s' % (u, b, where))\n\nsamples = [3, 5, 4, 6, 5]\nthreshold = 4.0\nmean = sum(samples) / len(samples)\npromoted = mean <= threshold\nprint('mean errors: %.1f' % mean)\nprint('promoted: %s' % promoted)"
+  },
+  {
+   "lesson": "swe.ch14.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "from zlib import crc32\n\ndef bucket(user_id):\n    return crc32(user_id.encode()) % 100\n\ndef canary_decision(samples, threshold):\n    mean = sum(samples) / len(samples)\n    promoted = mean <= threshold\n    print('mean: %.1f' % mean)\n    print('promoted: %s' % promoted)\n    return promoted\n\nprint('omar: bucket %d' % bucket('omar'))\nprint('maya: bucket %d' % bucket('maya'))\ncanary_decision([1, 2, 1, 2], 2.0)\n\n# جرّب: غيّر عينة واحدة في القائمة وشاهد mean يقفز فوق العتبة — قرار الترقية هش بهذا الشكل المرئي\n# try: change one sample and watch mean jump past the threshold — the decision flips visibly\n# جرّب: اجعل العتبة 1.5 فتصير الشريحة الصحية نفسها مرفوضة — أين يجب أن تسكن العتبة: في الحدس أم في رقم معلن؟\n# try: set the threshold to 1.5 and watch the same healthy slice get rejected — where should a threshold live: intuition or a declared number?\n# جرّب: جرّب دلائل أسماء أخرى — هل يقع الاسم نفسه في الدليل نفسه في كل تشغيل؟ لهذا crc32 وليس قائمة صدف\n# try: bucket other names — does the same name land in the same bucket every run? that is why crc32, not a lucky list"
+  },
+  {
+   "lesson": "swe.ch14.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "changed = {'src': True, 'deps': False, 'base': False}\nrebuilt = 0\nfor layer in ['base', 'deps', 'src']:\n    if changed[layer]:\n        rebuilt += 1\n        print('rebuild: %s' % layer)\n    else:\n        print('cached: %s' % layer)\nprint('rebuilt layers: %d' % rebuilt)"
+  },
+  {
+   "lesson": "swe.ch14.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "from zlib import crc32\n\nlayers = [\n    ('base', 'python:3.12-slim'),\n    ('deps', 'pip install -r requirements.txt'),\n    ('src', 'app.py v1.4.3'),\n]\nmanifest = {}\nfor name, content in layers:\n    manifest[name] = crc32(content.encode())\n\ndeployed = [\n    ('base', 'python:3.12-slim'),\n    ('deps', 'pip install -r requirements.txt'),\n    ('src', 'app.py v1.4.4'),\n]\n\nok = True\nfor name, content in deployed:\n    if crc32(content.encode()) != manifest[name]:\n        ok = False\n        print('layer drift: %s' % name)\nprint('same artifact: %s' % ok)"
+  },
+  {
+   "lesson": "swe.ch14.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "from datetime import datetime, timedelta\n\ndns = {\n    'clinic.example.com': {'value': '203.0.113.143', 'ttl': 300},\n    'www.example.com': {'value': 'clinic.example.com', 'ttl': 600},\n}\ncache = {}\n\ndef resolve(name, now):\n    if name in cache and now < cache[name][1]:\n        return (cache[name][0], 'hit')\n    rec = dns[name]\n    cache[name] = (rec['value'], now + timedelta(seconds=rec['ttl']))\n    return (rec['value'], 'miss')\n\nt0 = datetime(2025, 1, 1, 9, 0, 0)\nprint(resolve('clinic.example.com', t0))\nprint(resolve('clinic.example.com', t0 + timedelta(seconds=250)))\nprint(resolve('www.example.com', t0 + timedelta(seconds=700)))\n\n# جرّب: غيّر ttl في سجل clinic إلى 30 وأعد التشغيل — الاستعلام الثاني صار miss؟ هذه كلفة TTL القصيرة\n# try: change clinic's ttl to 30 and rerun — the second lookup became a miss? that is the cost of a short TTL\n# جرّب: قبل ترحيل مخطط له اخفض الـ TTL مبكرًا (لهذا) — وبعد التحويل ارفعه لتقليل حمل الاستعلامات\n# try: before a planned migration, lower the TTL early (this is why) — then raise it to cut lookup load\n# جرّب: أضف سجل MX أو TXT للنطاق واستعلمه — اسم ونوع وقيمة وTTL، هذا كل شيء\n# try: add an MX or TXT record and resolve it — name, type, value, TTL; that is all there is"
+  },
+  {
+   "lesson": "swe.ch14.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "outcomes = ['ok', 'ok', 'FAIL', 'ok', 'ok']\nfailed = 0\nfor o in outcomes:\n    if o == 'FAIL':\n        failed += 1\nprint('CFR: %.1f' % (failed / len(outcomes)))"
+  },
+  {
+   "lesson": "swe.ch14.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "from datetime import datetime\n\nlog = [\n    {'commit': datetime(2025, 3, 3, 9, 0), 'deploy': datetime(2025, 3, 3, 15, 0)},\n    {'commit': datetime(2025, 3, 4, 11, 0), 'deploy': datetime(2025, 3, 5, 10, 0)},\n    {'commit': datetime(2025, 3, 5, 14, 0), 'deploy': datetime(2025, 3, 7, 9, 0)},\n]\n\nhours = [(e['deploy'] - e['commit']).total_seconds() / 3600 for e in log]\nfor h in hours:\n    print('lead: %.2f days' % (h / 24))\nprint('lead time: %.1f days' % (sum(hours) / len(hours) / 24))"
+  },
+  {
+   "lesson": "swe.ch14.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "from datetime import datetime\n\nchanges = [\n    {'commit': datetime(2025, 3, 3, 9, 0), 'deploy': datetime(2025, 3, 4, 9, 0), 'failed': False},\n    {'commit': datetime(2025, 3, 5, 9, 0), 'deploy': datetime(2025, 3, 6, 9, 0), 'failed': True},\n]\n\ndef compute_dora(changes):\n    leads = [(c['deploy'] - c['commit']).total_seconds() / 3600 / 24 for c in changes]\n    failed = sum(1 for c in changes if c['failed'])\n    cfr = failed / len(changes)\n    print('lead time: %.1f days' % (sum(leads) / len(leads)))\n    print('CFR: %.1f' % cfr)\n    return (sum(leads) / len(leads), cfr)\n\ncompute_dora(changes)\n\n# جرّب: اجعل أحد الالتزامات ينتظر يومًا إضافيًّا — أي رقم تحرك: المتوسط أم CFR؟\n# try: make one commit wait an extra day — which number moved: the mean or the CFR?\n# جرّب: علّم النشرتين معًا failed: True — CFR يقفز إلى 1.0 وهو حد إنذار صريح\n# try: mark both deployments failed: True — CFR jumps to 1.0, a loud warning threshold\n# جرّب: أضف نشرًا ثالثًا صحيًّا سريعًا وشاهد CFR يهبط بينما زمن القيادة يتحسن — لوحة تُحسَّن معًا لا رخيصة\n# try: add a third healthy fast deploy and watch CFR drop while lead time improves — a dashboard improved together, not cheaply"
+  },
+  {
+   "lesson": "swe.ch14.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "from zlib import crc32\n\nb = crc32('maya'.encode()) % 100\nprint('bucket: %d' % b)\nprint('slice: %s' % ('canary' if b < 10 else 'stable'))"
+  },
+  {
+   "lesson": "swe.ch14.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "from datetime import datetime\n\nstages = ['build', 'canary']\nruns = {'r1': {'build': 'ok'}, 'r2': {'build': 'ok'}}\ncanary_errors = {'r1': [1, 2, 1, 2, 1], 'r2': [4, 6, 5]}\nERROR_THRESHOLD = 4.0\nhistory = [\n    {'commit': datetime(2025, 3, 10, 9, 0), 'deploy': datetime(2025, 3, 10, 21, 0), 'failed': False},\n    {'commit': datetime(2025, 3, 11, 9, 0), 'deploy': datetime(2025, 3, 12, 21, 0), 'failed': True},\n]\n\ndef deliver(run_id):\n    run = runs[run_id]\n    passed = 0\n    for stage in stages:\n        if stage == 'canary':\n            samples = canary_errors[run_id]\n            status = 'ok' if sum(samples) / len(samples) <= ERROR_THRESHOLD else 'FAIL'\n        else:\n            status = run.get(stage, 'skipped')\n        print('%s: %s' % (stage, status))\n        if status != 'ok':\n            print('stopped: %s' % stage)\n            break\n        passed += 1\n    decision = 'promote' if passed == len(stages) else 'rollback'\n    print('stages passed: %d / decision: %s' % (passed, decision))\n\ndeliver('r1')\ndeliver('r2')\n\nleads = [(c['deploy'] - c['commit']).total_seconds() / 3600 / 24 for c in history]\nfailed = sum(1 for c in history if c['failed'])\nprint('lead time: %.1f days' % (sum(leads) / len(leads)))\nprint('deploys: %d failed: %d' % (len(history), failed))\nprint('CFR: %.1f' % (failed / len(history)))"
+  },
+  {
+   "lesson": "swe.ch14.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "from datetime import datetime\n\nstages = ['build', 'test', 'canary']\nruns = {\n    'r1': {'build': 'ok', 'test': 'ok'},\n    'r2': {'build': 'ok', 'test': 'FAIL'},\n    'r3': {'build': 'ok', 'test': 'ok'},\n}\ncanary_errors = {'r1': [1, 2, 1, 2, 1], 'r2': [4, 6, 5], 'r3': [4, 6, 5]}\nERROR_THRESHOLD = 4.0\nhistory = [\n    {'commit': datetime(2025, 3, 10, 9, 0), 'deploy': datetime(2025, 3, 10, 21, 0), 'failed': False},\n    {'commit': datetime(2025, 3, 11, 9, 0), 'deploy': datetime(2025, 3, 13, 9, 0), 'failed': True},\n    {'commit': datetime(2025, 3, 12, 9, 0), 'deploy': datetime(2025, 3, 12, 21, 0), 'failed': False},\n]\n\ndef deliver(run_id):\n    run = runs[run_id]\n    passed = 0\n    for stage in stages:\n        if stage == 'canary':\n            samples = canary_errors[run_id]\n            status = 'ok' if sum(samples) / len(samples) <= ERROR_THRESHOLD else 'FAIL'\n        else:\n            status = run.get(stage, 'skipped')\n        print('%s: %s' % (stage, status))\n        if status != 'ok':\n            print('stopped: %s' % stage)\n            break\n        passed += 1\n    decision = 'promote' if passed == len(stages) else 'rollback'\n    print('stages passed: %d / decision: %s' % (passed, decision))\n\ndef dora_summary(history):\n    leads = [(c['deploy'] - c['commit']).total_seconds() / 3600 / 24 for c in history]\n    failed = sum(1 for c in history if c['failed'])\n    print('lead time: %.1f days' % (sum(leads) / len(leads)))\n    print('deploys: %d failed: %d' % (len(history), failed))\n    print('CFR: %.1f' % (failed / len(history)))\n\nfor run_id in ['r1', 'r2', 'r3']:\n    deliver(run_id)\ndora_summary(history)\n\n# جرّب: اجعل عينات r1 مريضة [4, 6, 5] — canary يقف حاجزًا عند آخر مرحلة: stopped: canary والقرار rollback\n# try: make r1's samples sick [4, 6, 5] — the canary gate trips at the last stage: stopped: canary, decision rollback\n# جرّب: ارفع ERROR_THRESHOLD إلى 6.0 — فجأة الكناري المريض يُرقَّى: العتبة سياسة مكتوبة تُراجَع لا حقيقة سماوية\n# try: raise ERROR_THRESHOLD to 6.0 — suddenly the sick canary promotes: the threshold is written, reviewable policy, not heaven's truth\n# جرّب: علّم نشرتَي history معًا failed: True — CFR يقفز إلى 0.7 ويتهم خطك لا زملاءك\n# try: mark two history deploys failed: True — CFR jumps to 0.7 and indicts your pipeline, not your teammates"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch14.l1",
+   "id": "ex3.mcq-red-build",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch14.l2",
+   "id": "ex3.mcq-delivery",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch14.l2",
+   "id": "ex4.numeric-blast",
+   "answer": "4000",
+   "solution": "4000"
+  },
+  {
+   "lesson": "swe.ch14.l3",
+   "id": "ex3.mcq-config",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch14.l4",
+   "id": "ex3.mcq-rework",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch14.l4",
+   "id": "ex4.numeric-mttr",
+   "answer": "2.5",
+   "solution": "2.5"
+  },
+  {
+   "lesson": "swe.ch14.l5",
+   "id": "ex3.mcq-rollforward",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch14.l5",
+   "id": "ex4.numeric-leadtime",
+   "answer": "1.25",
+   "solution": "1.25"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch14.l1",
+   "id": "ex4.fill-revert",
+   "answer": "revert"
+  },
+  {
+   "lesson": "swe.ch14.l3",
+   "id": "ex4.fill-volume",
+   "answer": "volume"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch14.l5",
+   "id": "ex5.debug-gateless",
+   "brokenCode": "stages = ['build', 'test', 'canary']\nruns = {\n    'r1': {'build': 'ok', 'test': 'ok'},\n    'r2': {'build': 'ok', 'test': 'FAIL'},\n}\ncanary_errors = {'r1': [1, 2, 1, 2, 1], 'r2': [1, 1, 1]}\nERROR_THRESHOLD = 4.0\n\ndef deliver(run_id):\n    run = runs[run_id]\n    passed = 0\n    for stage in stages:\n        if stage == 'canary':\n            samples = canary_errors[run_id]\n            status = 'ok' if sum(samples) / len(samples) <= ERROR_THRESHOLD else 'FAIL'\n        else:\n            status = run.get(stage, 'skipped')\n        print('%s: %s' % (stage, status))\n        passed = passed + 1\n    decision = 'promote' if passed == len(stages) else 'rollback'\n    print('stages passed: %d / decision: %s' % (passed, decision))\n\ndeliver('r1')\ndeliver('r2')"
+  }
+ ]
+}

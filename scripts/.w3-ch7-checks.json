@@ -1,0 +1,157 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch7.l1",
+   "id": "ex2.trace-layers",
+   "code": "def bottom(k):\n    return \"B=\" + k\ndef middle(k):\n    return \"M(\" + bottom(k) + \")\"\ndef top(k):\n    return \"T(\" + middle(k) + \")\"\nprint(top(\"x\"))\nprint(middle(\"y\"))\n",
+   "answer": "T(M(B=x))\nM(B=y)"
+  },
+  {
+   "lesson": "swe.ch7.l2",
+   "id": "ex3.trace-notify",
+   "code": "state = {\"status\": \"booked\"}\ndef notify():\n    print(\"display: \" + state[\"status\"])\ndef set_status(new):\n    state[\"status\"] = new\n    notify()\nset_status(\"arrived\")\nset_status(\"done\")\n",
+   "answer": "display: arrived\ndisplay: done"
+  },
+  {
+   "lesson": "swe.ch7.l3",
+   "id": "ex2.trace-roundtrip",
+   "code": "def server(req, book):\n    if req == \"GET\":\n        return \"200 count=\" + str(book[\"n\"])\n    if req == \"POST\":\n        book[\"n\"] += 1\n        return \"201 count=\" + str(book[\"n\"])\n    return \"400\"\nbook = {\"n\": 2}\nfor req in [\"GET\", \"POST\", \"GET\"]:\n    print(req, \"->\", server(req, book))\n",
+   "answer": "GET -> 200 count=2\nPOST -> 201 count=3\nGET -> 200 count=3"
+  },
+  {
+   "lesson": "swe.ch7.l4",
+   "id": "ex2.trace-edition",
+   "code": "FLAGS = {\"video\": True, \"tax_eu\": False, \"dark\": True}\ndef edition(wanted):\n    parts = [\"core\"]\n    for f in wanted:\n        if FLAGS.get(f, False):\n            parts.append(f)\n    return \"+\".join(parts)\nprint(edition([\"video\", \"tax_eu\", \"dark\"]))\n",
+   "answer": "core+video+dark"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch7.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "def presentation(x):\n    return \"P(\" + application(x) + \")\"\ndef application(x):\n    return \"A(\" + domain(x) + \")\"\ndef domain(x):\n    return \"D=\" + str(x * 2)\nprint(presentation(5))\n"
+  },
+  {
+   "lesson": "swe.ch7.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "# three layers, one request, dependencies point DOWN only\ndef data_layer(query):\n    rows = {\"appts\": 3}          # the store (shared data lives here)\n    return \"data->rows=\" + str(rows[query])\n\ndef logic_layer(query):\n    return \"logic->\" + data_layer(query)   # uses the layer below\n\ndef ui_layer(query):\n    return \"ui->\" + logic_layer(query)     # uses the layer below\n\nprint(ui_layer(\"appts\"))\n"
+  },
+  {
+   "lesson": "swe.ch7.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "def data_layer(query):\n    # try swapping this store: same interface, different implementation\n    rows = {\"appts\": 3}\n    return \"data->rows=\" + str(rows[query])\n\ndef logic_layer(query):\n    return \"logic->\" + data_layer(query)\n\ndef ui_layer(query):\n    return \"ui->\" + logic_layer(query)\n\nprint(ui_layer(\"appts\"))\n# experiment: make data_layer read from a different store and rerun.\n# ui_layer and logic_layer should not change at all. Then insert a\n# cache layer between them returning \"cache->\" + data_layer(query).\n"
+  },
+  {
+   "lesson": "swe.ch7.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "model = {\"count\": 0}\ndef view(m):\n    return \"count=\" + str(m[\"count\"])\ndef controller(m, events):\n    for e in events:\n        m[\"count\"] += 1 if e == \"+\" else -1\n        print(view(m))\ncontroller(model, [\"+\", \"+\"])\n"
+  },
+  {
+   "lesson": "swe.ch7.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "class Model:\n    def __init__(self):\n        self.count = 0\n        self.views = []\n    def subscribe(self, v):\n        self.views.append(v)\n    def set(self, n):\n        self.count = n\n        for v in self.views:\n            print(v(self))     # the model announces; views redraw\n\ndef text_view(m):\n    return \"text: count=\" + str(m.count)\n\ndef bar_view(m):\n    return \"bar: \" + \"#\" * m.count\n\ndef controller(m, events):\n    for e in events:\n        if e == \"+\":\n            m.set(m.count + 1)\n        else:\n            m.set(m.count - 1)\n\nm = Model()\nm.subscribe(text_view)\nm.subscribe(bar_view)\ncontroller(m, [\"+\", \"+\", \"-\"])\n"
+  },
+  {
+   "lesson": "swe.ch7.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "class Model:\n    def __init__(self):\n        self.items = 0\n        self.views = []\n    def subscribe(self, v):\n        self.views.append(v)\n    def set(self, n):\n        self.items = n\n        for v in self.views:\n            print(v(self))\n\ndef text_view(m):\n    return \"cart: items=\" + str(m.items)\n\ndef bar_view(m):\n    return \"stock: \" + \"#\" * m.items\n\ndef controller(m, events):\n    for e in events:\n        m.set(m.items + (1 if e == \"add\" else -1))\n\nm = Model()\nm.subscribe(text_view)\nm.subscribe(bar_view)\ncontroller(m, [\"add\", \"add\", \"add\", \"remove\"])\n# experiment: subscribe a THIRD view, or add events. The model never changes.\n"
+  },
+  {
+   "lesson": "swe.ch7.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "stream = [\"a\", \"b\", \"c\"]\ns1 = [x + \"!\" for x in stream]\ns2 = [x.upper() for x in s1]\nprint(\"|\".join(s2))\n"
+  },
+  {
+   "lesson": "swe.ch7.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "# three filters, two pipes; each stage knows only the data shape\nLOG = [\"10.0.0.1 404 /a\", \"10.0.0.2 200 /b\", \"10.0.0.1 404 /c\", \"10.0.0.3 404 /d\"]\n\ndef select_404(rows):            # filter: keep the 404 lines\n    return [r for r in rows if \" 404 \" in r]\n\ndef take_ip(rows):               # filter: project the client ip\n    return [r.split()[0] for r in rows]\n\ndef tally(ips):                  # filter: aggregate per ip\n    counts = {}\n    for ip in ips:\n        counts[ip] = counts.get(ip, 0) + 1\n    return counts\n\nstage1 = select_404(LOG)\nstage2 = take_ip(stage1)\nstage3 = tally(stage2)\nprint(\"1:\", stage1)\nprint(\"2:\", stage2)\nprint(\"3:\", stage3)\n"
+  },
+  {
+   "lesson": "swe.ch7.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "def server(req, book):\n    # tiny REST-ish contract: GET reads, POST books, PATCH arrives\n    if req == \"GET\":\n        return \"200 count=\" + str(book[\"n\"])\n    if req == \"POST\":\n        book[\"n\"] += 1\n        return \"201 count=\" + str(book[\"n\"])\n    if req == \"PATCH\":\n        return \"204 arrived\"\n    return \"400\"\nbook = {\"n\": 2}\nfor req in [\"GET\", \"POST\", \"PATCH\", \"GET\"]:\n    print(req, \"->\", server(req, book))\n# experiment: resend the POST twice (networks retry!). What happens to count?\n# POST is not idempotent — protect writes that must not repeat.\n"
+  },
+  {
+   "lesson": "swe.ch7.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "need = \"stream\"\nCATALOG = {\"stream\": \"pipe-filter\", \"ui\": \"mvc\", \"shared\": \"client-server\"}\nprint(CATALOG[need])\n"
+  },
+  {
+   "lesson": "swe.ch7.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "COMMON = [\"core\", \"auth\"]          # commonality: every product has these\n\ndef edition(extra):\n    parts = COMMON + [f for f in extra if f]   # variability by SELECTION\n    return \"+\".join(parts)\n\nprint(edition([]))\nprint(edition([\"video\", \"tax_eu\"]))\n"
+  },
+  {
+   "lesson": "swe.ch7.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "RULES = [\n    (\"pipe-filter\", (\"stream\",)),\n    (\"client-server\", (\"shared\", \"remote\")),\n    (\"mvc\", (\"ui\",)),\n    (\"shared-data\", (\"shared\",)),     # add more rules and scenarios\n]\n\ndef select(traits):\n    for name, needs in RULES:\n        if all(traits.get(t, False) for t in needs):\n            return name\n    return \"layered\"\n\nprint(select({\"stream\": True, \"ui\": False, \"shared\": False, \"remote\": False}))\nprint(select({\"ui\": True, \"stream\": False, \"shared\": False, \"remote\": False}))\nprint(select({\"shared\": True, \"remote\": False, \"stream\": False, \"ui\": False}))\n# experiment: S4 — a clinic dashboard needs ui AND shared. Which rule wins?\n# reorder RULES and watch the verdict change.\n"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch7.l1",
+   "id": "ex3.mcq-strict",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch7.l2",
+   "id": "ex2.mcq-model",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch7.l3",
+   "id": "ex3.mcq-who",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch7.l4",
+   "id": "ex3.mcq-commonality",
+   "answer": "b",
+   "solution": "b"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch7.l1",
+   "id": "ex4.fill-interface",
+   "answer": "interface"
+  },
+  {
+   "lesson": "swe.ch7.l2",
+   "id": "ex4.fill-humble",
+   "answer": "humble"
+  },
+  {
+   "lesson": "swe.ch7.l3",
+   "id": "ex4.fill-pipe",
+   "answer": "pipe"
+  },
+  {
+   "lesson": "swe.ch7.l4",
+   "id": "ex4.fill-variability",
+   "answer": "variability"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch7.l4",
+   "id": "ex5.debug-wrong-layer",
+   "brokenCode": "# BROKEN: the catalog's trait -> pattern wiring is crossed.\n# A dataflow need (stream) gets a UI pattern; a UI need gets a pipeline.\nRULES = [\n    (\"pipe-filter\", \"ui\"),\n    (\"mvc\", \"stream\"),\n    (\"client-server\", \"shared\"),\n]\n\ndef select(traits):\n    for name, key in RULES:\n        if traits.get(key, False):\n            return name\n    return \"layered\"\n\nSCENARIOS = [\n    (\"S1\", {\"stream\": True, \"ui\": False, \"shared\": False, \"remote\": False}),\n    (\"S2\", {\"shared\": True, \"remote\": True, \"stream\": False, \"ui\": False}),\n    (\"S3\", {\"ui\": True, \"stream\": False, \"shared\": False, \"remote\": False}),\n]\nEXPECTED = {\"S1\": \"pipe-filter\", \"S2\": \"client-server\", \"S3\": \"mvc\"}\n\nhits = 0\nfor sid, traits in SCENARIOS:\n    pick = select(traits)\n    print(sid + \": \" + pick)\n    if pick == EXPECTED[sid]:\n        hits += 1\nprint(\"matched: %d/%d\" % (hits, len(SCENARIOS)))\n"
+  }
+ ]
+}

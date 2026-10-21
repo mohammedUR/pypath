@@ -1,0 +1,219 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * d2l.ch15.l1 — "From One-Hot to Skip-Gram"
+ * من one-hot إلى skip-gram
+ * Aligned with D2L ch15 s1 (Word Embedding / word2vec) + s2 (Approximate
+ * Training) + s3 (The Dataset for Pretraining Word Embeddings). All expression
+ * is original — a paraphrase of the source's ideas, never a verbatim
+ * translation. Runnable design: skip-gram center/context pairs from a tiny
+ * fixed sentence (offsets as literals), subsampling discard probabilities,
+ * and a negative-sampling loss with FIXED noise candidates. Every literal
+ * verified under CPython 3. Deterministic only.
+ */
+const lesson = {
+  id: 'd2l.ch15.l1',
+  version: 1,
+  part: 'II',
+  track: 'A5',
+  book: 'D2L',
+  chapter: 15,
+  title: {
+    ar: 'من one-hot إلى skip-gram',
+    en: 'From One-Hot to Skip-Gram',
+  },
+  estimatedMinutes: 30,
+  prerequisites: ['d2l.ch10.l4'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'كلمة «بنك» و«نهر» و«قرض» تسكن جميعها في متجه واحد بطول المفردات لو استخدمنا one-hot: متجهات عملاقة، وأي كلمتين مختلفتين بينهما تشابه صفر تمامًا. فكرة هذا الدرس أن النص نفسه يعطينا الإشراف مجانًا: كل كلمة مركز تنبأ بجيرانها في نافذة صغيرة. سنبني أزواج (مركز، سياق) من جملة ثابتة، ونرى لماذا الـ softmax الكامل مكلف جدًا، وكيف تختصرها العينات السالبة، ثم كيف يُقلَّص النص نفسه قبل التدريب.',
+        en: 'The words "bank", "river", and "loan" all live in one giant vocabulary-sized vector if we use one-hot: huge vectors, and the similarity between any two different words is exactly zero. The idea of this lesson is that text itself gives us supervision for free: every center word predicts its neighbours inside a small window. We will build (center, context) pairs from a fixed sentence, see why the full softmax is prohibitively expensive, how negative sampling cuts that cost, and how the text itself is slimmed down before training.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'skip-gram، ثم تقريباته، ثم بياناته', en: 'Skip-gram, then its approximations, then its data' },
+      chunks: [
+        {
+          ar: 'تمثيل one-hot لمفردات بحجم N متجه بطول N فيه 1 واحدة — لا يعبر عن أي تشابه، وتباعد أي كلمتين مختلفتين صفر. word2vec يحل هذا بتدريب ذاتي الإشراف: نموذج skip-gram يفترض أن الكلمة المركزية تولد كلمات السياق حولها ضمن نافذة بحجم m، وباستقلال شرطي: P(السياق | المركز) = حاصل ضرب P(w_o | w_c) لكل جار. لكل كلمة متجهان بطول d: v_i حين تكون مركزًا وu_i حين تكون سياقًا، والاحتمال softmax على جداء قياسي: P(w_o|w_c) = exp(u_o·v_c) / مجموع exp(u_i·v_c) على كل المفردات. تقليل −log P على كل الأزواج يجعل الكلمات المتشابهة تجاور بعضها في الفضاء.',
+          en: 'A one-hot vector for a vocabulary of size N is a length-N vector with a single 1 — it expresses no similarity at all: the cosine between any two different words is 0. word2vec fixes this with self-supervision: the skip-gram model assumes a center word generates its surrounding context words within a window of size m, conditionally independently: P(context | center) is the product of P(w_o | w_c) over neighbours. Each word gets two d-dimensional vectors: v_i as a center and u_i as context, and the probability is a softmax over dot products: P(w_o|w_c) = exp(u_o·v_c) / sum of exp(u_i·v_c) over the vocabulary. Minimizing −log P over all pairs pulls similar words together in space.',
+        },
+        {
+          ar: 'المشكلة: كل تدرج يمر على المفردات كلها (عشرات إلى ملايين الكلمات) لأن مقام softmax يتوسع على V كلها. التدريب التقريبي يغير الهدف بدل تسريع الحساب فقط. العينات السالبة تعيد صياغة المسألة تصنيفا ثنائيا: الزوج الحقيقي (مركز، سياق) من نافذة واحدة يعطى التسمية D=1 باحتمال σ(u_o·v_c)، وK كلمات ضجيج من توزيع معرف مسبقا (لا من النافذة) تعطى D=0؛ الخسارة −log σ(u_o·v_c) − مجموع −log σ(−u_k·v_c). التكلفة لكل زوج تصبح K+1 حدا بدل |V|. بديل آخر: hierarchical softmax يمر على شجرة ثنائية عمقها log|V| فقط.',
+          en: 'The problem: every gradient sweeps the entire vocabulary (hundreds of thousands to millions of words) because the softmax denominator expands over all of V. Approximate training changes the objective rather than merely speeding up computation. Negative sampling reformulates the task as binary classification: a true (center, context) pair from the same window gets label D=1 with probability σ(u_o·v_c), and K noise words drawn from a predefined distribution (never from the window) get D=0; the loss is −log σ(u_o·v_c) − Σ −log σ(−u_k·v_c). The per-pair cost becomes K+1 terms instead of |V|. An alternative: hierarchical softmax walks a binary tree of depth only log|V|.',
+        },
+        {
+          ar: 'المجموعة القياسية للتدريب المسبق هنا هي PTB (جمل من Wall Street Journal): نبني مفردات تستبدل أي كلمة يتكرر قياسها أقل من 10 مرات بـ <unk> فيصبح الحجم 6719. ثم subsampling: الكلمات عالية التكرار مثل «the» تحذف باحتمال P(w_i) = max(1 − sqrt(t/f(w_i)), 0) حيث f النسبة التكرارية وt عتبة (مثل 10⁻⁴) — فكلما زاد تكرار الكلمة زاد احتمال حذفها، والكلمات النادرة تبقى. بعد الحذف نستخرج أزواج المركز/السياق بكل الإزاحات j من −m إلى m عدا 0، ونحشو السياقات والضجيج إلى طول ثابت بـ <pad> ليكونا دفعات مستطيلة.',
+          en: 'The standard pretraining corpus here is PTB (Wall Street Journal sentences): we build a vocabulary that replaces any word seen fewer than 10 times with <unk>, giving size 6719. Then subsampling: high-frequency words like "the" are dropped with probability P(w_i) = max(1 − sqrt(t/f(w_i)), 0), where f is the relative frequency and t a threshold (e.g. 10⁻⁴) — the more frequent the word, the higher its discard probability, while rare words stay. After that we extract center/context pairs at every offset j from −m to m except 0, and pad contexts and noise words to a fixed length with <pad> so they form rectangular batches.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: {
+        ar: 'أزواج من جملة واحدة، عتبات الحذف، وخسارة العينات السالبة',
+        en: 'Pairs from one sentence, discard thresholds, and the negative-sampling loss',
+      },
+      code: "import math\n\ndef sig(x):\n    return 1 / (1 + math.exp(-x))\n\ndef skipgram_pairs(tokens, size):\n    pairs = []\n    for t in range(len(tokens)):\n        for j in range(-size, size + 1):\n            if j == 0:\n                continue\n            o = t + j\n            if 0 <= o < len(tokens):\n                pairs.append((t, o))\n    return pairs\n\nprint('pairs size=2:', skipgram_pairs([0, 1, 2, 3, 4], 2))\nprint('count size=2:', len(skipgram_pairs([0, 1, 2, 3, 4], 2)))\nprint('count size=1:', len(skipgram_pairs([0, 1, 2, 3, 4], 1)))\n\ndef discard_prob(f, t=1e-4):\n    return max(1 - math.sqrt(t / f), 0.0)\n\nfor w, f in [('the', 0.5), ('chip', 0.002), ('intel', 0.00005)]:\n    print('P(discard %s) f=%.5f -> %.9f' % (w, f, discard_prob(f)))\n\ndef dot(a, b):\n    return sum(x * y for x, y in zip(a, b))\n\n# one true pair (center=loves, context=man) + fixed noise candidates\nv_c, u_o = [0.6, -0.2], [0.3, 0.4]\nnoise = [('chips', [-0.5, 0.1]), ('stock', [0.2, -0.3]), ('market', [-0.1, -0.4])]\ns = dot(v_c, u_o)\nloss = -math.log(sig(s))\nprint('pos s=%.6f sigma=%.9f' % (s, sig(s)))\nfor w, u in noise:\n    s = dot(v_c, u)\n    loss += -math.log(sig(-s))\n    print('noise %s s=%.6f sigma(-s)=%.9f' % (w, s, sig(-s)))\nprint('negative-sampling loss = %.9f' % loss)",
+      explanation: {
+        ar: 'على الجملة «the man loves his son» (فهارس 0..4) بنافذة 2 ينتج 14 زوجا: المركز 0 يعطي (0,1) و(0,2)، والمركز 2 وحده يعطي أربعة أزواج، وبنافذة 1 تنخفض إلى 8 — عدد الأزواج يتناسب مع حجم النافذة. الاحتمالات المحذوفة: f=0.5 → 0.985857864 (تحذف شبه دائمًا)، f=0.002 → 0.776393202، f=0.00005 → 0.000000000 (أقل من العتبة فتبقى). خسارة الزوج الحقيقي: σ(0.1)=0.524979187، وثلاث كلمات ضجيج ثابتة بدرجات −0.32 و0.18 و0.02، فتكون الخسارة الكلية 2.680678502 — لاحظ أن كلمات الضجيج لا تحتاج درجات سالبة؛ يكفي أن يكون σ(−s) قريبا من 1.',
+        en: 'On the sentence "the man loves his son" (indices 0..4) with window 2 we get 14 pairs: center 0 gives (0,1) and (0,2), center 2 alone gives four pairs, and window 1 drops the count to 8 — the pair count scales with the window. Discard probabilities: f=0.5 → 0.985857864 (almost always dropped), f=0.002 → 0.776393202, f=0.00005 → 0.000000000 (below the threshold, so it stays). For the true pair: σ(0.1)=0.524979187, and three fixed noise words score −0.32, 0.18 and 0.02, giving a total loss of 2.680678502 — note noise words need no negative scores; it suffices that σ(−s) is near 1.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.pairs-subsampling',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'نفذ دالتين: skipgram_pairs(tokens, size) تعيد قائمة أزواج فهارس (المركز، السياق) بترتيب الفهارس ومن j=−size إلى size مع تجاوز j=0 والخروج عن الحدود؛ وdiscard_prob(f, t=1e-4) تعيد max(1 − sqrt(t/f), 0). جربهما على قائمة الفهارس [0, 1, 2, 3, 4].',
+        en: 'Implement two functions: skipgram_pairs(tokens, size) returning (center, context) index pairs in index order for j from −size to size, skipping j=0 and out-of-bounds; and discard_prob(f, t=1e-4) returning max(1 − sqrt(t/f), 0). Try them on the index list [0, 1, 2, 3, 4].',
+      },
+      starterCode: "import math\n\ndef skipgram_pairs(tokens, size):\n    # TODO: for each center t, for each offset j (-size..size, j != 0),\n    # append (t, t+j) when t+j is a valid index\n    ...\n\ndef discard_prob(f, t=1e-4):\n    # TODO: subsampling discard probability, floored at 0\n    ...\n",
+      solution: "import math\n\ndef skipgram_pairs(tokens, size):\n    pairs = []\n    for t in range(len(tokens)):\n        for j in range(-size, size + 1):\n            if j == 0:\n                continue\n            o = t + j\n            if 0 <= o < len(tokens):\n                pairs.append((t, o))\n    return pairs\n\ndef discard_prob(f, t=1e-4):\n    return max(1 - math.sqrt(t / f), 0.0)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'نافذة 2 تعطي 14 زوجا بالترتيب الصحيح', en: 'Window 2 gives 14 pairs in the right order' },
+          code: "p = skipgram_pairs([0, 1, 2, 3, 4], 2)\nassert len(p) == 14, 'window 2 must give 14 pairs | got %r' % len(p)\nassert p[0] == (0, 1) and p[1] == (0, 2), 'first pairs must be (0,1) then (0,2) | got %r' % p[:2]\nassert (2, 4) in p and (4, 2) in p, 'distance-2 pairs must exist in both directions'",
+          expected: '14 pairs, first (0,1), (0,2)',
+        },
+        {
+          id: 't2',
+          name: { ar: 'نافذة 1 تنخفض إلى 8 أزواج', en: 'Window 1 drops to 8 pairs' },
+          code: "p1 = skipgram_pairs([0, 1, 2, 3, 4], 1)\nassert len(p1) == 8, 'window 1 must give 8 pairs | got %r' % len(p1)\nassert p1 == [(0, 1), (1, 0), (1, 2), (2, 1), (2, 3), (3, 2), (3, 4), (4, 3)], 'window-1 pairs must hug the neighbours | got %r' % p1",
+          expected: '8 adjacent pairs',
+        },
+        {
+          id: 't3',
+          name: { ar: 'احتمال الحذف: عال للكلمات المتكررة، وصفر للنادرة', en: 'Discard probability: high for frequent words, zero for rare' },
+          code: "assert abs(discard_prob(0.5) - 0.985857864) < 1e-6, 'f=0.5 must give ~0.985858 | got %r' % discard_prob(0.5)\nassert abs(discard_prob(0.002) - 0.776393202) < 1e-6, 'f=0.002 must give ~0.776393 | got %r' % discard_prob(0.002)\nassert discard_prob(0.00005) == 0.0, 'f below t must give exactly 0 | got %r' % discard_prob(0.00005)",
+          expected: '0.985857864, 0.776393202, 0.0',
+        },
+      ],
+      hints: [
+        { ar: 'حلقة مزدوجة: for t في range(len(tokens)) ثم for j في range(-size, size+1)؛ تذكر تجاهل j == 0 قبل أي شيء آخر.', en: 'A double loop: for t in range(len(tokens)) then for j in range(-size, size+1); remember to skip j == 0 before anything else.' },
+        { ar: 'شرط الحدود واحد فقط: 0 <= t + j < len(tokens) — بعده أضف الزوج (t, t+j) كما هو.', en: 'The boundary check is a single condition: 0 <= t + j < len(tokens) — then append the pair (t, t+j) as is.' },
+        { ar: 'في discard_prob استخدم math.sqrt واحرص على ترتيب العمليات: 1 - math.sqrt(t / f) ثم غلفها بـ max(..., 0.0).', en: 'In discard_prob use math.sqrt and mind operation order: 1 - math.sqrt(t / f), then wrap in max(..., 0.0).' },
+        { ar: 'قيم تحقق: عدد الأزواج بنافذة 2 على 5 كلمات هو 2+3+4+3+2=14، وdiscard_prob(0.5) ≈ 0.985858.', en: 'Sanity values: window-2 pair count on 5 words is 2+3+4+3+2=14, and discard_prob(0.5) ≈ 0.985858.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.mcq-negative-sampling',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'ما التغيير الجوهري الذي يدخله negative sampling على تدريب skip-gram؟',
+        en: 'What is the essential change that negative sampling introduces to skip-gram training?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'يستبدل softmax على كل المفردات بمجموعة صغيرة من تصنيفات ثنائية: زوج واحد موجب وK كلمات ضجيج', en: 'It replaces the softmax over the whole vocabulary with a small set of binary classifications: one positive pair and K noise words' } },
+        { id: 'b', text: { ar: 'يحذف متجه السياق ويكتفي بمتجه المركز لكل كلمة', en: 'It drops the context vector and keeps only a center vector per word' } },
+        { id: 'c', text: { ar: 'يضمن الحصول على الحل الأمثل نفسه الذي يعطيه softmax الكامل', en: 'It guarantees the same optimum that the full softmax would give' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'قس التكلفة: مقام softmax يمر على |V|، بينما صيغة σ تعني K+1 حدا فقط لكل زوج.', en: 'Count the cost: the softmax denominator sweeps |V|, while the σ formulation means only K+1 terms per pair.' },
+        { ar: 'كلمات الضجيج لا تأتي من النافذة؛ تسحب من توزيع معرف مسبقا وتعامل كأنها D=0.', en: 'Noise words never come from the window; they are drawn from a predefined distribution and treated as D=0.' },
+        { ar: 'الهدف تغير: لم نعد نطبع توزيعا كاملا على المفردات بل نميز الموجب من السالب.', en: 'The objective changed: we no longer fit a full distribution over the vocabulary but discriminate positive from negative.' },
+        { ar: 'الجواب: a — وهو تقريب مقصود: خسارة أرخص تخبرنا بمعلومة كافية عن التشابه.', en: 'Answer: a — a deliberate approximation: a cheaper loss that still tells us enough about similarity.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "import math\n\ndef sig(x):\n    return 1 / (1 + math.exp(-x))\n\ndef skipgram_pairs(tokens, size):\n    pairs = []\n    for t in range(len(tokens)):\n        for j in range(-size, size + 1):\n            if j == 0:\n                continue\n            o = t + j\n            if 0 <= o < len(tokens):\n                pairs.append((t, o))\n    return pairs\n\ntokens = [0, 1, 2, 3, 4, 5, 6]\nfor size in (1, 2, 3):\n    print('size=%d -> %d pairs' % (size, len(skipgram_pairs(tokens, size))))\n\nprint('sigma table for fixed dot products:')\nfor s in (-2.0, -0.5, 0.0, 0.5, 2.0):\n    print('  s=%+.1f sigma(s)=%.6f sigma(-s)=%.6f' % (s, sig(s), sig(-s)))\n\n# try: grow the sentence to 10 words and watch how the pair count grows with the window.\n# try: which s makes sigma(s) and sigma(-s) equal? why is that the point of no discrimination?\n",
+      prompt: {
+        ar: 'الملعب يوسع الجملة إلى 7 كلمات ويقارن عدد الأزواج للنوافذ 1 و2 و3، ثم يطبع جدول σ لدرجات ثابتة. لاحظ: عند s=0 لا تمييز إطلاقا (σ=0.5 للحالتين)، بينما |s|=2 يكفي لدفع أحد الطرفين إلى 0.88 — هذا هو مدى «الحسم» الذي يتعلمه المتجهان.',
+        en: 'The sandbox grows the sentence to 7 words and compares pair counts for windows 1, 2 and 3, then prints a σ table for fixed scores. Note: at s=0 there is no discrimination at all (σ=0.5 both ways), while |s|=2 already pushes one side to 0.88 — that is the range of "confidence" the two vectors learn.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'لماذا تعد متجهات one-hot خيارا سيئا لتمثيل الكلمات؟',
+            en: 'Why are one-hot vectors a poor choice for representing words?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'لأنها طويلة جدا ولا تحمل أي تشابه بين الكلمات: تشابه الجيب بين أي كلمتين مختلفتين صفر', en: 'They are huge and carry no similarity: the cosine between any two different words is 0' } },
+            { id: 'b', text: { ar: 'لأنها لا يمكن تحويلها إلى فهارس صحيحة', en: 'Because they cannot be converted into integer indices' } },
+            { id: 'c', text: { ar: 'لأنها تحتاج شبكة عصبية عميقة لقراءتها', en: 'Because they need a deep network to be read' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'المتجه one-hot بطول N فيه 1 واحدة، وجداء أي كلمتين مختلفتين صفر تماما فتشابه الجيب صفر — أي أن «قطة» و«كلب» على البعد نفسه عن كل شيء. word2vec يستبدلها بمتجهات كثيفة بطول d تتعلم من السياق.',
+            en: 'A one-hot vector of length N holds a single 1, and the dot product of any two different words is exactly 0, so their cosine similarity is 0 — "cat" and "dog" are equally distant from everything. word2vec replaces them with dense d-dimensional vectors learned from context.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'في skip-gram، ماذا تمثل P(w_o | w_c) = exp(u_o·v_c)/Σ exp(u_i·v_c)؟',
+            en: 'In skip-gram, what does P(w_o | w_c) = exp(u_o·v_c)/Σ exp(u_i·v_c) represent?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'احتمال توليد كلمة السياق w_o من الكلمة المركزية w_c عبر softmax على جداء متجهي السياق والمركز', en: 'The probability of generating context word w_o from center word w_c via a softmax over context and center vector dot products' } },
+            { id: 'b', text: { ar: 'تشابه الجيب بين متجهي w_o وw_c دون أي تطبيع', en: 'The cosine similarity between w_o and w_c with no normalization' } },
+            { id: 'c', text: { ar: 'خسارة العينات السالبة مباشرة', en: 'The negative-sampling loss directly' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'لكل كلمة متجهان: v_c للمركز وu_o للسياق، والاحتمال softmax على الجداءات القياسية مع كل مفردات القاموس. تقليل −log P يجعل أزواج السياق الحقيقية أكثر احتمالا. النسخة المقلصة بالعينات السالبة تستبدل المقام الضخم بحدود σ.',
+            en: 'Each word has two vectors: v_c as center and u_o as context, and the probability is a softmax over dot products against the whole vocabulary. Minimizing −log P makes true context pairs more likely. The negative-sampling shortcut replaces the huge denominator with σ terms.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'أي الكلمات يحميها subsampling من الحذف عند العتبة t؟',
+            en: 'Which words does subsampling protect from being dropped at threshold t?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الكلمات التي تكرارها النسبي أقل من t — مثل «intel» بين كلمات شائعة', en: 'Words whose relative frequency is below t — like "intel" among common words' } },
+            { id: 'b', text: { ar: 'الكلمات الأكثر تكرارا مثل «the» لأنها مهمة للقواعد', en: 'The most frequent words like "the" because they matter for grammar' } },
+            { id: 'c', text: { ar: 'كل الكلمات باحتمال ثابت واحد مهما كان تكرارها', en: 'All words with one constant probability regardless of frequency' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'P(w_i) = max(1 − sqrt(t/f(w_i)), 0): لا حذف إلا إذا تجاوز التكرار النسبي f العتبة t، وكلما زاد f زاد الاحتمال (0.985858 عند f=0.5 في مثالنا مقابل 0.776393 عند f=0.002). الكلمات النادرة (f ≤ t) تبقى دائمًا لأن إشارتها مع جيرانها أثمن.',
+            en: 'P(w_i) = max(1 − sqrt(t/f(w_i)), 0): nothing is dropped unless the relative frequency f exceeds the threshold t, and the larger f the higher the probability (0.985858 at f=0.5 in our example vs 0.776393 at f=0.002). Rare words (f ≤ t) always survive because their signal with neighbours is more valuable.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'تمثيل one-hot لا يعرف التشابه؛ skip-gram يجعل الكلمة المركزية تولد سياقها بـ softmax على جداءات متجه المركز v_c ومتجهات السياق u_i، ولكل كلمة متجهان بطول d (الهدف من s1).', en: 'One-hot knows no similarity; skip-gram makes a center word generate its context via a softmax over dot products of center vector v_c and context vectors u_i, with two d-dimensional vectors per word (goal of s1).' },
+        { ar: 'الـ softmax الكامل مكلف بمرور على |V| لكل تدرج؛ العينات السالبة تخفض التكلفة إلى K+1 تصنيفا ثنائيا σ لكل زوج، والـ hierarchical softmax يمشي شجرة عمقها log|V| (الهدف من s2).', en: 'The full softmax sweeps |V| per gradient; negative sampling cuts the cost to K+1 binary σ terms per pair, and hierarchical softmax walks a tree of depth log|V| (goal of s2).' },
+        { ar: 'على PTB: مفردات بعد استبدال النادر بـ <unk> حجمها 6719، وsubsampling يحذف المتكرر باحتمال max(1−sqrt(t/f),0)، ثم أزواج المركز/السياق بكل الإزاحات −m..m عدا 0 وحشو بـ <pad> (الهدف من s3).', en: 'On PTB: vocabulary with rare words replaced by <unk> has size 6719, subsampling drops frequent words with probability max(1−sqrt(t/f),0), then center/context pairs at every offset −m..m except 0 are padded with <pad> (goal of s3).' },
+      ],
+      reflectPrompt: {
+        ar: 'لو كانت مفرداتك مليون كلمة وK=5: كم حدا يجتازها التدرج لكل زوج تحت softmax الكامل وتحت العينات السالبة؟ وما الكلمة التي تختفي من بياناتك تقريبا دائمًا عند f=0.02 وt=10⁻⁴، وهل تشك في أثر ذلك على جودة متجهها؟',
+        en: 'With a million-word vocabulary and K=5: how many terms does one gradient sweep per pair under the full softmax versus negative sampling? And which word practically always vanishes from your data at f=0.02 and t=10⁻⁴ — do you suspect any effect on the quality of its vector?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'D2L', section: 'd2l.ch15.s1' },
+        { book: 'D2L', section: 'd2l.ch15.s2' },
+        { book: 'D2L', section: 'd2l.ch15.s3' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'D2L', section: 'd2l.ch15.s1' },
+    { book: 'D2L', section: 'd2l.ch15.s2' },
+    { book: 'D2L', section: 'd2l.ch15.s3' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

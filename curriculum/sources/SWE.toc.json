@@ -1,0 +1,741 @@
+{
+ "code": "SWE",
+ "title": "Software Engineering: Standing on the Shoulders of Giants — Python Edition",
+ "authors": [
+  "Thomas Hastings"
+ ],
+ "license": "Text/figures CC BY-SA 4.0; code examples MIT — © 2026 Thomas Hastings",
+ "url": "https://www.swebook.org/",
+ "page_offset": 0,
+ "chapters": [
+  {
+   "id": "swe.ch1",
+   "number": 1,
+   "title": "Introduction",
+   "pdfPage": 19,
+   "bookPage": 19,
+   "sections": [
+    {
+     "id": "swe.ch1.s1",
+     "number": "1.1",
+     "title": "1.1 What Is Software Engineering?"
+    },
+    {
+     "id": "swe.ch1.s2",
+     "number": "1.2",
+     "title": "1.2 The Requirements Challenge"
+    },
+    {
+     "id": "swe.ch1.s3",
+     "number": "1.3",
+     "title": "1.3 Software Is Intrinsically Complex"
+    },
+    {
+     "id": "swe.ch1.s4",
+     "number": "1.4",
+     "title": "1.4 Defects Are Inevitable"
+    },
+    {
+     "id": "swe.ch1.s5",
+     "number": "1.5",
+     "title": "1.5 Balancing Constraints: The Iron Triangle"
+    },
+    {
+     "id": "swe.ch1.s6",
+     "number": "1.6",
+     "title": "1.6 Social Responsibility"
+    },
+    {
+     "id": "swe.ch1.s7",
+     "number": "1.7",
+     "title": "1.7 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch2",
+   "number": 2,
+   "title": "Software Development Processes",
+   "pdfPage": 35,
+   "bookPage": 35,
+   "sections": [
+    {
+     "id": "swe.ch2.s1",
+     "number": "2.1",
+     "title": "2.1 Processes and Values Guide Development"
+    },
+    {
+     "id": "swe.ch2.s2",
+     "number": "2.2",
+     "title": "2.2 Structuring Teamwork: The Scrum Framework"
+    },
+    {
+     "id": "swe.ch2.s3",
+     "number": "2.3",
+     "title": "2.3 Agile Development: Extreme Programming"
+    },
+    {
+     "id": "swe.ch2.s4",
+     "number": "2.4",
+     "title": "2.4 Limitations of Waterfall Processes"
+    },
+    {
+     "id": "swe.ch2.s5",
+     "number": "2.5",
+     "title": "2.5 Levels of Design and Testing: V Processes"
+    },
+    {
+     "id": "swe.ch2.s6",
+     "number": "2.6",
+     "title": "2.6 Additional Project Risks"
+    },
+    {
+     "id": "swe.ch2.s7",
+     "number": "2.7",
+     "title": "2.7 Risk Reduction: The Spiral Framework"
+    },
+    {
+     "id": "swe.ch2.s8",
+     "number": "2.8",
+     "title": "2.8 Shape Up: Fixed Time, Variable Scope"
+    },
+    {
+     "id": "swe.ch2.s9",
+     "number": "2.9",
+     "title": "2.9 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch3",
+   "number": 3,
+   "title": "User Requirements",
+   "pdfPage": 64,
+   "bookPage": 64,
+   "sections": [
+    {
+     "id": "swe.ch3.s1",
+     "number": "3.1",
+     "title": "3.1 What Is a Requirement?"
+    },
+    {
+     "id": "swe.ch3.s2",
+     "number": "3.2",
+     "title": "3.2 Developing Requirements and Software"
+    },
+    {
+     "id": "swe.ch3.s3",
+     "number": "3.3",
+     "title": "3.3 Eliciting User Needs"
+    },
+    {
+     "id": "swe.ch3.s4",
+     "number": "3.4",
+     "title": "3.4 Writing Requirements: Stories and Features"
+    },
+    {
+     "id": "swe.ch3.s5",
+     "number": "3.5",
+     "title": "3.5 Writing User-Experience Scenarios"
+    },
+    {
+     "id": "swe.ch3.s6",
+     "number": "3.6",
+     "title": "3.6 Clarifying User Goals"
+    },
+    {
+     "id": "swe.ch3.s7",
+     "number": "3.7",
+     "title": "3.7 Identifying Security Attacks"
+    },
+    {
+     "id": "swe.ch3.s8",
+     "number": "3.8",
+     "title": "3.8 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch4",
+   "number": 4,
+   "title": "Requirements Analysis",
+   "pdfPage": 96,
+   "bookPage": 96,
+   "sections": [
+    {
+     "id": "swe.ch4.s1",
+     "number": "4.1",
+     "title": "4.1 A Checklist Approach"
+    },
+    {
+     "id": "swe.ch4.s2",
+     "number": "4.2",
+     "title": "4.2 Relative Estimation: Iteration Planning"
+    },
+    {
+     "id": "swe.ch4.s3",
+     "number": "4.3",
+     "title": "4.3 Structured Group Consensus Estimates"
+    },
+    {
+     "id": "swe.ch4.s4",
+     "number": "4.4",
+     "title": "4.4 Balancing Priorities"
+    },
+    {
+     "id": "swe.ch4.s5",
+     "number": "4.5",
+     "title": "4.5 Customer Satisfiers and Dissatisfiers"
+    },
+    {
+     "id": "swe.ch4.s6",
+     "number": "4.6",
+     "title": "4.6 Plan-Driven Estimation Models"
+    },
+    {
+     "id": "swe.ch4.s7",
+     "number": "4.7",
+     "title": "4.7 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch5",
+   "number": 5,
+   "title": "Use Cases",
+   "pdfPage": 124,
+   "bookPage": 124,
+   "sections": [
+    {
+     "id": "swe.ch5.s1",
+     "number": "5.1",
+     "title": "5.1 Elements of a Use Case"
+    },
+    {
+     "id": "swe.ch5.s2",
+     "number": "5.2",
+     "title": "5.2 Alternative Flows: Conditional Behaviors"
+    },
+    {
+     "id": "swe.ch5.s3",
+     "number": "5.3",
+     "title": "5.3 Writing Use Cases"
+    },
+    {
+     "id": "swe.ch5.s4",
+     "number": "5.4",
+     "title": "5.4 Use-Case Diagrams"
+    },
+    {
+     "id": "swe.ch5.s5",
+     "number": "5.5",
+     "title": "5.5 Relationships between Use Cases"
+    },
+    {
+     "id": "swe.ch5.s6",
+     "number": "5.6",
+     "title": "5.6 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch6",
+   "number": 6,
+   "title": "Design and Architecture",
+   "pdfPage": 145,
+   "bookPage": 145,
+   "sections": [
+    {
+     "id": "swe.ch6.s1",
+     "number": "6.1",
+     "title": "6.1 The Role of Architecture"
+    },
+    {
+     "id": "swe.ch6.s2",
+     "number": "6.2",
+     "title": "6.2 Designing Modular Systems"
+    },
+    {
+     "id": "swe.ch6.s3",
+     "number": "6.3",
+     "title": "6.3 Class Diagrams"
+    },
+    {
+     "id": "swe.ch6.s4",
+     "number": "6.4",
+     "title": "6.4 Architectural Views"
+    },
+    {
+     "id": "swe.ch6.s5",
+     "number": "6.5",
+     "title": "6.5 Describing System Architecture"
+    },
+    {
+     "id": "swe.ch6.s6",
+     "number": "6.6",
+     "title": "6.6 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch7",
+   "number": 7,
+   "title": "Architectural Patterns",
+   "pdfPage": 174,
+   "bookPage": 174,
+   "sections": [
+    {
+     "id": "swe.ch7.s1",
+     "number": "7.1",
+     "title": "7.1 Software Layering"
+    },
+    {
+     "id": "swe.ch7.s2",
+     "number": "7.2",
+     "title": "7.2 Three Building Blocks"
+    },
+    {
+     "id": "swe.ch7.s3",
+     "number": "7.3",
+     "title": "7.3 User Interfaces: Model-View-Controller"
+    },
+    {
+     "id": "swe.ch7.s4",
+     "number": "7.4",
+     "title": "7.4 Dataflow Architectures"
+    },
+    {
+     "id": "swe.ch7.s5",
+     "number": "7.5",
+     "title": "7.5 Connecting Clients with Servers"
+    },
+    {
+     "id": "swe.ch7.s6",
+     "number": "7.6",
+     "title": "7.6 Families and Product Lines"
+    },
+    {
+     "id": "swe.ch7.s7",
+     "number": "7.7",
+     "title": "7.7 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch8",
+   "number": 8,
+   "title": "Version Control with Git",
+   "pdfPage": 207,
+   "bookPage": 207,
+   "sections": [
+    {
+     "id": "swe.ch8.s1",
+     "number": "8.1",
+     "title": "8.1 Why Version Control"
+    },
+    {
+     "id": "swe.ch8.s2",
+     "number": "8.2",
+     "title": "8.2 The Everyday Workflow"
+    },
+    {
+     "id": "swe.ch8.s3",
+     "number": "8.3",
+     "title": "8.3 Branching and Merging"
+    },
+    {
+     "id": "swe.ch8.s4",
+     "number": "8.4",
+     "title": "8.4 Working with Others"
+    },
+    {
+     "id": "swe.ch8.s5",
+     "number": "8.5",
+     "title": "8.5 Merge Conflicts"
+    },
+    {
+     "id": "swe.ch8.s6",
+     "number": "8.6",
+     "title": "8.6 Habits That Make Git Work for a Team"
+    },
+    {
+     "id": "swe.ch8.s7",
+     "number": "8.7",
+     "title": "8.7 Markdown, READMEs, and Project Documentation"
+    },
+    {
+     "id": "swe.ch8.s8",
+     "number": "8.8",
+     "title": "8.8 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch9",
+   "number": 9,
+   "title": "Static Checking",
+   "pdfPage": 232,
+   "bookPage": 232,
+   "sections": [
+    {
+     "id": "swe.ch9.s1",
+     "number": "9.1",
+     "title": "9.1 Architecture Reviews"
+    },
+    {
+     "id": "swe.ch9.s2",
+     "number": "9.2",
+     "title": "9.2 Conducting Software Inspections"
+    },
+    {
+     "id": "swe.ch9.s3",
+     "number": "9.3",
+     "title": "9.3 Code Reviews: Check Intent and Trust"
+    },
+    {
+     "id": "swe.ch9.s4",
+     "number": "9.4",
+     "title": "9.4 Automated Static Analysis"
+    },
+    {
+     "id": "swe.ch9.s5",
+     "number": "9.5",
+     "title": "9.5 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch10",
+   "number": 10,
+   "title": "Testing",
+   "pdfPage": 253,
+   "bookPage": 253,
+   "sections": [
+    {
+     "id": "swe.ch10.s1",
+     "number": "10.1",
+     "title": "10.1 Overview of Testing"
+    },
+    {
+     "id": "swe.ch10.s2",
+     "number": "10.2",
+     "title": "10.2 Levels of Testing"
+    },
+    {
+     "id": "swe.ch10.s3",
+     "number": "10.3",
+     "title": "10.3 Code Coverage I: White-Box Testing"
+    },
+    {
+     "id": "swe.ch10.s4",
+     "number": "10.4",
+     "title": "10.4 Input Coverage I: Black-Box Testing"
+    },
+    {
+     "id": "swe.ch10.s5",
+     "number": "10.5",
+     "title": "10.5 Code Coverage II: MC/DC"
+    },
+    {
+     "id": "swe.ch10.s6",
+     "number": "10.6",
+     "title": "10.6 Input Coverage II: Combinatorial Testing"
+    },
+    {
+     "id": "swe.ch10.s7",
+     "number": "10.7",
+     "title": "10.7 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch11",
+   "number": 11,
+   "title": "Software Security",
+   "pdfPage": 287,
+   "bookPage": 287,
+   "sections": [
+    {
+     "id": "swe.ch11.s1",
+     "number": "11.1",
+     "title": "11.1 Security Is a Lifecycle Property"
+    },
+    {
+     "id": "swe.ch11.s2",
+     "number": "11.2",
+     "title": "11.2 The OWASP Top 10"
+    },
+    {
+     "id": "swe.ch11.s3",
+     "number": "11.3",
+     "title": "11.3 Finding Vulnerabilities, from Manual to Autonomous"
+    },
+    {
+     "id": "swe.ch11.s4",
+     "number": "11.4",
+     "title": "11.4 The Software Supply Chain: A World of Weak Links"
+    },
+    {
+     "id": "swe.ch11.s5",
+     "number": "11.5",
+     "title": "11.5 Building Security In"
+    },
+    {
+     "id": "swe.ch11.s6",
+     "number": "11.6",
+     "title": "11.6 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch12",
+   "number": 12,
+   "title": "Quality Metrics",
+   "pdfPage": 314,
+   "bookPage": 314,
+   "sections": [
+    {
+     "id": "swe.ch12.s1",
+     "number": "12.1",
+     "title": "12.1 Meaningful Metrics"
+    },
+    {
+     "id": "swe.ch12.s2",
+     "number": "12.2",
+     "title": "12.2 Software Quality"
+    },
+    {
+     "id": "swe.ch12.s3",
+     "number": "12.3",
+     "title": "12.3 Graphical Displays of Data Sets"
+    },
+    {
+     "id": "swe.ch12.s4",
+     "number": "12.4",
+     "title": "12.4 Product Quality: Measuring Defects"
+    },
+    {
+     "id": "swe.ch12.s5",
+     "number": "12.5",
+     "title": "12.5 Ops Quality Improvement: A Case Study"
+    },
+    {
+     "id": "swe.ch12.s6",
+     "number": "12.6",
+     "title": "12.6 Data Dispersion: Boxplots and Histograms"
+    },
+    {
+     "id": "swe.ch12.s7",
+     "number": "12.7",
+     "title": "12.7 Data Dispersion: Statistics"
+    },
+    {
+     "id": "swe.ch12.s8",
+     "number": "12.8",
+     "title": "12.8 Confidence Intervals"
+    },
+    {
+     "id": "swe.ch12.s9",
+     "number": "12.9",
+     "title": "12.9 Simple Linear Regression"
+    },
+    {
+     "id": "swe.ch12.s10",
+     "number": "12.10",
+     "title": "12.10 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch13",
+   "number": 13,
+   "title": "Software Engineering in the Age of AI",
+   "pdfPage": 343,
+   "bookPage": 343,
+   "sections": [
+    {
+     "id": "swe.ch13.s1",
+     "number": "13.1",
+     "title": "13.1 What AI Changes — and What It Doesn't"
+    },
+    {
+     "id": "swe.ch13.s2",
+     "number": "13.2",
+     "title": "13.2 AI Across the Lifecycle"
+    },
+    {
+     "id": "swe.ch13.s3",
+     "number": "13.3",
+     "title": "13.3 The Evidence: Productivity, Quality, Security"
+    },
+    {
+     "id": "swe.ch13.s4",
+     "number": "13.4",
+     "title": "13.4 Outcome Engineering: The o16g Manifesto"
+    },
+    {
+     "id": "swe.ch13.s5",
+     "number": "13.5",
+     "title": "13.5 Spec-Driven Development"
+    },
+    {
+     "id": "swe.ch13.s6",
+     "number": "13.6",
+     "title": "13.6 Context as Infrastructure: CLAUDE.md, AGENTS.md, and Skills"
+    },
+    {
+     "id": "swe.ch13.s7",
+     "number": "13.7",
+     "title": "13.7 Loop Engineering"
+    },
+    {
+     "id": "swe.ch13.s8",
+     "number": "13.8",
+     "title": "13.8 Principles for the AI-Augmented Engineer"
+    },
+    {
+     "id": "swe.ch13.s9",
+     "number": "13.9",
+     "title": "13.9 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch14",
+   "number": 14,
+   "title": "Delivery: CI/CD, DevOps, and Operations",
+   "pdfPage": 375,
+   "bookPage": 375,
+   "sections": [
+    {
+     "id": "swe.ch14.s1",
+     "number": "14.1",
+     "title": "14.1 SaaS and the Cloud"
+    },
+    {
+     "id": "swe.ch14.s2",
+     "number": "14.2",
+     "title": "14.2 Continuous Integration Pipelines"
+    },
+    {
+     "id": "swe.ch14.s3",
+     "number": "14.3",
+     "title": "14.3 Continuous Deployment"
+    },
+    {
+     "id": "swe.ch14.s4",
+     "number": "14.4",
+     "title": "14.4 Packaging and Running a Service: Docker and Compose"
+    },
+    {
+     "id": "swe.ch14.s5",
+     "number": "14.5",
+     "title": "14.5 Reaching Users: DNS, TLS, and the Edge"
+    },
+    {
+     "id": "swe.ch14.s6",
+     "number": "14.6",
+     "title": "14.6 Continuous Security Pipelines"
+    },
+    {
+     "id": "swe.ch14.s7",
+     "number": "14.7",
+     "title": "14.7 DORA Delivery Metrics"
+    },
+    {
+     "id": "swe.ch14.s8",
+     "number": "14.8",
+     "title": "14.8 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch15",
+   "number": 15,
+   "title": "Maintenance and Evolution",
+   "pdfPage": 414,
+   "bookPage": 414,
+   "sections": [
+    {
+     "id": "swe.ch15.s1",
+     "number": "15.1",
+     "title": "15.1 What Makes Code Legacy"
+    },
+    {
+     "id": "swe.ch15.s2",
+     "number": "15.2",
+     "title": "15.2 Characterization Tests"
+    },
+    {
+     "id": "swe.ch15.s3",
+     "number": "15.3",
+     "title": "15.3 Refactoring Under Green Tests"
+    },
+    {
+     "id": "swe.ch15.s4",
+     "number": "15.4",
+     "title": "15.4 Repository Stewardship"
+    },
+    {
+     "id": "swe.ch15.s5",
+     "number": "15.5",
+     "title": "15.5 Technical Debt"
+    },
+    {
+     "id": "swe.ch15.s6",
+     "number": "15.6",
+     "title": "15.6 Strangler Fig versus Big-Bang Rewrite"
+    },
+    {
+     "id": "swe.ch15.s7",
+     "number": "15.7",
+     "title": "15.7 Conclusion"
+    }
+   ]
+  },
+  {
+   "id": "swe.appendixA",
+   "number": "A",
+   "title": "The Team Project",
+   "pdfPage": null,
+   "bookPage": null,
+   "sections": [
+    {
+     "id": "swe.A.s1",
+     "number": "A.1",
+     "title": "Overview"
+    },
+    {
+     "id": "swe.A.s2",
+     "number": "A.2",
+     "title": "Project Proposal"
+    },
+    {
+     "id": "swe.A.s3",
+     "number": "A.3",
+     "title": "Skeletal System: Status Report 1"
+    },
+    {
+     "id": "swe.A.s4",
+     "number": "A.4",
+     "title": "Viable System: Status Report 2"
+    },
+    {
+     "id": "swe.A.s5",
+     "number": "A.5",
+     "title": "Comprehensive Final Report"
+    },
+    {
+     "id": "swe.A.s6",
+     "number": "A.6",
+     "title": "Grading Your Own Repository"
+    },
+    {
+     "id": "swe.A.s7",
+     "number": "A.7",
+     "title": "Conclusion"
+    }
+   ]
+  }
+ ]
+}

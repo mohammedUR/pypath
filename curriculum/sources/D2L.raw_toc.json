@@ -1,0 +1,6677 @@
+[
+[
+1,
+"Preface",
+25
+],
+[
+1,
+"Installation",
+34
+],
+[
+1,
+"Notation",
+37
+],
+[
+1,
+"Introduction",
+41
+],
+[
+2,
+"A Motivating Example",
+42
+],
+[
+2,
+"Key Components",
+44
+],
+[
+3,
+"Data",
+44
+],
+[
+3,
+"Models",
+46
+],
+[
+3,
+"Objective Functions",
+46
+],
+[
+3,
+"Optimization Algorithms",
+47
+],
+[
+2,
+"Kinds of Machine Learning Problems",
+47
+],
+[
+3,
+"Supervised Learning",
+47
+],
+[
+4,
+"Regression",
+48
+],
+[
+4,
+"Classification",
+49
+],
+[
+4,
+"Tagging",
+51
+],
+[
+4,
+"Search",
+52
+],
+[
+4,
+"Recommender Systems",
+53
+],
+[
+4,
+"Sequence Learning",
+54
+],
+[
+3,
+"Unsupervised and Self-Supervised Learning",
+56
+],
+[
+3,
+"Interacting with an Environment",
+57
+],
+[
+3,
+"Reinforcement Learning",
+58
+],
+[
+2,
+"Roots",
+60
+],
+[
+2,
+"The Road to Deep Learning",
+62
+],
+[
+2,
+"Success Stories",
+65
+],
+[
+2,
+"The Essence of Deep Learning",
+67
+],
+[
+2,
+"Summary",
+69
+],
+[
+2,
+"Exercises",
+69
+],
+[
+1,
+"Preliminaries",
+70
+],
+[
+2,
+"Data Manipulation",
+70
+],
+[
+3,
+"Getting Started",
+70
+],
+[
+3,
+"Indexing and Slicing",
+73
+],
+[
+3,
+"Operations",
+73
+],
+[
+3,
+"Broadcasting",
+75
+],
+[
+3,
+"Saving Memory",
+76
+],
+[
+3,
+"Conversion to Other Python Objects",
+77
+],
+[
+3,
+"Summary",
+77
+],
+[
+3,
+"Exercises",
+77
+],
+[
+2,
+"Data Preprocessing",
+78
+],
+[
+3,
+"Reading the Dataset",
+78
+],
+[
+3,
+"Data Preparation",
+79
+],
+[
+3,
+"Conversion to the Tensor Format",
+80
+],
+[
+3,
+"Discussion",
+80
+],
+[
+3,
+"Exercises",
+80
+],
+[
+2,
+"Linear Algebra",
+81
+],
+[
+3,
+"Scalars",
+81
+],
+[
+3,
+"Vectors",
+82
+],
+[
+3,
+"Matrices",
+83
+],
+[
+3,
+"Tensors",
+84
+],
+[
+3,
+"Basic Properties of Tensor Arithmetic",
+85
+],
+[
+3,
+"Reduction",
+86
+],
+[
+3,
+"Non-Reduction Sum",
+87
+],
+[
+3,
+"Dot Products",
+88
+],
+[
+3,
+"Matrix–Vector Products",
+88
+],
+[
+3,
+"Matrix–Matrix Multiplication",
+89
+],
+[
+3,
+"Norms",
+90
+],
+[
+3,
+"Discussion",
+92
+],
+[
+3,
+"Exercises",
+93
+],
+[
+2,
+"Calculus",
+94
+],
+[
+3,
+"Derivatives and Differentiation",
+94
+],
+[
+3,
+"Visualization Utilities",
+96
+],
+[
+3,
+"Partial Derivatives and Gradients",
+97
+],
+[
+3,
+"Chain Rule",
+98
+],
+[
+3,
+"Discussion",
+99
+],
+[
+3,
+"Exercises",
+99
+],
+[
+2,
+"Automatic Differentiation",
+99
+],
+[
+3,
+"A Simple Function",
+100
+],
+[
+3,
+"Backward for Non-Scalar Variables",
+101
+],
+[
+3,
+"Detaching Computation",
+102
+],
+[
+3,
+"Gradients and Python Control Flow",
+103
+],
+[
+3,
+"Discussion",
+104
+],
+[
+3,
+"Exercises",
+104
+],
+[
+2,
+"Probability and Statistics",
+105
+],
+[
+3,
+"A Simple Example: Tossing Coins",
+106
+],
+[
+3,
+"A More Formal Treatment",
+108
+],
+[
+3,
+"Random Variables",
+109
+],
+[
+3,
+"Multiple Random Variables",
+110
+],
+[
+3,
+"An Example",
+113
+],
+[
+3,
+"Expectations",
+114
+],
+[
+3,
+"Discussion",
+116
+],
+[
+3,
+"Exercises",
+117
+],
+[
+2,
+"Documentation",
+118
+],
+[
+3,
+"Functions and Classes in a Module",
+118
+],
+[
+3,
+"Specific Functions and Classes",
+119
+],
+[
+1,
+"Linear Neural Networks for Regression",
+122
+],
+[
+2,
+"Linear Regression",
+122
+],
+[
+3,
+"Basics",
+123
+],
+[
+4,
+"Model",
+123
+],
+[
+4,
+"Loss Function",
+124
+],
+[
+4,
+"Analytic Solution",
+125
+],
+[
+4,
+"Minibatch Stochastic Gradient Descent",
+125
+],
+[
+4,
+"Predictions",
+127
+],
+[
+3,
+"Vectorization for Speed",
+127
+],
+[
+3,
+"The Normal Distribution and Squared Loss",
+128
+],
+[
+3,
+"Linear Regression as a Neural Network",
+130
+],
+[
+4,
+"Biology",
+130
+],
+[
+3,
+"Summary",
+131
+],
+[
+3,
+"Exercises",
+132
+],
+[
+2,
+"Object-Oriented Design for Implementation",
+133
+],
+[
+3,
+"Utilities",
+134
+],
+[
+3,
+"Models",
+135
+],
+[
+3,
+"Data",
+137
+],
+[
+3,
+"Training",
+137
+],
+[
+3,
+"Summary",
+138
+],
+[
+3,
+"Exercises",
+138
+],
+[
+2,
+"Synthetic Regression Data",
+139
+],
+[
+3,
+"Generating the Dataset",
+139
+],
+[
+3,
+"Reading the Dataset",
+140
+],
+[
+3,
+"Concise Implementation of the Data Loader",
+141
+],
+[
+3,
+"Summary",
+142
+],
+[
+3,
+"Exercises",
+142
+],
+[
+2,
+"Linear Regression Implementation from Scratch",
+142
+],
+[
+3,
+"Defining the Model",
+143
+],
+[
+3,
+"Defining the Loss Function",
+144
+],
+[
+3,
+"Defining the Optimization Algorithm",
+144
+],
+[
+3,
+"Training",
+145
+],
+[
+3,
+"Summary",
+147
+],
+[
+3,
+"Exercises",
+147
+],
+[
+2,
+"Concise Implementation of Linear Regression",
+148
+],
+[
+3,
+"Defining the Model",
+148
+],
+[
+3,
+"Defining the Loss Function",
+149
+],
+[
+3,
+"Defining the Optimization Algorithm",
+149
+],
+[
+3,
+"Training",
+150
+],
+[
+3,
+"Summary",
+151
+],
+[
+3,
+"Exercises",
+151
+],
+[
+2,
+"Generalization",
+152
+],
+[
+3,
+"Training Error and Generalization Error",
+153
+],
+[
+4,
+"Model Complexity",
+153
+],
+[
+3,
+"Underfitting or Overfitting?",
+155
+],
+[
+4,
+"Polynomial Curve Fitting",
+155
+],
+[
+4,
+"Dataset Size",
+156
+],
+[
+3,
+"Model Selection",
+156
+],
+[
+4,
+"Cross-Validation",
+157
+],
+[
+3,
+"Summary",
+157
+],
+[
+3,
+"Exercises",
+157
+],
+[
+2,
+"Weight Decay",
+158
+],
+[
+3,
+"Norms and Weight Decay",
+159
+],
+[
+3,
+"High-Dimensional Linear Regression",
+160
+],
+[
+3,
+"Implementation from Scratch",
+161
+],
+[
+4,
+"Defining 2 Norm Penalty",
+161
+],
+[
+4,
+"Defining the Model",
+161
+],
+[
+4,
+"Training without Regularization",
+161
+],
+[
+4,
+"Using Weight Decay",
+161
+],
+[
+3,
+"Concise Implementation",
+162
+],
+[
+3,
+"Summary",
+164
+],
+[
+3,
+"Exercises",
+164
+],
+[
+1,
+"Linear Neural Networks for Classification",
+165
+],
+[
+2,
+"Softmax Regression",
+165
+],
+[
+3,
+"Classification",
+166
+],
+[
+4,
+"Linear Model",
+166
+],
+[
+4,
+"The Softmax",
+167
+],
+[
+4,
+"Vectorization",
+168
+],
+[
+3,
+"Loss Function",
+169
+],
+[
+4,
+"Log-Likelihood",
+169
+],
+[
+4,
+"Softmax and Cross-Entropy Loss",
+169
+],
+[
+3,
+"Information Theory Basics",
+170
+],
+[
+4,
+"Entropy",
+171
+],
+[
+4,
+"Surprisal",
+171
+],
+[
+4,
+"Cross-Entropy Revisited",
+171
+],
+[
+3,
+"Summary and Discussion",
+171
+],
+[
+3,
+"Exercises",
+172
+],
+[
+2,
+"The Image Classification Dataset",
+173
+],
+[
+3,
+"Loading the Dataset",
+174
+],
+[
+3,
+"Reading a Minibatch",
+175
+],
+[
+3,
+"Visualization",
+176
+],
+[
+3,
+"Summary",
+177
+],
+[
+3,
+"Exercises",
+177
+],
+[
+2,
+"The Base Classification Model",
+177
+],
+[
+3,
+"The Classifier Class",
+178
+],
+[
+3,
+"Accuracy",
+178
+],
+[
+3,
+"Summary",
+179
+],
+[
+3,
+"Exercises",
+179
+],
+[
+2,
+"Softmax Regression Implementation from Scratch",
+179
+],
+[
+3,
+"The Softmax",
+180
+],
+[
+3,
+"The Model",
+181
+],
+[
+3,
+"The Cross-Entropy Loss",
+181
+],
+[
+3,
+"Training",
+182
+],
+[
+3,
+"Prediction",
+183
+],
+[
+3,
+"Summary",
+183
+],
+[
+3,
+"Exercises",
+184
+],
+[
+2,
+"Concise Implementation of Softmax Regression",
+184
+],
+[
+3,
+"Defining the Model",
+185
+],
+[
+3,
+"Softmax Revisited",
+185
+],
+[
+3,
+"Training",
+186
+],
+[
+3,
+"Summary",
+186
+],
+[
+3,
+"Exercises",
+187
+],
+[
+2,
+"Generalization in Classification",
+187
+],
+[
+3,
+"The Test Set",
+188
+],
+[
+3,
+"Test Set Reuse",
+190
+],
+[
+3,
+"Statistical Learning Theory",
+191
+],
+[
+3,
+"Summary",
+193
+],
+[
+3,
+"Exercises",
+194
+],
+[
+2,
+"Environment and Distribution Shift",
+194
+],
+[
+3,
+"Types of Distribution Shift",
+195
+],
+[
+4,
+"Covariate Shift",
+195
+],
+[
+4,
+"Label Shift",
+196
+],
+[
+4,
+"Concept Shift",
+196
+],
+[
+3,
+"Examples of Distribution Shift",
+197
+],
+[
+4,
+"Medical Diagnostics",
+197
+],
+[
+4,
+"Self-Driving Cars",
+197
+],
+[
+4,
+"Nonstationary Distributions",
+197
+],
+[
+4,
+"More Anecdotes",
+197
+],
+[
+3,
+"Correction of Distribution Shift",
+199
+],
+[
+4,
+"Empirical Risk and Risk",
+199
+],
+[
+4,
+"Covariate Shift Correction",
+199
+],
+[
+4,
+"Label Shift Correction",
+201
+],
+[
+4,
+"Concept Shift Correction",
+202
+],
+[
+3,
+"A Taxonomy of Learning Problems",
+203
+],
+[
+4,
+"Batch Learning",
+203
+],
+[
+4,
+"Online Learning",
+203
+],
+[
+4,
+"Bandits",
+203
+],
+[
+4,
+"Control",
+203
+],
+[
+4,
+"Reinforcement Learning",
+203
+],
+[
+4,
+"Considering the Environment",
+203
+],
+[
+3,
+"Fairness, Accountability, and Transparency in Machine Learning",
+204
+],
+[
+3,
+"Summary",
+205
+],
+[
+3,
+"Exercises",
+205
+],
+[
+1,
+"Multilayer Perceptrons",
+207
+],
+[
+2,
+"Multilayer Perceptrons",
+207
+],
+[
+3,
+"Hidden Layers",
+207
+],
+[
+4,
+"Limitations of Linear Models",
+208
+],
+[
+4,
+"Incorporating Hidden Layers",
+208
+],
+[
+4,
+"From Linear to Nonlinear",
+209
+],
+[
+4,
+"Universal Approximators",
+210
+],
+[
+3,
+"Activation Functions",
+211
+],
+[
+4,
+"ReLU Function",
+211
+],
+[
+4,
+"Sigmoid Function",
+212
+],
+[
+4,
+"Tanh Function",
+213
+],
+[
+3,
+"Summary and Discussion",
+214
+],
+[
+3,
+"Exercises",
+215
+],
+[
+2,
+"Implementation of Multilayer Perceptrons",
+215
+],
+[
+3,
+"Implementation from Scratch",
+216
+],
+[
+4,
+"Initializing Model Parameters",
+216
+],
+[
+4,
+"Model",
+216
+],
+[
+4,
+"Training",
+216
+],
+[
+3,
+"Concise Implementation",
+217
+],
+[
+4,
+"Model",
+217
+],
+[
+4,
+"Training",
+217
+],
+[
+3,
+"Summary",
+218
+],
+[
+3,
+"Exercises",
+219
+],
+[
+2,
+"Forward Propagation, Backward Propagation, and Computational Graphs",
+219
+],
+[
+3,
+"Forward Propagation",
+220
+],
+[
+3,
+"Computational Graph of Forward Propagation",
+221
+],
+[
+3,
+"Backpropagation",
+221
+],
+[
+3,
+"Training Neural Networks",
+222
+],
+[
+3,
+"Summary",
+223
+],
+[
+3,
+"Exercises",
+223
+],
+[
+2,
+"Numerical Stability and Initialization",
+224
+],
+[
+3,
+"Vanishing and Exploding Gradients",
+224
+],
+[
+4,
+"Vanishing Gradients",
+224
+],
+[
+4,
+"Exploding Gradients",
+224
+],
+[
+4,
+"Breaking the Symmetry",
+224
+],
+[
+3,
+"Parameter Initialization",
+226
+],
+[
+4,
+"Default Initialization",
+227
+],
+[
+4,
+"Xavier Initialization",
+227
+],
+[
+4,
+"Beyond",
+228
+],
+[
+3,
+"Summary",
+228
+],
+[
+3,
+"Exercises",
+228
+],
+[
+2,
+"Generalization in Deep Learning",
+229
+],
+[
+3,
+"Revisiting Overfitting and Regularization",
+230
+],
+[
+3,
+"Inspiration from Nonparametrics",
+231
+],
+[
+3,
+"Early Stopping",
+232
+],
+[
+3,
+"Classical Regularization Methods for Deep Networks",
+233
+],
+[
+3,
+"Summary",
+233
+],
+[
+3,
+"Exercises",
+233
+],
+[
+2,
+"Dropout",
+234
+],
+[
+3,
+"Dropout in Practice",
+235
+],
+[
+3,
+"Implementation from Scratch",
+236
+],
+[
+4,
+"Defining the Model",
+236
+],
+[
+4,
+"Training",
+236
+],
+[
+3,
+"Concise Implementation",
+237
+],
+[
+3,
+"Summary",
+238
+],
+[
+3,
+"Exercises",
+238
+],
+[
+2,
+"Predicting House Prices on Kaggle",
+239
+],
+[
+3,
+"Downloading Data",
+239
+],
+[
+3,
+"Kaggle",
+239
+],
+[
+3,
+"Accessing and Reading the Dataset",
+240
+],
+[
+3,
+"Data Preprocessing",
+241
+],
+[
+3,
+"Error Measure",
+243
+],
+[
+3,
+"K-Fold Cross-Validation",
+244
+],
+[
+3,
+"Model Selection",
+244
+],
+[
+3,
+"Submitting Predictions on Kaggle",
+245
+],
+[
+3,
+"Summary and Discussion",
+246
+],
+[
+3,
+"Exercises",
+246
+],
+[
+1,
+"Builders' Guide",
+247
+],
+[
+2,
+"Layers and Modules",
+247
+],
+[
+3,
+"A Custom Module",
+249
+],
+[
+3,
+"The Sequential Module",
+250
+],
+[
+3,
+"Executing Code in the Forward Propagation Method",
+251
+],
+[
+3,
+"Summary",
+253
+],
+[
+3,
+"Exercises",
+253
+],
+[
+2,
+"Parameter Management",
+253
+],
+[
+3,
+"Parameter Access",
+254
+],
+[
+4,
+"Targeted Parameters",
+255
+],
+[
+4,
+"All Parameters at Once",
+255
+],
+[
+3,
+"Tied Parameters",
+255
+],
+[
+3,
+"Summary",
+256
+],
+[
+3,
+"Exercises",
+256
+],
+[
+2,
+"Parameter Initialization",
+256
+],
+[
+3,
+"Built-in Initialization",
+257
+],
+[
+4,
+"Custom Initialization",
+258
+],
+[
+3,
+"Summary",
+259
+],
+[
+3,
+"Exercises",
+259
+],
+[
+2,
+"Lazy Initialization",
+259
+],
+[
+3,
+"Summary",
+260
+],
+[
+3,
+"Exercises",
+260
+],
+[
+2,
+"Custom Layers",
+261
+],
+[
+3,
+"Layers without Parameters",
+261
+],
+[
+3,
+"Layers with Parameters",
+262
+],
+[
+3,
+"Summary",
+263
+],
+[
+3,
+"Exercises",
+263
+],
+[
+2,
+"File I/O",
+263
+],
+[
+3,
+"Loading and Saving Tensors",
+264
+],
+[
+3,
+"Loading and Saving Model Parameters",
+265
+],
+[
+3,
+"Summary",
+266
+],
+[
+3,
+"Exercises",
+266
+],
+[
+2,
+"GPUs",
+266
+],
+[
+3,
+"Computing Devices",
+267
+],
+[
+3,
+"Tensors and GPUs",
+268
+],
+[
+4,
+"Storage on the GPU",
+268
+],
+[
+4,
+"Copying",
+268
+],
+[
+4,
+"Side Notes",
+269
+],
+[
+3,
+"Neural Networks and GPUs",
+270
+],
+[
+3,
+"Summary",
+271
+],
+[
+3,
+"Exercises",
+271
+],
+[
+1,
+"Convolutional Neural Networks",
+273
+],
+[
+2,
+"From Fully Connected Layers to Convolutions",
+274
+],
+[
+3,
+"Invariance",
+274
+],
+[
+3,
+"Constraining the MLP",
+275
+],
+[
+4,
+"Translation Invariance",
+276
+],
+[
+4,
+"Locality",
+276
+],
+[
+3,
+"Convolutions",
+277
+],
+[
+3,
+"Channels",
+278
+],
+[
+3,
+"Summary and Discussion",
+279
+],
+[
+3,
+"Exercises",
+279
+],
+[
+2,
+"Convolutions for Images",
+280
+],
+[
+3,
+"The Cross-Correlation Operation",
+280
+],
+[
+3,
+"Convolutional Layers",
+282
+],
+[
+3,
+"Object Edge Detection in Images",
+282
+],
+[
+3,
+"Learning a Kernel",
+283
+],
+[
+3,
+"Cross-Correlation and Convolution",
+284
+],
+[
+3,
+"Feature Map and Receptive Field",
+285
+],
+[
+3,
+"Summary",
+286
+],
+[
+3,
+"Exercises",
+287
+],
+[
+2,
+"Padding and Stride",
+287
+],
+[
+3,
+"Padding",
+288
+],
+[
+3,
+"Stride",
+290
+],
+[
+3,
+"Summary and Discussion",
+291
+],
+[
+3,
+"Exercises",
+291
+],
+[
+2,
+"Multiple Input and Multiple Output Channels",
+292
+],
+[
+3,
+"Multiple Input Channels",
+292
+],
+[
+3,
+"Multiple Output Channels",
+293
+],
+[
+3,
+"11 Convolutional Layer",
+294
+],
+[
+3,
+"Discussion",
+296
+],
+[
+3,
+"Exercises",
+296
+],
+[
+2,
+"Pooling",
+297
+],
+[
+3,
+"Maximum Pooling and Average Pooling",
+298
+],
+[
+3,
+"Padding and Stride",
+299
+],
+[
+3,
+"Multiple Channels",
+300
+],
+[
+3,
+"Summary",
+301
+],
+[
+3,
+"Exercises",
+301
+],
+[
+2,
+"Convolutional Neural Networks (LeNet)",
+302
+],
+[
+3,
+"LeNet",
+303
+],
+[
+3,
+"Training",
+305
+],
+[
+3,
+"Summary",
+306
+],
+[
+3,
+"Exercises",
+306
+],
+[
+1,
+"Modern Convolutional Neural Networks",
+308
+],
+[
+2,
+"Deep Convolutional Neural Networks (AlexNet)",
+309
+],
+[
+3,
+"Representation Learning",
+310
+],
+[
+4,
+"Missing Ingredient: Data",
+311
+],
+[
+4,
+"Missing Ingredient: Hardware",
+311
+],
+[
+3,
+"AlexNet",
+313
+],
+[
+4,
+"Architecture",
+314
+],
+[
+4,
+"Activation Functions",
+314
+],
+[
+4,
+"Capacity Control and Preprocessing",
+314
+],
+[
+3,
+"Training",
+316
+],
+[
+3,
+"Discussion",
+316
+],
+[
+3,
+"Exercises",
+317
+],
+[
+2,
+"Networks Using Blocks (VGG)",
+318
+],
+[
+3,
+"VGG Blocks",
+319
+],
+[
+3,
+"VGG Network",
+319
+],
+[
+3,
+"Training",
+321
+],
+[
+3,
+"Summary",
+321
+],
+[
+3,
+"Exercises",
+322
+],
+[
+2,
+"Network in Network (NiN)",
+323
+],
+[
+3,
+"NiN Blocks",
+323
+],
+[
+3,
+"NiN Model",
+324
+],
+[
+3,
+"Training",
+325
+],
+[
+3,
+"Summary",
+325
+],
+[
+3,
+"Exercises",
+326
+],
+[
+2,
+"Multi-Branch Networks (GoogLeNet)",
+327
+],
+[
+3,
+"Inception Blocks",
+327
+],
+[
+3,
+"GoogLeNet Model",
+328
+],
+[
+3,
+"Training",
+331
+],
+[
+3,
+"Discussion",
+331
+],
+[
+3,
+"Exercises",
+331
+],
+[
+2,
+"Batch Normalization",
+332
+],
+[
+3,
+"Training Deep Networks",
+332
+],
+[
+3,
+"Batch Normalization Layers",
+335
+],
+[
+4,
+"Fully Connected Layers",
+335
+],
+[
+4,
+"Convolutional Layers",
+335
+],
+[
+4,
+"Layer Normalization",
+335
+],
+[
+4,
+"Batch Normalization During Prediction",
+336
+],
+[
+3,
+"Implementation from Scratch",
+336
+],
+[
+3,
+"LeNet with Batch Normalization",
+338
+],
+[
+3,
+"Concise Implementation",
+339
+],
+[
+3,
+"Discussion",
+340
+],
+[
+3,
+"Exercises",
+341
+],
+[
+2,
+"Residual Networks (ResNet) and ResNeXt",
+342
+],
+[
+3,
+"Function Classes",
+342
+],
+[
+3,
+"Residual Blocks",
+344
+],
+[
+3,
+"ResNet Model",
+346
+],
+[
+3,
+"Training",
+348
+],
+[
+3,
+"ResNeXt",
+348
+],
+[
+3,
+"Summary and Discussion",
+350
+],
+[
+3,
+"Exercises",
+351
+],
+[
+2,
+"Densely Connected Networks (DenseNet)",
+352
+],
+[
+3,
+"From ResNet to DenseNet",
+352
+],
+[
+3,
+"Dense Blocks",
+353
+],
+[
+3,
+"Transition Layers",
+354
+],
+[
+3,
+"DenseNet Model",
+354
+],
+[
+3,
+"Training",
+355
+],
+[
+3,
+"Summary and Discussion",
+356
+],
+[
+3,
+"Exercises",
+356
+],
+[
+2,
+"Designing Convolution Network Architectures",
+356
+],
+[
+3,
+"The AnyNet Design Space",
+358
+],
+[
+3,
+"Distributions and Parameters of Design Spaces",
+360
+],
+[
+3,
+"RegNet",
+362
+],
+[
+3,
+"Training",
+363
+],
+[
+3,
+"Discussion",
+363
+],
+[
+3,
+"Exercises",
+364
+],
+[
+1,
+"Recurrent Neural Networks",
+365
+],
+[
+2,
+"Working with Sequences",
+367
+],
+[
+3,
+"Autoregressive Models",
+368
+],
+[
+3,
+"Sequence Models",
+369
+],
+[
+4,
+"Markov Models",
+370
+],
+[
+4,
+"The Order of Decoding",
+370
+],
+[
+3,
+"Training",
+371
+],
+[
+3,
+"Prediction",
+372
+],
+[
+3,
+"Summary",
+375
+],
+[
+3,
+"Exercises",
+375
+],
+[
+2,
+"Converting Raw Text into Sequence Data",
+376
+],
+[
+3,
+"Reading the Dataset",
+376
+],
+[
+3,
+"Tokenization",
+377
+],
+[
+3,
+"Vocabulary",
+377
+],
+[
+3,
+"Putting It All Together",
+378
+],
+[
+3,
+"Exploratory Language Statistics",
+379
+],
+[
+3,
+"Summary",
+381
+],
+[
+3,
+"Exercises",
+382
+],
+[
+2,
+"Language Models",
+382
+],
+[
+3,
+"Learning Language Models",
+383
+],
+[
+4,
+"Markov Models and n-grams",
+383
+],
+[
+4,
+"Word Frequency",
+383
+],
+[
+4,
+"Laplace Smoothing",
+384
+],
+[
+3,
+"Perplexity",
+384
+],
+[
+3,
+"Partitioning Sequences",
+386
+],
+[
+3,
+"Summary and Discussion",
+387
+],
+[
+3,
+"Exercises",
+387
+],
+[
+2,
+"Recurrent Neural Networks",
+388
+],
+[
+3,
+"Neural Networks without Hidden States",
+389
+],
+[
+3,
+"Recurrent Neural Networks with Hidden States",
+389
+],
+[
+3,
+"RNN-Based Character-Level Language Models",
+391
+],
+[
+3,
+"Summary",
+392
+],
+[
+3,
+"Exercises",
+392
+],
+[
+2,
+"Recurrent Neural Network Implementation from Scratch",
+392
+],
+[
+3,
+"RNN Model",
+393
+],
+[
+3,
+"RNN-Based Language Model",
+394
+],
+[
+4,
+"One-Hot Encoding",
+395
+],
+[
+4,
+"Transforming RNN Outputs",
+395
+],
+[
+3,
+"Gradient Clipping",
+396
+],
+[
+3,
+"Training",
+397
+],
+[
+3,
+"Decoding",
+398
+],
+[
+3,
+"Summary",
+399
+],
+[
+3,
+"Exercises",
+399
+],
+[
+2,
+"Concise Implementation of Recurrent Neural Networks",
+400
+],
+[
+3,
+"Defining the Model",
+400
+],
+[
+3,
+"Training and Predicting",
+401
+],
+[
+3,
+"Summary",
+401
+],
+[
+3,
+"Exercises",
+402
+],
+[
+2,
+"Backpropagation Through Time",
+402
+],
+[
+3,
+"Analysis of Gradients in RNNs",
+402
+],
+[
+4,
+"Full Computation",
+404
+],
+[
+4,
+"Truncating Time Steps",
+404
+],
+[
+4,
+"Randomized Truncation",
+404
+],
+[
+4,
+"Comparing Strategies",
+404
+],
+[
+3,
+"Backpropagation Through Time in Detail",
+405
+],
+[
+3,
+"Summary",
+407
+],
+[
+3,
+"Exercises",
+408
+],
+[
+1,
+"Modern Recurrent Neural Networks",
+409
+],
+[
+2,
+"Long Short-Term Memory (LSTM)",
+409
+],
+[
+3,
+"Gated Memory Cell",
+410
+],
+[
+4,
+"Gated Hidden State",
+410
+],
+[
+4,
+"Input Gate, Forget Gate, and Output Gate",
+410
+],
+[
+4,
+"Input Node",
+411
+],
+[
+4,
+"Memory Cell Internal State",
+412
+],
+[
+4,
+"Hidden State",
+413
+],
+[
+3,
+"Implementation from Scratch",
+413
+],
+[
+4,
+"Initializing Model Parameters",
+413
+],
+[
+4,
+"Training and Prediction",
+413
+],
+[
+3,
+"Concise Implementation",
+414
+],
+[
+3,
+"Summary",
+416
+],
+[
+3,
+"Exercises",
+416
+],
+[
+2,
+"Gated Recurrent Units (GRU)",
+416
+],
+[
+3,
+"Reset Gate and Update Gate",
+417
+],
+[
+3,
+"Candidate Hidden State",
+417
+],
+[
+3,
+"Hidden State",
+418
+],
+[
+3,
+"Implementation from Scratch",
+419
+],
+[
+4,
+"Initializing Model Parameters",
+419
+],
+[
+4,
+"Defining the Model",
+419
+],
+[
+4,
+"Training",
+419
+],
+[
+3,
+"Concise Implementation",
+420
+],
+[
+3,
+"Summary",
+421
+],
+[
+3,
+"Exercises",
+421
+],
+[
+2,
+"Deep Recurrent Neural Networks",
+421
+],
+[
+3,
+"Implementation from Scratch",
+423
+],
+[
+3,
+"Concise Implementation",
+424
+],
+[
+3,
+"Summary",
+424
+],
+[
+3,
+"Exercises",
+425
+],
+[
+2,
+"Bidirectional Recurrent Neural Networks",
+425
+],
+[
+3,
+"Implementation from Scratch",
+427
+],
+[
+3,
+"Concise Implementation",
+427
+],
+[
+3,
+"Summary",
+427
+],
+[
+3,
+"Exercises",
+428
+],
+[
+2,
+"Machine Translation and the Dataset",
+428
+],
+[
+3,
+"Downloading and Preprocessing the Dataset",
+429
+],
+[
+3,
+"Tokenization",
+430
+],
+[
+3,
+"Loading Sequences of Fixed Length",
+431
+],
+[
+3,
+"Reading the Dataset",
+432
+],
+[
+3,
+"Summary",
+433
+],
+[
+3,
+"Exercises",
+434
+],
+[
+2,
+"The Encoder-Decoder Architecture",
+434
+],
+[
+3,
+"Encoder",
+434
+],
+[
+3,
+"Decoder",
+435
+],
+[
+3,
+"Putting the Encoder and Decoder Together",
+435
+],
+[
+3,
+"Summary",
+435
+],
+[
+3,
+"Exercises",
+436
+],
+[
+2,
+"Sequence-to-Sequence Learning for Machine Translation",
+436
+],
+[
+3,
+"Teacher Forcing",
+437
+],
+[
+3,
+"Encoder",
+437
+],
+[
+3,
+"Decoder",
+439
+],
+[
+3,
+"Encoder–Decoder for Sequence-to-Sequence Learning",
+440
+],
+[
+3,
+"Loss Function with Masking",
+441
+],
+[
+3,
+"Training",
+441
+],
+[
+3,
+"Prediction",
+442
+],
+[
+3,
+"Evaluation of Predicted Sequences",
+443
+],
+[
+3,
+"Summary",
+444
+],
+[
+3,
+"Exercises",
+444
+],
+[
+2,
+"Beam Search",
+445
+],
+[
+3,
+"Greedy Search",
+445
+],
+[
+3,
+"Exhaustive Search",
+447
+],
+[
+3,
+"Beam Search",
+447
+],
+[
+3,
+"Summary",
+448
+],
+[
+3,
+"Exercises",
+448
+],
+[
+1,
+"Attention Mechanisms and Transformers",
+449
+],
+[
+2,
+"Queries, Keys, and Values",
+451
+],
+[
+3,
+"Visualization",
+453
+],
+[
+3,
+"Summary",
+454
+],
+[
+3,
+"Exercises",
+454
+],
+[
+2,
+"Attention Pooling by Similarity",
+455
+],
+[
+3,
+"Kernels and Data",
+455
+],
+[
+3,
+"Attention Pooling via Nadaraya–Watson Regression",
+457
+],
+[
+3,
+"Adapting Attention Pooling",
+458
+],
+[
+3,
+"Summary",
+459
+],
+[
+3,
+"Exercises",
+459
+],
+[
+2,
+"Attention Scoring Functions",
+460
+],
+[
+3,
+"Dot Product Attention",
+461
+],
+[
+3,
+"Convenience Functions",
+461
+],
+[
+4,
+"Masked Softmax Operation",
+461
+],
+[
+4,
+"Batch Matrix Multiplication",
+461
+],
+[
+3,
+"Scaled Dot Product Attention",
+463
+],
+[
+3,
+"Additive Attention",
+464
+],
+[
+3,
+"Summary",
+466
+],
+[
+3,
+"Exercises",
+466
+],
+[
+2,
+"The Bahdanau Attention Mechanism",
+466
+],
+[
+3,
+"Model",
+468
+],
+[
+3,
+"Defining the Decoder with Attention",
+468
+],
+[
+3,
+"Training",
+470
+],
+[
+3,
+"Summary",
+471
+],
+[
+3,
+"Exercises",
+472
+],
+[
+2,
+"Multi-Head Attention",
+472
+],
+[
+3,
+"Model",
+472
+],
+[
+3,
+"Implementation",
+473
+],
+[
+3,
+"Summary",
+475
+],
+[
+3,
+"Exercises",
+475
+],
+[
+2,
+"Self-Attention and Positional Encoding",
+475
+],
+[
+3,
+"Self-Attention",
+476
+],
+[
+3,
+"Comparing CNNs, RNNs, and Self-Attention",
+476
+],
+[
+3,
+"Positional Encoding",
+477
+],
+[
+4,
+"Absolute Positional Information",
+478
+],
+[
+4,
+"Relative Positional Information",
+478
+],
+[
+3,
+"Summary",
+480
+],
+[
+3,
+"Exercises",
+480
+],
+[
+2,
+"The Transformer Architecture",
+480
+],
+[
+3,
+"Model",
+481
+],
+[
+3,
+"Positionwise Feed-Forward Networks",
+481
+],
+[
+3,
+"Residual Connection and Layer Normalization",
+483
+],
+[
+3,
+"Encoder",
+484
+],
+[
+3,
+"Decoder",
+485
+],
+[
+3,
+"Training",
+487
+],
+[
+3,
+"Summary",
+490
+],
+[
+3,
+"Exercises",
+491
+],
+[
+2,
+"Transformers for Vision",
+491
+],
+[
+3,
+"Model",
+492
+],
+[
+3,
+"Patch Embedding",
+493
+],
+[
+3,
+"Vision Transformer Encoder",
+493
+],
+[
+3,
+"Putting It All Together",
+494
+],
+[
+3,
+"Training",
+495
+],
+[
+3,
+"Summary and Discussion",
+495
+],
+[
+3,
+"Exercises",
+496
+],
+[
+2,
+"Large-Scale Pretraining with Transformers",
+496
+],
+[
+3,
+"Encoder-Only",
+497
+],
+[
+4,
+"Pretraining BERT",
+497
+],
+[
+4,
+"Fine-Tuning BERT",
+498
+],
+[
+3,
+"Encoder–Decoder",
+499
+],
+[
+4,
+"Pretraining T5",
+499
+],
+[
+4,
+"Fine-Tuning T5",
+500
+],
+[
+3,
+"Decoder-Only",
+501
+],
+[
+4,
+"GPT and GPT-2",
+501
+],
+[
+4,
+"GPT-3 and Beyond",
+502
+],
+[
+3,
+"Scalability",
+503
+],
+[
+3,
+"Large Language Models",
+504
+],
+[
+3,
+"Summary and Discussion",
+506
+],
+[
+3,
+"Exercises",
+506
+],
+[
+1,
+"Optimization Algorithms",
+508
+],
+[
+2,
+"Optimization and Deep Learning",
+508
+],
+[
+3,
+"Goal of Optimization",
+508
+],
+[
+3,
+"Optimization Challenges in Deep Learning",
+509
+],
+[
+4,
+"Local Minima",
+510
+],
+[
+4,
+"Saddle Points",
+510
+],
+[
+4,
+"Vanishing Gradients",
+510
+],
+[
+3,
+"Summary",
+513
+],
+[
+3,
+"Exercises",
+513
+],
+[
+2,
+"Convexity",
+513
+],
+[
+3,
+"Definitions",
+514
+],
+[
+4,
+"Convex Sets",
+514
+],
+[
+4,
+"Convex Functions",
+515
+],
+[
+4,
+"Jensen’s Inequality",
+515
+],
+[
+3,
+"Properties",
+516
+],
+[
+4,
+"Local Minima Are Global Minima",
+517
+],
+[
+4,
+"Below Sets of Convex Functions Are Convex",
+517
+],
+[
+4,
+"Convexity and Second Derivatives",
+518
+],
+[
+3,
+"Constraints",
+519
+],
+[
+4,
+"Lagrangian",
+519
+],
+[
+4,
+"Penalties",
+520
+],
+[
+4,
+"Projections",
+520
+],
+[
+3,
+"Summary",
+521
+],
+[
+3,
+"Exercises",
+521
+],
+[
+2,
+"Gradient Descent",
+522
+],
+[
+3,
+"One-Dimensional Gradient Descent",
+522
+],
+[
+4,
+"Learning Rate",
+523
+],
+[
+4,
+"Local Minima",
+523
+],
+[
+3,
+"Multivariate Gradient Descent",
+526
+],
+[
+3,
+"Adaptive Methods",
+527
+],
+[
+4,
+"Newton’s Method",
+528
+],
+[
+4,
+"Convergence Analysis",
+528
+],
+[
+4,
+"Preconditioning",
+531
+],
+[
+4,
+"Gradient Descent with Line Search",
+531
+],
+[
+3,
+"Summary",
+532
+],
+[
+3,
+"Exercises",
+532
+],
+[
+2,
+"Stochastic Gradient Descent",
+532
+],
+[
+3,
+"Stochastic Gradient Updates",
+533
+],
+[
+3,
+"Dynamic Learning Rate",
+535
+],
+[
+3,
+"Convergence Analysis for Convex Objectives",
+536
+],
+[
+3,
+"Stochastic Gradients and Finite Samples",
+538
+],
+[
+3,
+"Summary",
+539
+],
+[
+3,
+"Exercises",
+539
+],
+[
+2,
+"Minibatch Stochastic Gradient Descent",
+539
+],
+[
+3,
+"Vectorization and Caches",
+540
+],
+[
+3,
+"Minibatches",
+543
+],
+[
+3,
+"Reading the Dataset",
+544
+],
+[
+3,
+"Implementation from Scratch",
+544
+],
+[
+3,
+"Concise Implementation",
+547
+],
+[
+3,
+"Summary",
+549
+],
+[
+3,
+"Exercises",
+549
+],
+[
+2,
+"Momentum",
+550
+],
+[
+3,
+"Basics",
+550
+],
+[
+4,
+"Leaky Averages",
+550
+],
+[
+4,
+"An Ill-conditioned Problem",
+551
+],
+[
+4,
+"The Momentum Method",
+551
+],
+[
+4,
+"Effective Sample Weight",
+552
+],
+[
+3,
+"Practical Experiments",
+554
+],
+[
+4,
+"Implementation from Scratch",
+554
+],
+[
+4,
+"Concise Implementation",
+554
+],
+[
+3,
+"Theoretical Analysis",
+556
+],
+[
+4,
+"Quadratic Convex Functions",
+557
+],
+[
+4,
+"Scalar Functions",
+557
+],
+[
+3,
+"Summary",
+558
+],
+[
+3,
+"Exercises",
+559
+],
+[
+2,
+"Adagrad",
+559
+],
+[
+3,
+"Sparse Features and Learning Rates",
+559
+],
+[
+3,
+"Preconditioning",
+560
+],
+[
+3,
+"The Algorithm",
+561
+],
+[
+3,
+"Implementation from Scratch",
+563
+],
+[
+3,
+"Concise Implementation",
+564
+],
+[
+3,
+"Summary",
+564
+],
+[
+3,
+"Exercises",
+565
+],
+[
+2,
+"RMSProp",
+565
+],
+[
+3,
+"The Algorithm",
+566
+],
+[
+3,
+"Implementation from Scratch",
+566
+],
+[
+3,
+"Concise Implementation",
+568
+],
+[
+3,
+"Summary",
+568
+],
+[
+3,
+"Exercises",
+569
+],
+[
+2,
+"Adadelta",
+569
+],
+[
+3,
+"The Algorithm",
+569
+],
+[
+3,
+"Implementation",
+570
+],
+[
+3,
+"Summary",
+571
+],
+[
+3,
+"Exercises",
+571
+],
+[
+2,
+"Adam",
+572
+],
+[
+3,
+"The Algorithm",
+572
+],
+[
+3,
+"Implementation",
+573
+],
+[
+3,
+"Yogi",
+574
+],
+[
+3,
+"Summary",
+575
+],
+[
+3,
+"Exercises",
+576
+],
+[
+2,
+"Learning Rate Scheduling",
+576
+],
+[
+3,
+"Toy Problem",
+577
+],
+[
+3,
+"Schedulers",
+579
+],
+[
+3,
+"Policies",
+580
+],
+[
+4,
+"Factor Scheduler",
+581
+],
+[
+4,
+"Multi Factor Scheduler",
+581
+],
+[
+4,
+"Cosine Scheduler",
+581
+],
+[
+4,
+"Warmup",
+583
+],
+[
+3,
+"Summary",
+585
+],
+[
+3,
+"Exercises",
+585
+],
+[
+1,
+"Computational Performance",
+587
+],
+[
+2,
+"Compilers and Interpreters",
+587
+],
+[
+3,
+"Symbolic Programming",
+588
+],
+[
+3,
+"Hybrid Programming",
+589
+],
+[
+3,
+"Hybridizing the Sequential Class",
+590
+],
+[
+4,
+"Acceleration by Hybridization",
+591
+],
+[
+4,
+"Serialization",
+591
+],
+[
+3,
+"Summary",
+592
+],
+[
+3,
+"Exercises",
+592
+],
+[
+2,
+"Asynchronous Computation",
+592
+],
+[
+3,
+"Asynchrony via Backend",
+592
+],
+[
+3,
+"Barriers and Blockers",
+594
+],
+[
+3,
+"Improving Computation",
+594
+],
+[
+3,
+"Summary",
+595
+],
+[
+3,
+"Exercises",
+595
+],
+[
+2,
+"Automatic Parallelism",
+595
+],
+[
+3,
+"Parallel Computation on GPUs",
+596
+],
+[
+3,
+"Parallel Computation and Communication",
+597
+],
+[
+3,
+"Summary",
+598
+],
+[
+3,
+"Exercises",
+598
+],
+[
+2,
+"Hardware",
+599
+],
+[
+3,
+"Computers",
+600
+],
+[
+3,
+"Memory",
+601
+],
+[
+3,
+"Storage",
+602
+],
+[
+4,
+"Hard Disk Drives",
+602
+],
+[
+4,
+"Solid State Drives",
+602
+],
+[
+4,
+"Cloud Storage",
+602
+],
+[
+3,
+"CPUs",
+603
+],
+[
+4,
+"Microarchitecture",
+603
+],
+[
+4,
+"Vectorization",
+604
+],
+[
+4,
+"Cache",
+605
+],
+[
+3,
+"GPUs and other Accelerators",
+606
+],
+[
+3,
+"Networks and Buses",
+609
+],
+[
+3,
+"More Latency Numbers",
+609
+],
+[
+3,
+"Summary",
+611
+],
+[
+3,
+"Exercises",
+611
+],
+[
+2,
+"Training on Multiple GPUs",
+612
+],
+[
+3,
+"Splitting the Problem",
+613
+],
+[
+3,
+"Data Parallelism",
+614
+],
+[
+3,
+"A Toy Network",
+615
+],
+[
+3,
+"Data Synchronization",
+616
+],
+[
+3,
+"Distributing Data",
+617
+],
+[
+3,
+"Training",
+618
+],
+[
+3,
+"Summary",
+620
+],
+[
+3,
+"Exercises",
+620
+],
+[
+2,
+"Concise Implementation for Multiple GPUs",
+620
+],
+[
+3,
+"A Toy Network",
+621
+],
+[
+3,
+"Network Initialization",
+621
+],
+[
+3,
+"Training",
+622
+],
+[
+3,
+"Summary",
+623
+],
+[
+3,
+"Exercises",
+623
+],
+[
+2,
+"Parameter Servers",
+624
+],
+[
+3,
+"Data-Parallel Training",
+624
+],
+[
+3,
+"Ring Synchronization",
+626
+],
+[
+3,
+"Multi-Machine Training",
+628
+],
+[
+3,
+"Key–Value Stores",
+629
+],
+[
+3,
+"Summary",
+631
+],
+[
+3,
+"Exercises",
+631
+],
+[
+1,
+"Computer Vision",
+632
+],
+[
+2,
+"Image Augmentation",
+632
+],
+[
+3,
+"Common Image Augmentation Methods",
+633
+],
+[
+4,
+"Flipping and Cropping",
+633
+],
+[
+4,
+"Changing Colors",
+633
+],
+[
+4,
+"Combining Multiple Image Augmentation Methods",
+633
+],
+[
+3,
+"Training with Image Augmentation",
+636
+],
+[
+4,
+"Multi-GPU Training",
+637
+],
+[
+3,
+"Summary",
+639
+],
+[
+3,
+"Exercises",
+639
+],
+[
+2,
+"Fine-Tuning",
+640
+],
+[
+3,
+"Steps",
+640
+],
+[
+3,
+"Hot Dog Recognition",
+641
+],
+[
+4,
+"Reading the Dataset",
+641
+],
+[
+4,
+"Defining and Initializing the Model",
+641
+],
+[
+4,
+"Fine-Tuning the Model",
+641
+],
+[
+3,
+"Summary",
+645
+],
+[
+3,
+"Exercises",
+645
+],
+[
+2,
+"Object Detection and Bounding Boxes",
+646
+],
+[
+3,
+"Bounding Boxes",
+647
+],
+[
+3,
+"Summary",
+648
+],
+[
+3,
+"Exercises",
+649
+],
+[
+2,
+"Anchor Boxes",
+649
+],
+[
+3,
+"Generating Multiple Anchor Boxes",
+649
+],
+[
+3,
+"Intersection over Union (IoU)",
+652
+],
+[
+3,
+"Labeling Anchor Boxes in Training Data",
+653
+],
+[
+4,
+"Assigning Ground-Truth Bounding Boxes to Anchor Boxes",
+654
+],
+[
+4,
+"Labeling Classes and Offsets",
+655
+],
+[
+4,
+"An Example",
+656
+],
+[
+3,
+"Predicting Bounding Boxes with Non-Maximum Suppression",
+659
+],
+[
+3,
+"Summary",
+662
+],
+[
+3,
+"Exercises",
+662
+],
+[
+2,
+"Multiscale Object Detection",
+663
+],
+[
+3,
+"Multiscale Anchor Boxes",
+663
+],
+[
+3,
+"Multiscale Detection",
+665
+],
+[
+3,
+"Summary",
+666
+],
+[
+3,
+"Exercises",
+666
+],
+[
+2,
+"The Object Detection Dataset",
+667
+],
+[
+3,
+"Downloading the Dataset",
+667
+],
+[
+3,
+"Reading the Dataset",
+667
+],
+[
+3,
+"Demonstration",
+669
+],
+[
+3,
+"Summary",
+669
+],
+[
+3,
+"Exercises",
+669
+],
+[
+2,
+"Single Shot Multibox Detection",
+670
+],
+[
+3,
+"Model",
+670
+],
+[
+4,
+"Class Prediction Layer",
+671
+],
+[
+4,
+"Bounding Box Prediction Layer",
+671
+],
+[
+4,
+"Concatenating Predictions for Multiple Scales",
+671
+],
+[
+4,
+"Downsampling Block",
+671
+],
+[
+4,
+"Base Network Block",
+671
+],
+[
+4,
+"The Complete Model",
+671
+],
+[
+3,
+"Training",
+676
+],
+[
+4,
+"Reading the Dataset and Initializing the Model",
+676
+],
+[
+4,
+"Defining Loss and Evaluation Functions",
+676
+],
+[
+4,
+"Training the Model",
+676
+],
+[
+3,
+"Prediction",
+678
+],
+[
+3,
+"Summary",
+679
+],
+[
+3,
+"Exercises",
+680
+],
+[
+2,
+"Region-based CNNs (R-CNNs)",
+682
+],
+[
+3,
+"R-CNNs",
+682
+],
+[
+3,
+"Fast R-CNN",
+683
+],
+[
+3,
+"Faster R-CNN",
+685
+],
+[
+3,
+"Mask R-CNN",
+686
+],
+[
+3,
+"Summary",
+687
+],
+[
+3,
+"Exercises",
+687
+],
+[
+2,
+"Semantic Segmentation and the Dataset",
+687
+],
+[
+3,
+"Image Segmentation and Instance Segmentation",
+688
+],
+[
+3,
+"The Pascal VOC2012 Semantic Segmentation Dataset",
+688
+],
+[
+4,
+"Data Preprocessing",
+688
+],
+[
+4,
+"Custom Semantic Segmentation Dataset Class",
+688
+],
+[
+4,
+"Reading the Dataset",
+688
+],
+[
+4,
+"Putting It All Together",
+688
+],
+[
+3,
+"Summary",
+693
+],
+[
+3,
+"Exercises",
+694
+],
+[
+2,
+"Transposed Convolution",
+694
+],
+[
+3,
+"Basic Operation",
+694
+],
+[
+3,
+"Padding, Strides, and Multiple Channels",
+696
+],
+[
+3,
+"Connection to Matrix Transposition",
+697
+],
+[
+3,
+"Summary",
+699
+],
+[
+3,
+"Exercises",
+699
+],
+[
+2,
+"Fully Convolutional Networks",
+699
+],
+[
+3,
+"The Model",
+699
+],
+[
+3,
+"Initializing Transposed Convolutional Layers",
+702
+],
+[
+3,
+"Reading the Dataset",
+703
+],
+[
+3,
+"Training",
+704
+],
+[
+3,
+"Prediction",
+704
+],
+[
+3,
+"Summary",
+705
+],
+[
+3,
+"Exercises",
+706
+],
+[
+2,
+"Neural Style Transfer",
+706
+],
+[
+3,
+"Method",
+706
+],
+[
+3,
+"Reading the Content and Style Images",
+707
+],
+[
+3,
+"Preprocessing and Postprocessing",
+708
+],
+[
+3,
+"Extracting Features",
+709
+],
+[
+3,
+"Defining the Loss Function",
+710
+],
+[
+4,
+"Content Loss",
+710
+],
+[
+4,
+"Style Loss",
+710
+],
+[
+4,
+"Total Variation Loss",
+710
+],
+[
+4,
+"Loss Function",
+711
+],
+[
+3,
+"Initializing the Synthesized Image",
+712
+],
+[
+3,
+"Training",
+712
+],
+[
+3,
+"Summary",
+714
+],
+[
+3,
+"Exercises",
+714
+],
+[
+2,
+"Image Classification (CIFAR-10) on Kaggle",
+714
+],
+[
+3,
+"Obtaining and Organizing the Dataset",
+715
+],
+[
+4,
+"Downloading the Dataset",
+715
+],
+[
+4,
+"Organizing the Dataset",
+715
+],
+[
+3,
+"Image Augmentation",
+718
+],
+[
+3,
+"Reading the Dataset",
+718
+],
+[
+3,
+"Defining the Model",
+719
+],
+[
+3,
+"Defining the Training Function",
+719
+],
+[
+3,
+"Training and Validating the Model",
+720
+],
+[
+3,
+"Classifying the Testing Set and Submitting Results on Kaggle",
+720
+],
+[
+3,
+"Summary",
+721
+],
+[
+3,
+"Exercises",
+722
+],
+[
+2,
+"Dog Breed Identification (ImageNet Dogs) on Kaggle",
+722
+],
+[
+3,
+"Obtaining and Organizing the Dataset",
+722
+],
+[
+4,
+"Downloading the Dataset",
+722
+],
+[
+4,
+"Organizing the Dataset",
+722
+],
+[
+3,
+"Image Augmentation",
+724
+],
+[
+3,
+"Reading the Dataset",
+725
+],
+[
+3,
+"Fine-Tuning a Pretrained Model",
+725
+],
+[
+3,
+"Defining the Training Function",
+726
+],
+[
+3,
+"Training and Validating the Model",
+727
+],
+[
+3,
+"Classifying the Testing Set and Submitting Results on Kaggle",
+727
+],
+[
+3,
+"Summary",
+728
+],
+[
+3,
+"Exercises",
+728
+],
+[
+1,
+"Natural Language Processing: Pretraining",
+730
+],
+[
+2,
+"Word Embedding (word2vec)",
+730
+],
+[
+3,
+"One-Hot Vectors Are a Bad Choice",
+731
+],
+[
+3,
+"Self-Supervised word2vec",
+731
+],
+[
+3,
+"The Skip-Gram Model",
+732
+],
+[
+4,
+"Training",
+733
+],
+[
+3,
+"The Continuous Bag of Words (CBOW) Model",
+734
+],
+[
+4,
+"Training",
+735
+],
+[
+3,
+"Summary",
+735
+],
+[
+3,
+"Exercises",
+735
+],
+[
+2,
+"Approximate Training",
+736
+],
+[
+3,
+"Negative Sampling",
+736
+],
+[
+3,
+"Hierarchical Softmax",
+737
+],
+[
+3,
+"Summary",
+738
+],
+[
+3,
+"Exercises",
+739
+],
+[
+2,
+"The Dataset for Pretraining Word Embeddings",
+739
+],
+[
+3,
+"Reading the Dataset",
+739
+],
+[
+3,
+"Subsampling",
+740
+],
+[
+3,
+"Extracting Center Words and Context Words",
+742
+],
+[
+3,
+"Negative Sampling",
+743
+],
+[
+3,
+"Loading Training Examples in Minibatches",
+744
+],
+[
+3,
+"Putting It All Together",
+745
+],
+[
+3,
+"Summary",
+746
+],
+[
+3,
+"Exercises",
+746
+],
+[
+2,
+"Pretraining word2vec",
+747
+],
+[
+3,
+"The Skip-Gram Model",
+747
+],
+[
+4,
+"Embedding Layer",
+747
+],
+[
+4,
+"Defining the Forward Propagation",
+747
+],
+[
+3,
+"Training",
+748
+],
+[
+4,
+"Binary Cross-Entropy Loss",
+748
+],
+[
+4,
+"Initializing Model Parameters",
+748
+],
+[
+4,
+"Defining the Training Loop",
+748
+],
+[
+3,
+"Applying Word Embeddings",
+750
+],
+[
+3,
+"Summary",
+751
+],
+[
+3,
+"Exercises",
+751
+],
+[
+2,
+"Word Embedding with Global Vectors (GloVe)",
+751
+],
+[
+3,
+"Skip-Gram with Global Corpus Statistics",
+752
+],
+[
+3,
+"The GloVe Model",
+753
+],
+[
+3,
+"Interpreting GloVe from the Ratio of Co-occurrence Probabilities",
+753
+],
+[
+3,
+"Summary",
+754
+],
+[
+3,
+"Exercises",
+755
+],
+[
+2,
+"Subword Embedding",
+755
+],
+[
+3,
+"The fastText Model",
+755
+],
+[
+3,
+"Byte Pair Encoding",
+756
+],
+[
+3,
+"Summary",
+759
+],
+[
+3,
+"Exercises",
+759
+],
+[
+2,
+"Word Similarity and Analogy",
+759
+],
+[
+3,
+"Loading Pretrained Word Vectors",
+760
+],
+[
+3,
+"Applying Pretrained Word Vectors",
+762
+],
+[
+4,
+"Word Similarity",
+762
+],
+[
+4,
+"Word Analogy",
+762
+],
+[
+3,
+"Summary",
+764
+],
+[
+3,
+"Exercises",
+764
+],
+[
+2,
+"Bidirectional Encoder Representations from Transformers (BERT)",
+764
+],
+[
+3,
+"From Context-Independent to Context-Sensitive",
+764
+],
+[
+3,
+"From Task-Specific to Task-Agnostic",
+765
+],
+[
+3,
+"BERT: Combining the Best of Both Worlds",
+765
+],
+[
+3,
+"Input Representation",
+766
+],
+[
+3,
+"Pretraining Tasks",
+768
+],
+[
+4,
+"Masked Language Modeling",
+769
+],
+[
+4,
+"Next Sentence Prediction",
+769
+],
+[
+3,
+"Putting It All Together",
+771
+],
+[
+3,
+"Summary",
+772
+],
+[
+3,
+"Exercises",
+772
+],
+[
+2,
+"The Dataset for Pretraining BERT",
+773
+],
+[
+3,
+"Defining Helper Functions for Pretraining Tasks",
+774
+],
+[
+4,
+"Generating the Next Sentence Prediction Task",
+774
+],
+[
+4,
+"Generating the Masked Language Modeling Task",
+774
+],
+[
+3,
+"Transforming Text into the Pretraining Dataset",
+776
+],
+[
+3,
+"Summary",
+778
+],
+[
+3,
+"Exercises",
+778
+],
+[
+2,
+"Pretraining BERT",
+779
+],
+[
+3,
+"Pretraining BERT",
+779
+],
+[
+3,
+"Representing Text with BERT",
+781
+],
+[
+3,
+"Summary",
+782
+],
+[
+3,
+"Exercises",
+783
+],
+[
+1,
+"Natural Language Processing: Applications",
+784
+],
+[
+2,
+"Sentiment Analysis and the Dataset",
+785
+],
+[
+3,
+"Reading the Dataset",
+785
+],
+[
+3,
+"Preprocessing the Dataset",
+786
+],
+[
+3,
+"Creating Data Iterators",
+787
+],
+[
+3,
+"Putting It All Together",
+787
+],
+[
+3,
+"Summary",
+788
+],
+[
+3,
+"Exercises",
+788
+],
+[
+2,
+"Sentiment Analysis: Using Recurrent Neural Networks",
+788
+],
+[
+3,
+"Representing Single Text with RNNs",
+789
+],
+[
+3,
+"Loading Pretrained Word Vectors",
+790
+],
+[
+3,
+"Training and Evaluating the Model",
+790
+],
+[
+3,
+"Summary",
+791
+],
+[
+3,
+"Exercises",
+792
+],
+[
+2,
+"Sentiment Analysis: Using Convolutional Neural Networks",
+792
+],
+[
+3,
+"One-Dimensional Convolutions",
+792
+],
+[
+3,
+"Max-Over-Time Pooling",
+794
+],
+[
+3,
+"The textCNN Model",
+795
+],
+[
+4,
+"Defining the Model",
+796
+],
+[
+4,
+"Loading Pretrained Word Vectors",
+796
+],
+[
+4,
+"Training and Evaluating the Model",
+796
+],
+[
+3,
+"Summary",
+798
+],
+[
+3,
+"Exercises",
+798
+],
+[
+2,
+"Natural Language Inference and the Dataset",
+798
+],
+[
+3,
+"Natural Language Inference",
+799
+],
+[
+3,
+"The Stanford Natural Language Inference (SNLI) Dataset",
+799
+],
+[
+4,
+"Reading the Dataset",
+800
+],
+[
+4,
+"Defining a Class for Loading the Dataset",
+800
+],
+[
+4,
+"Putting It All Together",
+800
+],
+[
+3,
+"Summary",
+803
+],
+[
+3,
+"Exercises",
+803
+],
+[
+2,
+"Natural Language Inference: Using Attention",
+803
+],
+[
+3,
+"The Model",
+804
+],
+[
+4,
+"Attending",
+804
+],
+[
+4,
+"Comparing",
+806
+],
+[
+4,
+"Aggregating",
+806
+],
+[
+4,
+"Putting It All Together",
+807
+],
+[
+3,
+"Training and Evaluating the Model",
+808
+],
+[
+4,
+"Reading the dataset",
+808
+],
+[
+4,
+"Creating the Model",
+808
+],
+[
+4,
+"Training and Evaluating the Model",
+808
+],
+[
+4,
+"Using the Model",
+808
+],
+[
+3,
+"Summary",
+810
+],
+[
+3,
+"Exercises",
+810
+],
+[
+2,
+"Fine-Tuning BERT for Sequence-Level and Token-Level Applications",
+810
+],
+[
+3,
+"Single Text Classification",
+811
+],
+[
+3,
+"Text Pair Classification or Regression",
+811
+],
+[
+3,
+"Text Tagging",
+813
+],
+[
+3,
+"Question Answering",
+813
+],
+[
+3,
+"Summary",
+814
+],
+[
+3,
+"Exercises",
+814
+],
+[
+2,
+"Natural Language Inference: Fine-Tuning BERT",
+815
+],
+[
+3,
+"Loading Pretrained BERT",
+815
+],
+[
+3,
+"The Dataset for Fine-Tuning BERT",
+816
+],
+[
+3,
+"Fine-Tuning BERT",
+818
+],
+[
+3,
+"Summary",
+819
+],
+[
+3,
+"Exercises",
+819
+],
+[
+1,
+"Reinforcement Learning",
+821
+],
+[
+2,
+"Markov Decision Process (MDP)",
+822
+],
+[
+3,
+"Definition of an MDP",
+822
+],
+[
+3,
+"Return and Discount Factor",
+823
+],
+[
+3,
+"Discussion of the Markov Assumption",
+824
+],
+[
+3,
+"Summary",
+825
+],
+[
+3,
+"Exercises",
+825
+],
+[
+2,
+"Value Iteration",
+825
+],
+[
+3,
+"Stochastic Policy",
+825
+],
+[
+3,
+"Value Function",
+825
+],
+[
+3,
+"Action-Value Function",
+826
+],
+[
+3,
+"Optimal Stochastic Policy",
+827
+],
+[
+3,
+"Principle of Dynamic Programming",
+827
+],
+[
+3,
+"Value Iteration",
+828
+],
+[
+3,
+"Policy Evaluation",
+828
+],
+[
+3,
+"Implementation of Value Iteration",
+828
+],
+[
+3,
+"Summary",
+830
+],
+[
+3,
+"Exercises",
+831
+],
+[
+2,
+"Q-Learning",
+831
+],
+[
+3,
+"The Q-Learning Algorithm",
+831
+],
+[
+3,
+"An Optimization Problem Underlying Q-Learning",
+831
+],
+[
+3,
+"Exploration in Q-Learning",
+832
+],
+[
+3,
+"The “Self-correcting” Property of Q-Learning",
+833
+],
+[
+3,
+"Implementation of Q-Learning",
+834
+],
+[
+3,
+"Summary",
+835
+],
+[
+3,
+"Exercises",
+835
+],
+[
+1,
+"Gaussian Processes",
+837
+],
+[
+2,
+"Introduction to Gaussian Processes",
+837
+],
+[
+3,
+"Summary",
+847
+],
+[
+3,
+"Exercises",
+848
+],
+[
+2,
+"Gaussian Process Priors",
+849
+],
+[
+3,
+"Definition",
+849
+],
+[
+3,
+"A Simple Gaussian Process",
+849
+],
+[
+3,
+"From Weight Space to Function Space",
+850
+],
+[
+3,
+"The Radial Basis Function (RBF) Kernel",
+851
+],
+[
+3,
+"The Neural Network Kernel",
+853
+],
+[
+3,
+"Summary",
+854
+],
+[
+3,
+"Exercises",
+854
+],
+[
+2,
+"Gaussian Process Inference",
+855
+],
+[
+3,
+"Posterior Inference for Regression",
+855
+],
+[
+3,
+"Equations for Making Predictions and Learning Kernel Hyperparameters in GP Regression",
+856
+],
+[
+3,
+"Interpreting Equations for Learning and Predictions",
+857
+],
+[
+3,
+"Worked Example from Scratch",
+858
+],
+[
+3,
+"Making Life Easy with GPyTorch",
+862
+],
+[
+3,
+"Summary",
+865
+],
+[
+3,
+"Exercises",
+865
+],
+[
+1,
+"Hyperparameter Optimization",
+868
+],
+[
+2,
+"What Is Hyperparameter Optimization?",
+868
+],
+[
+3,
+"The Optimization Problem",
+869
+],
+[
+4,
+"The Objective Function",
+870
+],
+[
+4,
+"The Configuration Space",
+870
+],
+[
+3,
+"Random Search",
+872
+],
+[
+3,
+"Summary",
+874
+],
+[
+3,
+"Exercises",
+874
+],
+[
+2,
+"Hyperparameter Optimization API",
+875
+],
+[
+3,
+"Searcher",
+876
+],
+[
+3,
+"Scheduler",
+877
+],
+[
+3,
+"Tuner",
+877
+],
+[
+3,
+"Bookkeeping the Performance of HPO Algorithms",
+878
+],
+[
+3,
+"Example: Optimizing the Hyperparameters of a Convolutional Neural Network",
+878
+],
+[
+3,
+"Comparing HPO Algorithms",
+881
+],
+[
+3,
+"Summary",
+881
+],
+[
+3,
+"Exercises",
+882
+],
+[
+2,
+"Asynchronous Random Search",
+882
+],
+[
+3,
+"Objective Function",
+884
+],
+[
+3,
+"Asynchronous Scheduler",
+885
+],
+[
+3,
+"Visualize the Asynchronous Optimization Process",
+891
+],
+[
+3,
+"Summary",
+892
+],
+[
+3,
+"Exercises",
+893
+],
+[
+2,
+"Multi-Fidelity Hyperparameter Optimization",
+893
+],
+[
+3,
+"Successive Halving",
+895
+],
+[
+3,
+"Summary",
+906
+],
+[
+2,
+"Asynchronous Successive Halving",
+906
+],
+[
+3,
+"Objective Function",
+909
+],
+[
+3,
+"Asynchronous Scheduler",
+909
+],
+[
+3,
+"Visualize the Optimization Process",
+918
+],
+[
+3,
+"Summary",
+919
+],
+[
+1,
+"Generative Adversarial Networks",
+920
+],
+[
+2,
+"Generative Adversarial Networks",
+920
+],
+[
+3,
+"Generate Some “Real” Data",
+922
+],
+[
+3,
+"Generator",
+922
+],
+[
+3,
+"Discriminator",
+923
+],
+[
+3,
+"Training",
+923
+],
+[
+3,
+"Summary",
+925
+],
+[
+3,
+"Exercises",
+925
+],
+[
+2,
+"Deep Convolutional Generative Adversarial Networks",
+925
+],
+[
+3,
+"The Pokemon Dataset",
+926
+],
+[
+3,
+"The Generator",
+927
+],
+[
+3,
+"Discriminator",
+929
+],
+[
+3,
+"Training",
+930
+],
+[
+3,
+"Summary",
+932
+],
+[
+3,
+"Exercises",
+932
+],
+[
+1,
+"Recommender Systems",
+933
+],
+[
+2,
+"Overview of Recommender Systems",
+933
+],
+[
+3,
+"Collaborative Filtering",
+934
+],
+[
+3,
+"Explicit Feedback and Implicit Feedback",
+935
+],
+[
+3,
+"Recommendation Tasks",
+935
+],
+[
+3,
+"Summary",
+935
+],
+[
+3,
+"Exercises",
+935
+],
+[
+1,
+" Appendix AMathematics for Deep Learning",
+937
+],
+[
+2,
+"Geometry and Linear Algebraic Operations",
+938
+],
+[
+3,
+"Geometry of Vectors",
+938
+],
+[
+3,
+"Dot Products and Angles",
+939
+],
+[
+4,
+"Cosine Similarity",
+941
+],
+[
+3,
+"Hyperplanes",
+942
+],
+[
+3,
+"Geometry of Linear Transformations",
+945
+],
+[
+3,
+"Linear Dependence",
+946
+],
+[
+3,
+"Rank",
+947
+],
+[
+3,
+"Invertibility",
+948
+],
+[
+4,
+"Numerical Issues",
+948
+],
+[
+3,
+"Determinant",
+949
+],
+[
+3,
+"Tensors and Common Linear Algebra Operations",
+951
+],
+[
+4,
+"Common Examples from Linear Algebra",
+951
+],
+[
+4,
+"Expressing in Code",
+951
+],
+[
+3,
+"Summary",
+953
+],
+[
+3,
+"Exercises",
+953
+],
+[
+2,
+"Eigendecompositions",
+954
+],
+[
+3,
+"Finding Eigenvalues",
+955
+],
+[
+4,
+"An Example",
+955
+],
+[
+3,
+"Decomposing Matrices",
+956
+],
+[
+3,
+"Operations on Eigendecompositions",
+956
+],
+[
+3,
+"Eigendecompositions of Symmetric Matrices",
+957
+],
+[
+3,
+"Gershgorin Circle Theorem",
+957
+],
+[
+3,
+"A Useful Application: The Growth of Iterated Maps",
+958
+],
+[
+4,
+"Eigenvectors as Long Term Behavior",
+959
+],
+[
+4,
+"Behavior on Random Data",
+959
+],
+[
+4,
+"Relating Back to Eigenvectors",
+959
+],
+[
+4,
+"An Observation",
+959
+],
+[
+4,
+"Fixing the Normalization",
+959
+],
+[
+3,
+"Discussion",
+962
+],
+[
+3,
+"Summary",
+963
+],
+[
+3,
+"Exercises",
+963
+],
+[
+2,
+"Single Variable Calculus",
+963
+],
+[
+3,
+"Differential Calculus",
+964
+],
+[
+3,
+"Rules of Calculus",
+967
+],
+[
+4,
+"Common Derivatives",
+967
+],
+[
+4,
+"Derivative Rules",
+967
+],
+[
+4,
+"Linear Approximation",
+969
+],
+[
+4,
+"Higher Order Derivatives",
+970
+],
+[
+4,
+"Taylor Series",
+972
+],
+[
+3,
+"Summary",
+974
+],
+[
+3,
+"Exercises",
+974
+],
+[
+2,
+"Multivariable Calculus",
+975
+],
+[
+3,
+"Higher-Dimensional Differentiation",
+975
+],
+[
+3,
+"Geometry of Gradients and Gradient Descent",
+977
+],
+[
+3,
+"A Note on Mathematical Optimization",
+978
+],
+[
+3,
+"Multivariate Chain Rule",
+979
+],
+[
+3,
+"The Backpropagation Algorithm",
+981
+],
+[
+3,
+"Hessians",
+984
+],
+[
+3,
+"A Little Matrix Calculus",
+986
+],
+[
+3,
+"Summary",
+990
+],
+[
+3,
+"Exercises",
+991
+],
+[
+2,
+"Integral Calculus",
+991
+],
+[
+3,
+"Geometric Interpretation",
+991
+],
+[
+3,
+"The Fundamental Theorem of Calculus",
+993
+],
+[
+3,
+"Change of Variables",
+995
+],
+[
+3,
+"A Comment on Sign Conventions",
+996
+],
+[
+3,
+"Multiple Integrals",
+997
+],
+[
+3,
+"Change of Variables in Multiple Integrals",
+999
+],
+[
+3,
+"Summary",
+1000
+],
+[
+3,
+"Exercises",
+1000
+],
+[
+2,
+"Random Variables",
+1001
+],
+[
+3,
+"Continuous Random Variables",
+1001
+],
+[
+4,
+"From Discrete to Continuous",
+1001
+],
+[
+4,
+"Probability Density Functions",
+1002
+],
+[
+4,
+"Cumulative Distribution Functions",
+1004
+],
+[
+4,
+"Means",
+1005
+],
+[
+4,
+"Variances",
+1006
+],
+[
+4,
+"Standard Deviations",
+1006
+],
+[
+4,
+"Means and Variances in the Continuum",
+1008
+],
+[
+4,
+"Joint Density Functions",
+1011
+],
+[
+4,
+"Marginal Distributions",
+1012
+],
+[
+4,
+"Covariance",
+1013
+],
+[
+4,
+"Correlation",
+1016
+],
+[
+3,
+"Summary",
+1018
+],
+[
+3,
+"Exercises",
+1018
+],
+[
+2,
+"Maximum Likelihood",
+1019
+],
+[
+3,
+"The Maximum Likelihood Principle",
+1019
+],
+[
+4,
+"A Concrete Example",
+1019
+],
+[
+3,
+"Numerical Optimization and the Negative Log-Likelihood",
+1021
+],
+[
+3,
+"Maximum Likelihood for Continuous Variables",
+1023
+],
+[
+3,
+"Summary",
+1024
+],
+[
+3,
+"Exercises",
+1024
+],
+[
+2,
+"Distributions",
+1024
+],
+[
+3,
+"Bernoulli",
+1025
+],
+[
+3,
+"Discrete Uniform",
+1026
+],
+[
+3,
+"Continuous Uniform",
+1028
+],
+[
+3,
+"Binomial",
+1030
+],
+[
+3,
+"Poisson",
+1032
+],
+[
+3,
+"Gaussian",
+1034
+],
+[
+3,
+"Exponential Family",
+1038
+],
+[
+3,
+"Summary",
+1039
+],
+[
+3,
+"Exercises",
+1039
+],
+[
+2,
+"Naive Bayes",
+1039
+],
+[
+3,
+"Optical Character Recognition",
+1040
+],
+[
+3,
+"The Probabilistic Model for Classification",
+1042
+],
+[
+3,
+"The Naive Bayes Classifier",
+1042
+],
+[
+3,
+"Training",
+1043
+],
+[
+3,
+"Summary",
+1046
+],
+[
+3,
+"Exercises",
+1047
+],
+[
+2,
+"Statistics",
+1047
+],
+[
+3,
+"Evaluating and Comparing Estimators",
+1048
+],
+[
+4,
+"Mean Squared Error",
+1049
+],
+[
+4,
+"Statistical Bias",
+1049
+],
+[
+4,
+"Variance and Standard Deviation",
+1050
+],
+[
+4,
+"The Bias-Variance Trade-off",
+1050
+],
+[
+4,
+"Evaluating Estimators in Code",
+1051
+],
+[
+3,
+"Conducting Hypothesis Tests",
+1052
+],
+[
+4,
+"Statistical Significance",
+1053
+],
+[
+4,
+"Statistical Power",
+1054
+],
+[
+4,
+"Test Statistic",
+1053
+],
+[
+4,
+"p-value",
+1053
+],
+[
+4,
+"One-side Test and Two-sided Test",
+1055
+],
+[
+4,
+"General Steps of Hypothesis Testing",
+1055
+],
+[
+3,
+"Constructing Confidence Intervals",
+1056
+],
+[
+4,
+"Definition",
+1056
+],
+[
+4,
+"Interpretation",
+1056
+],
+[
+4,
+"A Gaussian Example",
+1056
+],
+[
+3,
+"Summary",
+1058
+],
+[
+3,
+"Exercises",
+1058
+],
+[
+2,
+"Information Theory",
+1059
+],
+[
+3,
+"Information",
+1059
+],
+[
+4,
+"Self-information",
+1060
+],
+[
+3,
+"Entropy",
+1061
+],
+[
+4,
+"Motivating Entropy",
+1061
+],
+[
+4,
+"Definition",
+1062
+],
+[
+4,
+"Interpretations",
+1062
+],
+[
+4,
+"Properties of Entropy",
+1063
+],
+[
+3,
+"Mutual Information",
+1063
+],
+[
+4,
+"Joint Entropy",
+1064
+],
+[
+4,
+"Conditional Entropy",
+1064
+],
+[
+4,
+"Mutual Information",
+1065
+],
+[
+4,
+"Properties of Mutual Information",
+1066
+],
+[
+4,
+"Pointwise Mutual Information",
+1067
+],
+[
+4,
+"Applications of Mutual Information",
+1067
+],
+[
+3,
+"Kullback–Leibler Divergence",
+1068
+],
+[
+4,
+"Definition",
+1068
+],
+[
+4,
+"KL Divergence Properties",
+1068
+],
+[
+4,
+"Example",
+1069
+],
+[
+3,
+"Cross-Entropy",
+1070
+],
+[
+4,
+"Formal Definition",
+1071
+],
+[
+4,
+"Properties",
+1071
+],
+[
+4,
+"Cross-Entropy as An Objective Function of Multi-class Classification",
+1072
+],
+[
+3,
+"Summary",
+1073
+],
+[
+3,
+"Exercises",
+1073
+],
+[
+1,
+" Appendix BTools for Deep Learning",
+1075
+],
+[
+2,
+"Using Jupyter Notebooks",
+1075
+],
+[
+3,
+"Editing and Running the Code Locally",
+1075
+],
+[
+3,
+"Advanced Options",
+1076
+],
+[
+4,
+"Markdown Files in Jupyter",
+1078
+],
+[
+4,
+"Running Jupyter Notebooks on a Remote Server",
+1078
+],
+[
+4,
+"Timing",
+1078
+],
+[
+3,
+"Summary",
+1079
+],
+[
+3,
+"Exercises",
+1079
+],
+[
+2,
+"Using Amazon SageMaker",
+1079
+],
+[
+3,
+"Signing Up",
+1080
+],
+[
+3,
+"Creating a SageMaker Instance",
+1080
+],
+[
+3,
+"Running and Stopping an Instance",
+1081
+],
+[
+3,
+"Updating Notebooks",
+1081
+],
+[
+3,
+"Summary",
+1082
+],
+[
+3,
+"Exercises",
+1082
+],
+[
+2,
+"Using AWS EC2 Instances",
+1083
+],
+[
+3,
+"Creating and Running an EC2 Instance",
+1083
+],
+[
+4,
+"Presetting Location",
+1084
+],
+[
+4,
+"Increasing Limits",
+1084
+],
+[
+4,
+"Launching an Instance",
+1084
+],
+[
+4,
+"Connecting to the Instance",
+1087
+],
+[
+3,
+"Installing CUDA",
+1088
+],
+[
+3,
+"Installing Libraries for Running the Code",
+1089
+],
+[
+3,
+"Running the Jupyter Notebook remotely",
+1089
+],
+[
+3,
+"Closing Unused Instances",
+1089
+],
+[
+3,
+"Summary",
+1090
+],
+[
+3,
+"Exercises",
+1090
+],
+[
+2,
+"Using Google Colab",
+1091
+],
+[
+3,
+"Summary",
+1091
+],
+[
+3,
+"Exercises",
+1091
+],
+[
+2,
+"Selecting Servers and GPUs",
+1092
+],
+[
+3,
+"Selecting Servers",
+1092
+],
+[
+3,
+"Selecting GPUs",
+1093
+],
+[
+3,
+"Summary",
+1096
+],
+[
+2,
+"Contributing to This Book",
+1096
+],
+[
+3,
+"Submitting Minor Changes",
+1096
+],
+[
+3,
+"Proposing Major Changes",
+1096
+],
+[
+3,
+"Submitting Major Changes",
+1097
+],
+[
+4,
+"Installing Git",
+1097
+],
+[
+4,
+"Logging in to GitHub",
+1098
+],
+[
+4,
+"Cloning the Repository",
+1098
+],
+[
+4,
+"Editing and Pushing",
+1098
+],
+[
+4,
+"Submitting Pull Requests",
+1098
+],
+[
+3,
+"Summary",
+1100
+],
+[
+3,
+"Exercises",
+1100
+],
+[
+2,
+"Utility Functions and Classes",
+1100
+],
+[
+2,
+"The d2l API Document",
+1113
+],
+[
+3,
+"Classes",
+1114
+],
+[
+3,
+"Functions",
+1126
+],
+[
+1,
+"References",
+1129
+]
+]

@@ -1,0 +1,2843 @@
+
+===== صفحة الكتاب 868 =====
+19
+Hyperparameter Optimization
+Aaron Klein (Amazon), Matthias Seeger (Amazon), and Cedric Archambeau (Ama-
+zon)
+The performance of every machine learning model depends on its hyperparameters. They
+control the learning algorithm or the structure of the underlying statistical model. However,
+there is no general way to choose hyperparameters in practice. Instead, hyperparameters
+are often set in a trial-and-error manner or sometimes left to their default values by practi-
+tioners, leading to suboptimal generalization.
+Hyperparameter optimization provides a systematic approach to this problem, by casting
+it as an optimization problem: a good set of hyperparameters should (at least) minimize a
+validation error. Compared to most other optimization problems arising in machine learn-
+ing, hyperparameter optimization is a nested one, where each iteration requires training and
+validating a machine learning model.
+In this chapter, we will first introduce the basics of hyperparameter optimization. We will
+also present some recent advancements that improve the overall efficiency of hyperparame-
+ter optimization by exploiting cheap-to-evaluate proxies of the original objective function.
+At the end of this chapter, you should be able to apply state-of-the-art hyperparameter
+optimization techniques to optimize the hyperparameter of your own machine learning al-
+gorithm.
+19.1 What Is Hyperparameter Optimization?
+As we have seen in the previous chapters, deep neural networks come with a large number
+of parameters or weights that are learned during training. On top of these, every neural net-
+work has additional hyperparameters that need to be configured by the user. For example,
+to ensure that stochastic gradient descent converges to a local optimum of the training loss
+(see Chapter 12), we have to adjust the learning rate and batch size. To avoid overfitting on
+training datasets, we might have to set regularization parameters, such as weight decay (see
+Section 3.7) or dropout (see Section 5.6). We can define the capacity and inductive bias of
+the model by setting the number of layers and number of units or filters per layer (i.e., the
+effective number of weights).
+828
+
+===== صفحة الكتاب 869 =====
+829
+What Is Hyperparameter Optimization?
+Unfortunately, we cannot simply adjust these hyperparameters by minimizing the training
+loss, because this would lead to overfitting on the training data. For example, setting reg-
+ularization parameters, such as dropout or weight decay to zero leads to a small training
+loss, but might hurt the generalization performance.
+Set Hyperparameters
+Train
+Evaluate
+Deploy
+Loop until validation
+performance is maximised
+t
+Fig. 19.1.1
+Typical workﬂow in machine learning that consists of training the model multiple times
+with different hyperparameters.
+Without a different form of automation, hyperparameters have to be set manually in a trial-
+and-error fashion, in what amounts to a time-consuming and difficult part of machine learn-
+ing workflows. For example, consider training a ResNet (see Section 8.6) on CIFAR-10,
+which requires more than 2 hours on an Amazon Elastic Cloud Compute (EC2) g4dn.
+xlarge instance. Even just trying ten hyperparameter configurations in sequence, this
+would already take us roughly one day. To make matters worse, hyperparameters are usu-
+ally not directly transferable across architectures and datasets (Bardenet et al., 2013, Feurer
+et al., 2022, Wistuba et al., 2018), and need to be re-optimized for every new task. Also,
+for most hyperparameters, there are no rule-of-thumbs, and expert knowledge is required
+to find sensible values.
+Hyperparameter optimization (HPO) algorithms are designed to tackle this problem in a
+principled and automated fashion (Feurer and Hutter, 2018), by framing it as a global op-
+timization problem. The default objective is the error on a hold-out validation dataset, but
+could in principle be any other business metric. It can be combined with or constrained by
+secondary objectives, such as training time, inference time, or model complexity.
+Recently, hyperparameter optimization has been extended to neural architecture search
+(NAS) (Elsken et al., 2018, Wistuba et al., 2019), where the goal is to find entirely new
+neural network architectures. Compared to classical HPO, NAS is even more expensive in
+terms of computation and requires additional efforts to remain feasible in practice. Both,
+HPO and NAS can be considered as sub-fields of AutoML (Hutter et al., 2019), which aims
+to automate the entire ML pipeline.
+In this section we will introduce HPO and show how we can automatically find the best
+hyperparameters of the logistic regression example introduced in Section 4.5.
+19.1.1 The Optimization Problem
+We will start with a simple toy problem: searching for the learning rate of the multi-class
+logistic regression model SoftmaxRegression from Section 4.5 to minimize the validation
+
+===== صفحة الكتاب 870 =====
+830
+Hyperparameter Optimization
+error on the Fashion MNIST dataset. While other hyperparameters like batch size or num-
+ber of epochs are also worth tuning, we focus on learning rate alone for simplicity.
+import numpy as np
+import torch
+from scipy import stats
+from torch import nn
+from d2l import torch as d2l
+Before we can run HPO, we first need to define two ingredients: the objective function and
+the configuration space.
+The Objective Function
+The performance of a learning algorithm can be seen as a function 𝑓: X →R that maps
+from the hyperparameter space x ∈X to the validation loss. For every evaluation of 𝑓(x),
+we have to train and validate our machine learning model, which can be time and compute
+intensive in the case of deep neural networks trained on large datasets. Given our criterion
+𝑓(x) our goal is to find x★∈argminx∈X 𝑓(x).
+There is no simple way to compute gradients of 𝑓with respect to x, because it would require
+to propagate the gradient through the entire training process. While there is recent work
+(Franceschi et al., 2017, Maclaurin et al., 2015) to drive HPO by approximate “hypergradi-
+ents”, none of the existing approaches are competitive with the state-of-the-art yet, and we
+will not discuss them here. Furthermore, the computational burden of evaluating 𝑓requires
+HPO algorithms to approach the global optimum with as few samples as possible.
+The training of neural networks is stochastic (e.g., weights are randomly initialized, mini-
+batches are randomly sampled), so that our observations will be noisy: 𝑦∼𝑓(x) +𝜖, where
+we usually assume that the 𝜖∼𝑁(0, 𝜎) observation noise is Gaussian distributed.
+Faced with all these challenges, we usually try to identify a small set of well performing
+hyperparameter configurations quickly, instead of hitting the global optima exactly. How-
+ever, due to large computational demands of most neural networks models, even this can
+take days or weeks of compute. We will explore in Section 19.4 how we can speed-up the
+optimization process by either distributing the search or using cheaper-to-evaluate approx-
+imations of the objective function.
+We begin with a method for computing the validation error of a model.
+class HPOTrainer(d2l.Trainer):
+#@save
+def validation_error(self):
+self.model.eval()
+accuracy = 0
+val_batch_idx = 0
+for batch in self.val_dataloader:
+with torch.no_grad():
+x, y = self.prepare_batch(batch)
+y_hat = self.model(x)
+(continues on next page)
+
+===== صفحة الكتاب 871 =====
+831
+What Is Hyperparameter Optimization?
+(continued from previous page)
+accuracy += self.model.accuracy(y_hat, y)
+val_batch_idx += 1
+return 1 -
+accuracy / val_batch_idx
+We optimize validation error with respect to the hyperparameter configuration config,
+consisting of the learning_rate. For each evaluation, we train our model for max_epochs
+epochs, then compute and return its validation error:
+def hpo_objective_softmax_classification(config, max_epochs=8):
+learning_rate = config["learning_rate"]
+trainer = d2l.HPOTrainer(max_epochs=max_epochs)
+data = d2l.FashionMNIST(batch_size=16)
+model = d2l.SoftmaxRegression(num_outputs=10, lr=learning_rate)
+trainer.fit(model=model, data=data)
+return trainer.validation_error().detach().numpy()
+The Configuration Space
+Along with the objective function 𝑓(x), we also need to define the feasible set x ∈X to
+optimize over, known as configuration space or search space. For our logistic regression
+example, we will use:
+config_space = {"learning_rate": stats.loguniform(1e-4, 1)}
+Here we use the use the loguniform object from SciPy, which represents a uniform distri-
+bution between -4 and -1 in the logarithmic space. This object allows us to sample random
+variables from this distribution.
+Each hyperparameter has a data type, such as float for learning_rate, as well as a closed
+bounded range (i.e., lower and upper bounds). We usually assign a prior distribution (e.g,
+uniform or log-uniform) to each hyperparameter to sample from. Some positive parameters,
+such as learning_rate, are best represented on a logarithmic scale as optimal values can
+differ by several orders of magnitude, while others, such as momentum, come with linear
+scale.
+Below we show a simple example of a configuration space consisting of typical hyperpa-
+rameters of a multi-layer perceptron including their type and standard ranges.
+: Example configuration space of multi-layer perceptron
+Table 19.1.1: label:tab_example_configspace
+
+===== صفحة الكتاب 872 =====
+832
+Hyperparameter Optimization
+Name
+Type
+Hyperparameter
+Ranges
+log-scale
+learning rate
+float
+:math:‘
+[10^{-
+6},10^{-1}]‘
+yes
+batch size
+integer
+[8, 256]
+yes
+momentum
+float
+[0, 0.99]
+no
+activation function
+categorical
+:mat
+h:{textrm{tanh}
+, textrm{relu}}
+•
+number of units
+integer
+[32, 1024]
+yes
+number of layers
+integer
+[1, 6]
+no
+In general, the structure of the configuration space X can be complex and it can be quite
+different from R𝑑. In practice, some hyperparameters may depend on the value of others.
+For example, assume we try to tune the number of layers for a multi-layer perceptron, and
+for each layer the number of units. The number of units of the 𝑙-th layer is relevant only if
+the network has at least 𝑙+ 1 layers. These advanced HPO problems are beyond the scope
+of this chapter. We refer the interested reader to (Baptista and Poloczek, 2018, Hutter et
+al., 2011, Jenatton et al., 2017).
+The configuration space plays an important role for hyperparameter optimization, since
+no algorithms can find something that is not included in the configuration space. On the
+other hand, if the ranges are too large, the computation budget to find well performing
+configurations might become infeasible.
+19.1.2 Random Search
+Random search is the first hyperparameter optimization algorithm we will consider. The
+main idea of random search is to independently sample from the configuration space until
+a predefined budget (e.g maximum number of iterations) is exhausted, and to return the
+best observed configuration. All evaluations can be executed independently in parallel (see
+Section 19.3), but here we use a sequential loop for simplicity.
+errors, values = [], []
+num_iterations = 5
+for i in range(num_iterations):
+learning_rate = config_space["learning_rate"].rvs()
+print(f"Trial {i}: learning_rate = {learning_rate}")
+y = hpo_objective_softmax_classification({"learning_rate": learning_rate})
+print(f"
+validation_error = {y}")
+values.append(learning_rate)
+errors.append(y)
+validation_error = 0.17070001363754272
+The best learning rate is then simply the one with the lowest validation error.
+
+===== صفحة الكتاب 873 =====
+833
+19.1 What Is Hyperparameter Optimization?
+
+===== صفحة الكتاب 874 =====
+834
+Hyperparameter Optimization
+best_idx = np.argmin(errors)
+print(f"optimal learning rate = {values[best_idx]}")
+optimal learning rate = 0.09844872561810249
+Due to its simplicity and generality, random search is one of the most frequently used HPO
+algorithms. It does not require any sophisticated implementation and can be applied to
+any configuration space as long as we can define some probability distribution for each
+hyperparameter.
+Unfortunately random search also comes with a few shortcomings. First, it does not adapt
+the sampling distribution based on the previous observations it collected so far. Hence,
+it is equally likely to sample a poorly performing configuration than a better performing
+configuration. Second, the same amount of resources are spent for all configurations, even
+though some may show poor initial performance and are less likely to outperform previously
+seen configurations.
+In the next sections we will look at more sample efficient hyperparameter optimization
+algorithms that overcome the shortcomings of random search by using a model to guide
+the search. We will also look at algorithms that automatically stop the evaluation process
+of poorly performing configurations to speed up the optimization process.
+19.1.3 Summary
+In this section we introduced hyperparameter optimization (HPO) and how we can phrase
+it as a global optimization by defining a configuration space and an objective function.
+We also implemented our first HPO algorithm, random search, and applied it on a simple
+softmax classification problem.
+While random search is very simple, it is the better alternative to grid search, which simply
+evaluates a fixed set of hyperparameters. Random search somewhat mitigates the curse
+of dimensionality (Bellman, 1966), and can be far more efficient than grid search if the
+criterion most strongly depends on a small subset of the hyperparameters.
+19.1.4 Exercises
+
+===== صفحة الكتاب 875 =====
+835
+What Is Hyperparameter Optimization?
+265
+1. In this chapter, we optimize the validation error of a model after training on a disjoint
+training set. For simplicity, our code uses Trainer.val_dataloader, which maps to a
+loader around FashionMNIST.val.
+1. Convince yourself (by looking at the code) that this means we use the original Fash-
+ionMNIST training set (60000 examples) for training, and the original test set (10000
+examples) for validation.
+2. Why could this practice be problematic? Hint: Re-read Section 3.6, especially about
+model selection.
+3. What should we have done instead?
+2. We stated above that hyperparameter optimization by gradient descent is very hard to do.
+Consider a small problem, such as training a two-layer perceptron on the FashionMNIST
+dataset (Section 5.2) with a batch size of 256. We would like to tune the learning rate
+of SGD in order to minimize a validation metric after one epoch of training.
+1. Why cannot we use validation error for this purpose? What metric on the validation
+set would you use?
+2. Sketch (roughly) the computational graph of the validation metric after training for
+one epoch. You may assume that initial weights and hyperparameters (such as learn-
+ing rate) are input nodes to this graph. Hint: Re-read about computational graphs in
+Section 5.3.
+3. Give a rough estimate of the number of floating point values you need to store during
+a forward pass on this graph. Hint: FashionMNIST has 60000 cases. Assume the
+required memory is dominated by the activations after each layer, and look up the
+layer widths in Section 5.2.
+4. Apart from the sheer amount of compute and storage required, what other issues
+would gradient-based hyperparameter optimization run into? Hint: Re-read about
+vanishing and exploding gradients in Section 5.4.
+5. Advanced: Read (Maclaurin et al., 2015) for an elegant (yet still somewhat unprac-
+tical) approach to gradient-based HPO.
+3. Grid search is another HPO baseline, where we define an equi-spaced grid for each hy-
+perparameter, then iterate over the (combinatorial) Cartesian product in order to suggest
+configurations.
+1. We stated above that random search can be much more efficient than grid search for
+HPO on a sizable number of hyperparameters, if the criterion most strongly depends
+on a small subset of the hyperparameters. Why is this? Hint: Read (Bergstra et al.,
+2011).
+Discussions265.
+
+===== صفحة الكتاب 876 =====
+836
+Hyperparameter Optimization
+19.2 Hyperparameter Optimization API
+Before we dive into the methodology, we will first discuss a basic code structure that al-
+lows us to efficiently implement various HPO algorithms. In general, all HPO algorithms
+considered here need to implement two decision making primitives, searching and schedul-
+ing. First, they need to sample new hyperparameter configurations, which often involves
+some kind of search over the configuration space. Second, for each configuration, an HPO
+algorithm needs to schedule its evaluation and decide how many resources to allocate for
+it. Once we start to evaluate a configuration, we will refer to it as a trial. We map these
+decisions to two classes, HPOSearcher and HPOScheduler. On top of that, we also provide
+a HPOTuner class that executes the optimization process.
+This concept of scheduler and searcher is also implemented in popular HPO libraries, such
+as Syne Tune (Salinas et al., 2022), Ray Tune (Liaw et al., 2018) or Optuna (Akiba et al.,
+2019).
+import time
+from scipy import stats
+from d2l import torch as d2l
+19.2.1 Searcher
+Below we define a base class for searchers, which provides a new candidate configuration
+through the sample_configuration function. A simple way to implement this function
+would be to sample configurations uniformly at random, as we did for random search in
+Section 19.1. More sophisticated algorithms, such as Bayesian optimization, will make
+these decisions based on the performance of previous trials. As a result, these algorithms
+are able to sample more promising candidates over time. We add the update function in
+order to update the history of previous trials, which can then be exploited to improve our
+sampling distribution.
+class HPOSearcher(d2l.HyperParameters):
+#@save
+def sample_configuration() -> dict:
+raise NotImplementedError
+def update(self, config: dict, error: float, additional_info=None):
+pass
+The following code shows how to implement our random search optimizer from the pre-
+vious section in this API. As a slight extension, we allow the user to prescribe the first
+configuration to be evaluated via initial_config, while subsequent ones are drawn at
+random.
+class RandomSearcher(HPOSearcher):
+#@save
+(continues on next page)
+
+===== صفحة الكتاب 877 =====
+837
+Hyperparameter Optimization API
+(continued from previous page)
+def __init__(self, config_space: dict, initial_config=None):
+self.save_hyperparameters()
+def sample_configuration(self) -> dict:
+if self.initial_config is not None:
+result = self.initial_config
+self.initial_config = None
+else:
+result = {
+name: domain.rvs()
+for name, domain in self.config_space.items()
+}
+return result
+19.2.2 Scheduler
+Beyond sampling configurations for new trials, we also need to decide when and for how
+long to run a trial. In practice, all these decisions are done by the HPOScheduler, which
+delegates the choice of new configurations to a HPOSearcher. The suggest method is
+called whenever some resource for training becomes available. Apart from invoking sam-
+ple_configuration of a searcher, it may also decide upon parameters like max_epochs
+(i.e., how long to train the model for). The update method is called whenever a trial returns
+a new observation.
+class HPOScheduler(d2l.HyperParameters):
+#@save
+def suggest(self) -> dict:
+raise NotImplementedError
+def update(self, config: dict, error: float, info=None):
+raise NotImplementedError
+To implement random search, but also other HPO algorithms, we only need a basic sched-
+uler that schedules a new configuration every time new resources become available.
+class BasicScheduler(HPOScheduler):
+#@save
+def __init__(self, searcher: HPOSearcher):
+self.save_hyperparameters()
+def suggest(self) -> dict:
+return self.searcher.sample_configuration()
+def update(self, config: dict, error: float, info=None):
+self.searcher.update(config, error, additional_info=info)
+19.2.3 Tuner
+Finally, we need a component that runs the scheduler/searcher and does some book-keeping
+of the results. The following code implements a sequential execution of the HPO trials that
+
+===== صفحة الكتاب 878 =====
+838
+Hyperparameter Optimization
+evaluates one training job after the next and will serve as a basic example. We will later
+use Syne Tune for more scalable distributed HPO cases.
+class HPOTuner(d2l.HyperParameters):
+#@save
+def __init__(self, scheduler: HPOScheduler, objective: callable):
+self.save_hyperparameters()
+# Bookeeping results for plotting
+self.incumbent = None
+self.incumbent_error = None
+self.incumbent_trajectory = []
+self.cumulative_runtime = []
+self.current_runtime = 0
+self.records = []
+def run(self, number_of_trials):
+for i in range(number_of_trials):
+start_time = time.time()
+config = self.scheduler.suggest()
+print(f"Trial {i}: config = {config}")
+error = self.objective(**config)
+error = float(error.cpu().detach().numpy())
+self.scheduler.update(config, error)
+runtime = time.time() - start_time
+self.bookkeeping(config, error, runtime)
+print(f"
+error = {error}, runtime = {runtime}")
+19.2.4 Bookkeeping the Performance of HPO Algorithms
+With any HPO algorithm, we are mostly interested in the best performing configuration
+(called incumbent) and its validation error after a given wall-clock time. This is why we
+track runtime per iteration, which includes both the time to run an evaluation (call of
+objective) and the time to make a decision (call of scheduler.suggest). In the se-
+quel, we will plot cumulative_runtime against incumbent_trajectory in order to visu-
+alize the any-time performance of the HPO algorithm defined in terms of scheduler (and
+searcher). This allows us to quantify not only how well the configuration found by an
+optimizer works, but also how quickly an optimizer is able to find it.
+@d2l.add_to_class(HPOTuner)
+#@save
+def bookkeeping(self, config: dict, error: float, runtime: float):
+self.records.append({"config": config, "error": error, "runtime": runtime})
+# Check if the last hyperparameter configuration performs better
+# than the incumbent
+if self.incumbent is None or self.incumbent_error > error:
+self.incumbent = config
+self.incumbent_error = error
+# Add current best observed performance to the optimization trajectory
+self.incumbent_trajectory.append(self.incumbent_error)
+# Update runtime
+self.current_runtime += runtime
+self.cumulative_runtime.append(self.current_runtime)
+
+===== صفحة الكتاب 879 =====
+839
+Hyperparameter Optimization API
+19.2.5 Example: Optimizing the Hyperparameters of a Convolutional
+Neural Network
+We now use our new implementation of random search to optimize the batch size and
+learning rate of the LeNet convolutional neural network from Section 7.6. We being by
+defining the objective function, which will once more be validation error.
+def hpo_objective_lenet(learning_rate, batch_size, max_epochs=10):
+#@save
+model = d2l.LeNet(lr=learning_rate, num_classes=10)
+trainer = d2l.HPOTrainer(max_epochs=max_epochs, num_gpus=1)
+data = d2l.FashionMNIST(batch_size=batch_size)
+model.apply_init([next(iter(data.get_dataloader(True)))[0]], d2l.init_cnn)
+trainer.fit(model=model, data=data)
+validation_error = trainer.validation_error()
+return validation_error
+We also need to define the configuration space. Moreover, the first configuration to be
+evaluated is the default setting used in Section 7.6.
+config_space = {
+"learning_rate": stats.loguniform(1e-2, 1),
+"batch_size": stats.randint(32, 256),
+}
+initial_config = {
+"learning_rate": 0.1,
+"batch_size": 128,
+}
+Now we can start our random search:
+searcher = RandomSearcher(config_space, initial_config=initial_config)
+scheduler = BasicScheduler(searcher=searcher)
+tuner = HPOTuner(scheduler=scheduler, objective=hpo_objective_lenet)
+tuner.run(number_of_trials=5)
+error = 0.9000097513198853, runtime = 62.85189199447632
+Below we plot the optimization trajectory of the incumbent to get the any-time performance
+of random search:
+
+===== صفحة الكتاب 880 =====
+840
+Hyperparameter Optimization
+
+===== صفحة الكتاب 881 =====
+841
+Hyperparameter Optimization API
+board = d2l.ProgressBoard(xlabel="time", ylabel="error")
+for time_stamp, error in zip(
+tuner.cumulative_runtime, tuner.incumbent_trajectory
+):
+board.draw(time_stamp, error, "random search", every_n=1)
+19.2.6 Comparing HPO Algorithms
+Just as with training algorithms or model architectures, it is important to understand how
+to best compare different HPO algorithms. Each HPO run depends on two major sources
+of randomness: the random effects of the training process, such as random weight initial-
+ization or mini-batch ordering, and the intrinsic randomness of the HPO algorithm itself,
+such as the random sampling of random search. Hence, when comparing different algo-
+rithms, it is crucial to run each experiment several times and report statistics, such as mean
+or median, across a population of multiple repetitions of an algorithm based on different
+seeds of the random number generator.
+To illustrate this, we compare random search (see Section 19.1.2) and Bayesian optimiza-
+tion (Snoek et al., 2012) on tuning the hyperparameters of a feed-forward neural network.
+Each algorithm was evaluated 50 times with a different random seed. The solid line indi-
+cates the average performance of the incumbent across these 50 repetitions and the dashed
+line the standard deviation. We can see that random search and Bayesian optimization per-
+form roughly the same up to ~1000 seconds, but Bayesian optimization can make use of
+the past observation to identify better configurations and thus quickly outperforms random
+search afterwards.
+t
+Fig. 19.2.1
+Example any-time performance plot to compare two algorithms A and B.
+
+===== صفحة الكتاب 882 =====
+842
+Hyperparameter Optimization
+266
+19.2.7 Summary
+This section laid out a simple, yet flexible interface to implement various HPO algorithms
+that we will look at in this chapter. Similar interfaces can be found in popular open-source
+HPO frameworks. We also looked at how we can compare HPO algorithms, and potential
+pitfall one needs to be aware.
+19.2.8 Exercises
+1. The goal of this exercise is to implement the objective function for a slightly more chal-
+lenging HPO problem, and to run more realistic experiments. We will use the two hidden
+layer MLP DropoutMLP implemented in Section 5.6.
+1. Code up the objective function, which should depend on all hyperparameters of the
+model and batch_size. Use max_epochs=50. GPUs do not help here, so num_gpus=0.
+Hint: Modify hpo_objective_lenet.
+2. Choose a sensible search space, where num_hiddens_1, num_hiddens_2 are integers
+in [8, 1024], and dropout values lie in [0, 0.95], while batch_size lies in [16, 384].
+Provide code for config_space, using sensible distributions from scipy.stats.
+3. Run random search on this example with number_of_trials=20 and plot the re-
+sults. Make sure to first evaluate the default configuration of Section 5.6, which
+is initial_config = {'num_hiddens_1':
+256, 'num_hiddens_2':
+256,
+'dropout_1': 0.5, 'dropout_2': 0.5, 'lr': 0.1, 'batch_size': 256}.
+2. In this exercise, you will implement a new searcher (subclass of HPOSearcher) which
+makes decisions based on past data. It depends on parameters probab_local, num_init_random.
+Its sample_configuration method works as follows. For the first num_init_random
+calls, do the same as RandomSearcher.sample_configuration. Otherwise, with prob-
+ability 1 - probab_local, do the same as RandomSearcher.sample_configuration.
+Otherwise, pick the configuration which attained the smallest validation error so far,
+select one of its hyperparameters at random, and sample its value randomly like in
+RandomSearcher.sample_configuration, but leave all other values the same. Re-
+turn this configuration, which is identical to the best configuration so far, except in this
+one hyperparameter.
+1. Code up this new LocalSearcher. Hint: Your searcher requires config_space as
+argument at construction. Feel free to use a member of type RandomSearcher. You
+will also have to implement the update method.
+2. Re-run the experiment from the previous exercise, but using your new searcher in-
+stead of RandomSearcher. Experiment with different values for probab_local,
+num_init_random. However, note that a proper comparison between different HPO
+methods requires repeating experiments several times, and ideally considering a
+number of benchmark tasks.
+Discussions266.
+
+===== صفحة الكتاب 883 =====
+843
+Asynchronous Random Search
+19.3 Asynchronous Random Search
+As we have seen in the previous Section 19.2, we might have to wait hours or even days be-
+fore random search returns a good hyperparameter configuration, because of the expensive
+evaluation of hyperparameter configurations. In practice, we have often access to a pool of
+resources such as multiple GPUs on the same machine or multiple machines with a single
+GPU. This begs the question: How do we eﬀiciently distribute random search?
+In general, we distinguish between synchronous and asynchronous parallel hyperparameter
+optimization (see Fig. 19.3.1). In the synchronous setting, we wait for all concurrently
+running trials to finish, before we start the next batch. Consider configuration spaces that
+contain hyperparameters such as the number of filters or number of layers of a deep neural
+network. Hyperparameter configurations that contain a larger number of layers of filters
+will naturally take more time to finish, and all other trials in the same batch will have to wait
+at synchronisation points (grey area in Fig. 19.3.1) before we can continue the optimization
+process.
+In the asynchronous setting we immediately schedule a new trial as soon as resources be-
+come available. This will optimally exploit our resources, since we can avoid any synchro-
+nisation overhead. For random search, each new hyperparameter configuration is chosen
+independently of all others, and in particular without exploiting observations from any prior
+evaluation. This means we can trivially parallelize random search asynchronously. This is
+not straight-forward with more sophisticated methods that make decision based on previ-
+ous observations (see Section 19.5). While we need access to more resources than in the
+sequential setting, asynchronous random search exhibits a linear speed-up, in that a certain
+performance is reached 𝐾times faster if 𝐾trials can be run in parallel.
+Sequential
+Trial-0
+Trial-1
+Trial-2
+Trial-3
+Trial-4
+Synchronous
+Asynchronous
+Trial-0
+Trial-2
+Trial-3
+Trial-0
+Time
+Trial-5
+Trial-1
+Trial-1
+Trial-4
+Trial-5
+Trial-3
+Trial-2
+Trial-4
+Trial-5
+t
+Fig. 19.3.1
+Distributing the hyperparameter optimization process either synchronously or
+asynchronously. Compared to the sequential setting, we can reduce the overall wall-clock
+time while keep the total compute constant. Synchronous scheduling might lead to idling
+workers in the case of stragglers.
+In this notebook, we will look at asynchronous random search that, where trials are exe-
+cuted in multiple python processes on the same machine. Distributed job scheduling and
+execution is difficult to implement from scratch. We will use Syne Tune (Salinas et al.,
+2022), which provides us with a simple interface for asynchronous HPO. Syne Tune is de-
+
+===== صفحة الكتاب 884 =====
+844
+Hyperparameter Optimization
+signed to be run with different execution back-ends, and the interested reader is invited to
+study its simple APIs in order to learn more about distributed HPO.
+import logging
+from d2l import torch as d2l
+logging.basicConfig(level=logging.INFO)
+from syne_tune import StoppingCriterion, Tuner
+from syne_tune.backend.python_backend import PythonBackend
+from syne_tune.config_space import loguniform, randint
+from syne_tune.experiments import load_experiment
+from syne_tune.optimizer.baselines import RandomSearch
+INFO:root:SageMakerBackend is not imported since dependencies are missing. You␣
+↩→can install them with
+pip install 'syne-tune[extra]'
+AWS dependencies are not imported since dependencies are missing. You can␣
+↩→install them with
+pip install 'syne-tune[aws]'
+or (for everything)
+pip install 'syne-tune[extra]'
+AWS dependencies are not imported since dependencies are missing. You can␣
+↩→install them with
+pip install 'syne-tune[aws]'
+or (for everything)
+pip install 'syne-tune[extra]'
+INFO:root:Ray Tune schedulers and searchers are not imported since␣
+↩→dependencies are missing. You can install them with
+pip install 'syne-tune[raytune]'
+or (for everything)
+pip install 'syne-tune[extra]'
+19.3.1 Objective Function
+First, we have to define a new objective function such that it now returns the performance
+back to Syne Tune via the report callback.
+def hpo_objective_lenet_synetune(learning_rate, batch_size, max_epochs):
+from syne_tune import Reporter
+from d2l import torch as d2l
+model = d2l.LeNet(lr=learning_rate, num_classes=10)
+trainer = d2l.HPOTrainer(max_epochs=1, num_gpus=1)
+data = d2l.FashionMNIST(batch_size=batch_size)
+model.apply_init([next(iter(data.get_dataloader(True)))[0]], d2l.init_cnn)
+report = Reporter()
+for epoch in range(1, max_epochs + 1):
+if epoch == 1:
+# Initialize the state of Trainer
+trainer.fit(model=model, data=data)
+else:
+trainer.fit_epoch()
+(continues on next page)
+
+===== صفحة الكتاب 885 =====
+845
+Asynchronous Random Search
+(continued from previous page)
+validation_error = trainer.validation_error().cpu().detach().numpy()
+report(epoch=epoch, validation_error=float(validation_error))
+Note that the PythonBackend of Syne Tune requires dependencies to be imported inside
+the function definition.
+19.3.2 Asynchronous Scheduler
+First, we define the number of workers that evaluate trials concurrently. We also need to
+specify how long we want to run random search, by defining an upper limit on the total
+wall-clock time.
+n_workers = 2
+# Needs to be <= the number of available GPUs
+max_wallclock_time = 12 * 60
+# 12 minutes
+Next, we state which metric we want to optimize and whether we want to minimize or
+maximize this metric. Namely, metric needs to correspond to the argument name passed
+to the report callback.
+mode = "min"
+metric = "validation_error"
+We use the configuration space from our previous example. In Syne Tune, this dictionary
+can also be used to pass constant attributes to the training script. We make use of this
+feature in order to pass max_epochs. Moreover, we specify the first configuration to be
+evaluated in initial_config.
+config_space = {
+"learning_rate": loguniform(1e-2, 1),
+"batch_size": randint(32, 256),
+"max_epochs": 10,
+}
+initial_config = {
+"learning_rate": 0.1,
+"batch_size": 128,
+}
+Next, we need to specify the back-end for job executions. Here we just consider the distri-
+bution on a local machine where parallel jobs are executed as sub-processes. However, for
+large scale HPO, we could run this also on a cluster or cloud environment, where each trial
+consumes a full instance.
+trial_backend = PythonBackend(
+tune_function=hpo_objective_lenet_synetune,
+config_space=config_space,
+)
+
+===== صفحة الكتاب 886 =====
+846
+Hyperparameter Optimization
+We can now create the scheduler for asynchronous random search, which is similar in be-
+haviour to our BasicScheduler from Section 19.2.
+scheduler = RandomSearch(
+config_space,
+metric=metric,
+mode=mode,
+points_to_evaluate=[initial_config],
+)
+INFO:syne_tune.optimizer.schedulers.fifo:max_resource_level = 10, as inferred␣
+↩→from config_space
+INFO:syne_tune.optimizer.schedulers.fifo:Master random_seed = 2737092907
+Syne Tune also features a Tuner, where the main experiment loop and bookkeeping is
+centralized, and interactions between scheduler and back-end are mediated.
+stop_criterion = StoppingCriterion(max_wallclock_time=max_wallclock_time)
+tuner = Tuner(
+trial_backend=trial_backend,
+scheduler=scheduler,
+stop_criterion=stop_criterion,
+n_workers=n_workers,
+print_update_interval=int(max_wallclock_time * 0.6),
+)
+Let us run our distributed HPO experiment. According to our stopping criterion, it will run
+for about 12 minutes.
+tuner.run()
+INFO:syne_tune.tuner:results of trials will be saved on /home/ci/syne-tune/
+↩→python-entrypoint-2023-08-18-19-45-39-958
+INFO:root:Detected 4 GPUs
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.1 --batch_size 128 --max_epochs 10 --tune_function_root␣
+↩→/home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/tune_function --
+↩→tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_checkpoint_dir /
+↩→home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/0/checkpoints
+INFO:syne_tune.tuner:(trial 0) - scheduled config {'learning_rate': 0.1,
+↩→'batch_size': 128, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.1702844732454753 --batch_size 114 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→1/checkpoints
+INFO:syne_tune.tuner:(trial 1) - scheduled config {'learning_rate': 0.
+(continues on next page)
+
+===== صفحة الكتاب 887 =====
+847
+Asynchronous Random Search
+(continued from previous page)
+↩→1702844732454753, 'batch_size': 114, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 0 completed.
+INFO:syne_tune.tuner:Trial trial_id 1 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.34019846567238493 --batch_size 221 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→2/checkpoints
+INFO:syne_tune.tuner:(trial 2) - scheduled config {'learning_rate': 0.
+↩→34019846567238493, 'batch_size': 221, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.014628124155727769 --batch_size 88 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→3/checkpoints
+INFO:syne_tune.tuner:(trial 3) - scheduled config {'learning_rate': 0.
+↩→014628124155727769, 'batch_size': 88, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 2 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.1114831485450576 --batch_size 142 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→4/checkpoints
+INFO:syne_tune.tuner:(trial 4) - scheduled config {'learning_rate': 0.
+↩→1114831485450576, 'batch_size': 142, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 3 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.014076038679980779 --batch_size 223 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→5/checkpoints
+INFO:syne_tune.tuner:(trial 5) - scheduled config {'learning_rate': 0.
+↩→014076038679980779, 'batch_size': 223, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 4 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.02558173674804846 --batch_size 62 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→6/checkpoints
+INFO:syne_tune.tuner:(trial 6) - scheduled config {'learning_rate': 0.
+↩→02558173674804846, 'batch_size': 62, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 5 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.026035979388614055 --batch_size 139 --max_epochs 10 --
+(continues on next page)
+
+===== صفحة الكتاب 888 =====
+848
+Hyperparameter Optimization
+(continued from previous page)
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→7/checkpoints
+INFO:syne_tune.tuner:(trial 7) - scheduled config {'learning_rate': 0.
+↩→026035979388614055, 'batch_size': 139, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 6 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.24202494130424274 --batch_size 231 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→8/checkpoints
+INFO:syne_tune.tuner:(trial 8) - scheduled config {'learning_rate': 0.
+↩→24202494130424274, 'batch_size': 231, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 7 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.10483132064775551 --batch_size 145 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→9/checkpoints
+INFO:syne_tune.tuner:(trial 9) - scheduled config {'learning_rate': 0.
+↩→10483132064775551, 'batch_size': 145, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 8 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.017898854850751864 --batch_size 51 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→10/checkpoints
+INFO:syne_tune.tuner:(trial 10) - scheduled config {'learning_rate': 0.
+↩→017898854850751864, 'batch_size': 51, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 9 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.9645419978270817 --batch_size 200 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→11/checkpoints
+INFO:syne_tune.tuner:(trial 11) - scheduled config {'learning_rate': 0.
+↩→9645419978270817, 'batch_size': 200, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 11 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.10559888854748693 --batch_size 40 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→12/checkpoints
+INFO:syne_tune.tuner:(trial 12) - scheduled config {'learning_rate': 0.
+(continues on next page)
+
+===== صفحة الكتاب 889 =====
+849
+Asynchronous Random Search
+(continued from previous page)
+↩→10559888854748693, 'batch_size': 40, 'max_epochs': 10}
+INFO:syne_tune.tuner:tuning status (last metric is reported)
+trial_id
+status
+iter
+learning_rate
+batch_size
+max_epochs
+epoch ␣
+↩→validation_error
+worker-time
+0
+Completed
+10
+0.100000
+128
+10
+10.0
+␣
+↩→
+0.277195
+64.928907
+1
+Completed
+10
+0.170284
+114
+10
+10.0
+␣
+↩→
+0.286225
+65.434195
+2
+Completed
+10
+0.340198
+221
+10
+10.0
+␣
+↩→
+0.218990
+59.729758
+3
+Completed
+10
+0.014628
+88
+10
+10.0
+␣
+↩→
+0.899920
+81.001636
+4
+Completed
+10
+0.111483
+142
+10
+10.0
+␣
+↩→
+0.268684
+64.427400
+5
+Completed
+10
+0.014076
+223
+10
+10.0
+␣
+↩→
+0.899922
+61.264475
+6
+Completed
+10
+0.025582
+62
+10
+10.0
+␣
+↩→
+0.399520
+75.966186
+7
+Completed
+10
+0.026036
+139
+10
+10.0
+␣
+↩→
+0.899988
+62.261541
+8
+Completed
+10
+0.242025
+231
+10
+10.0
+␣
+↩→
+0.257636
+58.186485
+9
+Completed
+10
+0.104831
+145
+10
+10.0
+␣
+↩→
+0.273898
+59.771699
+10 InProgress
+8
+0.017899
+51
+10
+8.0
+␣
+↩→
+0.496118
+66.999746
+11
+Completed
+10
+0.964542
+200
+10
+10.0
+␣
+↩→
+0.181600
+59.159662
+12 InProgress
+0
+0.105599
+40
+10
+-
+␣
+↩→
+-
+-
+2 trials running, 11 finished (11 until the end), 436.60s wallclock-time
+INFO:syne_tune.tuner:Trial trial_id 10 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.5846051207380589 --batch_size 35 --max_epochs 10 --tune_
+↩→function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→13/checkpoints
+INFO:syne_tune.tuner:(trial 13) - scheduled config {'learning_rate': 0.
+↩→5846051207380589, 'batch_size': 35, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 12 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.2468891379769198 --batch_size 146 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→14/checkpoints
+INFO:syne_tune.tuner:(trial 14) - scheduled config {'learning_rate': 0.
+↩→2468891379769198, 'batch_size': 146, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 13 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+(continues on next page)
+
+===== صفحة الكتاب 890 =====
+850
+Hyperparameter Optimization
+(continued from previous page)
+↩→py --learning_rate 0.12956867470224812 --batch_size 218 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→15/checkpoints
+INFO:syne_tune.tuner:(trial 15) - scheduled config {'learning_rate': 0.
+↩→12956867470224812, 'batch_size': 218, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 14 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.24900745354561854 --batch_size 103 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→16/checkpoints
+INFO:syne_tune.tuner:(trial 16) - scheduled config {'learning_rate': 0.
+↩→24900745354561854, 'batch_size': 103, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 15 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.03903577426988046 --batch_size 80 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→17/checkpoints
+INFO:syne_tune.tuner:(trial 17) - scheduled config {'learning_rate': 0.
+↩→03903577426988046, 'batch_size': 80, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 16 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.01846559300690354 --batch_size 183 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-
+↩→958/tune_function --tune_function_hash 4d7d5b85e4537ad0c5d0a202623dcec5 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958/
+↩→18/checkpoints
+INFO:syne_tune.tuner:(trial 18) - scheduled config {'learning_rate': 0.
+↩→01846559300690354, 'batch_size': 183, 'max_epochs': 10}
+INFO:syne_tune.stopping_criterion:reaching max wallclock time (720), stopping␣
+↩→there.
+INFO:syne_tune.tuner:Stopping trials that may still be running.
+INFO:syne_tune.tuner:Tuning finished, results of trials can be found on /home/
+↩→ci/syne-tune/python-entrypoint-2023-08-18-19-45-39-958
+--------------------
+Resource summary (last result is reported):
+trial_id
+status
+iter
+learning_rate
+batch_size
+max_epochs
+epoch ␣
+↩→validation_error
+worker-time
+0
+Completed
+10
+0.100000
+128
+10
+10
+␣
+↩→
+0.277195
+64.928907
+1
+Completed
+10
+0.170284
+114
+10
+10
+␣
+↩→
+0.286225
+65.434195
+2
+Completed
+10
+0.340198
+221
+10
+10
+␣
+↩→
+0.218990
+59.729758
+3
+Completed
+10
+0.014628
+88
+10
+10
+␣
+↩→
+0.899920
+81.001636
+4
+Completed
+10
+0.111483
+142
+10
+10
+␣
+(continues on next page)
+
+===== صفحة الكتاب 891 =====
+851
+Asynchronous Random Search
+(continued from previous page)
+↩→
+0.268684
+64.427400
+5
+Completed
+10
+0.014076
+223
+10
+10
+␣
+↩→
+0.899922
+61.264475
+6
+Completed
+10
+0.025582
+62
+10
+10
+␣
+↩→
+0.399520
+75.966186
+7
+Completed
+10
+0.026036
+139
+10
+10
+␣
+↩→
+0.899988
+62.261541
+8
+Completed
+10
+0.242025
+231
+10
+10
+␣
+↩→
+0.257636
+58.186485
+9
+Completed
+10
+0.104831
+145
+10
+10
+␣
+↩→
+0.273898
+59.771699
+10
+Completed
+10
+0.017899
+51
+10
+10
+␣
+↩→
+0.405545
+83.778503
+11
+Completed
+10
+0.964542
+200
+10
+10
+␣
+↩→
+0.181600
+59.159662
+12
+Completed
+10
+0.105599
+40
+10
+10
+␣
+↩→
+0.182500
+94.734384
+13
+Completed
+10
+0.584605
+35
+10
+10
+␣
+↩→
+0.153846
+110.965637
+14
+Completed
+10
+0.246889
+146
+10
+10
+␣
+↩→
+0.215050
+65.142847
+15
+Completed
+10
+0.129569
+218
+10
+10
+␣
+↩→
+0.313873
+61.310455
+16
+Completed
+10
+0.249007
+103
+10
+10
+␣
+↩→
+0.196101
+72.519127
+17 InProgress
+9
+0.039036
+80
+10
+9
+␣
+↩→
+0.369000
+73.403000
+18 InProgress
+5
+0.018466
+183
+10
+5
+␣
+↩→
+0.900263
+34.714568
+2 trials running, 17 finished (17 until the end), 722.84s wallclock-time
+validation_error: best 0.14451533555984497 for trial-id 13
+--------------------
+The logs of all evaluated hyperparameter configurations are stored for further analysis. At
+any time during the tuning job, we can easily get the results obtained so far and plot the
+incumbent trajectory.
+d2l.set_figsize()
+tuning_experiment = load_experiment(tuner.name)
+tuning_experiment.plot()
+WARNING:matplotlib.legend:No artists with labels found to put in legend.
+Note␣
+↩→that artists whose label start with an underscore are ignored when legend()␣
+↩→is called with no argument.
+19.3.3 Visualize the Asynchronous Optimization Process
+Below we visualize how the learning curves of every trial (each color in the plot represents
+a trial) evolve during the asynchronous optimization process. At any point in time, there
+are as many trials running concurrently as we have workers. Once a trial finishes, we
+
+===== صفحة الكتاب 892 =====
+852
+Hyperparameter Optimization
+immediately start the next trial, without waiting for the other trials to finish. Idle time
+of workers is reduced to a minimum with asynchronous scheduling.
+d2l.set_figsize([6, 2.5])
+results = tuning_experiment.results
+for trial_id in results.trial_id.unique():
+df = results[results["trial_id"] == trial_id]
+d2l.plt.plot(
+df["st_tuner_time"],
+df["validation_error"],
+marker="o"
+)
+d2l.plt.xlabel("wall-clock time")
+d2l.plt.ylabel("objective function")
+Text(0, 0.5, 'objective function')
+19.3.4 Summary
+We can reduce the waiting time for random search substantially by distribution trials across
+parallel resources. In general, we distinguish between synchronous scheduling and asyn-
+chronous scheduling. Synchronous scheduling means that we sample a new batch of hy-
+perparameter configurations once the previous batch finished. If we have a stragglers -
+trials that takes more time to finish than other trials - our workers need to wait at synchro-
+nization points. Asynchronous scheduling evaluates a new hyperparameter configurations
+
+===== صفحة الكتاب 893 =====
+853
+Multi-Fidelity Hyperparameter Optimization
+267
+268
+269
+270
+271
+as soon as resources become available, and, hence, ensures that all workers are busy at
+any point in time. While random search is easy to distribute asynchronously and does not
+require any change of the actual algorithm, other methods require some additional modifi-
+cations.
+19.3.5 Exercises
+1. Consider the DropoutMLP model implemented in Section 5.6, and used in Exercise 1 of
+Section 19.2.
+1. Implement an objective function hpo_objective_dropoutmlp_synetune to be used
+with Syne Tune. Make sure that your function reports the validation error after every
+epoch.
+2. Using the setup of Exercise 1 in Section 19.2, compare random search to Bayesian
+optimization. If you use SageMaker, feel free to use Syne Tune’s benchmarking
+facilities in order to run experiments in parallel. Hint: Bayesian optimization is
+provided as syne_tune.optimizer.baselines.BayesianOptimization.
+3. For this exercise, you need to run on an instance with at least 4 CPU cores. For one
+of the methods used above (random search, Bayesian optimization), run experiments
+with n_workers=1, n_workers=2, n_workers=4, and compare results (incumbent
+trajectories). At least for random search, you should observe linear scaling with
+respect to the number of workers. Hint: For robust results, you may have to average
+over several repetitions each.
+2. Advanced. The goal of this exercise is to implement a new scheduler in Syne Tune.
+1. Create a virtual environment containing both the d2lbook 267 and syne-tune 268
+sources.
+2. Implement the LocalSearcher from Exercise 2 in Section 19.2 as a new searcher in
+Syne Tune. Hint: Read this tutorial269. Alternatively, you may follow this example
+270.
+3. Compare your new LocalSearcher with RandomSearch on the DropoutMLP bench-
+mark.
+Discussions271.
+19.4 Multi-Fidelity Hyperparameter Optimization
+Training neural networks can be expensive even on moderate size datasets. Depending
+on the configuration space (Section 19.1.1), hyperparameter optimization requires tens to
+hundreds of function evaluations to find a well-performing hyperparameter configuration.
+As we have seen in Section 19.3, we can significantly speed up the overall wall-clock time of
+
+===== صفحة الكتاب 894 =====
+854
+Hyperparameter Optimization
+HPO by exploiting parallel resources, but this does not reduce the total amount of compute
+required.
+In this section, we will show how the evaluation of hyperparameter configurations can be
+sped up. Methods such as random search allocate the same amount of resources (e.g.,
+number of epochs, training data points) to each hyperparameter evaluation. Fig. 19.4.1
+depicts learning curves of a set of neural networks trained with different hyperparameter
+configurations. After a few epochs we are already able to visually distinguish between well-
+performing and suboptimal configurations. However, the learning curves are noisy, and we
+might still require the full amount of 100 epochs to identify the best performing one.
+t
+Fig. 19.4.1
+Learning curves of random hyperparameter conﬁgurations
+Multi-fidelity hyperparameter optimization allocates more resources to promising configu-
+rations and stop evaluations of poorly performing ones early. This speeds up the optimiza-
+tion process, since we can try a larger number of configurations for the same total amount
+of resources.
+More formally, we expand our definition in Section 19.1.1, such that our objective function
+𝑓(x, 𝑟) gets an additional input 𝑟∈[𝑟min, 𝑟𝑚𝑎𝑥], specifying the amount of resources that
+we are willing to spend for the evaluation of configuration x. We assume that the error
+𝑓(x, 𝑟) decreases with 𝑟, whereas the computational cost 𝑐(x, 𝑟) increases. Typically, 𝑟
+represents the number of epochs for training the neural network, but it could also be the
+training subset size or the number of cross-validation folds.
+from collections import defaultdict
+import numpy as np
+from scipy import stats
+from d2l import torch as d2l
+(continues on next page)
+
+===== صفحة الكتاب 895 =====
+855
+Multi-Fidelity Hyperparameter Optimization
+(continued from previous page)
+d2l.set_figsize()
+19.4.1 Successive Halving
+One of the simplest ways to adapt random search to the multi-fidelity setting is successive
+halving (Jamieson and Talwalkar, 2016, Karnin et al., 2013). The basic idea is to start with
+𝑁configurations, for example randomly sampled from the configuration space, and to train
+each of them for 𝑟min epochs only. We then discard a fraction of the worst performing trials
+and train the remaining ones for longer. Iterating this process, fewer trials run for longer,
+until at least one trial reaches 𝑟𝑚𝑎𝑥epochs.
+More formally, consider a minimum budget 𝑟min (for example 1 epoch), a maximum bud-
+get 𝑟𝑚𝑎𝑥, for example max_epochs in our previous example, and a halving constant 𝜂∈
+{2, 3, . . . }. For simplicity, assume that 𝑟𝑚𝑎𝑥= 𝑟min𝜂𝐾, with 𝐾∈I . The number of initial
+configurations is then 𝑁= 𝜂𝐾. Let us define the set of rungs R = {𝑟min, 𝑟min𝜂, 𝑟min𝜂2, . . . , 𝑟𝑚𝑎𝑥}.
+One round of successive halving proceeds as follows. We start with running 𝑁trials un-
+til the first rung 𝑟min. Sorting the validation errors, we keep the top 1/𝜂fraction (which
+amounts to 𝜂𝐾−1 configurations) and discard all the rest. The surviving trials are trained
+for the next rung (𝑟min𝜂epochs), and the process is repeated. At each rung, a 1/𝜂fraction of
+trials survives and their training continues with a 𝜂times larger budget. With this particular
+choice of 𝑁, only a single trial will be trained to the full budget 𝑟𝑚𝑎𝑥. Once such a round
+of successive halving is done, we start the next one with a new set of initial configurations,
+iterating until the total budget is spent.
+t
+Fig. 19.4.2
+Learning curves of random hyperparameter conﬁgurations.
+
+===== صفحة الكتاب 896 =====
+856
+Hyperparameter Optimization
+We subclass the HPOScheduler base class from Section 19.2 in order to implement succes-
+sive halving, allowing for a generic HPOSearcher object to sample configurations (which,
+in our example below, will be a RandomSearcher). Additionally, the user has to pass the
+minimum resource 𝑟min, the maximum resource 𝑟𝑚𝑎𝑥and 𝜂as input. Inside our scheduler,
+we maintain a queue of configurations that still need to be evaluated for the current rung 𝑟𝑖.
+We update the queue every time we jump to the next rung.
+class SuccessiveHalvingScheduler(d2l.HPOScheduler):
+#@save
+def __init__(self, searcher, eta, r_min, r_max, prefact=1):
+self.save_hyperparameters()
+# Compute K, which is later used to determine the number of␣
+↩→configurations
+self.K = int(np.log(r_max / r_min) / np.log(eta))
+# Define the rungs
+self.rung_levels = [r_min * eta ** k for k in range(self.K + 1)]
+if r_max not in self.rung_levels:
+# The final rung should be r_max
+self.rung_levels.append(r_max)
+self.K += 1
+# Bookkeeping
+self.observed_error_at_rungs = defaultdict(list)
+self.all_observed_error_at_rungs = defaultdict(list)
+# Our processing queue
+self.queue = []
+In the beginning our queue is empty, and we fill it with 𝑛= prefact · 𝜂𝐾configurations,
+which are first evaluated on the smallest rung 𝑟min. Here, prefact allows us to reuse our
+code in a different context. For the purpose of this section, we fix prefact = 1. Every time
+resources become available and the HPOTuner object queries the suggest function, we
+return an element from the queue. Once we finish one round of successive halving, which
+means that we evaluated all surviving configurations on the highest resource level 𝑟𝑚𝑎𝑥and
+our queue is empty, we start the entire process again with a new, randomly sampled set of
+configurations.
+@d2l.add_to_class(SuccessiveHalvingScheduler)
+#@save
+def suggest(self):
+if len(self.queue) == 0:
+# Start a new round of successive halving
+# Number of configurations for the first rung:
+n0 = int(self.prefact * self.eta ** self.K)
+for _ in range(n0):
+config = self.searcher.sample_configuration()
+config["max_epochs"] = self.r_min
+# Set r = r_min
+self.queue.append(config)
+# Return an element from the queue
+return self.queue.pop()
+When we collected a new data point, we first update the searcher module. Afterwards we
+check if we already collect all data points on the current rung. If so, we sort all configura-
+tions and push the top 1
+𝜂configurations into the queue.
+
+===== صفحة الكتاب 897 =====
+857
+Multi-Fidelity Hyperparameter Optimization
+@d2l.add_to_class(SuccessiveHalvingScheduler)
+#@save
+def update(self, config: dict, error: float, info=None):
+ri = int(config["max_epochs"])
+# Rung r_i
+# Update our searcher, e.g if we use Bayesian optimization later
+self.searcher.update(config, error, additional_info=info)
+self.all_observed_error_at_rungs[ri].append((config, error))
+if ri < self.r_max:
+# Bookkeeping
+self.observed_error_at_rungs[ri].append((config, error))
+# Determine how many configurations should be evaluated on this rung
+ki = self.K - self.rung_levels.index(ri)
+ni = int(self.prefact * self.eta ** ki)
+# If we observed all configuration on this rung r_i, we estimate the
+# top 1 / eta configuration, add them to queue and promote them for
+# the next rung r_{i+1}
+if len(self.observed_error_at_rungs[ri]) >= ni:
+kiplus1 = ki - 1
+niplus1 = int(self.prefact * self.eta ** kiplus1)
+best_performing_configurations = self.get_top_n_configurations(
+rung_level=ri, n=niplus1
+)
+riplus1 = self.rung_levels[self.K - kiplus1]
+# r_{i+1}
+# Queue may not be empty: insert new entries at the beginning
+self.queue = [
+dict(config, max_epochs=riplus1)
+for config in best_performing_configurations
+] + self.queue
+self.observed_error_at_rungs[ri] = []
+# Reset
+Configurations are sorted based on their observed performance on the current rung.
+@d2l.add_to_class(SuccessiveHalvingScheduler)
+#@save
+def get_top_n_configurations(self, rung_level, n):
+rung = self.observed_error_at_rungs[rung_level]
+if not rung:
+return []
+sorted_rung = sorted(rung, key=lambda x: x[1])
+return [x[0] for x in sorted_rung[:n]]
+Let us see how successive halving is doing on our neural network example. We will use
+𝑟min = 2, 𝜂= 2, 𝑟𝑚𝑎𝑥= 10, so that rung levels are 2, 4, 8, 10.
+min_number_of_epochs = 2
+max_number_of_epochs = 10
+eta = 2
+num_gpus=1
+config_space = {
+"learning_rate": stats.loguniform(1e-2, 1),
+"batch_size": stats.randint(32, 256),
+}
+initial_config = {
+"learning_rate": 0.1,
+(continues on next page)
+
+===== صفحة الكتاب 898 =====
+858
+Hyperparameter Optimization
+(continued from previous page)
+"batch_size": 128,
+}
+We just replace the scheduler with our new SuccessiveHalvingScheduler.
+searcher = d2l.RandomSearcher(config_space, initial_config=initial_config)
+scheduler = SuccessiveHalvingScheduler(
+searcher=searcher,
+eta=eta,
+r_min=min_number_of_epochs,
+r_max=max_number_of_epochs,
+)
+tuner = d2l.HPOTuner(
+scheduler=scheduler,
+objective=d2l.hpo_objective_lenet,
+)
+tuner.run(number_of_trials=30)
+error = 0.17762434482574463, runtime = 53.576584339141846
+We can visualize the learning curves of all configurations that we evaluated. Most of the
+configurations are stopped early and only the better performing configurations survive until
+𝑟𝑚𝑎𝑥. Compare this to vanilla random search, which would allocate 𝑟𝑚𝑎𝑥to every config-
+uration.
+
+===== صفحة الكتاب 899 =====
+859
+19.4 Multi-Fidelity Hyperparameter Optimization
+
+===== صفحة الكتاب 900 =====
+860
+Hyperparameter Optimization
+
+===== صفحة الكتاب 901 =====
+861
+19.4 Multi-Fidelity Hyperparameter Optimization
+
+===== صفحة الكتاب 902 =====
+862
+Hyperparameter Optimization
+
+===== صفحة الكتاب 903 =====
+863
+19.4 Multi-Fidelity Hyperparameter Optimization
+
+===== صفحة الكتاب 904 =====
+864
+Hyperparameter Optimization
+
+===== صفحة الكتاب 905 =====
+865
+19.4 Multi-Fidelity Hyperparameter Optimization
+
+===== صفحة الكتاب 906 =====
+866
+Hyperparameter Optimization
+272
+for rung_index, rung in scheduler.all_observed_error_at_rungs.items():
+errors = [xi[1] for xi in rung]
+d2l.plt.scatter([rung_index] * len(errors), errors)
+d2l.plt.xlim(min_number_of_epochs - 0.5, max_number_of_epochs + 0.5)
+d2l.plt.xticks(
+np.arange(min_number_of_epochs, max_number_of_epochs + 1),
+np.arange(min_number_of_epochs, max_number_of_epochs + 1)
+)
+d2l.plt.ylabel("validation error")
+d2l.plt.xlabel("epochs")
+Text(0.5, 0, 'epochs')
+Finally, note some slight complexity in our implementation of SuccessiveHalvingSched-
+uler. Say that a worker is free to run a job, and suggest is called when the current rung
+has almost been completely filled, but another worker is still busy with an evaluation. Since
+we lack the metric value from this worker, we cannot determine the top 1/𝜂fraction to open
+up the next rung. On the other hand, we want to assign a job to our free worker, so it does
+not remain idle. Our solution is to start a new round of successive halving and assign our
+worker to the first trial there. However, once a rung is completed in update, we make sure
+to insert new configurations at the beginning of the queue, so they take precedence over
+configurations from the next round.
+19.4.2 Summary
+In this section, we introduced the concept of multi-fidelity hyperparameter optimization,
+where we assume to have access to cheap-to-evaluate approximations of the objective func-
+tion, such as validation error after a certain number of epochs of training as proxy to val-
+idation error after the full number of epochs. Multi-fidelity hyperparameter optimization
+allows to reduce the overall computation of the HPO instead of just reducing the wall-clock
+time.
+We implemented and evaluated successive halving, a simple yet efficient multi-fidelity HPO
+algorithm.
+Discussions272.
+
+===== صفحة الكتاب 907 =====
+867
+Asynchronous Successive Halving
+19.5 Asynchronous Successive Halving
+As we have seen in Section 19.3, we can accelerate HPO by distributing the evaluation of
+hyperparameter configurations across either multiple instances or multiples CPUs / GPUs
+on a single instance. However, compared to random search, it is not straightforward to
+run successive halving (SH) asynchronously in a distributed setting. Before we can decide
+which configuration to run next, we first have to collect all observations at the current rung
+level. This requires to synchronize workers at each rung level. For example, for the lowest
+rung level 𝑟min, we first have to evaluate all 𝑁= 𝜂𝐾configurations, before we can promote
+the 1
+𝜂of them to the next rung level.
+In any distributed system, synchronization typically implies idle time for workers. First,
+we often observe high variations in training time across hyperparameter configurations.
+For example, assuming the number of filters per layer is a hyperparameter, then networks
+with less filters finish training faster than networks with more filters, which implies idle
+worker time due to stragglers. Moreover, the number of slots in a rung level is not always a
+multiple of the number of workers, in which case some workers may even sit idle for a full
+batch.
+Figure Fig. 19.5.1 shows the scheduling of synchronous SH with 𝜂= 2 for four different
+trials with two workers. We start with evaluating Trial-0 and Trial-1 for one epoch and
+immediately continue with the next two trials once they are finished. We first have to wait
+until Trial-2 finishes, which takes substantially more time than the other trials, before we
+can promote the best two trials, i.e., Trial-0 and Trial-3 to the next rung level. This causes
+idle time for Worker-1. Then, we continue with Rung 1. Also, here Trial-3 takes longer
+than Trial-0, which leads to an additional ideling time of Worker-0. Once, we reach Rung-2,
+only the best trial, Trial-0, remains which occupies only one worker. To avoid that Worker-1
+idles during that time, most implementaitons of SH continue already with the next round,
+and start evaluating new trials (e.g Trial-4) on the first rung.
+Trial-0
+Trial-1
+Trial-2
+Trial-3
+Trial-0
+Trial-3
+Synchronous Successive Halving
+Worker-0
+Worker-1
+Rung 0
+Trial-0
+Rung 1
+Rung 2
+Trial-4
+t
+Fig. 19.5.1
+Synchronous successive halving with two workers.
+Asynchronous successive halving (ASHA) (Li et al., 2018) adapts SH to the asynchronous
+parallel scenario. The main idea of ASHA is to promote configurations to the next rung
+level as soon as we collected at least 𝜂observations on the current rung level. This decision
+rule may lead to suboptimal promotions: configurations can be promoted to the next rung
+level, which in hindsight do not compare favourably against most others at the same rung
+
+===== صفحة الكتاب 908 =====
+868
+Hyperparameter Optimization
+level. On the other hand, we get rid of all synchronization points this way. In practice, such
+suboptimal initial promotions have only a modest impact on performance, not only because
+the ranking of hyperparameter configurations is often fairly consistent across rung levels,
+but also because rungs grow over time and reflect the distribution of metric values at this
+level better and better. If a worker is free, but no configuration can be promoted, we start a
+new configuration with 𝑟= 𝑟min, i.e the first rung level.
+Fig. 19.5.2 shows the scheduling of the same configurations for ASHA. Once Trial-1 fin-
+ishes, we collect the results of two trials (i.e Trial-0 and Trial-1) and immediately promote
+the better of them (Trial-0) to the next rung level. After Trial-0 finishes on rung 1, there
+are too few trials there in order to support a further promotion. Hence, we continue with
+rung 0 and evaluate Trial-3. Once Trial-3 finishes, Trial-2 is still pending. At this point we
+have 3 trials evaluated on rung 0 and one trial evaluated already on rung 1. Since Trial-3
+performs worse than Trial-0 at rung 0, and 𝜂= 2, we cannot promote any new trial yet, and
+Worker-1 starts Trial-4 from scratch instead. However, once Trial-2 finishes and scores
+worse than Trial-3, the latter is promoted towards rung 1. Afterwards, we collected 2 eval-
+uations on rung 1, which means we can now promote Trial-0 towards rung 2. At the same
+time, Worker-1 continues with evaluating new trials (i.e., Trial-5) on rung 0.
+Trial-0
+Trial-1
+Trial-2
+Trial-0
+Trial-3
+Asynchronous Successive Halving
+Worker-0
+Worker-1
+Trial-3
+Trial-4
+Trial-0
+Promotion to Rung 1
+Promotion to Rung 1
+Start new trial on Rung 0
+Promotion to Rung 2
+Trial-5
+Start new trial on Rung 0
+t
+Fig. 19.5.2
+Asynchronous successive halving (ASHA) with two workers.
+import logging
+from d2l import torch as d2l
+logging.basicConfig(level=logging.INFO)
+import matplotlib.pyplot as plt
+from syne_tune import StoppingCriterion, Tuner
+from syne_tune.backend.python_backend import PythonBackend
+from syne_tune.config_space import loguniform, randint
+from syne_tune.experiments import load_experiment
+from syne_tune.optimizer.baselines import ASHA
+INFO:root:SageMakerBackend is not imported since dependencies are missing. You␣
+↩→can install them with
+pip install 'syne-tune[extra]'
+AWS dependencies are not imported since dependencies are missing. You can␣
+↩→install them with
+pip install 'syne-tune[aws]'
+or (for everything)
+pip install 'syne-tune[extra]'
+(continues on next page)
+
+===== صفحة الكتاب 909 =====
+869
+Asynchronous Successive Halving
+(continued from previous page)
+AWS dependencies are not imported since dependencies are missing. You can␣
+↩→install them with
+pip install 'syne-tune[aws]'
+or (for everything)
+pip install 'syne-tune[extra]'
+INFO:root:Ray Tune schedulers and searchers are not imported since␣
+↩→dependencies are missing. You can install them with
+pip install 'syne-tune[raytune]'
+or (for everything)
+pip install 'syne-tune[extra]'
+19.5.1 Objective Function
+We will use Syne Tune with the same objective function as in Section 19.3.
+def hpo_objective_lenet_synetune(learning_rate, batch_size, max_epochs):
+from syne_tune import Reporter
+from d2l import torch as d2l
+model = d2l.LeNet(lr=learning_rate, num_classes=10)
+trainer = d2l.HPOTrainer(max_epochs=1, num_gpus=1)
+data = d2l.FashionMNIST(batch_size=batch_size)
+model.apply_init([next(iter(data.get_dataloader(True)))[0]], d2l.init_cnn)
+report = Reporter()
+for epoch in range(1, max_epochs + 1):
+if epoch == 1:
+# Initialize the state of Trainer
+trainer.fit(model=model, data=data)
+else:
+trainer.fit_epoch()
+validation_error = trainer.validation_error().cpu().detach().numpy()
+report(epoch=epoch, validation_error=float(validation_error))
+We will also use the same configuration space as before:
+min_number_of_epochs = 2
+max_number_of_epochs = 10
+eta = 2
+config_space = {
+"learning_rate": loguniform(1e-2, 1),
+"batch_size": randint(32, 256),
+"max_epochs": max_number_of_epochs,
+}
+initial_config = {
+"learning_rate": 0.1,
+"batch_size": 128,
+}
+19.5.2 Asynchronous Scheduler
+
+===== صفحة الكتاب 910 =====
+870
+Hyperparameter Optimization
+First, we define the number of workers that evaluate trials concurrently. We also need to
+specify how long we want to run random search, by defining an upper limit on the total
+wall-clock time.
+n_workers = 2
+# Needs to be <= the number of available GPUs
+max_wallclock_time = 12 * 60
+# 12 minutes
+The code for running ASHA is a simple variation of what we did for asynchronous random
+search.
+mode = "min"
+metric = "validation_error"
+resource_attr = "epoch"
+scheduler = ASHA(
+config_space,
+metric=metric,
+mode=mode,
+points_to_evaluate=[initial_config],
+max_resource_attr="max_epochs",
+resource_attr=resource_attr,
+grace_period=min_number_of_epochs,
+reduction_factor=eta,
+)
+INFO:syne_tune.optimizer.schedulers.fifo:max_resource_level = 10, as inferred␣
+↩→from config_space
+INFO:syne_tune.optimizer.schedulers.fifo:Master random_seed = 3140976097
+Here, metric and resource_attr specify the key names used with the report callback,
+and max_resource_attr denotes which input to the objective function corresponds to 𝑟max.
+Moreover, grace_period provides 𝑟min, and reduction_factor is 𝜂. We can run Syne
+Tune as before (this will take about 12 minutes):
+trial_backend = PythonBackend(
+tune_function=hpo_objective_lenet_synetune,
+config_space=config_space,
+)
+stop_criterion = StoppingCriterion(max_wallclock_time=max_wallclock_time)
+tuner = Tuner(
+trial_backend=trial_backend,
+scheduler=scheduler,
+stop_criterion=stop_criterion,
+n_workers=n_workers,
+print_update_interval=int(max_wallclock_time * 0.6),
+)
+tuner.run()
+
+===== صفحة الكتاب 911 =====
+871
+Asynchronous Successive Halving
+INFO:syne_tune.tuner:results of trials will be saved on /home/ci/syne-tune/
+↩→python-entrypoint-2023-08-18-20-01-52-046
+INFO:root:Detected 4 GPUs
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.1 --batch_size 128 --max_epochs 10 --tune_function_root␣
+↩→/home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/tune_function --
+↩→tune_function_hash e03d187e043d2a17cae636d6af164015 --st_checkpoint_dir /
+↩→home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/0/checkpoints
+INFO:syne_tune.tuner:(trial 0) - scheduled config {'learning_rate': 0.1,
+↩→'batch_size': 128, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.44639554136672527 --batch_size 196 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→1/checkpoints
+INFO:syne_tune.tuner:(trial 1) - scheduled config {'learning_rate': 0.
+↩→44639554136672527, 'batch_size': 196, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.011548051321691994 --batch_size 254 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→2/checkpoints
+INFO:syne_tune.tuner:(trial 2) - scheduled config {'learning_rate': 0.
+↩→011548051321691994, 'batch_size': 254, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.14942487313193167 --batch_size 132 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→3/checkpoints
+INFO:syne_tune.tuner:(trial 3) - scheduled config {'learning_rate': 0.
+↩→14942487313193167, 'batch_size': 132, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 1 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.06317157191455719 --batch_size 242 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→4/checkpoints
+INFO:syne_tune.tuner:(trial 4) - scheduled config {'learning_rate': 0.
+↩→06317157191455719, 'batch_size': 242, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.48801815412811467 --batch_size 41 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→5/checkpoints
+INFO:syne_tune.tuner:(trial 5) - scheduled config {'learning_rate': 0.
+(continues on next page)
+
+===== صفحة الكتاب 912 =====
+872
+Hyperparameter Optimization
+(continued from previous page)
+↩→48801815412811467, 'batch_size': 41, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.5904067586747807 --batch_size 244 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→6/checkpoints
+INFO:syne_tune.tuner:(trial 6) - scheduled config {'learning_rate': 0.
+↩→5904067586747807, 'batch_size': 244, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.08812857364095393 --batch_size 148 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→7/checkpoints
+INFO:syne_tune.tuner:(trial 7) - scheduled config {'learning_rate': 0.
+↩→08812857364095393, 'batch_size': 148, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.012271314788363914 --batch_size 235 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→8/checkpoints
+INFO:syne_tune.tuner:(trial 8) - scheduled config {'learning_rate': 0.
+↩→012271314788363914, 'batch_size': 235, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 5 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.08845692598296777 --batch_size 236 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→9/checkpoints
+INFO:syne_tune.tuner:(trial 9) - scheduled config {'learning_rate': 0.
+↩→08845692598296777, 'batch_size': 236, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.0825770880068151 --batch_size 75 --max_epochs 10 --tune_
+↩→function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→10/checkpoints
+INFO:syne_tune.tuner:(trial 10) - scheduled config {'learning_rate': 0.
+↩→0825770880068151, 'batch_size': 75, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.20235201406823256 --batch_size 65 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→11/checkpoints
+INFO:syne_tune.tuner:(trial 11) - scheduled config {'learning_rate': 0.
+(continues on next page)
+
+===== صفحة الكتاب 913 =====
+873
+Asynchronous Successive Halving
+(continued from previous page)
+↩→20235201406823256, 'batch_size': 65, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.3359885631737537 --batch_size 58 --max_epochs 10 --tune_
+↩→function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→12/checkpoints
+INFO:syne_tune.tuner:(trial 12) - scheduled config {'learning_rate': 0.
+↩→3359885631737537, 'batch_size': 58, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.7892434579795236 --batch_size 89 --max_epochs 10 --tune_
+↩→function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→13/checkpoints
+INFO:syne_tune.tuner:(trial 13) - scheduled config {'learning_rate': 0.
+↩→7892434579795236, 'batch_size': 89, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.1233786579597858 --batch_size 176 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→14/checkpoints
+INFO:syne_tune.tuner:(trial 14) - scheduled config {'learning_rate': 0.
+↩→1233786579597858, 'batch_size': 176, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 13 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.13707981127012328 --batch_size 141 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→15/checkpoints
+INFO:syne_tune.tuner:(trial 15) - scheduled config {'learning_rate': 0.
+↩→13707981127012328, 'batch_size': 141, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.02913976299993913 --batch_size 116 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→16/checkpoints
+INFO:syne_tune.tuner:(trial 16) - scheduled config {'learning_rate': 0.
+↩→02913976299993913, 'batch_size': 116, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.033362897489792855 --batch_size 154 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→17/checkpoints
+INFO:syne_tune.tuner:(trial 17) - scheduled config {'learning_rate': 0.
+(continues on next page)
+
+===== صفحة الكتاب 914 =====
+874
+Hyperparameter Optimization
+(continued from previous page)
+↩→033362897489792855, 'batch_size': 154, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.29442952580755816 --batch_size 210 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→18/checkpoints
+INFO:syne_tune.tuner:(trial 18) - scheduled config {'learning_rate': 0.
+↩→29442952580755816, 'batch_size': 210, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.10214259921521483 --batch_size 239 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→19/checkpoints
+INFO:syne_tune.tuner:(trial 19) - scheduled config {'learning_rate': 0.
+↩→10214259921521483, 'batch_size': 239, 'max_epochs': 10}
+INFO:syne_tune.tuner:tuning status (last metric is reported)
+trial_id
+status
+iter
+learning_rate
+batch_size
+max_epochs
+epoch ␣
+↩→validation_error
+worker-time
+0
+Stopped
+4
+0.100000
+128
+10
+4.0
+␣
+↩→
+0.430578
+29.093798
+1
+Completed
+10
+0.446396
+196
+10
+10.0
+␣
+↩→
+0.205652
+72.747496
+2
+Stopped
+2
+0.011548
+254
+10
+2.0
+␣
+↩→
+0.900570
+13.729115
+3
+Stopped
+8
+0.149425
+132
+10
+8.0
+␣
+↩→
+0.259171
+58.980305
+4
+Stopped
+4
+0.063172
+242
+10
+4.0
+␣
+↩→
+0.900579
+27.773950
+5
+Completed
+10
+0.488018
+41
+10
+10.0
+␣
+↩→
+0.140488
+113.171314
+6
+Stopped
+10
+0.590407
+244
+10
+10.0
+␣
+↩→
+0.193776
+70.364757
+7
+Stopped
+2
+0.088129
+148
+10
+2.0
+␣
+↩→
+0.899955
+14.169738
+8
+Stopped
+2
+0.012271
+235
+10
+2.0
+␣
+↩→
+0.899840
+13.434274
+9
+Stopped
+2
+0.088457
+236
+10
+2.0
+␣
+↩→
+0.899801
+13.034437
+10
+Stopped
+4
+0.082577
+75
+10
+4.0
+␣
+↩→
+0.385970
+35.426524
+11
+Stopped
+4
+0.202352
+65
+10
+4.0
+␣
+↩→
+0.543102
+34.653495
+12
+Stopped
+10
+0.335989
+58
+10
+10.0
+␣
+↩→
+0.149558
+90.924182
+13
+Completed
+10
+0.789243
+89
+10
+10.0
+␣
+↩→
+0.144887
+77.365970
+14
+Stopped
+2
+0.123379
+176
+10
+2.0
+␣
+↩→
+0.899987
+12.422906
+15
+Stopped
+2
+0.137080
+141
+10
+2.0
+␣
+↩→
+0.899983
+13.395153
+16
+Stopped
+4
+0.029140
+116
+10
+4.0
+␣
+(continues on next page)
+
+===== صفحة الكتاب 915 =====
+875
+Asynchronous Successive Halving
+(continued from previous page)
+↩→
+0.900532
+27.834111
+17
+Stopped
+2
+0.033363
+154
+10
+2.0
+␣
+↩→
+0.899996
+13.407285
+18 InProgress
+1
+0.294430
+210
+10
+1.0
+␣
+↩→
+0.899878
+6.126259
+19 InProgress
+0
+0.102143
+239
+10
+-
+␣
+↩→
+-
+-
+2 trials running, 18 finished (3 until the end), 437.07s wallclock-time
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.02846298236356246 --batch_size 115 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→20/checkpoints
+INFO:syne_tune.tuner:(trial 20) - scheduled config {'learning_rate': 0.
+↩→02846298236356246, 'batch_size': 115, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.037703019195187606 --batch_size 91 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→21/checkpoints
+INFO:syne_tune.tuner:(trial 21) - scheduled config {'learning_rate': 0.
+↩→037703019195187606, 'batch_size': 91, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.0741039859356903 --batch_size 192 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→22/checkpoints
+INFO:syne_tune.tuner:(trial 22) - scheduled config {'learning_rate': 0.
+↩→0741039859356903, 'batch_size': 192, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.3032613031191755 --batch_size 252 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→23/checkpoints
+INFO:syne_tune.tuner:(trial 23) - scheduled config {'learning_rate': 0.
+↩→3032613031191755, 'batch_size': 252, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.019823425532533637 --batch_size 252 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→24/checkpoints
+INFO:syne_tune.tuner:(trial 24) - scheduled config {'learning_rate': 0.
+↩→019823425532533637, 'batch_size': 252, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+(continues on next page)
+
+===== صفحة الكتاب 916 =====
+876
+Hyperparameter Optimization
+(continued from previous page)
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.8203370335228594 --batch_size 77 --max_epochs 10 --tune_
+↩→function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→25/checkpoints
+INFO:syne_tune.tuner:(trial 25) - scheduled config {'learning_rate': 0.
+↩→8203370335228594, 'batch_size': 77, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.2960420911378594 --batch_size 104 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→26/checkpoints
+INFO:syne_tune.tuner:(trial 26) - scheduled config {'learning_rate': 0.
+↩→2960420911378594, 'batch_size': 104, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.2993874715754653 --batch_size 192 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→27/checkpoints
+INFO:syne_tune.tuner:(trial 27) - scheduled config {'learning_rate': 0.
+↩→2993874715754653, 'batch_size': 192, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.08056711961080017 --batch_size 36 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→28/checkpoints
+INFO:syne_tune.tuner:(trial 28) - scheduled config {'learning_rate': 0.
+↩→08056711961080017, 'batch_size': 36, 'max_epochs': 10}
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.26868380288030347 --batch_size 151 --max_epochs 10 --
+↩→tune_function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-
+↩→046/tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→29/checkpoints
+INFO:syne_tune.tuner:(trial 29) - scheduled config {'learning_rate': 0.
+↩→26868380288030347, 'batch_size': 151, 'max_epochs': 10}
+INFO:syne_tune.tuner:Trial trial_id 29 completed.
+INFO:root:running subprocess with command: /usr/bin/python /home/ci/.local/lib/
+↩→python3.8/site-packages/syne_tune/backend/python_backend/python_entrypoint.
+↩→py --learning_rate 0.9197404791177789 --batch_size 66 --max_epochs 10 --tune_
+↩→function_root /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→tune_function --tune_function_hash e03d187e043d2a17cae636d6af164015 --st_
+↩→checkpoint_dir /home/ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046/
+↩→30/checkpoints
+INFO:syne_tune.tuner:(trial 30) - scheduled config {'learning_rate': 0.
+↩→9197404791177789, 'batch_size': 66, 'max_epochs': 10}
+INFO:syne_tune.stopping_criterion:reaching max wallclock time (720), stopping␣
+(continues on next page)
+
+===== صفحة الكتاب 917 =====
+877
+Asynchronous Successive Halving
+(continued from previous page)
+↩→there.
+INFO:syne_tune.tuner:Stopping trials that may still be running.
+INFO:syne_tune.tuner:Tuning finished, results of trials can be found on /home/
+↩→ci/syne-tune/python-entrypoint-2023-08-18-20-01-52-046
+--------------------
+Resource summary (last result is reported):
+trial_id
+status
+iter
+learning_rate
+batch_size
+max_epochs
+epoch ␣
+↩→validation_error
+worker-time
+0
+Stopped
+4
+0.100000
+128
+10
+4
+␣
+↩→
+0.430578
+29.093798
+1
+Completed
+10
+0.446396
+196
+10
+10
+␣
+↩→
+0.205652
+72.747496
+2
+Stopped
+2
+0.011548
+254
+10
+2
+␣
+↩→
+0.900570
+13.729115
+3
+Stopped
+8
+0.149425
+132
+10
+8
+␣
+↩→
+0.259171
+58.980305
+4
+Stopped
+4
+0.063172
+242
+10
+4
+␣
+↩→
+0.900579
+27.773950
+5
+Completed
+10
+0.488018
+41
+10
+10
+␣
+↩→
+0.140488
+113.171314
+6
+Stopped
+10
+0.590407
+244
+10
+10
+␣
+↩→
+0.193776
+70.364757
+7
+Stopped
+2
+0.088129
+148
+10
+2
+␣
+↩→
+0.899955
+14.169738
+8
+Stopped
+2
+0.012271
+235
+10
+2
+␣
+↩→
+0.899840
+13.434274
+9
+Stopped
+2
+0.088457
+236
+10
+2
+␣
+↩→
+0.899801
+13.034437
+10
+Stopped
+4
+0.082577
+75
+10
+4
+␣
+↩→
+0.385970
+35.426524
+11
+Stopped
+4
+0.202352
+65
+10
+4
+␣
+↩→
+0.543102
+34.653495
+12
+Stopped
+10
+0.335989
+58
+10
+10
+␣
+↩→
+0.149558
+90.924182
+13
+Completed
+10
+0.789243
+89
+10
+10
+␣
+↩→
+0.144887
+77.365970
+14
+Stopped
+2
+0.123379
+176
+10
+2
+␣
+↩→
+0.899987
+12.422906
+15
+Stopped
+2
+0.137080
+141
+10
+2
+␣
+↩→
+0.899983
+13.395153
+16
+Stopped
+4
+0.029140
+116
+10
+4
+␣
+↩→
+0.900532
+27.834111
+17
+Stopped
+2
+0.033363
+154
+10
+2
+␣
+↩→
+0.899996
+13.407285
+18
+Stopped
+8
+0.294430
+210
+10
+8
+␣
+↩→
+0.241193
+52.089688
+19
+Stopped
+2
+0.102143
+239
+10
+2
+␣
+↩→
+0.900002
+12.487762
+20
+Stopped
+2
+0.028463
+115
+10
+2
+␣
+↩→
+0.899995
+14.100359
+21
+Stopped
+2
+0.037703
+91
+10
+2
+␣
+↩→
+0.900026
+14.664848
+22
+Stopped
+2
+0.074104
+192
+10
+2
+␣
+↩→
+0.901730
+13.312770
+23
+Stopped
+2
+0.303261
+252
+10
+2
+␣
+(continues on next page)
+
+===== صفحة الكتاب 918 =====
+878
+Hyperparameter Optimization
+(continued from previous page)
+↩→
+0.900009
+12.725821
+24
+Stopped
+2
+0.019823
+252
+10
+2
+␣
+↩→
+0.899917
+12.533380
+25
+Stopped
+10
+0.820337
+77
+10
+10
+␣
+↩→
+0.196842
+81.816103
+26
+Stopped
+10
+0.296042
+104
+10
+10
+␣
+↩→
+0.198453
+81.121330
+27
+Stopped
+4
+0.299387
+192
+10
+4
+␣
+↩→
+0.336183
+24.610689
+28 InProgress
+9
+0.080567
+36
+10
+9
+␣
+↩→
+0.203052
+104.303746
+29
+Completed
+10
+0.268684
+151
+10
+10
+␣
+↩→
+0.222814
+68.217289
+30 InProgress
+1
+0.919740
+66
+10
+1
+␣
+↩→
+0.900037
+10.070776
+2 trials running, 29 finished (4 until the end), 723.70s wallclock-time
+validation_error: best 0.1404876708984375 for trial-id 5
+--------------------
+Note that we are running a variant of ASHA where underperforming trials are stopped
+early. This is different to our implementation in Section 19.4.1, where each training job is
+started with a fixed max_epochs. In the latter case, a well-performing trial which reaches
+the full 10 epochs, first needs to train 1, then 2, then 4, then 8 epochs, each time starting
+from scratch. This type of pause-and-resume scheduling can be implemented efficiently by
+checkpointing the training state after each epoch, but we avoid this extra complexity here.
+After the experiment has finished, we can retrieve and plot results.
+d2l.set_figsize()
+e = load_experiment(tuner.name)
+e.plot()
+WARNING:matplotlib.legend:No artists with labels found to put in legend.
+Note␣
+↩→that artists whose label start with an underscore are ignored when legend()␣
+↩→is called with no argument.
+19.5.3 Visualize the Optimization Process
+
+===== صفحة الكتاب 919 =====
+879
+Asynchronous Successive Halving
+273
+Once more, we visualize the learning curves of every trial (each color in the plot represents
+a trial). Compare this to asynchronous random search in Section 19.3. As we have seen
+for successive halving in Section 19.4, most of the trials are stopped at 1 or 2 epochs (𝑟min
+or 𝜂∗𝑟min). However, trials do not stop at the same point, because they require different
+amount of time per epoch. If we ran standard successive halving instead of ASHA, we
+would need to synchronize our workers, before we can promote configurations to the next
+rung level.
+d2l.set_figsize([6, 2.5])
+results = e.results
+for trial_id in results.trial_id.unique():
+df = results[results["trial_id"] == trial_id]
+d2l.plt.plot(
+df["st_tuner_time"],
+df["validation_error"],
+marker="o"
+)
+d2l.plt.xlabel("wall-clock time")
+d2l.plt.ylabel("objective function")
+Text(0, 0.5, 'objective function')
+19.5.4 Summary
+Compared to random search, successive halving is not quite as trivial to run in an asyn-
+chronous distributed setting. To avoid synchronisation points, we promote configurations
+as quickly as possible to the next rung level, even if this means promoting some wrong
+ones. In practice, this usually does not hurt much, and the gains of asynchronous versus
+synchronous scheduling are usually much higher than the loss of the suboptimal decision
+making.
+Discussions273.

@@ -1,0 +1,161 @@
+{
+ "traces": [
+  {
+   "lesson": "swe.ch15.l1",
+   "id": "ex1.trace-fees",
+   "code": "def legacy_fee_code(visit_type):\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type, 'E10')\n\nfor probe in ['lab', 'phone', 'vaccine', '']:\n    print(repr(probe), legacy_fee_code(probe))",
+   "answer": "'lab' L20\n'phone' E10\n'vaccine' V30\n'' E10"
+  },
+  {
+   "lesson": "swe.ch15.l2",
+   "id": "ex1.trace-guards",
+   "code": "MAX_DAILY_BOOKINGS = 8\n\ndef can_book(booked_today):\n    return booked_today < MAX_DAILY_BOOKINGS\n\ndef booking_ok(patient, slot_open, booked_today):\n    if patient is None:\n        return False\n    if not slot_open:\n        return False\n    return can_book(booked_today)\n\nfor args in [(None, True, 7), ('lina', False, 2), ('sara', True, 8), ('omar', True, 7)]:\n    print(args[0], booking_ok(*args))",
+   "answer": "None False\nlina False\nsara False\nomar True"
+  },
+  {
+   "lesson": "swe.ch15.l3",
+   "id": "ex1.trace-router",
+   "code": "ROUTES = {'/reports': 'new', '/invoices': 'new'}\n\ndef route_for(path):\n    return ROUTES.get(path, 'legacy')\n\nfor path in ['/reports', '/payroll', '/invoices']:\n    print(path, route_for(path))",
+   "answer": "/reports new\n/payroll legacy\n/invoices new"
+  },
+  {
+   "lesson": "swe.ch15.l4",
+   "id": "ex1.trace-pin",
+   "code": "golden = {'exam': 'E10', 'lab': 'L20', 'phone': 'E10'}\n\ndef legacy_fee_code(visit_type):\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type, 'E10')\n\npinned = 0\nfor probe in sorted(golden):\n    if legacy_fee_code(probe) == golden[probe]:\n        pinned = pinned + 1\n    else:\n        print('FAILED', probe)\nprint('pinned: %d / %d' % (pinned, len(golden)))",
+   "answer": "pinned: 3 / 3"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "swe.ch15.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "def legacy_fee_code(visit_type):\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type, 'E10')\n\nprint(legacy_fee_code('lab'))\nprint(legacy_fee_code('phone'))"
+  },
+  {
+   "lesson": "swe.ch15.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import io\nimport unittest\n\ndef legacy_fee_code(visit_type):\n    # inherited: no docs, no tests\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type, 'E10')\n\ngolden = {}\nfor probe in ['exam', 'lab', 'vaccine', 'phone', '']:\n    golden[probe] = legacy_fee_code(probe)\n\nfor key in sorted(golden):\n    print((key if key else '<empty>'), golden[key])\n\nclass Characterization(unittest.TestCase):\n    def test_known_codes(self):\n        for probe in ['exam', 'lab', 'vaccine']:\n            self.assertEqual(legacy_fee_code(probe), golden[probe])\n\n    def test_unknown_bills_as_exam(self):\n        self.assertEqual(legacy_fee_code('phone'), golden['phone'])\n\n    def test_empty_bills_as_exam(self):\n        self.assertEqual(legacy_fee_code(''), golden[''])\n\nresult = unittest.TextTestRunner(stream=io.StringIO()).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(Characterization))\nprint('run: %d failures: %d' % (result.testsRun, len(result.failures)))"
+  },
+  {
+   "lesson": "swe.ch15.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "def legacy_fee_code(visit_type):\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type, 'E10')\n\nprobes = ['exam', 'lab', 'vaccine', 'phone', '', 'X-RAY']\ngolden = {}\nfor p in probes:\n    golden[p] = legacy_fee_code(p)\n\nfor p in probes:\n    print(repr(p), golden[p])\n\n# جرّب: أضف مفتاحًا جديدًا للقاموس مثل 'x-ray': 'X01' — أي أسطر في golden تغيّرت؟\n# try: add a new dict key like 'x-ray': 'X01' — which lines in golden changed?\n# جرّب: هذا هو الانكشاف الذي تصونه الشبكة — سلوك اعتمده آخرون انقلب بلمسة واحدة\n# try: that is exactly the drift the net guards against — behavior others depend on flipped by one touch\n# جرّب: افسد قيمة واحدة في golden واكتب حلقة assert صغيرة تشتكي باسم المفتاح المخالف\n# try: corrupt one golden value and write a tiny assert loop that names the offending key"
+  },
+  {
+   "lesson": "swe.ch15.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "DEFAULT_EXAM_CODE = 'E10'\nFEE_CODES = {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}\n\ndef known_fee_code(visit_type):\n    return FEE_CODES.get(visit_type)\n\ndef legacy_fee_code(visit_type):\n    known = known_fee_code(visit_type)\n    if known is not None:\n        return known\n    return DEFAULT_EXAM_CODE\n\nprint(legacy_fee_code('lab'))\nprint(legacy_fee_code('phone'))"
+  },
+  {
+   "lesson": "swe.ch15.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import difflib\nimport io\nimport unittest\n\nbefore_src = \"def legacy_fee_code(visit_type):\\n    # inherited: no docs, no tests\\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type, 'E10')\\n\"\n\n# the net from l1 — same probes, same pinned values, untouched\ngolden = {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30', 'phone': 'E10', '': 'E10'}\n\n# refactor: named constants, extracted helper, guard clause — structure only\nDEFAULT_EXAM_CODE = 'E10'\nFEE_CODES = {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}\n\ndef known_fee_code(visit_type):\n    return FEE_CODES.get(visit_type)\n\ndef legacy_fee_code(visit_type):\n    known = known_fee_code(visit_type)\n    if known is not None:\n        return known\n    return DEFAULT_EXAM_CODE\n\nafter_src = \"DEFAULT_EXAM_CODE = 'E10'\\nFEE_CODES = {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}\\n\\ndef known_fee_code(visit_type):\\n    return FEE_CODES.get(visit_type)\\n\\ndef legacy_fee_code(visit_type):\\n    known = known_fee_code(visit_type)\\n    if known is not None:\\n        return known\\n    return DEFAULT_EXAM_CODE\\n\"\n\nclass Characterization(unittest.TestCase):\n    def test_known_codes(self):\n        for probe in ['exam', 'lab', 'vaccine']:\n            self.assertEqual(legacy_fee_code(probe), golden[probe])\n\n    def test_unknown_bills_as_exam(self):\n        self.assertEqual(legacy_fee_code('phone'), golden['phone'])\n\n    def test_empty_bills_as_exam(self):\n        self.assertEqual(legacy_fee_code(''), golden[''])\n\nresult = unittest.TextTestRunner(stream=io.StringIO()).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(Characterization))\nprint('run: %d failures: %d' % (result.testsRun, len(result.failures)))\n\ndiff = list(difflib.unified_diff(\n    before_src.splitlines(keepends=True),\n    after_src.splitlines(keepends=True),\n    fromfile='before.py', tofile='after.py'))\nchanged = 0\nfor line in diff:\n    if line.startswith('+') and not line.startswith('+++'):\n        changed = changed + 1\n    if line.startswith('-') and not line.startswith('---'):\n        changed = changed + 1\nfor line in diff:\n    print(line.rstrip())\nprint('changed lines: %d' % changed)"
+  },
+  {
+   "lesson": "swe.ch15.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "DEFAULT_EXAM_CODE = 'E10'\nFEE_CODES = {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}\n\ndef known_fee_code(visit_type):\n    return FEE_CODES.get(visit_type)\n\ndef legacy_fee_code(visit_type):\n    known = known_fee_code(visit_type)\n    if known is not None:\n        return known\n    return DEFAULT_EXAM_CODE\n\nimport difflib\n\nbefore_src = \"def legacy_fee_code(visit_type):\\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type, 'E10')\\n\"\nafter_src = \"DEFAULT_EXAM_CODE = 'E10'\\nFEE_CODES = {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}\\n\\ndef known_fee_code(visit_type):\\n    return FEE_CODES.get(visit_type)\\n\\ndef legacy_fee_code(visit_type):\\n    known = known_fee_code(visit_type)\\n    if known is not None:\\n        return known\\n    return DEFAULT_EXAM_CODE\\n\"\n\nfor line in difflib.unified_diff(before_src.splitlines(), after_src.splitlines(), fromfile='before.py', tofile='after.py'):\n    print(line)\n\n# جرّب: أضف نوع زائر جديد 'x-ray' إلى FEE_CODES وقيمة X01 — أي أسطر يتغير فيها الـdiff؟\n# try: add a new visitor type 'x-ray' to FEE_CODES with X01 — which diff lines change?\n# جرّب: حوّل الحارس إلى تعليق if مركّب من سطر واحد — أي أسهل قراءةً عند مستوى تجريد واحد؟\n# try: collapse the guard into a one-line compound if — which one reads better at a single level of abstraction?\n# جرّب: غيّر اسم known_fee_code إلى lookup_code — الـdiff سيكشف حركة إعادة التسمية سطرًا سطرًا\n# try: rename known_fee_code to lookup_code — the diff will expose the rename move line by line"
+  },
+  {
+   "lesson": "swe.ch15.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "debt = [\n    {'item': 'hardcoded tax rule', 'principal': 2, 'interest_per_month': 1},\n    {'item': 'flaky deploy script', 'principal': 3, 'interest_per_month': 2},\n]\nMONTHS = 6\ntotal = 0\nfor entry in debt:\n    cost = entry['principal'] + entry['interest_per_month'] * MONTHS\n    total = total + cost\n    print(entry['item'], 'cost:', cost)\nprint('total cost:', total, 'dev-days')"
+  },
+  {
+   "lesson": "swe.ch15.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "debt = [\n    {'item': 'hardcoded tax rule', 'principal': 2, 'interest_per_month': 1},\n    {'item': 'flaky deploy script', 'principal': 3, 'interest_per_month': 2},\n    {'item': 'untested billing core', 'principal': 5, 'interest_per_month': 3},\n]\nHORIZON = 6\n\ndef projected_cost(entry):\n    return entry['principal'] + entry['interest_per_month'] * HORIZON\n\ntotal_interest = 0\nranked = sorted(debt, key=lambda row: row['interest_per_month'], reverse=True)\nfor entry in ranked:\n    total_interest = total_interest + entry['interest_per_month'] * HORIZON\n    print('%s | principal %d + %d/mo -> %d dev-days' % (entry['item'], entry['principal'], entry['interest_per_month'], projected_cost(entry)))\nprint('total interest over %d months: %d dev-days' % (HORIZON, total_interest))\n\nROUTES = {'/reports': 'new', '/invoices': 'new'}\n\ndef new_module(route):\n    return 'new:' + route\n\ndef legacy_module(route):\n    return 'legacy:' + route\n\nMODULES = {'new': new_module, 'legacy': legacy_module}\n\ndef handle(route):\n    target = ROUTES.get(route, 'legacy')\n    return MODULES[target](route)\n\nfor route in ['/reports', '/audit-log', '/payroll']:\n    print(route, '->', handle(route))"
+  },
+  {
+   "lesson": "swe.ch15.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "debt = [\n    {'item': 'hardcoded tax rule', 'principal': 2, 'interest_per_month': 1},\n    {'item': 'flaky deploy script', 'principal': 3, 'interest_per_month': 2},\n]\nROUTES = {'/reports': 'new'}\n\ndef new_module(route):\n    return 'new:' + route\n\ndef legacy_module(route):\n    return 'legacy:' + route\n\nMODULES = {'new': new_module, 'legacy': legacy_module}\n\ndef handle(route):\n    return MODULES[ROUTES.get(route, 'legacy')](route)\n\nfor entry in debt:\n    print(entry['item'], 'principal', entry['principal'], 'interest', entry['interest_per_month'], '/mo')\nprint('/reports ->', handle('/reports'))\nprint('/payroll ->', handle('/payroll'))\n\n# جرّب: أضف صنفًا رابعًا بفائدة 4/شهر وأعد حساب أفق 6 أشهر — من يتصدّر السداد؟\n# try: add a fourth item with 4/month interest and redo a 6-month horizon — who leads the paydown?\n# جرّب: انقل /reports إلى legacy ثم أعد التوجيه — متى يصير عكس القرار مكلفًا؟\n# try: flip /reports back to legacy and reroute — when does reversing the decision get expensive?\n# جرّب: أضف قدرة جديدة إلى الوحدة الجديدة بمفتاح في ROUTES ولاحظ عدّاد legacy ينخفض\n# try: add a new capability to the new module with a ROUTES key and watch the legacy count drop"
+  },
+  {
+   "lesson": "swe.ch15.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "ROUTES = {'/fees': 'new'}\n\ndef new_fee_code(visit_type):\n    return 'N-' + visit_type.upper()[:2]\n\ndef legacy_fee_code(visit_type):\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type, 'E10')\n\ndef handle(visit_type):\n    if ROUTES.get('/fees') == 'new' and visit_type in ('exam', 'lab', 'vaccine'):\n        return new_fee_code(visit_type)\n    return legacy_fee_code(visit_type)\n\nprint(handle('exam'))\nprint(handle('phone'))\nprint(handle('vaccine'))"
+  },
+  {
+   "lesson": "swe.ch15.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "import difflib\nimport io\nimport unittest\n\n# the inheritance: a source string, no docs, no tests\nLEGACY_SRC = '''def legacy_zone(zipcode):\n    # inherited: no docs, no tests\n    zones = {'10': 'A', '20': 'B', '30': 'C'}\n    return zones.get(zipcode[:2], 'C')\n'''\nlegacy_ns = {}\nexec(compile(LEGACY_SRC, 'legacy_zone.py', 'exec'), legacy_ns)\nlegacy_zone = legacy_ns['legacy_zone']\n\n# step 1 — run the net green: observe, pin\nprobes = ['10001', '20500', '30501', '9', '']\ngolden = {}\nfor probe in probes:\n    golden[probe] = legacy_zone(probe)\n\nclass Characterization(unittest.TestCase):\n    def test_matches_observation(self):\n        for probe in probes:\n            self.assertEqual(legacy_zone(probe), golden[probe])\n\nresult = unittest.TextTestRunner(stream=io.StringIO()).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(Characterization))\nprint('net: run: %d failures: %d' % (result.testsRun, len(result.failures)))\n\n# steps 2-3 — refactor under the net: named zones, guard clause, helper\nZONES = {'10': 'A', '20': 'B', '30': 'C'}\nDEFAULT_ZONE = 'C'\n\ndef zone_for_prefix(prefix):\n    return ZONES.get(prefix, DEFAULT_ZONE)\n\ndef legacy_zone(zipcode):\n    if len(zipcode) < 2:\n        return DEFAULT_ZONE\n    return zone_for_prefix(zipcode[:2])\n\nresult = unittest.TextTestRunner(stream=io.StringIO()).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(Characterization))\nprint('after: run: %d failures: %d' % (result.testsRun, len(result.failures)))\n\n# step 4 — report the change\nafter_src = '''ZONES = {'10': 'A', '20': 'B', '30': 'C'}\nDEFAULT_ZONE = 'C'\n\ndef zone_for_prefix(prefix):\n    return ZONES.get(prefix, DEFAULT_ZONE)\n\ndef legacy_zone(zipcode):\n    if len(zipcode) < 2:\n        return DEFAULT_ZONE\n    return zone_for_prefix(zipcode[:2])\n'''\ndiff = list(difflib.unified_diff(\n    LEGACY_SRC.splitlines(keepends=True), after_src.splitlines(keepends=True),\n    fromfile='legacy_zone.py', tofile='legacy_zone.py'))\nchanged = 0\nfor line in diff:\n    if line.startswith('+') and not line.startswith('+++'):\n        changed = changed + 1\n    if line.startswith('-') and not line.startswith('---'):\n        changed = changed + 1\nprint('changed lines: %d / probes: %d pinned: %d' % (changed, len(probes), len(probes)))"
+  },
+  {
+   "lesson": "swe.ch15.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "LEGACY_SRC = '''def legacy_fee_code(visit_type):\n    # inherited: no docs, no tests\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type, 'E10')\n'''\nns = {}\nexec(compile(LEGACY_SRC, 'legacy_fees.py', 'exec'), ns)\n\nprobes = ['exam', 'lab', 'vaccine', 'phone', '']\ngolden = {}\nfor probe in probes:\n    golden[probe] = ns['legacy_fee_code'](probe)\nfor probe in probes:\n    print(repr(probe), golden[probe])\n\n# جرّب: اكتب نسختك المعاد هيكلتها كسلسلة وحمّلها بـ exec في مساحة أسماء جديدة — هل يطابق كل ركن؟\n# try: write your refactored version as a string and exec it into a fresh namespace — does it match every corner?\n# جرّب: أضف مفتاح 'x-ray': 'X01' إلى قاموس النسخة الجديدة — أي ركن في golden سيصرخ؟\n# try: add an 'x-ray': 'X01' key to the new version's dict — which golden corner would scream?\n# جرّب: أعد بناء سطر دين للوحدة هذه وأفق فائدته على ستة أشهر\n# try: build a debt register line for this module and project its interest over six months"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "swe.ch15.l1",
+   "id": "ex3.mcq-two-ways",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch15.l2",
+   "id": "ex3.mcq-red-bar",
+   "answer": "b",
+   "solution": "b"
+  },
+  {
+   "lesson": "swe.ch15.l2",
+   "id": "ex4.numeric-complexity",
+   "answer": "3",
+   "solution": "3"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "swe.ch15.l1",
+   "id": "ex4.fill-promote",
+   "answer": "promote"
+  },
+  {
+   "lesson": "swe.ch15.l3",
+   "id": "ex4.fill-facade",
+   "answer": "facade"
+  },
+  {
+   "lesson": "swe.ch15.l4",
+   "id": "ex4.fill-strangler",
+   "answer": "strangler"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "swe.ch15.l1",
+   "id": "ex5.debug-stale-oracle",
+   "brokenCode": "import io\nimport sys\nimport unittest\n\ndef legacy_zone(zipcode):\n    # inherited: no docs, no tests\n    zones = {'10': 'A', '20': 'B', '30': 'C'}\n    return zones.get(zipcode[:2], 'C')\n\nclass ZoneSuite(unittest.TestCase):\n    def test_known_prefixes(self):\n        self.assertEqual(legacy_zone('10001'), 'A')\n        self.assertEqual(legacy_zone('20500'), 'B')\n\n    def test_short_code_bills_as_A(self):\n        # expected copied from a stale spec, never observed\n        self.assertEqual(legacy_zone('9'), 'A')\n\n    def test_prefix_rule(self):\n        self.assertEqual(legacy_zone('30501'), 'C')\n\nresult = unittest.TextTestRunner(stream=sys.stdout).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(ZoneSuite))\nprint('run: %d failures: %d' % (result.testsRun, len(result.failures)))\nprint('probe: 9 ->', legacy_zone('9'))"
+  },
+  {
+   "lesson": "swe.ch15.l2",
+   "id": "ex5.debug-slip",
+   "brokenCode": "import io\nimport unittest\n\nRATE = 10\nBONUS_THRESHOLD = 200\nBONUS = 15\n\ndef base_discount(total):\n    return total * RATE // 100\n\ndef legacy_discount(total):\n    if total >= BONUS_THRESHOLD:  # the refactor slipped: >= crept in where legacy had >\n        return total - base_discount(total) - BONUS\n    return total - base_discount(total)\n\ngolden = {5: 5, 100: 90, 200: 180, 201: 166, 300: 255}\n\nclass Characterization(unittest.TestCase):\n    def test_small_totals(self):\n        self.assertEqual(legacy_discount(5), golden[5])\n        self.assertEqual(legacy_discount(100), golden[100])\n\n    def test_bonus_edge(self):\n        self.assertEqual(legacy_discount(200), golden[200])\n\n    def test_above_threshold(self):\n        self.assertEqual(legacy_discount(201), golden[201])\n        self.assertEqual(legacy_discount(300), golden[300])\n\nresult = unittest.TextTestRunner(stream=io.StringIO()).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(Characterization))\nprint('run: %d failures: %d' % (result.testsRun, len(result.failures)))\nprint('probe: 200 -> %d' % legacy_discount(200))"
+  },
+  {
+   "lesson": "swe.ch15.l3",
+   "id": "ex5.debug-router-default",
+   "brokenCode": "ROUTES = {'/reports': 'new'}\n\ndef new_module(route):\n    return 'new:' + route\n\ndef legacy_module(route):\n    return 'legacy:' + route\n\nMODULES = {'new': new_module, 'legacy': legacy_module}\n\ndef handle(route):\n    target = ROUTES.get(route, 'new')  # bug: optimism — unfixed routes must stay legacy\n    return MODULES[target](route)\n\nserved = {}\nfor path in ['/reports', '/payroll', '/audit-log']:\n    served[path] = handle(path)\n\nlegacy_count = 0\nfor target in served.values():\n    if target.startswith('legacy'):\n        legacy_count = legacy_count + 1\nprint('routes: %d legacy: %d' % (len(served), legacy_count))\nprint(served['/payroll'])"
+  },
+  {
+   "lesson": "swe.ch15.l4",
+   "id": "ex5.debug-detail-test",
+   "brokenCode": "import io\nimport unittest\n\n# an honest refactor already applied: helper renamed _lookup_fee -> _fetch_fee, behavior identical\ndef _fetch_fee(visit_type):\n    return {'exam': 'E10', 'lab': 'L20', 'vaccine': 'V30'}.get(visit_type)\n\ndef legacy_fee_code(visit_type):\n    known = _fetch_fee(visit_type)\n    if known is not None:\n        return known\n    return 'E10'\n\nclass DetailSuite(unittest.TestCase):\n    def test_helper_name(self):\n        # pins an implementation detail: the helper's OLD name\n        self.assertIn('_lookup_fee', globals())\n\n    def test_known_codes(self):\n        self.assertEqual(legacy_fee_code('lab'), 'L20')\n        self.assertEqual(legacy_fee_code('vaccine'), 'V30')\n\n    def test_unknown_bills_as_exam(self):\n        self.assertEqual(legacy_fee_code('phone'), 'E10')\n\n    def test_exam_bills_as_itself(self):\n        self.assertEqual(legacy_fee_code('exam'), 'E10')\n\nresult = unittest.TextTestRunner(stream=io.StringIO()).run(\n    unittest.defaultTestLoader.loadTestsFromTestCase(DetailSuite))\nprint('run: %d failures: %d' % (result.testsRun, len(result.failures)))"
+  }
+ ]
+}

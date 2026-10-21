@@ -1,0 +1,373 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch15.l3 — "Technical Debt and Strangler Fig versus Big-Bang Rewrite
+ * الدين التقني: شجرة الخنزير مقابل إعادة الكتابة الكاملة"
+ * Aligned with SWE ch15 s5 (Technical Debt, p.418) +
+ * s6 (Strangler Fig versus Big-Bang Rewrite, p.419).
+ * All expression is original — a paraphrase of the CC BY-SA 4.0 source, never
+ * a verbatim translation (the tax-rule/pilot example and the routing-facade
+ * shape follow the book's examples with original framing).
+ * Runnable design: a debt register (list of dicts: item / principal /
+ * interest_per_month) with a total-interest projection over a horizon, plus a
+ * strangler router (route -> 'legacy' | 'new' decision map) that serves every
+ * unfixed route from the old module. The debug block is a router whose default
+ * was flipped to 'new', sending unfixed routes to the half-built module.
+ * Deterministic only: no input(), no exit(), no unittest.main in code.
+ */
+const lesson = {
+  id: 'swe.ch15.l3',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 15,
+  title: { ar: 'الدين التقني: شجرة الخنزير مقابل إعادة الكتابة الكاملة', en: 'Technical Debt and Strangler Fig versus Big-Bang Rewrite' },
+  estimatedMinutes: 30,
+  prerequisites: ['swe.ch15.l2'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'درسا الماضيان أعطاك القدرة: شبكة توصيف ثم هيكلة تحت اختبارات خضراء. هذا الدرس يعطيك الاقتصاد والحكم: لماذا نشتري دينًا أصلًا، ومتى يصير عبئًا مركّبًا صامتًا، وأين تسدد أصلًا. ثم السؤال الأقسى في حياة أي نظام: ماذا لو كان كله بعيدًا عن الإنقاذ ففكر الفريق في البدء من جديد؟ سترى لماذا تكدّس إعادة الكتابة الكاملة المخاطر حتى النهاية — ولماذا توزّعها شجرة الخنزير: واجهة توجيه أمام النظام العتيق تنزع قدرةً قدرةً وتخدم كل ما لم يُنقل بعد من الوحدة القديمة. بنهاية الدرس ستكون قادرًا على: التمييز بين الدين المتعمَّد وغير المقصود، وبناء سجل دين بإسقاط فائدة ورتبة سداد، وتصميم موجّه شجرة خنزير يقرر لكل مسار وحدةً يخدمه.',
+        en: 'The last two lessons gave you the capability: a characterization net, then refactoring under green tests. This lesson gives you the economics and the judgment: why teams borrow at all, when the burden compounds silently, and where to repay principal. Then the harshest question in a system\u2019s life: what if all of it looks beyond rescue and the team wants to start over? You will see why a big-bang rewrite concentrates risk to the very end — and how the strangler fig spreads it: a routing facade in front of the legacy system peels off one capability at a time and serves everything not yet migrated from the old module. By the end you will be able to: tell deliberate debt from inadvertent, build a debt register with an interest projection and a paydown order, and design a strangler router that decides which module serves each route.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "debt = [\n    {'item': 'hardcoded tax rule', 'principal': 2, 'interest_per_month': 1},\n    {'item': 'flaky deploy script', 'principal': 3, 'interest_per_month': 2},\n]\nMONTHS = 6\ntotal = 0\nfor entry in debt:\n    cost = entry['principal'] + entry['interest_per_month'] * MONTHS\n    total = total + cost\n    print(entry['item'], 'cost:', cost)\nprint('total cost:', total, 'dev-days')",
+      question: {
+        ar: 'سجل دين بصنفين: أصل كل صنف (كلفة سداده مرة واحدة بوحدة أيام-مطوّر) وفائدة شهرية تدفعها في كل تغيير تلمسه. على أفق ستة أشهر: أي الصنفين يكلف أكثر، وكم مجموع الكلفة؟',
+        en: 'A debt register with two items: each has a principal (a one-time repayment cost, in developer-days) and a monthly interest paid on every change that touches it. Over a six-month horizon: which item costs more, and what is the total cost?',
+      },
+      reveal: {
+        ar: 'الطباعة: hardcoded tax rule cost: 8 ثم flaky deploy script cost: 15 ثم total cost: 23 dev-days. الأصل الأكبر ليس الأكبر كلفة: الصنف ذو الفائدة 2/شهر يسبح فوق صاحب الفائدة 1/شهر لأن الفائدة تُدفع كل شهر على كل تغيير. هذه هي اقتصاديات الدين: الأصل تدفعه مرة، والفائدة تعيش معك — ولذلك يُسقَط الأفق على السجل قبل أي قرار سداد، وسيقول الدرس أين تسدد أولًا: حيث تدفع الفائدة فعلًا، في الشيفرة عالية الدوران التي تلمسها أسبوعيًا.',
+        en: 'It prints hardcoded tax rule cost: 8, then flaky deploy script cost: 15, then total cost: 23 dev-days. The bigger principal is not the bigger cost: the item with 2/month interest swims past the 1/month one, because interest is paid every month on every change. That is debt economics: you pay the principal once, the interest lives with you — so a horizon gets projected onto the register before any paydown decision, and the lesson will say where to repay first: where you actually pay interest, in the high-churn code you touch weekly.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'الدين التقني: أصل وفائدة، متعمَّد وغير مقصود', en: 'Technical debt: principal and interest, deliberate and inadvertent' },
+      chunks: [
+        {
+          ar: 'الدين التقني استعارة لكلفة مستقبلية تشتريها باختصار اليوم: كما الدين المالي يتيح لك التحرك أسرع الآن مقابل فائدة — والفائدة أن كل تغيير قادم على تلك الشيفرة يكلّف أكثر مما كان سيكلّف. دقة الاستعارة فضيلتها: الدين صفقة لا «شيفرة سيئة» ببساطة، وربما صفقة رابحة. الدين المتعمَّد مقايضة واعية: «نثبّت قاعدة الضريبة المكتوبة لإطلاق النسخة التجريبية ونفتح تذكرة لتعميمها» — وهو مقابل قرض شركة ناشئة، عقلاني حين يهم التعلم السريع أكثر من النقاء، بشرط تتبّعه وخدمته.',
+          en: 'Technical debt is the metaphor for the future cost incurred by a shortcut taken today: like financial debt it lets you move faster now in exchange for interest — the interest being that every future change to that code costs more than it would have. The metaphor\\u2019s precision is its virtue: debt is a deal, not simply \\u201cbad code\\u201d, and sometimes a good one.',
+        },
+          {
+          ar: 'أما الدين غير المقصود ففائدة اختصارات لم تعرف أنك أخذتها: من قلة خبرة، أو متطلبات انحرفت تحت تصميم كان صائبًا، أو ورطة الانضغاط في الفصل الأول حيث تُمتصّ مهام الزيادة بصمت في ساعات إضافية تدفع ثمنها لاحقًا بنكاوة بنية. لم يختره أحد، فلم يتتبعه أحد، فتراكم.',
+          en: 'Deliberate debt is a conscious trade: \\u201cwe hard-code the tax rule for the pilot and log a ticket to generalize it\\u201d — a startup loan, rational whenever learning fast matters more than building clean, provided you track it and service it. Inadvertent debt is interest on shortcuts you never knew you took: from inexperience, from requirements that shifted under a once-correct design, or from chapter one\\u2019s crunch pitfall where scope silently absorbed through overtime is repaid later in weakened structure. Nobody chose it, so nobody tracks it, so it compounds.',
+        },
+        {
+          ar: 'غير المُدار يلتهم الفريق: كل ميزة تطول، فيرتفع الضغط، فيُقال اختصارات جديدة، فترتفع الفائدة ثانية — حلزون يعيشه كثيرون بلا اسم. والإدارة ليست «لا تقترض أبدًا» بل: اقترض وعيًا، وأبقِ الديون مرئية في سجل داخل قائمة الأعمال يُراجَع كأي عمل آخر، وسدّد الأصل حيث تدفع الفائدة فعلًا: الشيفرة عالية الدوران التي تلمسها أسبوعيًا، لا الوحدة القبيحة التي لم يفتحها أحد منذ سنوات. وإعادة الهيكلة من الدرس الماضي هي آلية السداد نفسها، والخط التجميعي من الفصل الرابع عشر هو ما يجعل السداد آمنًا بما يكفي ليُمارَس باستمرار.',
+          en: 'Unmanaged, the interest consumes the whole team: every feature takes longer, pressure rises, new shortcuts get invited, interest rises again — a spiral many live in without a name. Management is not \u201cnever borrow\u201d: borrow knowingly, keep the debts visible in a register inside the backlog reviewed like any other work, and pay down principal where you actually pay interest — the high-churn code you touch weekly, not the ugly module nobody has opened in years. Refactoring, from last lesson, is the repayment mechanism itself, and the chapter-fourteen pipeline is what makes repayment safe enough to do continuously.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'شجرة الخنزير مقابل إعادة الكتابة الكاملة', en: 'Strangler fig versus big-bang rewrite' },
+      chunks: [
+        {
+          ar: 'وماذا عن نظام بعيد كل البعد عن الإنقاذ؟ إعادة الكتابة الكاملة تكدّس الخطر في نقطة واحدة: تلقي بعلم الشيفرة المتراكم — آلاف الحالات الحدّية المضمّنة في شيفرة تعمل منذ سنوات — وتشغّل نظامين طوال المدة: واحد مجمّد وآخر متخيَّل، وأول تحقق حقيقي للنظام الجديد يأتي في النهاية، دفعة واحدة. أما بديل عصر التسليم فنمط شجرة الخنزير، المسمّى على اسم التين الذي ينمو حول شجرة مضيفة يتجذّر ويستبدلها تدريجيًا: تضع طبقة اعتراض — واجهة توجيه — أمام النظام العتيق، ثم تنزع قدرة واحدة في كل مرة: ابنِ التنفيذ الجديد لتلك الشريحة، وحوّل حصتها من الطلب إليه، وتحقق منها في الإنتاج — قنينة من الفصل الرابع عشر بتفصيل الميزة — ثم أرحل مسار الشيفرة القديمة.',
+          en: 'And what about a system that looks beyond rescue? A big-bang rewrite concentrates risk: you discard the accumulated knowledge embedded in code that handles a thousand edge cases, you run two systems for the duration — one frozen, one imaginary — and the new system\u2019s first real validation comes at the end, all at once. The delivery-era alternative is the strangler fig pattern, named for the fig that grows around a host tree, roots itself, and gradually replaces it: place an interception layer — a routing facade — in front of the legacy system, then peel off one capability at a time: build the new implementation for that slice, route its share of traffic to it, verify it in production — a canary from chapter fourteen at the granularity of a feature — then retire the old code path.',
+        },
+        {
+          ar: 'في كل لحظة من الترحيل لديك نظام عامل واحد — جزء منه قديم وجزء جديد — وكل زيادة في إعادة الكتابة يتحقق منها الاستخدام الحقيقي في أسابيع من كتابتها. وهكذا تصير إعادة الكتابة سلسلة نشرات صغيرة قابلة للتراجع بدل رهان عملاق واحد لا تراجع عنه: الحجّة كلها من الفصل الرابع عشر مطبّقة على أكبر تغيير قد يقوم به فريق. والقاعدة العملية للموجّه: المسار الذي لا تملكه الوحدة الجديدة بعدًا يبقى على الوحدة القديمة — القرار الافتراضي للأمان، لا للتفاؤل.',
+          en: 'At every moment of the migration you have one working system — part old, part new — and every increment of the rewrite is validated by real use within weeks of being written. The rewrite becomes a sequence of small, reversible deployments instead of one giant irreversible bet: the whole argument of chapter fourteen applied to the biggest change a team ever makes. And the practical rule for the router: a route the new module does not own yet stays on the old module — the safe default is caution, not optimism.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'سجل الدين وموجّه شجرة الخنزير', en: 'A debt register and a strangler router' },
+      code: "debt = [\n    {'item': 'hardcoded tax rule', 'principal': 2, 'interest_per_month': 1},\n    {'item': 'flaky deploy script', 'principal': 3, 'interest_per_month': 2},\n    {'item': 'untested billing core', 'principal': 5, 'interest_per_month': 3},\n]\nHORIZON = 6\n\ndef projected_cost(entry):\n    return entry['principal'] + entry['interest_per_month'] * HORIZON\n\ntotal_interest = 0\nranked = sorted(debt, key=lambda row: row['interest_per_month'], reverse=True)\nfor entry in ranked:\n    total_interest = total_interest + entry['interest_per_month'] * HORIZON\n    print('%s | principal %d + %d/mo -> %d dev-days' % (entry['item'], entry['principal'], entry['interest_per_month'], projected_cost(entry)))\nprint('total interest over %d months: %d dev-days' % (HORIZON, total_interest))\n\nROUTES = {'/reports': 'new', '/invoices': 'new'}\n\ndef new_module(route):\n    return 'new:' + route\n\ndef legacy_module(route):\n    return 'legacy:' + route\n\nMODULES = {'new': new_module, 'legacy': legacy_module}\n\ndef handle(route):\n    target = ROUTES.get(route, 'legacy')\n    return MODULES[target](route)\n\nfor route in ['/reports', '/audit-log', '/payroll']:\n    print(route, '->', handle(route))",
+      explanation: {
+        ar: 'جزءان في تنفيذ واحد. السجل: ثلاثة أصناف بقاموس لكل صنف (item / principal / interest_per_month)؛ الإسقاط على أفق 6 أشهر يحسب كلفة كل صنف principal + interest × الأشهر ويرتبها تنازليًا بالفائدة فيتصدّر untested billing core بكلفة 23 أيام-مطوّر، ويطبع مجموع الفوائد 36 — رتبة السداد جاهزة قبل أي قرار. الموجّه: قاموس ROUTES يقرر لكل مسار وحدةً يخدمها، وhandle يسأل ROUTES.get(route, \'legacy\') فتخدم /reports و/invoices من الوحدة الجديدة، بينما /audit-log و/payroll اللذان لم تُنقلا بعد يبقيان على legacy — نظام عامل واحد في كل لحظة، وزيادة كل أسبوعين تُرحَّل فيها قدرة واحدة.',
+        en: 'Two halves in one run. The register: three items as dicts (item / principal / interest_per_month); the projection over a 6-month horizon computes each cost as principal + interest \u00d7 months and ranks by interest, so untested billing core leads at 23 developer-days, and the total-interest line prints 36 — the paydown order is ready before any decision. The router: a ROUTES dict decides which module serves each route, and handle asks ROUTES.get(route, \'legacy\'), so /reports and /invoices go to the new module while /audit-log and /payroll — not migrated yet — stay on legacy: one working system at every moment, one capability migrated per increment.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.trace-router',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرجه بالضبط — سطرًا لكل طباعة — دون تشغيله. انتبه إلى ماذا يسأل get عندما يغيب المسار عن خريطة التوجيه.',
+        en: 'Read the code and predict its exact output — one line per print — without running it. Watch what get answers when a route is missing from the routing map.',
+      },
+      code: "ROUTES = {'/reports': 'new', '/invoices': 'new'}\n\ndef route_for(path):\n    return ROUTES.get(path, 'legacy')\n\nfor path in ['/reports', '/payroll', '/invoices']:\n    print(path, route_for(path))",
+      solution: '/reports new\n/payroll legacy\n/invoices new',
+      answer: '/reports new\n/payroll legacy\n/invoices new',
+      hints: [
+        { ar: 'المساران /reports و/invoices مفتاحان موجودان في ROUTES فتُعيد get قيمتيهما: new وnew.', en: 'The routes /reports and /invoices exist in ROUTES, so get returns their values: new and new.' },
+        { ar: 'المسار /payroll ليس في الخريطة بعد — الوحدة الجديدة لم تملكه — فينزل get على البديل legacy.', en: 'The route /payroll is not in the map yet — the new module does not own it — so get falls back to legacy.' },
+        { ar: 'البديل legacy هو قرار الأمان: كل ما لم يُنقل بعد يبقى على الوحدة القديمة، حتى لو بدا المسار بسيطًا.', en: 'The legacy fallback is the safety decision: everything not migrated yet stays on the old module, however simple the route looks.' },
+        { ar: 'الخرج:\n/reports new\n/payroll legacy\n/invoices new', en: 'The output:\n/reports new\n/payroll legacy\n/invoices new' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.debt-register',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'ابنِ إسقاط السجل: لديك debt (قائمة قواميس item / principal / interest_per_month) وأفق HORIZON = 6 أشهر. اكتب projected_cost(entry) التي تعيد principal + interest × الأشهر، وpaydown_order(register) التي ترتب الأصناف تنازليًا بالفائدة الشهرية. اطبع لكل صنف بالترتيب سطرًا بصيغة item cost=%d، ثم سطر total interest: %d dev-days بمجموع الفوائد فقط (فائدة كل صنف × الأشهر)، ثم سطر pay first: %s باسم المتصدّر. المتوقع: untested billing core cost=23 ثم flaky deploy script cost=15 ثم hardcoded tax rule cost=8، والمجموع 36.',
+        en: 'Build the register projection: you have debt (a list of dicts with item / principal / interest_per_month) and a horizon HORIZON = 6 months. Write projected_cost(entry) returning principal + interest \u00d7 months, and paydown_order(register) ranking items by monthly interest, descending. For each item in that order print item cost=%d, then total interest: %d dev-days summing interest only (each item\u2019s interest \u00d7 months), then pay first: %s naming the leader. Expected: untested billing core cost=23, flaky deploy script cost=15, hardcoded tax rule cost=8, total 36.',
+      },
+      starterCode: "debt = [\n    {'item': 'hardcoded tax rule', 'principal': 2, 'interest_per_month': 1},\n    {'item': 'flaky deploy script', 'principal': 3, 'interest_per_month': 2},\n    {'item': 'untested billing core', 'principal': 5, 'interest_per_month': 3},\n]\nHORIZON = 6\n\n# TODO: projected_cost(entry) — principal + interest_per_month * HORIZON\n# TODO: projected_cost(entry) — principal + interest_per_month * HORIZON\n\n# TODO: paydown_order(register) — الترتيب تنازليًا بالفائدة الشهرية\n# TODO: paydown_order(register) — ranked by monthly interest, descending\n\n# TODO: اطبع أسطر cost بالترتيب ثم total interest ثم pay first\n# TODO: print the cost lines in order, then total interest, then pay first\n",
+      solution: "debt = [\n    {'item': 'hardcoded tax rule', 'principal': 2, 'interest_per_month': 1},\n    {'item': 'flaky deploy script', 'principal': 3, 'interest_per_month': 2},\n    {'item': 'untested billing core', 'principal': 5, 'interest_per_month': 3},\n]\nHORIZON = 6\n\ndef projected_cost(entry):\n    return entry['principal'] + entry['interest_per_month'] * HORIZON\n\ndef paydown_order(register):\n    return sorted(register, key=lambda row: row['interest_per_month'], reverse=True)\n\ntotal_interest = 0\nfor entry in paydown_order(debt):\n    total_interest = total_interest + entry['interest_per_month'] * HORIZON\n    print('%s cost=%d' % (entry['item'], projected_cost(entry)))\nprint('total interest: %d dev-days' % total_interest)\nprint('pay first: %s' % paydown_order(debt)[0]['item'])",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'مجموع الفوائد على الأفق صحيح', en: 'The total interest over the horizon is right' },
+          code: "assert 'total interest: 36 dev-days' in __learner_output__, 'expected: total interest: 36 dev-days | actual: %r' % __learner_output__",
+          expected: 'total interest: 36 dev-days',
+        },
+        {
+          id: 't2',
+          name: { ar: 'رتبة السداد تتصدّر أعلى فائدة', en: 'The paydown order leads with the top interest' },
+          code: "assert 'pay first: untested billing core' in __learner_output__, 'expected: pay first: untested billing core | actual: %r' % __learner_output__",
+          expected: 'pay first: untested billing core',
+        },
+        {
+          id: 't3',
+          name: { ar: 'الإسقاط صحيح لكل صنف', en: 'The projection is right for each item' },
+          code: "assert projected_cost(debt[0]) == 8 and projected_cost(debt[1]) == 15 and projected_cost(debt[2]) == 23, 'expected: 8/15/23 | actual: %r' % ((projected_cost(debt[0]), projected_cost(debt[1]), projected_cost(debt[2])),)",
+          expected: '8/15/23',
+        },
+        {
+          id: 't4',
+          name: { ar: 'أسطر الكلفة بالترتيب وبلا فشل', en: 'Cost lines in order with no failures' },
+          code: "assert 'untested billing core cost=23' in __learner_output__ and 'flaky deploy script cost=15' in __learner_output__ and 'hardcoded tax rule cost=8' in __learner_output__ and 'FAILED' not in __learner_output__, 'expected: ranked cost lines, no FAILED | actual: %r' % __learner_output__",
+          expected: 'ranked cost lines, no FAILED',
+        },
+      ],
+      hints: [
+        { ar: 'الإسقاط حرفي: untested billing core = 5 + 3×6 = 23، وflaky deploy script = 3 + 2×6 = 15، وhardcoded tax rule = 2 + 1×6 = 8.', en: 'The projection is literal: untested billing core = 5 + 3\u00d76 = 23, flaky deploy script = 3 + 2\u00d76 = 15, hardcoded tax rule = 2 + 1\u00d76 = 8.' },
+        { ar: 'مجموع الفوائد فقط: 3×6 + 2×6 + 1×6 = 18 + 12 + 6 = 36 — الأصول لا تدخل في السطر total interest.', en: 'Interest only: 3\u00d76 + 2\u00d76 + 1\u00d76 = 18 + 12 + 6 = 36 — principals never enter the total interest line.' },
+        { ar: 'الهيكل:\ndef paydown_order(register):\n    return sorted(register, key=lambda row: row[\'interest_per_month\'], reverse=True)\n\nfor entry in paydown_order(debt):\n    print(\'%s cost=%d\' % (entry[\'item\'], projected_cost(entry)))', en: "The skeleton:\ndef paydown_order(register):\n    return sorted(register, key=lambda row: row['interest_per_month'], reverse=True)\n\nfor entry in paydown_order(debt):\n    print('%s cost=%d' % (entry['item'], projected_cost(entry)))" },
+        { ar: 'سطر pay first يقرأ المتصدّر من paydown_order(debt)[0][\'item\'] — لا تكتبه يدويًا، فالسجل سيتغير وسيبقى السطر صادقًا.', en: "The pay first line reads paydown_order(debt)[0][\'item\'] — never hard-code it, so the line stays true as the register changes." },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-debt-kind',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'أي الحالات الثلاث تُصنَّف دينًا تقنيًا متعمَّدًا — مقياسة واعية تحتاج تتبعًا وخدمة؟',
+        en: 'Which of the three cases counts as deliberate technical debt — a conscious trade that needs tracking and servicing?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'مبتدئ أخطأ فهمًا خفيًا للغة فترك شيفرة صحيحة الظاهر خاطئة البنية ولم ينتبه أحد', en: 'A junior subtly misunderstood the language, leaving code that looks right but is structurally wrong, unnoticed' } },
+        { id: 'b', text: { ar: 'الفريق ثبّت قاعدة ضريبة مكتوبة لإطلاق النسخة التجريبية وفتح تذكرة معلنة لتعميمها', en: 'The team hard-coded the tax rule for the pilot launch and opened a public ticket to generalize it' } },
+        { id: 'c', text: { ar: 'متطلبات تحوّلت تحت تصميم كان صائبًا فصارت بنيتُه مرهقة بلا قرار بذلك', en: 'Requirements pivoted under a once-correct design, leaving its structure strained with no one deciding so' } },
+      ],
+      answer: 'b',
+      solution: 'b',
+      hints: [
+        { ar: 'المتعمَّد قرار معلن: أحدٌ قرر، وكتبه، وفتح له تذكرة تُتابَع.', en: "Deliberate debt is an announced decision: someone chose it, wrote it down, and opened a tracked ticket." },
+        { ar: 'ابحث عن الأثر المكتوب: قاعدة مثبتة في الشيفرة وتذكرة عامة تعد بتعليمها لاحقًا.', en: "Look for the written trail: a pinned rule in the code and a public ticket promising to generalize it later." },
+        { ar: '(a) سوء فهم غير مقصود للغة و(c) انحراف متطلبات لم يقرره أحد — كلاهما دين صامت يتراكم.', en: "(a) is an unintentional language misunderstanding and (c) requirement drift nobody decided — both are silent accumulating debt." },
+        { ar: 'الإجابة هي الحالة الوحيدة التي يجتمع فيها القرار والتوثيق والتذكرة المتابَعة.', en: "The answer is the only case combining a decision, documentation, and a tracked ticket." },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-facade',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'نمط شجرة الخنزير يبدأ بطبقة اعتراض توضع أمام النظام العتيق ثم تنزع قدرةً قدرةً: هذه الطبقة تُسمى واجهة التوجيه أو routing ____.',
+        en: 'The strangler fig pattern begins with an interception layer placed in front of the legacy system, peeling off one capability at a time: this layer is called the routing ____.',
+      },
+      answer: 'facade',
+      solution: 'facade',
+      hints: [
+        { ar: 'وظيفتها واحدة: تستقبل الطلب وتقرر — حسب خريطة المسارات — أي وحدة تخدمه، الجديدة أم العتيقة.', en: 'Its job is singular: receive the request and decide — by the route map — which module serves it, new or legacy.' },
+        { ar: 'الاسم من أنماط التصميم المعروفة: واجهة موحّدة أمام أنظمة متعددة، ومنها النظامان أثناء الترحيل.', en: 'The name comes from a classic design pattern: a unified front over multiple systems — here, the two systems mid-migration.' },
+        { ar: 'في كود الدرس هي دالة handle تقرأ من قاموس ROUTES وتسأل عن البديل legacy.', en: 'In the lesson\u2019s code it is the handle function reading the ROUTES dict and asking for the legacy fallback.' },
+        { ar: 'الجواب: facade', en: 'Answer: facade' },
+      ],
+    },
+    {
+      kind: 'debug',
+      id: 'ex5.debug-router-default',
+      required: true,
+      brokenCode: "ROUTES = {'/reports': 'new'}\n\ndef new_module(route):\n    return 'new:' + route\n\ndef legacy_module(route):\n    return 'legacy:' + route\n\nMODULES = {'new': new_module, 'legacy': legacy_module}\n\ndef handle(route):\n    target = ROUTES.get(route, 'new')  # bug: optimism — unfixed routes must stay legacy\n    return MODULES[target](route)\n\nserved = {}\nfor path in ['/reports', '/payroll', '/audit-log']:\n    served[path] = handle(path)\n\nlegacy_count = 0\nfor target in served.values():\n    if target.startswith('legacy'):\n        legacy_count = legacy_count + 1\nprint('routes: %d legacy: %d' % (len(served), legacy_count))\nprint(served['/payroll'])",
+      prompt: {
+        ar: 'الموجّه يعمل ولا يطبع خطأً — لكن انظر: routes: 3 legacy: 0 وnew:/payroll. وحدة payroll الجديدة لم تُبنَ بعد ولا تحققها قنينة واحدة، ومع ذلك يخدمها التنفيذ الجديد لأن بديل get كان new. أين يجب أن تذهب كل مسار لم تملكه الوحدة الجديدة بعدًا؟ إصلاحٌ في سطر واحد يعيد الترحيل إلى مساره.',
+        en: 'The router runs and prints no error — but look: routes: 3 legacy: 0 and new:/payroll. The new payroll module was never built and no canary has verified it, yet the new implementation serves it because the get fallback was new. Where must every route the new module does not own yet go? A one-line fix puts the migration back on track.',
+      },
+      solution: "ROUTES = {'/reports': 'new'}\n\ndef new_module(route):\n    return 'new:' + route\n\ndef legacy_module(route):\n    return 'legacy:' + route\n\nMODULES = {'new': new_module, 'legacy': legacy_module}\n\ndef handle(route):\n    target = ROUTES.get(route, 'legacy')\n    return MODULES[target](route)\n\nserved = {}\nfor path in ['/reports', '/payroll', '/audit-log']:\n    served[path] = handle(path)\n\nlegacy_count = 0\nfor target in served.values():\n    if target.startswith('legacy'):\n        legacy_count = legacy_count + 1\nprint('routes: %d legacy: %d' % (len(served), legacy_count))\nprint(served['/payroll'])",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'عدّاد الترحيل يظهر المسارين القديمين', en: 'The migration counter shows the two old routes' },
+          code: "assert 'routes: 3 legacy: 2' in __learner_output__, 'expected: routes: 3 legacy: 2 | actual: %r' % __learner_output__",
+          expected: 'routes: 3 legacy: 2',
+        },
+        {
+          id: 't2',
+          name: { ar: 'المسار غير المنقول عاد إلى الوحدة العتيقة', en: 'The unmigrated route is back on the legacy module' },
+          code: "assert 'legacy:/payroll' in __learner_output__, 'expected: legacy:/payroll | actual: %r' % __learner_output__",
+          expected: 'legacy:/payroll',
+        },
+        {
+          id: 't3',
+          name: { ar: 'قرار التوجيه صائب لكل مسار', en: 'The routing decision is right for every route' },
+          code: "assert handle('/reports') == 'new:/reports' and handle('/audit-log') == 'legacy:/audit-log' and handle('/anything') == 'legacy:/anything', 'expected: new:/reports, legacy:/audit-log, legacy:/anything | actual: %r' % ((handle('/reports'), handle('/audit-log'), handle('/anything')),)",
+          expected: 'new:/reports, legacy:/audit-log, legacy:/anything',
+        },
+        {
+          id: 't4',
+          name: { ar: 'لا مسار غير مُتحقق منه يخدمه الجديد', en: 'No unverified route is served by the new module' },
+          code: "assert 'legacy: 0' not in __learner_output__ and len(served) == 3, 'expected: no legacy: 0 and 3 served routes | actual: %r' % (__learner_output__ + ' | served=' + str(len(served)))",
+          expected: 'no legacy: 0 and 3 served routes',
+        },
+      ],
+      hints: [
+        { ar: 'أي سطر يقرر مصير مسارٍ ليس مفتاحًا في ROUTES؟ سؤال واحد: ماذا يعيد get عندما يغيب المفتاح؟', en: 'Which line decides the fate of a route absent from ROUTES? One question: what does get return when the key is missing?' },
+        { ar: 'قاعدة الدرس: المسار الذي لا تملكه الوحدة الجديدة بعدًا يبقى على الوحدة القديمة — البديل الافتراضي للأمان هو legacy.', en: 'The lesson\u2019s rule: a route the new module does not own yet stays on the old module — the safe default is legacy.' },
+        { ar: 'الإصلاح في البديل:\n    target = ROUTES.get(route, \'legacy\')', en: "The fix is in the fallback:\n    target = ROUTES.get(route, 'legacy')" },
+        { ar: 'بعد الإصلاح: /reports يبقى new:/reports، و/payroll و/audit-log يطبعان legacy:/payroll وlegacy:/audit-log، والعداد routes: 3 legacy: 2.', en: 'After the fix: /reports stays new:/reports, /payroll and /audit-log print legacy:/payroll and legacy:/audit-log, and the counter reads routes: 3 legacy: 2.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "debt = [\n    {'item': 'hardcoded tax rule', 'principal': 2, 'interest_per_month': 1},\n    {'item': 'flaky deploy script', 'principal': 3, 'interest_per_month': 2},\n]\nROUTES = {'/reports': 'new'}\n\ndef new_module(route):\n    return 'new:' + route\n\ndef legacy_module(route):\n    return 'legacy:' + route\n\nMODULES = {'new': new_module, 'legacy': legacy_module}\n\ndef handle(route):\n    return MODULES[ROUTES.get(route, 'legacy')](route)\n\nfor entry in debt:\n    print(entry['item'], 'principal', entry['principal'], 'interest', entry['interest_per_month'], '/mo')\nprint('/reports ->', handle('/reports'))\nprint('/payroll ->', handle('/payroll'))\n\n# جرّب: أضف صنفًا رابعًا بفائدة 4/شهر وأعد حساب أفق 6 أشهر — من يتصدّر السداد؟\n# try: add a fourth item with 4/month interest and redo a 6-month horizon — who leads the paydown?\n# جرّب: انقل /reports إلى legacy ثم أعد التوجيه — متى يصير عكس القرار مكلفًا؟\n# try: flip /reports back to legacy and reroute — when does reversing the decision get expensive?\n# جرّب: أضف قدرة جديدة إلى الوحدة الجديدة بمفتاح في ROUTES ولاحظ عدّاد legacy ينخفض\n# try: add a new capability to the new module with a ROUTES key and watch the legacy count drop",
+      prompt: {
+        ar: 'الملعب يجمع السجل والموجّه: اقتصاد الدين على اليسار وترحيل شجرة الخنزير على اليمين. حاول أن تراهما نظامًا واحدًا: كل قدرة تنزل من الوحدة العتيقة هي دين يُسدَّد من أصلها. لا اختبار هنا — فضولك فقط.',
+        en: 'The sandbox joins register and router: debt economics on one side, strangler migration on the other. Try to see them as one system: every capability retired from the old module is principal actually repaid. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ومن الفصل الرابع عشر: كيف يتحقق نمط شجرة الخنزير من كل زيادة تُنقل؟',
+            en: 'From chapter fourteen: how does the strangler fig pattern verify each migrated increment?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'بالتحقق الكامل في النهاية بعد اكتمال الترحيل', en: 'With full validation at the end, once migration completes' } },
+            { id: 'b', text: { ar: 'بقنينة في الإنتاج بتفصيل الميزة — كل شريحة تتحقق من الاستخدام الحقيقي في أسابيع', en: 'With a production canary at feature granularity — each slice validated by real use within weeks' } },
+            { id: 'c', text: { ar: 'بمراجعة كود فقط قبل تحويل حركة المسار', en: 'By code review only, before routing the traffic' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'قنينة الفصل الرابع عشر بتفصيل الميزة هي ما يجعل كل زيادة تتحقق من الاستخدام الحقيقي في أسابيع من كتابتها — فيصير أكبر تغيير يقوم به الفريق سلسلة نشرات صغيرة قابلة للتراجع.',
+            en: 'Chapter fourteen\u2019s canary at feature granularity is what validates every increment by real use within weeks of being written — turning the biggest change a team makes into a sequence of small, reversible deployments.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ورطة الانضغاط في الفصل الأول: مهام الزيادة تُمتص بصمت في ساعات إضافية فيضعف البنية. أي نوع دين تقني يصنع هذا؟',
+            en: 'Chapter one\u2019s crunch pitfall: scope silently absorbed through overtime, structure weakened. Which kind of technical debt does this produce?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'دين متعمَّد مُسجَّل في سجل ومبرَّر بموعد إطلاق', en: 'Deliberate debt, logged in a register, justified by a launch date' } },
+            { id: 'b', text: { ar: 'دين غير مقصود — لم يختره أحد فلم يتتبعه أحد فتراكم', en: 'Inadvertent debt — nobody chose it, so nobody tracks it, so it compounds' } },
+            { id: 'c', text: { ar: 'ليس دينًا إطلاقًا لأنه لم يُكتب سطر تقني جديد', en: 'Not debt at all, since no new technical code was written' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'الدين غير المقصود فائدة اختصارات لم تعرف أنك أخذتها: الامتصاص الصامت في الإرهاق يضعف البنية بلا قرار معلن ولا تذكرة — لذلك لا يظهر في أي سجل حتى تلتهم فائدته سعة الفريق.',
+            en: 'Inadvertent debt is interest on shortcuts you never knew you took: silent absorption through crunch weakens structure with no announced decision and no ticket — so it appears in no register until its interest eats the team\u2019s capacity.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'لديك سجل دين بسجلين: وحدة قبيحة لم يفتحها أحد منذ سنوات، وشيفرة خصم تلمسها الفريق أسبوعيًا. أين تسدد الأصل أولًا؟',
+            en: 'Your register holds two debts: an ugly module nobody has opened in years, and a discount routine the team touches weekly. Where do you repay principal first?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'الوحدة القبيحة — فكبرها أصل أكبر', en: 'The ugly module — its principal is bigger' } },
+            { id: 'b', text: { ar: 'شيفرة الخصم عالية الدوران — فأنت تدفع فائدتها فعلًا كل أسبوع', en: 'The high-churn discount routine — you actually pay its interest every week' } },
+            { id: 'c', text: { ar: 'بالنسبة، أجزاء متساوية من كل صنف شهريًا', en: 'Proportionally, equal parts of both monthly' } },
+          ],
+          answer: 'b',
+          explanation: {
+            ar: 'القاعدة: سدّد الأصل حيث تدفع الفائدة فعلًا. الوحدة المغلقة تفائدة صفر عمليًا مهما كان أصلها؛ الشيفرة الملموسة أسبوعيًا تفرغ فائدتها من سعة الفريق كل شهر — فيها يكون السداد استثمارًا.',
+            en: 'The rule: repay principal where you actually pay interest. The sealed module accrues effectively zero interest however big its principal; the weekly-touched code bleeds capacity every month — that is where repayment pays for itself.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'أي مما يلي ليس من مخاطر إعادة الكتابة الكاملة؟',
+            en: 'Which of the following is NOT a risk of the big-bang rewrite?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'إلقاء بعلم الحالات الحدّية المضمّنة في شيفرة تعمل منذ سنوات', en: 'Discarding the edge-case knowledge embedded in code that has worked for years' } },
+            { id: 'b', text: { ar: 'تشغيل نظامين طوال المدة: واحد مجمّد وآخر لم يثبت بعد', en: 'Running two systems for the duration: one frozen, one unproven' } },
+            { id: 'c', text: { ar: 'تحقق كل زيادة من الاستخدام الحقيقي في أسابيع من كتابتها', en: 'Each increment being validated by real use within weeks of being written' } },
+          ],
+          answer: 'c',
+          explanation: {
+            ar: '(c) هي صفة شجرة الخنزير لا خطر إعادة الكتابة: خطر الكتابة الكاملة أن أول تحقق حقيقي يأتي في النهاية دفعة واحدة — بينما توزّع الشجرة التحقق على كل زيادة.',
+            en: '(c) is the strangler fig\u2019s virtue, not the rewrite\u2019s risk: the big-bang danger is that the first real validation comes at the end, all at once — the fig spreads validation across every increment.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: 'الدين التقني شعار أخلاقي للشيفرة السيئة — والقرار الصائب دائمًا عدم الاقتراض',
+          right: 'الدين صفقة: اقترض وعيًا لمتع سريع يهم، سجّله في سجل، وخدمه — الصفقة الرابحة تُدار لا تُحظر',
+          note: {
+            ar: 'تثبيت قاعدة الضريبة للنسخة التجريبية مع تذكرة معلنة مقايضة عقلانية. الخطر الحقيقي ليس الاقتراض بل الاقتراض النائم: ما لا يُسجَّل لا يُراجَع فتأكل فائدته سعة الفريق بصمت — والسجل في قائمة الأعمال هو الفرق بين قرض وغرق.',
+            en: 'Hard-coding the tax rule for a pilot with a logged ticket is a rational trade. The real danger is not borrowing but borrowing asleep: what is never registered is never reviewed, and its interest silently eats capacity — the backlog register is the difference between a loan and drowning.',
+          },
+        },
+        {
+          wrong: 'سأبدأ السداد بالوحدة القبيحة التي لم يفتحها أحد منذ سنوات',
+          right: 'سدّد حيث تدفع الفائدة فعلًا: الشيفرة عالية الدوران التي تلمسها أسبوعيًا',
+          note: {
+            ar: 'الوحدة المغلقة تفائدة شبه صفر — قبحها لا فائدة. بينما الشيفرة الملموسة كل أسبوع ترفع كلفة كل تغيير فيها شهرًا بعد شهر. وزرع جهد السداد في المكان الخطأ هو أعذار إعادة الكتابة الكاملة لاحقًا: «جربنا الإصلاح فلم ينفع».',
+            en: 'The sealed module accrues near-zero interest — ugly is not costly by itself. The weekly-touched code raises the cost of every change month after month. Placing paydown effort in the wrong spot later feeds the rewrite argument: \u201cwe tried fixing and nothing worked.\u201d',
+          },
+        },
+        {
+          wrong: 'النظام مرهق فالأصح التوقف عنه وكتابة النسخة الجديدة كاملة ثم إطلاقها مرة واحدة',
+          right: 'شجرة الخنزير: واجهة توجيه أمام العتيق، قدرة قدرة، كل شريحة تتحقق في الإنتاج ثم تُرحَّل — نظام عامل واحد دائمًا',
+          note: {
+            ar: 'الكتابة الكاملة تترك أول تحقق حقيقي للنهاية: حين تكتشف آلاف الحالات الحدّية المفقودة يكون الرهان قد مضى. الترحيل التدريجي يكتشفها في أسبوعها الأول لكل شريحة، وكل قرار توجيه قابل للعكس — وهذا هو معنى أن تبقي الشيفرة قابلة للتغيير.',
+            en: 'The full rewrite leaves the first real validation to the end: by the time the thousand missing edge cases surface, the bet is already spent. Incremental replacement catches each slice\u2019s surprises in its first week, and every routing decision stays reversible — that is what keeping code changeable means.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'الدين التقني: أصل اليوم مقابل فائدة على كل تغيير قادم — متعمَّد معلن يُتتبع، وغير مقصود يتكوّر صامتًا؛ غير المُدار يلتهم سعة الفريق بحلزون: تأخير فاختصار ففائدة أعلى.', en: 'Technical debt: today\u2019s principal against interest on every future change — deliberate and tracked, or inadvertent and silently compounding; unmanaged it eats the team in a spiral: slower features, more shortcuts, higher interest.' },
+        { ar: 'الإدارة: سجل في قائمة الأعمال يُراجع كأي عمل، وسداد الأصل حيث تدفع الفائدة فعلًا — الشيفرة عالية الدوران — وإعادة الهيكلة آلية السداد والخط يجعلها آمنة باستمرار.', en: 'Management: a register in the backlog reviewed like any work, principal repaid where you actually pay interest — the high-churn code — with refactoring as the repayment mechanism and the pipeline making it safe continuously.' },
+        { ar: 'إعادة الكتابة الكاملة تكدّس الخطر: علم مُرمي، نظامان، تحقق نهائي دفعة واحدة. شجرة الخنزير: routing facade، قدرة قدرة، قنينة لكل شريحة، كل ما لم يُنقل يبقى على legacy — سلسلة نشرات صغيرة قابلة للتراجع.', en: 'Big-bang rewrite concentrates risk: knowledge discarded, two systems, validation all at the end. Strangler fig: a routing facade, capability by capability, a canary per slice, everything unmigrated stays on legacy — a sequence of small reversible deployments.' },
+      ],
+      reflectPrompt: {
+        ar: 'افتح الملعب وأضف صنفًا بفائدة 4/شهر ثم أعد الإسقاط. اسأل نفسك: في آخر مشروع عملت فيه — أي اختصار أخذته بلا تذكرة، وفي أي وحدة تدفع فائدته اليوم فعلًا؟',
+        en: 'Open the sandbox, add an item at 4/month interest, redo the projection. Ask yourself: in your last project — which shortcut did you take with no ticket, and in which module are you paying its interest today?',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch15.s5', pages: 'ص418 / p.418' },
+        { book: 'SWE', section: 'swe.ch15.s6', pages: 'ص419 / p.419' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch15.s5', pages: 'ص418 / p.418' },
+    { book: 'SWE', section: 'swe.ch15.s6', pages: 'ص419 / p.419' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

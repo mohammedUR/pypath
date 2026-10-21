@@ -1,0 +1,303 @@
+[
+ {
+  "lesson": "swe.ch12.l1",
+  "id": "ex2.share-metric",
+  "solution": "releases = {'r1': 5, 'r2': 10, 'r3': 25}\ntotal = sum(releases.values())\nmean = total / len(releases)\nmx = ''\nfor k in releases:\n    if mx == '' or releases[k] > releases[mx]:\n        mx = k\nprint('total: %d' % total)\nprint('mean: %.1f' % mean)\nprint('max: %s (%d)' % (mx, releases[mx]))\nprint('r3 share: %.1f%%' % (100.0 * releases['r3'] / total))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "المجموع والمتوسط صحيحان",
+     "en": "Total and mean are correct"
+    },
+    "code": "assert 'total: 40' in __learner_output__ and 'mean: 13.3' in __learner_output__, 'expected: total: 40 then mean: 13.3 | actual: %r' % __learner_output__",
+    "expected": "total: 40 then mean: 13.3"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الأكبر ونصيب r3 مطبوعان",
+     "en": "Max and the r3 share are printed"
+    },
+    "code": "assert 'max: r3 (25)' in __learner_output__ and 'r3 share: 62.5%' in __learner_output__, 'expected: max: r3 (25) then r3 share: 62.5% | actual: %r' % __learner_output__",
+    "expected": "max: r3 (25) then r3 share: 62.5%"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "المتوسط قيمة حقيقية لا صحيحة",
+     "en": "The mean is a float, not a truncation"
+    },
+    "code": "assert abs(mean - 40 / 3) < 1e-9, 'expected: mean == 40/3 (13.333...) | actual: %r' % (mean,)",
+    "expected": "mean == 40/3 (13.333...)"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "النسبة والمفتاح الأكبر محسوبان بدقة",
+     "en": "Share and max computed exactly"
+    },
+    "code": "assert abs(100.0 * releases['r3'] / total - 62.5) < 1e-9 and mx == 'r3', 'expected: 62.5 and r3 | actual: %r' % ((100.0 * releases['r3'] / total, mx),)",
+    "expected": "62.5 and r3"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch12.l2",
+  "id": "ex2.ascii-histogram",
+  "solution": "cfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nbins = [(0, 5), (5, 10), (10, 15), (15, 20), (20, 25)]\ncounts = []\nfor lo, hi in bins:\n    count = 0\n    for v in cfds:\n        if lo <= v < hi:\n            count += 1\n    counts.append(count)\n    print('[%2d,%2d) | %s %d' % (lo, hi, '#' * count, count))\nprint('counts: %s' % counts)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الصندوقان الأول والثاني صحيحان",
+     "en": "First two bins are correct"
+    },
+    "code": "assert '[ 0, 5) | ## 2' in __learner_output__ and '[ 5,10) | ##### 5' in __learner_output__, 'expected: [ 0, 5) | ## 2 then [ 5,10) | ##### 5 | actual: %r' % __learner_output__",
+    "expected": "[ 0, 5) | ## 2 then [ 5,10) | ##### 5"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الذيل: صندوق 10-15 وصندوق 20-25",
+     "en": "The tail: 10-15 and 20-25 bins"
+    },
+    "code": "assert '[10,15) | ### 3' in __learner_output__ and '[20,25) | # 1' in __learner_output__, 'expected: [10,15) | ### 3 then [20,25) | # 1 | actual: %r' % __learner_output__",
+    "expected": "[10,15) | ### 3 then [20,25) | # 1"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الصندوق الفارغ يظهر شريطًا صفر length",
+     "en": "The empty bin shows a zero-length bar"
+    },
+    "code": "assert '[15,20) |  0' in __learner_output__, 'expected: [15,20) |  0 (empty bar for zero count) | actual: %r' % __learner_output__",
+    "expected": "[15,20) |  0 (empty bar for zero count)"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "قائمة الأعداد [2, 5, 3, 0, 1]",
+     "en": "The counts list is [2, 5, 3, 0, 1]"
+    },
+    "code": "assert counts == [2, 5, 3, 0, 1], 'expected: [2, 5, 3, 0, 1] | actual: %r' % (counts,)",
+    "expected": "[2, 5, 3, 0, 1]"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch12.l3",
+  "id": "ex2.pipeline-dre",
+  "solution": "releases = {'r1': {'before': 720, 'prod': 80}, 'r2': {'before': 465, 'prod': 35}}\nsum_before = 0\nsum_prod = 0\nfor k in releases:\n    d = releases[k]\n    dre = 100.0 * d['before'] / (d['before'] + d['prod'])\n    print('%s DRE: %.1f%%' % (k, dre))\n    sum_before += d['before']\n    sum_prod += d['prod']\nescape = 100.0 * sum_prod / (sum_before + sum_prod)\nprint('pooled escape: %.1f%%' % escape)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "DRE الإصدارين مطبوعان صحيحًا",
+     "en": "Both releases’ DRE printed correctly"
+    },
+    "code": "assert 'r1 DRE: 90.0%' in __learner_output__ and 'r2 DRE: 93.0%' in __learner_output__, 'expected: r1 DRE: 90.0% then r2 DRE: 93.0% | actual: %r' % __learner_output__",
+    "expected": "r1 DRE: 90.0% then r2 DRE: 93.0%"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "معدل الإفلات المجمع 8.8%",
+     "en": "The pooled escape rate is 8.8%"
+    },
+    "code": "assert 'pooled escape: 8.8%' in __learner_output__, 'expected: pooled escape: 8.8% | actual: %r' % __learner_output__",
+    "expected": "pooled escape: 8.8%"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "التجميع تمّ داخل الحلقة",
+     "en": "The sums were accumulated inside the loop"
+    },
+    "code": "assert sum_before == 1185 and sum_prod == 115, 'expected: sum_before == 1185 and sum_prod == 115 | actual: %r' % ((sum_before, sum_prod),)",
+    "expected": "sum_before == 1185 and sum_prod == 115"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "قيمة escape المجمعة مطابقة للصيغة",
+     "en": "The pooled escape matches the formula"
+    },
+    "code": "assert abs(escape - 100.0 * 115 / 1300) < 1e-9, 'expected: escape == 100*115/1300 (8.846...) | actual: %r' % (escape,)",
+    "expected": "escape == 100*115/1300 (8.846...)"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch12.l4",
+  "id": "ex2.five-number",
+  "solution": "def median_of(xs):\n    s = sorted(xs)\n    n = len(s)\n    mid = n // 2\n    if n % 2 == 1:\n        return s[mid]\n    return (s[mid - 1] + s[mid]) / 2\n\ncfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nn = len(cfds)\nlo = median_of(cfds[:n // 2])\nmed = median_of(cfds)\nhi = median_of(cfds[n // 2 + 1:])\niqr = hi - lo\nlower_fence = lo - 1.5 * iqr\nupper_fence = hi + 1.5 * iqr\noutliers = []\nfor v in cfds:\n    if v < lower_fence or v > upper_fence:\n        outliers.append(v)\nprint('min: %d' % cfds[0])\nprint('Q1: %s' % lo)\nprint('median: %s' % med)\nprint('Q3: %s' % hi)\nprint('max: %d' % cfds[-1])\nprint('IQR: %s' % iqr)\nprint('fence: %s %s' % (lower_fence, upper_fence))\nprint('outliers: %s' % outliers)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الأرباع والوسيط صحيحة",
+     "en": "Quartiles and median are correct"
+    },
+    "code": "assert 'Q1: 5' in __learner_output__ and 'median: 8' in __learner_output__ and 'Q3: 12' in __learner_output__, 'expected: Q1: 5 / median: 8 / Q3: 12 | actual: %r' % __learner_output__",
+    "expected": "Q1: 5 / median: 8 / Q3: 12"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "IQR والأسوار صحيحة",
+     "en": "IQR and fences are correct"
+    },
+    "code": "assert 'IQR: 7' in __learner_output__ and 'fence: -5.5 22.5' in __learner_output__, 'expected: IQR: 7 then fence: -5.5 22.5 | actual: %r' % __learner_output__",
+    "expected": "IQR: 7 then fence: -5.5 22.5"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الشاذ الوحيد 23",
+     "en": "The sole outlier is 23"
+    },
+    "code": "assert 'outliers: [23]' in __learner_output__, 'expected: outliers: [23] | actual: %r' % __learner_output__",
+    "expected": "outliers: [23]"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "السور الأعلى والقائمة محسوبان بالصيغة",
+     "en": "Upper fence and list match the formula"
+    },
+    "code": "assert abs(upper_fence - 22.5) < 1e-9 and outliers == [23], 'expected: upper fence 22.5 and outliers [23] | actual: %r' % ((upper_fence, outliers),)",
+    "expected": "upper fence 22.5 and outliers [23]"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch12.l5",
+  "id": "ex2.ols-fit",
+  "solution": "x = [2, 4, 6, 8, 10]\ny = [5, 9, 10, 13, 18]\nm = len(x)\nsx = 0\nsy = 0\nsxy = 0\nsxx = 0\nfor i in range(m):\n    sx += x[i]\n    sy += y[i]\n    sxy += x[i] * y[i]\n    sxx += x[i] ** 2\nb1 = (m * sxy - sx * sy) / (m * sxx - sx ** 2)\nb0 = (sy - b1 * sx) / m\nres_sum = 0.0\nsse = 0.0\ny_mean = sy / m\nsst = 0.0\nfor i in range(m):\n    e = y[i] - (b0 + b1 * x[i])\n    res_sum += e\n    sse += e ** 2\n    sst += (y[i] - y_mean) ** 2\nr2 = 1 - sse / sst\nprint('b1: %.2f' % b1)\nprint('b0: %.2f' % b0)\nprint('fit: yhat = %.2f + %.2f x' % (b0, b1))\nprint('residuals sum: %.1f' % res_sum)\nprint('R2: %.3f' % r2)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الميل والتقاطع صحيحان",
+     "en": "Slope and intercept are correct"
+    },
+    "code": "assert 'b1: 1.50' in __learner_output__ and 'b0: 2.00' in __learner_output__, 'expected: b1: 1.50 then b0: 2.00 | actual: %r' % __learner_output__",
+    "expected": "b1: 1.50 then b0: 2.00"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "سطر الملاءمة مطبوع بصيغته",
+     "en": "The fit line is printed in its format"
+    },
+    "code": "assert 'fit: yhat = 2.00 + 1.50 x' in __learner_output__, 'expected: fit: yhat = 2.00 + 1.50 x | actual: %r' % __learner_output__",
+    "expected": "fit: yhat = 2.00 + 1.50 x"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "البواقي تجمع صفرًا وR2 صحيح",
+     "en": "Residuals sum to zero and R2 is right"
+    },
+    "code": "assert 'residuals sum: 0.0' in __learner_output__ and 'R2: 0.957' in __learner_output__, 'expected: residuals sum: 0.0 then R2: 0.957 | actual: %r' % __learner_output__",
+    "expected": "residuals sum: 0.0 then R2: 0.957"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "القيم محسوبة بالصيغ لا مكتوبة يدويًّا",
+     "en": "Values computed from formulas, not hardcoded"
+    },
+    "code": "assert abs(b1 - 1.5) < 1e-9 and abs(b0 - 2.0) < 1e-9 and abs(sse - 4.0) < 1e-9 and abs(r2 - (1 - 4 / 94)) < 1e-9, 'expected: b1=1.5 b0=2.0 sse=4 r2=90/94 | actual: %r' % ((b1, b0, sse, r2),)",
+    "expected": "b1=1.5 b0=2.0 sse=4 r2=90/94"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch12.l6",
+  "id": "ex2.project-dashboard",
+  "solution": "import statistics\nreleases = {'r1': 2, 'r2': 4, 'r3': 5, 'r4': 5, 'r5': 7, 'r6': 8,\n            'r7': 9, 'r8': 10, 'r9': 12, 'r10': 14, 'r11': 23}\npipeline = {'r1': {'before': 720, 'prod': 80}, 'r2': {'before': 465, 'prod': 35}}\nn = len(releases)\nmean = sum(releases.values()) / n\ns = statistics.stdev(releases.values())\nworst = 'r1'\nfor k in releases:\n    if releases[k] > releases[worst]:\n        worst = k\nfor k in releases:\n    print('%-4s |%s %d' % (k, '#' * releases[k], releases[k]))\nfor k in releases:\n    if releases[k] > mean + s:\n        print('flag: %s (%d > mean+s %.2f)' % (k, releases[k], mean + s))\nsum_before = 0\nsum_prod = 0\nfor k in pipeline:\n    d = pipeline[k]\n    dre = 100.0 * d['before'] / (d['before'] + d['prod'])\n    print('%s DRE: %.1f%%' % (k, dre))\n    sum_before += d['before']\n    sum_prod += d['prod']\nescape = 100.0 * sum_prod / (sum_before + sum_prod)\nprint('pooled escape: %.1f%%' % escape)\nprint('releases: %d / mean defects: %.1f / worst: %s' % (n, mean, worst))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الشريط مرسوم بالعرض المطلوب",
+     "en": "The bars are drawn with the required widths"
+    },
+    "code": "assert ('r11  |' + '#' * 23) in __learner_output__ and ('r1   |## 2') in __learner_output__, 'expected: r11 bar of 23 and r1 padded row | actual: %r' % __learner_output__",
+    "expected": "r11 bar of 23 and r1 padded row"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الراية ترتفع لـr11 وحده",
+     "en": "The flag rises for r11 alone"
+    },
+    "code": "assert 'flag: r11 (23 > mean+s 14.85)' in __learner_output__ and 'flag: r7' not in __learner_output__, 'expected: only flag: r11 (23 > mean+s 14.85) | actual: %r' % __learner_output__",
+    "expected": "only flag: r11 (23 > mean+s 14.85)"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "معدلات الإفلات من الدرس الثالث صحيحة",
+     "en": "Lesson three’s escape rates are correct"
+    },
+    "code": "assert 'r1 DRE: 90.0%' in __learner_output__ and 'r2 DRE: 93.0%' in __learner_output__ and 'pooled escape: 8.8%' in __learner_output__, 'expected: r1 DRE: 90.0% then r2 DRE: 93.0% then pooled escape: 8.8% | actual: %r' % __learner_output__",
+    "expected": "r1 DRE: 90.0% then r2 DRE: 93.0% then pooled escape: 8.8%"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "سطر الملخص والقيم المحسوبة",
+     "en": "The summary line and computed values"
+    },
+    "code": "assert 'releases: 11 / mean defects: 9.0 / worst: r11' in __learner_output__ and abs(mean - 9.0) < 1e-9 and abs(s - statistics.stdev(releases.values())) < 1e-9 and worst == 'r11', 'expected: summary line, mean 9.0, sample s, worst r11 | actual: %r' % ((mean, s, worst),)",
+    "expected": "summary line, mean 9.0, sample s, worst r11"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch12.l6",
+  "id": "ex5.debug-ci",
+  "solution": "import statistics\ncfds = [2, 4, 5, 5, 7, 8, 9, 10, 12, 14, 23]\nn = len(cfds)\nmean = sum(cfds) / n\ns = statistics.stdev(cfds)\nse = s / n ** 0.5\nt = 2.228\nprint('mean: %.2f s: %.2f' % (mean, s))\nprint('SE: %.2f' % se)\nprint('t 95%% CI: (%.2f, %.2f)' % (mean - t * se, mean + t * se))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الفاصل الصادق مطبوع",
+     "en": "The honest interval is printed"
+    },
+    "code": "assert 't 95% CI: (5.07, 12.93)' in __learner_output__, 'expected: t 95% CI: (5.07, 12.93) | actual: %r' % __learner_output__",
+    "expected": "t 95% CI: (5.07, 12.93)"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "نسخة العينة ومقصها صحيحان",
+     "en": "The sample version and its SE are correct"
+    },
+    "code": "assert 's: 5.85' in __learner_output__ and 'SE: 1.76' in __learner_output__, 'expected: s: 5.85 then SE: 1.76 | actual: %r' % __learner_output__",
+    "expected": "s: 5.85 then SE: 1.76"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "أثر نسخة المجتمع زال",
+     "en": "The population version’s trace is gone"
+    },
+    "code": "assert '5.58' not in __learner_output__ and '(5.25, 12.75)' not in __learner_output__, 'expected: no 5.58 and no (5.25, 12.75) | actual: %r' % __learner_output__",
+    "expected": "no 5.58 and no (5.25, 12.75)"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "المتغير s أصبح الانحراف العيني فعلًا",
+     "en": "The variable s now truly holds the sample stdev"
+    },
+    "code": "assert abs(s - statistics.stdev(cfds)) < 1e-9, 'expected: s == statistics.stdev(cfds) | actual: %r' % (s,)",
+    "expected": "s == statistics.stdev(cfds)"
+   }
+  ]
+ }
+]

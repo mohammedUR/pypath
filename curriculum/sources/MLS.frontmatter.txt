@@ -1,0 +1,1171 @@
+
+########## PAGE 1 ##########
+Introduction
+What this Book Covers
+This book covers the building blocks of the most common methods in machine learning. This set of methods is like a
+toolbox for machine learning engineers. Those entering the ﬁeld of machine learning should feel comfortable with this
+toolbox so they have the right tool for a variety of tasks. Each chapter in this book corresponds to a single machine
+learning method or group of methods. In other words, each chapter focuses on a single tool within the ML toolbox.
+In my experience, the best way to become comfortable with these methods is to see them derived from scratch, both in
+theory and in code. The purpose of this book is to provide those derivations. Each chapter is broken into three sections.
+The concept sections introduce the methods conceptually and derive their results mathematically. The construction
+sections show how to construct the methods from scratch using Python. The implementation sections demonstrate how
+to apply the methods using packages in Python like scikit-learn, statsmodels, and tensorflow.
+Why this Book
+There are many great books on machine learning written by more knowledgeable authors and covering a broader range of
+topics. In particular, I would suggest An Introduction to Statistical Learning, Elements of Statistical Learning, and Pattern
+Recognition and Machine Learning, all of which are available online for free.
+While those books provide a conceptual overview of machine learning and the theory behind its methods, this book
+focuses on the bare bones of machine learning algorithms. Its main purpose is to provide readers with the ability to
+construct these algorithms independently. Continuing the toolbox analogy, this book is intended as a user guide: it is not
+designed to teach users broad practices of the ﬁeld but rather how each tool works at a micro level.
+Who this Book is for
+This book is for readers looking to learn new machine learning algorithms or understand algorithms at a deeper level.
+Speciﬁcally, it is intended for readers interested in seeing machine learning algorithms derived from start to ﬁnish. Seeing
+these derivations might help a reader previously unfamiliar with common algorithms understand how they work
+intuitively. Or, seeing these derivations might help a reader experienced in modeling understand how different algorithms
+create the models they do and the advantages and disadvantages of each one.
+This book will be most helpful for those with practice in basic modeling. It does not review best practices—such as feature
+engineering or balancing response variables—or discuss in depth when certain models are more appropriate than others.
+Instead, it focuses on the elements of those models.
+What Readers Should Know
+The concept sections of this book primarily require knowledge of calculus, though some require an understanding of
+probability (think maximum likelihood and Bayes’ Rule) and basic linear algebra (think matrix operations and dot
+products). The appendix reviews the math and probabilityneeded to understand this book. The concept sections also
+reference a few common machine learning methods, which are introduced in the appendix as well. The concept sections
+do not require any knowledge of programming.
+The construction and code sections of this book use some basic Python. The construction sections require understanding
+of the corresponding content sections and familiarity creating functions and classes in Python. The code sections require
+neither.
+Where to Ask Questions or Give Feedback
+You can raise an issue here or email me at dafrdman@gmail.com.
+ Contents 
+
+########## PAGE 2 ##########
+Table of Contents
+1. Ordinary Linear Regression
+1. The Loss-Minimization Perspective
+2. The Likelihood-Maximization Perspective
+2. Linear Regression Extensions
+1. Regularized Regression (Ridge and Lasso)
+2. Bayesian Regression
+3. Generalized Linear Models (GLMs)
+3. Discriminative Classiﬁcation
+1. Logistic Regression
+2. The Perceptron Algorithm
+3. Fisher’s Linear Discriminant
+4. Generative Classiﬁcation
+(Linear and Quadratic Discriminant Analysis, Naive Bayes)
+5. Decision Trees
+1. Regression Trees
+2. Classiﬁcation Trees
+6. Tree Ensemble Methods
+1. Bagging
+2. Random Forests
+3. Boosting
+7. Neural Networks
+Conventions and Notation
+The following terminology will be used throughout the book.
+Variables can be split into two types: the variables we intend to model are referred to as target or output
+variables, while the variables we use to model the target variables are referred to as predictors, features, or input
+variables. These are also known as the dependent and independent variables, respectively.
+An observation is a single collection of predictors and target variables. Multiple observations with the same
+variables are combined to form a dataset.
+A training dataset is one used to build a machine learning model. A validation dataset is one used to compare
+multiple models built on the same training dataset with different parameters. A testing dataset is one used to
+evaluate a ﬁnal model.
+Variables, whether predictors or targets, may be quantitative or categorical. Quantitative variables follow a
+continuous or near-contih234nuous scale (such as height in inches or income in dollars). Categorical variables fall
+in one of a discrete set of groups (such as nation of birth or species type). While the values of categorical variables
+may follow some natural order (such as shirt size), this is not assumed.
+Modeling tasks are referred to as regression if the target is quantitative and classiﬁcation if the target is
+categorical. Note that regression does not necessarily refer to ordinary least squares (OLS) linear regression.
+Unless indicated otherwise, the following conventions are used to represent data and datasets.
+Training datasets are assumed to have 
+ observations and 
+ predictors.
+The vector of features for the 
+ observation is given by 
+. Note that 
+ might include functions of the original
+predictors through feature engineering. When the target variable is single-dimensional (i.e. there is only one
+target variable per observation), it is given by 
+; when there are multiple target variables per observation, the
+vector of targets is given by 
+.
+The entire collection of input and output data is often represented with 
+, which implies observation 
+has a multi-dimensional predictor vector 
+ and a target variable 
+ for 
+.
+Many models, such as ordinary linear regression, append an intercept term to the predictor vector. When this is
+the case, 
+ will be deﬁned as
+Feature matrices or data frames are created by concatenating feature vectors across observations. Within a
+matrix, feature vectors are row vectors, with 
+ representing the matrix’s 
+ row. These matrices are then given
+by 
+. If a leading 1 is appended to each 
+, the ﬁrst column of the corresponding feature matrix 
+ will consist of
+only 1s.
+j
+`
+th
+Ã
+Ã
+
+Ä
+{
+,
+Ã }j
+=1
+
+Ã
+
+ = 1, 2, … , j
+Ã
+= (
+) .
+Ã
+1
+1
+2
+. . .
+`
+Ã
+th
+©
+Ã
+©
+
+########## PAGE 3 ##########
+Finally, the following mathematical and notational conventions are used.
+Scalar values will be non-boldface and lowercase, random variables will be non-boldface and uppercase, vectors
+will be bold and lowercase, and matrices will be bold and uppercase. E.g.   is a scalar,   a random variable,   a
+vector, and   a matrix.
+Unless indicated otherwise, all vectors are assumed to be column vectors. Since feature vectors (such as 
+ and 
+ above) are entered into data frames as rows, they will sometimes be treated as row vectors, even outside of
+data frames.
+Matrix or vector derivatives, covered in the math appendix, will use the numerator layout convention. Let 
+and 
+; under this convention, the derivative 
+ is written as
+The likelihood of a parameter   given data 
+ is represented by 
+. If we are considering the
+data to be random (i.e. not yet observed), it will be written as 
+. If the data in consideration is obvious, we
+may write the likelihood as just 
+.
+Concept
+Model Structure
+Linear regression is a relatively simple method that is extremely widely-used. It is also a great stepping stone for
+more sophisticated methods, making it a natural algorithm to study ﬁrst.
+In linear regression, the target variable   is assumed to follow a linear function of one or more predictor variables, 
+, plus some random error. Speciﬁcally, we assume the model for the 
+ observation in our sample is of the
+form
+Here 
+ is the intercept term, 
+ through 
+ are the coefﬁcients on our feature variables, and   is an error term that
+represents the difference between the true   value and the linear function of the predictors. Note that the terms
+with an   in the subscript differ between observations while the terms without (namely the 
+) do not.
+The math behind linear regression often becomes easier when we use vectors to represent our predictors and
+coefﬁcients. Let’s deﬁne 
+ and   as follows:
+Note that 
+ includes a leading 1, corresponding to the intercept term 
+. Using these deﬁnitions, we can
+equivalently express 
+ as
+Below is an example of a dataset designed for linear regression. The input variable is generated randomly and the
+target variable is generated as a linear combination of that input variable plus an error term.
+x
+^
+­
+
+Ã
+
+Ä ∈ℝw
+Ã ∈ℝx
+∂Ä/∂Ã
+=
+.
+∂Ä
+∂Ã
+⎛
+⎝
+⎜
+⎜
+⎜
+⎜
+⎜
+⎜
+∂1
+∂1
+∂2
+∂1
+∂w
+∂1
+. . .
+. . .
+. . .
+. . .
+∂1
+∂x
+∂2
+∂x
+∂w
+∂x
+⎞
+⎠
+⎟
+⎟
+⎟
+⎟
+⎟
+⎟
+
+{}j
+=1
+(; {
+)
+}j
+=1
+{t}j
+=1
+()
+
+, … ,
+1
+`
+th
+=
++
++ ⋯+
++
+.
+
+0
+11
+``
+$
+0
+1
+`
+$
+
+
+s
+Ã
+
+Ã
+
+= (
+)
+1
+1
+…
+`
+⊤
+=
+.
+(
+)
+0
+1
+…
+`
+⊤
+Ã
+0
+
+=
++
+.
+
+⊤Ã
+$
+
+########## PAGE 4 ##########
+../../_images/concept_2_0.png
+Parameter Estimation
+The previous section covers the entire structure we assume our data follows in linear regression. The machine
+learning task is then to estimate the parameters in  . These estimates are represented by 
+ or  . The
+estimates give us ﬁtted values for our target variable, represented by 
+.
+This task can be accomplished in two ways which, though slightly different conceptually, are identical mathematically.
+The ﬁrst approach is through the lens of minimizing loss. A common practice in machine learning is to choose a loss
+function that deﬁnes how well a model with a given set of parameter estimates the observed data. The most common
+loss function for linear regression is squared error loss. This says the loss of our model is proportional to the sum of
+squared differences between the true 
+ values and the ﬁtted values, 
+. We then ﬁt the model by ﬁnding the
+estimates   that minimize this loss function. This approach is covered in the subsection Approach 1: Minimizing Loss.
+The second approach is through the lens of maximizing likelihood. Another common practice in machine learning is to
+model the target as a random variable whose distribution depends on one or more parameters, and then ﬁnd the
+parameters that maximize its likelihood. Under this approach, we will represent the target with 
+ since we are
+treating it as a random variable. The most common model for 
+ in linear regression is a Normal random variable with
+mean 
+. That is, we assume
+and we ﬁnd the values of   to maximize the likelihood. This approach is covered in subsection Approach 2:
+Maximizing Likelihood.
+Once we’ve estimated  , our model is ﬁt and we can make predictions. The below graph is the same as the one above
+but includes our estimated line-of-best-ﬁt, obtained by calculating 
+ and 
+.
+import numpy as np 
+import matplotlib.pyplot as plt 
+import seaborn as sns 
+ 
+# generate data 
+np.random.seed(123) 
+N = 20 
+beta0 = -4 
+beta1 = 2 
+x = np.random.randn(N) 
+e = np.random.randn(N) 
+y = beta0 + beta1*x + e 
+true_x = np.linspace(min(x), max(x), 100) 
+true_y = beta0 + beta1*true_x 
+ 
+# plot 
+fig, ax = plt.subplots() 
+sns.scatterplot(x, y, s = 40, label = 'Data') 
+sns.lineplot(true_x, true_y, color = 'red', label = 'True Model') 
+ax.set_xlabel('x', fontsize = 14) 
+ax.set_title(fr"$y = {beta0} + ${beta1}$x + \epsilon$", fontsize = 16) 
+ax.set_ylabel('y', fontsize=14, rotation=0, labelpad=10) 
+ax.legend(loc = 4) 
+sns.despine() 
+
+, … ,
+̂ 0
+̂ `
+̂ 
+̂ 
+
+̂ 
+̂ 
+u
+u
+a(
+) =
+u
+⊤Ã
+|
+∼(
+,
+),
+u Ã
+⊤Ã 2
+̂ 
+
+̂ 0
+̂ 1
+
+########## PAGE 5 ##########
+../../_images/concept_4_0.png
+Extensions of Ordinary Linear Regression
+There are many important extensions to linear regression which make the model more ﬂexible. Those include
+Regularized Regression—which balances the bias-variance tradeoff for high-dimensional regression models—
+Bayesian Regression—which allows for prior distributions on the coefﬁcients—and GLMs—which introduce non-
+linearity to regression models. These extensions are discussed in the next chapter.
+Approach 1: Minimizing Loss
+1. Simple Linear Regression
+Model Structure
+Simple linear regression models the target variable,  , as a linear function of just one predictor variable,  , plus
+an error term,  . We can write the entire model for the 
+ observation as
+Fitting the model then consists of estimating two parameters: 
+ and 
+. We call our estimates of these
+parameters 
+ and 
+, respectively. Once we’ve made these estimates, we can form our prediction for any
+given 
+ with
+One way to ﬁnd these estimates is by minimizing a loss function. Typically, this loss function is the residual sum
+of squares (RSS). The RSS is calculated with
+We divide the sum of squared errors by 2 in order to simplify the math, as shown below. Note that doing this
+does not affect our estimates because it does not affect which 
+ and 
+ minimize the RSS.
+Parameter Estimation
+Having chosen a loss function, we are ready to derive our estimates. First, let’s rewrite the RSS in terms of the
+estimates:
+# generate data 
+np.random.seed(123) 
+N = 20 
+beta0 = -4 
+beta1 = 2 
+x = np.random.randn(N) 
+e = np.random.randn(N) 
+y = beta0 + beta1*x + e 
+true_x = np.linspace(min(x), max(x), 100) 
+true_y = beta0 + beta1*true_x 
+ 
+# estimate model  
+beta1_hat = sum((x - np.mean(x))*(y - np.mean(y)))/sum((x - np.mean(x))**2) 
+beta0_hat = np.mean(y) - beta1_hat*np.mean(x) 
+fit_y = beta0_hat + beta1_hat*true_x 
+ 
+# plot 
+fig, ax = plt.subplots() 
+sns.scatterplot(x, y, s = 40, label = 'Data') 
+sns.lineplot(true_x, true_y, color = 'red', label = 'True Model') 
+sns.lineplot(true_x, fit_y, color = 'purple', label = 'Estimated Model') 
+ax.set_xlabel('x', fontsize = 14) 
+ax.set_title(fr"Linear Regression for $y = {beta0} + ${beta1}$x + \epsilon$", fontsize 
+= 16) 
+ax.set_ylabel('y', fontsize=14, rotation=0, labelpad=10) 
+ax.legend(loc = 4) 
+sns.despine() 
+
+
+$
+th
+ =
++
++
+.
+0
+1
+$
+0
+1
+̂ 0
+̂ 1
+
+=
++
+.
+̂ 
+̂ 0
+̂ 1
+(
+,
+)
+̂ 0 ̂ 1 =
+.
+1
+2 ∑
+=1
+j
+(
+−
+)
+
+̂ 
+2
+̂ 0
+̂ 1
+(
+,
+) =
+.
+̂ 
+0 ̂ 
+1
+1
+2 ∑
+=1
+j
+(
+−(
++
+))
+
+̂ 
+0
+̂ 
+1
+2
+
+########## PAGE 6 ##########
+To ﬁnd the intercept estimate, start by taking the derivative of the RSS with respect to 
+:
+where   and   are the sample means. Then set that derivative equal to 0 and solve for 
+:
+This gives our intercept estimate, 
+, in terms of the slope estimate, 
+. To ﬁnd the slope estimate, again start
+by taking the derivative of the RSS:
+Setting this equal to 0 and substituting for 
+, we get
+To put this in a more standard form, we use a slight algebra trick. Note that
+for any constant   and any collection 
+ with sample mean   (this can easily be veriﬁed by expanding
+the sum). Since   is a constant, we can then subtract 
+ from the numerator and 
+ from the denominator without affecting our slope estimate. Finally, we get
+2. Multiple Regression
+Model Structure
+In multiple regression, we assume our target variable to be a linear combination of multiple predictor
+variables. Letting 
+ be the 
+ predictor for observation  , we can write the model as
+Using the vectors 
+ and   deﬁned in the previous section, this can be written more compactly as
+Then deﬁne   the same way as   except replace the parameters with their estimates. We again want to ﬁnd
+the vector   that minimizes the RSS:
+Minimizing this loss function is easier when working with matrices rather than sums. Deﬁne   and 
+ with
+which gives 
+. Then, we can equivalently write the loss function as
+̂ 0
+∂(
+,
+)
+̂ 0 ̂ 1
+∂̂ 0
+= −
+(
+−
+−
+)
+∑
+=1
+j
+
+̂ 0
+̂ 1
+= −j( −
+−
+),
+¯
+̂ 0
+̂ 1¯
+¯
+¯
+̂ 0
+̂ 0 =
+−
+.
+¯
+̂ 1¯
+̂ 0
+̂ 1
+∂(
+,
+)
+̂ 0 ̂ 1
+∂̂ 1
+= −
+(
+−
+−
+)
+.
+∑
+=1
+j
+
+̂ 0
+̂ 1 
+̂ 0
+(
+−( −
+) −
+)
+∑
+=1
+j
+
+¯
+̂ 
+1¯
+̂ 
+1 
+(
+−)
+̂ 1 ∑
+=1
+j
+
+¯ 
+̂ 1
+= 0
+=
+(
+−)
+∑
+=1
+j
+
+¯ 
+=
+.
+(
+−)
+∑j
+=1  
+¯
+(
+−)
+∑j
+=1  
+¯
+y(
+−) = 0
+∑
+=1
+j
+
+¯
+y
+, … ,
+1
+j
+¯
+¯
+(
+−)
+∑j
+=1 ¯ 
+¯
+(
+−)
+∑j
+=1 ¯ 
+¯
+=
+.
+̂ 1
+(
+−)(
+−)
+∑j
+=1 
+¯ 
+¯
+(
+−
+∑j
+=1 
+¯)2
+
+th
+
+ =
++
++ ⋯+
++
+.
+0
+11
+``
+$
+Ã
+
+=
++
+.
+
+⊤Ã
+$
+̂ 
+
+̂ 
+( ) =
+=
+(
+−
+,
+̂ 
+1
+2 ∑
+=1
+j
+(
+−
+)
+
+̂ ⊤Ã
+2
+1
+2 ∑
+=1
+j
+
+̂ )2
+Ä
+©
+Ä =
+∈
+, © =
+∈
+,
+⎡
+⎣
+⎢
+⎢
+1
+…
+j
+⎤
+⎦
+⎥
+⎥
+ℝj
+⎡
+⎣
+⎢⎢⎢
+Ã⊤
+1
+…
+Ã⊤
+j
+⎤
+⎦
+⎥⎥⎥
+ℝj×(`+1)
+= ©
+∈
+Ä̂ 
+̂ 
+ℝj
+( ) =
+(Ä −©
+(Ä −© ).
+̂ 
+1
+2
+̂ )⊤
+̂ 
+
+########## PAGE 7 ##########
+[1]
+Parameter Estimation
+We can estimate the parameters in the same way as we did for simple linear regression, only this time
+calculating the derivative of the RSS with respect to the entire parameter vector. First, note the commonly-
+used matrix derivative below [1].
+For a symmetric matrix 
+,
+Applying the result of the Math Note, we get the derivative of the RSS with respect to   (note that the identity
+matrix takes the place of 
+):
+We get our parameter estimates by setting this derivative equal to 0 and solving for  :
+A helpful guide for matrix calculus is The Matrix Cookbook
+Approach 2: Maximizing Likelihood
+1. Simple Linear Regression
+Model Structure
+Using the maximum likelihood approach, we set up the regression model probabilistically. Since we are
+treating the target as a random variable, we will capitalize it. As before, we assume
+only now we give 
+ a distribution (we don’t do the same for 
+ since its value is known). Typically, we assume
+the 
+ are independently Normally distributed with mean 0 and an unknown variance. That is,
+The assumption that the variance is identical across observations is called homoskedasticity. This is required
+for the following derivations, though there are heteroskedasticity-robust estimates that do not make this
+assumption.
+Since 
+ and 
+ are ﬁxed parameters and 
+ is known, the only source of randomness in 
+ is 
+. Therefore,
+since a Normal random variable plus a constant is another Normal random variable with a shifted mean.
+Parameter Estimation
+The task of ﬁtting the linear regression model then consists of estimating the parameters with maximum
+likelihood. The joint likelihood and log-likelihood across observations are as follows.
+Math Note
+
+¨
+¨ (¼ −¾) = −2
+¨ (¼ −¾)
+∂
+∂¾ (¼ −¾)⊤
+⊤
+̂ 
+¨
+( )
+̂ 
+∂( )
+̂ 
+∂̂ 
+=
+(Ä −©
+(Ä −© )
+1
+2
+̂ )⊤
+̂ 
+= −
+(Ä −© ).
+©⊤
+̂ 
+̂ 
+(
+q)
+©⊤
+̂ 
+ ̂ 
+=
+Ä
+©⊤
+= (
+©
+Ä
+©⊤)⊤©⊤
+=
++
++
+,
+u
+0
+1
+$
+$
+
+$
+(0,
+).
+$ ∼
+i.i.d.
+2
+0
+1
+
+u
+$
+(
++
+,
+),
+u ∼
+i.i.d.
+0
+1 2
+
+########## PAGE 8 ##########
+Our 
+ and 
+ estimates are the values that maximize the log-likelihood given above. Notice that this is
+equivalent to ﬁnding the 
+ and 
+ that minimize the RSS, our loss function from the previous section:
+In other words, we are solving the same optimization problem we did in the last section. Since it’s the same
+problem, it has the same solution! (This can also of course be checked by differentiating and optimizing for 
+and 
+). Therefore, as with the loss minimization approach, the parameter estimates from the likelihood
+maximization approach are
+2. Multiple Regression
+Still assuming Normally-distributed errors but adding more than one predictor, we have
+We can then solve the same maximum likelihood problem. Calculating the log-likelihood as we did above for
+simple linear regression, we have
+Again, maximizing this quantity is the same as minimizing the RSS, as we did under the loss minimization
+approach. We therefore obtain the same solution:
+Construction
+This section demonstrates how to construct a linear regression model using only numpy. To do this, we generate a class
+named LinearRegression. We use this class to train the model and make future predictions.
+The ﬁrst method in the LinearRegression class is fit(), which takes care of estimating the   parameters. This simply
+consists of calculating
+The fit method also makes in-sample predictions with 
+ and calculates the training loss with
+The second method is predict(), which forms out-of-sample predictions. Given a test set of predictors 
+, we can form
+ﬁtted values with 
+.
+h(
+,
+;
+, … ,
+)
+0 1 u1
+uj
+log h(
+,
+;
+, … ,
+)
+0 1 u1
+uj
+=
+h(
+,
+;
+)
+∏
+=1
+j
+0 1 u
+=
+exp(−
+)
+∏
+=1
+j
+1
+
+2
+‾‾
+‾
+√
+(
+−(
++
+))
+u
+0
+1
+2
+22
+∝exp(−
+)
+∑
+=1
+j (
+−(
++
+))
+u
+0
+1
+2
+22
+= −
+.
+1
+22 ∑
+=1
+j
+(
+−(
++
+))
+u
+0
+1
+2
+̂ 
+0
+̂ 
+1
+̂ 0
+̂ 1
+RSS =
+.
+1
+2 ∑
+=1
+j
+(
+−(
++
+))
+
+̂ 0
+̂ 1
+2
+̂ 0
+̂ 1
+̂ 0
+̂ 1
+=
+−
+u¯
+̂ 1¯
+=
+.
+(
+−)(
+−
+)
+∑j
+=1 
+¯ u
+u¯
+(
+−
+∑j
+=1 
+¯)2
+(
+,
+).
+u ∼
+i.i.d.
+⊤Ã 2
+log h(
+,
+;
+, … ,
+)
+0 1 u1
+uj
+= −1
+22 ∑
+=1
+j
+(
+−
+)
+u
+⊤Ã
+2
+= −
+(Ä −©
+(Ä −© ).
+1
+22
+̂ )⊤
+̂ 
+= (
+©
+Ä.
+̂ 
+©⊤)−1©⊤
+
+=
+Ä
+̂ 
+(
+©)
+©⊤
+−1©⊤
+= ©
+Ä̂ 
+̂ 
+( ) =
+.
+̂ 
+1
+2 ∑
+=1
+j
+(
+−
+)
+
+̂ 
+2
+©′
+=
+Ä̂ ′
+©′̂ 
+
+########## PAGE 9 ##########
+Let’s try out our LinearRegression class with some data. Here we use the Boston housing dataset from
+sklearn.datasets. The target variable in this dataset is median neighborhood home value. The predictors are all
+continuous and represent factors possibly related to the median home value, such as average rooms per house. Hit
+“Click to show” to see the code that loads this data.
+With the class built and the data loaded, we are ready to run our regression model. This is as simple as instantiating the
+model and applying fit(), as shown below.
+Let’s then see how well our ﬁtted values model the true target values. The closer the points lie to the 45-degree line, the
+more accurate the ﬁt. The model seems to do reasonably well; our predictions deﬁnitely follow the true values quite
+well, although we would like the ﬁt to be a bit tighter.
+Note the handful of observations with 
+ exactly. This is due to censorship in the data collection
+process. It appears neighborhoods with average home values above $50,000 were assigned a value of
+50 even.
+../../_images/construction_10_0.png
+Implementation
+import numpy as np  
+import matplotlib.pyplot as plt 
+import seaborn as sns 
+class LinearRegression: 
+ 
+    def fit(self, X, y, intercept = False): 
+ 
+        # record data and dimensions 
+        if intercept == False: # add intercept (if not already included) 
+            ones = np.ones(len(X)).reshape(len(X), 1) # column of ones  
+            X = np.concatenate((ones, X), axis = 1) 
+        self.X = np.array(X) 
+        self.y = np.array(y) 
+        self.N, self.D = self.X.shape 
+         
+        # estimate parameters 
+        XtX = np.dot(self.X.T, self.X) 
+        XtX_inverse = np.linalg.inv(XtX) 
+        Xty = np.dot(self.X.T, self.y) 
+        self.beta_hats = np.dot(XtX_inverse, Xty) 
+         
+        # make in-sample predictions 
+        self.y_hat = np.dot(self.X, self.beta_hats) 
+         
+        # calculate loss 
+        self.L = .5*np.sum((self.y - self.y_hat)**2) 
+         
+    def predict(self, X_test, intercept = True): 
+         
+        # form predictions 
+        self.y_test_hat = np.dot(X_test, self.beta_hats) 
+from sklearn import datasets 
+boston = datasets.load_boston() 
+X = boston['data'] 
+y = boston['target'] 
+model = LinearRegression() # instantiate model 
+model.fit(X, y, intercept = False) # fit model 
+Note
+
+ = 50
+fig, ax = plt.subplots() 
+sns.scatterplot(model.y, model.y_hat) 
+ax.set_xlabel(r'$y$', size = 16) 
+ax.set_ylabel(r'$\hat{y}$', rotation = 0, size = 16, labelpad = 15) 
+ax.set_title(r'$y$ vs. $\hat{y}$', size = 20, pad = 10) 
+sns.despine() 
+
+########## PAGE 10 ##########
+This section demonstrates how to ﬁt a regression model in Python in practice. The two most common packages for
+ﬁtting regression models in Python are scikit-learn and statsmodels. Both methods are shown before.
+First, let’s import the data and necessary packages. We’ll again be using the Boston housing dataset from
+sklearn.datasets.
+Scikit-Learn
+Fitting the model in scikit-learn is very similar to how we ﬁt our model from scratch in the previous section. The
+model is ﬁt in two steps: ﬁrst instantiate the model and second use the fit() method to train it.
+As before, we can plot our ﬁtted values against the true values. To form predictions with the scikit-learn model, we
+can use the predict method. Reassuringly, we get the same plot as before.
+../../_images/code_7_0.png
+We can also check the estimated parameters using the coef_ attribute as follows (note that only the ﬁrst few are
+printed).
+Statsmodels
+statsmodels is another package frequently used for running linear regression in Python. There are two ways to run
+regression in statsmodels. The ﬁrst uses numpy arrays like we did in the previous section. An example is given below.
+Note two subtle differences between this model and the models we’ve previously built. First, we have
+to manually add a constant to the predictor dataframe in order to give our model an intercept term.
+Second, we supply the training data when instantiating the model, rather than when ﬁtting it.
+The second way to run regression in statsmodels is with R-style formulas and pandas dataframes. This allows us to
+identify predictors and target variables by name. An example is given below.
+import matplotlib.pyplot as plt 
+import seaborn as sns 
+from sklearn import datasets 
+boston = datasets.load_boston() 
+X_train = boston['data'] 
+y_train = boston['target'] 
+from sklearn.linear_model import LinearRegression 
+sklearn_model = LinearRegression() 
+sklearn_model.fit(X_train, y_train); 
+sklearn_predictions = sklearn_model.predict(X_train) 
+fig, ax = plt.subplots() 
+sns.scatterplot(y_train, sklearn_predictions) 
+ax.set_xlabel(r'$y$', size = 16) 
+ax.set_ylabel(r'$\hat{y}$', rotation = 0, size = 16, labelpad = 15) 
+ax.set_title(r'$y$ vs. $\hat{y}$', size = 20, pad = 10) 
+sns.despine() 
+predictors = boston.feature_names 
+beta_hats = sklearn_model.coef_ 
+print('\n'.join([f'{predictors[i]}: {round(beta_hats[i], 3)}' for i in range(3)])) 
+CRIM: -0.108 
+ZN: 0.046 
+INDUS: 0.021 
+Note
+
+import statsmodels.api as sm 
+ 
+X_train_with_constant = sm.add_constant(X_train) 
+sm_model1 = sm.OLS(y_train, X_train_with_constant) 
+sm_fit1 = sm_model1.fit() 
+sm_predictions1 = sm_fit1.predict(X_train_with_constant) 

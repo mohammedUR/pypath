@@ -1,0 +1,303 @@
+[
+ {
+  "lesson": "py4e.ch9.l1",
+  "id": "ex1.dna-codons",
+  "solution": "codons = {}\ncodons['ATA'] = 'I'\ncodons['ATG'] = 'M'\ncodons['CTT'] = 'L'\nprint(codons['ATG'])\nprint(len(codons))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "المفتاح ATG يترجم إلى M",
+     "en": "Key ATG translates to M"
+    },
+    "code": "assert codons['ATG'] == 'M', 'expected: M | actual: %r' % codons['ATG']",
+    "expected": "M"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "المفتاحان ATA وCTT صحيحان",
+     "en": "Keys ATA and CTT are correct"
+    },
+    "code": "assert codons['ATA'] == 'I' and codons['CTT'] == 'L', 'expected: I and L | actual: %r %r' % (codons['ATA'], codons['CTT'])",
+    "expected": "I and L"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "القاموس فيه 3 أزواج",
+     "en": "The dictionary holds 3 pairs"
+    },
+    "code": "assert len(codons) == 3, 'expected: 3 | actual: %r' % len(codons)",
+    "expected": "3"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "يُطبع M",
+     "en": "M is printed"
+    },
+    "code": "assert 'M' in __learner_output__, ('expected: M | actual: %r' % __learner_output__)",
+    "expected": "M"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch9.l2",
+  "id": "ex1.count-mississippi",
+  "solution": "word = 'mississippi'\ncounts = dict()\nfor c in word:\n    counts[c] = counts.get(c, 0) + 1\nprint(counts['s'])\nprint(counts['i'])\nprint(len(counts))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "حرف s عُدّ أربع مرات",
+     "en": "Letter s counted 4 times"
+    },
+    "code": "assert counts['s'] == 4, 'expected: 4 | actual: %r' % counts['s']",
+    "expected": "4"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "حرف i عُدّ أربع مرات",
+     "en": "Letter i counted 4 times"
+    },
+    "code": "assert counts['i'] == 4, 'expected: 4 | actual: %r' % counts['i']",
+    "expected": "4"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "حرف p عُدّ مرتين",
+     "en": "Letter p counted 2 times"
+    },
+    "code": "assert counts['p'] == 2, 'expected: 2 | actual: %r' % counts['p']",
+    "expected": "2"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "أربعة محارف مختلفة فقط",
+     "en": "Exactly four different characters"
+    },
+    "code": "assert len(counts) == 4, 'expected: 4 | actual: %r' % len(counts)",
+    "expected": "4"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch9.l3",
+  "id": "ex1.count-file-words",
+  "solution": "out = open('words-l3.txt', 'w')\nout.write('python is fun\\n')\nout.write('python is powerful\\n')\nout.close()\n\ncounts = dict()\nfhand = open('words-l3.txt')\nfor line in fhand:\n    words = line.split()\n    for word in words:\n        if word not in counts:\n            counts[word] = 1\n        else:\n            counts[word] += 1\nfhand.close()\nprint(counts['python'])\nprint(len(counts))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "كلمة python عُدّت مرتين",
+     "en": "Word python counted twice"
+    },
+    "code": "assert counts['python'] == 2, 'expected: 2 | actual: %r' % counts['python']",
+    "expected": "2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "كلمة powerful عُدّت مرة",
+     "en": "Word powerful counted once"
+    },
+    "code": "assert counts['powerful'] == 1, 'expected: 1 | actual: %r' % counts['powerful']",
+    "expected": "1"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "أربع كلمات مختلفة",
+     "en": "Exactly four different words"
+    },
+    "code": "assert len(counts) == 4, 'expected: 4 | actual: %r' % len(counts)",
+    "expected": "4"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "يُطبع 2 ثم 4",
+     "en": "Prints 2 then 4"
+    },
+    "code": "assert '2' in __learner_output__ and '4' in __learner_output__, ('expected: 2 then 4 | actual: %r' % __learner_output__)",
+    "expected": "2 then 4"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch9.l4",
+  "id": "ex1.report-counts",
+  "solution": "counts = {'ahmed': 3, 'sara': 7, 'omar': 12}\nfor key in counts:\n    if counts[key] > 5:\n        print(key, counts[key])\ntotal = 0\nfor v in list(counts.values()):\n    total = total + v\nprint('total:', total)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "المجموع يساوي 22",
+     "en": "The total equals 22"
+    },
+    "code": "assert total == 22, 'expected: 22 | actual: %r' % total",
+    "expected": "22"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع سطر sara 7",
+     "en": "The line sara 7 is printed"
+    },
+    "code": "assert 'sara 7' in __learner_output__, ('expected: sara 7 | actual: %r' % __learner_output__)",
+    "expected": "sara 7"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "يُطبع سطر omar 12",
+     "en": "The line omar 12 is printed"
+    },
+    "code": "assert 'omar 12' in __learner_output__, ('expected: omar 12 | actual: %r' % __learner_output__)",
+    "expected": "omar 12"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "يُطبع total: 22",
+     "en": "total: 22 is printed"
+    },
+    "code": "assert 'total: 22' in __learner_output__, ('expected: total: 22 | actual: %r' % __learner_output__)",
+    "expected": "total: 22"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch9.l5",
+  "id": "ex1.clean-count",
+  "solution": "import string\nline = 'Data, data, DATA!'\nline = line.translate(str.maketrans('', '', string.punctuation))\nline = line.lower()\ncounts = dict()\nfor word in line.split():\n    counts[word] = counts.get(word, 0) + 1\nprint(counts['data'])\nprint(len(counts))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "كلمة data عُدّت ثلاثًا رغم أشكالها",
+     "en": "Word data counted 3 times across its costumes"
+    },
+    "code": "assert counts['data'] == 3, 'expected: 3 | actual: %r' % counts['data']",
+    "expected": "3"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "مفتاح واحد فقط في القاموس",
+     "en": "Exactly one key in the dictionary"
+    },
+    "code": "assert len(counts) == 1, 'expected: 1 | actual: %r' % len(counts)",
+    "expected": "1"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "يُطبع 3",
+     "en": "3 is printed"
+    },
+    "code": "assert '3' in __learner_output__, ('expected: 3 | actual: %r' % __learner_output__)",
+    "expected": "3"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "لا مفاتيح ملطخة بالترقيم أو الحروف الكبيرة",
+     "en": "No punctuation-stained or uppercase keys remain"
+    },
+    "code": "assert 'DATA' not in counts and 'data,' not in counts and 'data!' not in counts, 'expected: cleaned keys | actual: %r' % list(counts.keys())",
+    "expected": "cleaned keys"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch9.l6",
+  "id": "ex2.word-counter",
+  "solution": "import string\n\nlines_text = ['Sun, sun, and more sun!\\n', 'The moon rises; the sun sets.\\n']\nout = open('story-l6.txt', 'w')\nfor item in lines_text:\n    out.write(item)\nout.close()\n\ncounts = dict()\nfhand = open('story-l6.txt')\nfor line in fhand:\n    line = line.translate(str.maketrans('', '', string.punctuation))\n    line = line.lower()\n    for word in line.split():\n        counts[word] = counts.get(word, 0) + 1\nfhand.close()\nprint('unique words: %d' % len(counts))\nbest = None\nbest_word = None\nfor word in counts:\n    if best is None or counts[word] > best:\n        best = counts[word]\n        best_word = word\nprint('top word: %s (%d)' % (best_word, best))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "كلمة sun عُدّت أربع مرات بعد التنظيف",
+     "en": "Word sun counted 4 times after cleaning"
+    },
+    "code": "assert counts['sun'] == 4, 'expected: 4 | actual: %r' % counts['sun']",
+    "expected": "4"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "كلمة the عُدّت مرتين",
+     "en": "Word the counted 2 times"
+    },
+    "code": "assert counts['the'] == 2, 'expected: 2 | actual: %r' % counts['the']",
+    "expected": "2"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "سبع كلمات مختلفة",
+     "en": "Exactly seven different words"
+    },
+    "code": "assert len(counts) == 7, 'expected: 7 | actual: %r' % len(counts)",
+    "expected": "7"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "يُطبع unique words: 7",
+     "en": "unique words: 7 is printed"
+    },
+    "code": "assert 'unique words: 7' in __learner_output__, ('expected: unique words: 7 | actual: %r' % __learner_output__)",
+    "expected": "unique words: 7"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "يُطبع top word: sun (4)",
+     "en": "top word: sun (4) is printed"
+    },
+    "code": "assert 'top word: sun (4)' in __learner_output__, ('expected: top word: sun (4) | actual: %r' % __learner_output__)",
+    "expected": "top word: sun (4)"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch9.l6",
+  "id": "ex5.debug-missing-else",
+  "solution": "text = 'sun sun moon'\ncounts = dict()\nfor word in text.split():\n    if word not in counts:\n        counts[word] = 1\n    else:\n        counts[word] = counts[word] + 1\nprint(counts['sun'])\nprint(counts['moon'])",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "sun عُدّت مرتين",
+     "en": "sun counted twice"
+    },
+    "code": "assert counts['sun'] == 2, 'expected: 2 | actual: %r' % counts['sun']",
+    "expected": "2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "moon عُدّت مرة",
+     "en": "moon counted once"
+    },
+    "code": "assert counts['moon'] == 1, 'expected: 1 | actual: %r' % counts['moon']",
+    "expected": "1"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "يُطبع 2 ثم 1",
+     "en": "Prints 2 then 1"
+    },
+    "code": "assert '2' in __learner_output__ and '1' in __learner_output__, ('expected: 2 then 1 | actual: %r' % __learner_output__)",
+    "expected": "2 then 1"
+   }
+  ]
+ }
+]

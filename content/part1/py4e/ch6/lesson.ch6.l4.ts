@@ -1,0 +1,304 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * py4e.ch6.l4 — "The in Operator and String Comparison / العامل in ومقارنة السلاسل"
+ * Aligned with PY4E ch6 s7 (العامل IN), s8 (مقارنة السلاسل النصية).
+ * All expression is original.
+ */
+const lesson = {
+  id: 'py4e.ch6.l4',
+  version: 1,
+  part: 'I',
+  track: 'P1',
+  book: 'PY4E',
+  chapter: 6,
+  title: { ar: 'العامل in ومقارنة السلاسل', en: 'The in Operator and String Comparison' },
+  estimatedMinutes: 15,
+  prerequisites: ['py4e.ch6.l3'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'هل تحتوي هذه الجملة الكلمة المحظورة؟ هل هذا البريد ينتهي بنطاقنا؟ هل كلمة المستخدم تأتي قبل كلمة الخصم في القاموس؟ أسئلة العضو والترتيب من أكثر أسئلة البرامج تكرارًا — وجوابها بعاملين فقط: in يفحص الوجود، و== و< و> يقارنون بالترتيب الأبجدي. بنهاية الدرس ستكون قادرًا على: استخدام in كاختبار منطقي، ومقارنة السلاسل بالمساواة والترتيب، وتجنّب فخ الحروف الكبيرة والصغيرة.',
+        en: 'Does this sentence contain the banned word? Does this email end with our domain? Does the user’s word come before the rival’s in the dictionary? Membership and ordering questions are among the most frequent a program asks — and two tools answer them: in tests presence, while == and < and > compare in alphabetical order. By the end of this lesson you will be able to: use in as a boolean test, compare strings for equality and ordering, and dodge the uppercase/lowercase trap.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "print('a' in 'banana')\nprint('seed' in 'banana')",
+      question: {
+        ar: 'ماذا يطبع السطران؟ العاملان متماثلان في الشكل — فماذا يفحص كل منهما؟',
+        en: 'What do the two lines print? The two operands look similar — so what exactly does each line test?',
+      },
+      reveal: {
+        ar: 'سيطبع True ثم False. العامل in يسأل: هل السلسلة الأولى سلسلة فرعية واقعة داخل الثانية؟ حرف a موجود في banana لكن seed ليست جزءًا منه. ملاحظة لطيفة: كلمة in نفسها تظهر في حلقة for — لكن هناك تمرّ، وهنا تفحص.',
+        en: 'It prints True then False. The in operator asks: is the first string a substring contained in the second? The letter a lives inside banana, but seed is not part of it. A nice footnote: the same word in appears in a for loop — there it iterates, here it inspects.',
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'العامل in: اختبار العضوية', en: 'The in operator: a membership test' },
+      chunks: [
+        {
+          ar: "العامل in عامل منطقي يأخذ سلسلتين نصيتين ويعيد الثابت المنطقي True إذا كانت الأولى سلسلة فرعية من الثانية:\n'a' in 'banana' تعطي True\n'seed' in 'banana' تعطي False\nوالسلسلة الفرعية قد تكون محرفًا واحدًا أو كلمة كاملة أو جزءًا من كلمة — 'na' in 'banana' تعطي True لأن na واقعتان داخل banana مواقع 2 و3.",
+          en: "The in operator is a boolean operator taking two strings and returning the logical value True when the first is a substring of the second:\n'a' in 'banana' gives True\n'seed' in 'banana' gives False\nThe substring may be a single character, a whole word, or a fragment — 'na' in 'banana' gives True because na sits inside banana at positions 2 and 3.",
+        },
+        {
+          ar: "وتذكّر التمييز: في حلقة for letter in word فالعامل in يمرّ على العناصر ويُسندها واحدًا واحدًا؛ أما in في التعبير المنطقي فيسأل عن الوجود ويعيد True أو False دون أي تكرار. الكلمة نفسها — الدوران مختلفان تمامًا، والسياق هو الذي يحسم الدور.",
+          en: "And keep the distinction straight: inside the loop for letter in word the operator in iterates, handing over elements one by one; but in a boolean expression in interrogates existence and returns True or False with no iteration at all. Same word — completely different roles, and context decides which role plays.",
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'المساواة والترتيب الأبجدي', en: 'Equality and alphabetical ordering' },
+      chunks: [
+        {
+          ar: "عوامل المقارنة تعمل على السلاسل النصية. للتحقق من تساوي سلسلتين نستخدم ==:\nif word == 'banana':\n    print('All right, bananas.')\nوتُستخدم العوامل الأخرى لترتيب السلاسل وفق الترتيب الأبجدي:\nif word < 'banana':\n    print('Your word, ' + word + ', comes before banana.')\nelif word > 'banana':\n    print('Your word, ' + word + ', comes after banana.')\nelse:\n    print('All right, bananas.')\nفالسلسلة الأصغر أبجديًا هي التي تقع أولًا في القاموس.",
+          en: "Comparison operators work on strings. To check two strings for equality we use ==:\nif word == 'banana':\n    print('All right, bananas.')\nAnd the other operators order strings alphabetically:\nif word < 'banana':\n    print('Your word, ' + word + ', comes before banana.')\nelif word > 'banana':\n    print('Your word, ' + word + ', comes after banana.')\nelse:\n    print('All right, bananas.')\nThe alphabetically smaller string is the one that would come first in a dictionary.",
+        },
+        {
+          ar: "لكن انتبه: بايثون لا تتعامل مع الحروف الكبيرة والصغيرة كما يفعل الناس. الحروف الكبيرة تأتي قبل الصغيرة دومًا، لذلك تأتي كلمة Pineapple قبل banana في المقارنة: 'Pineapple' < 'banana' تعطي True رغم أن p تسبق b أبجديًا! إحدى الطرائق الشائعة لتفادي هذه المشكلة توحيد نمط السلاسل قبل المقارنة — تحويلها كلها إلى أحرف صغيرة بـ lower (سنقابله قريبًا). أبقِ هذه الملاحظة في بالك عند مقارنة كلمات ذات حروف مختلطة.",
+          en: "But beware: Python does not treat uppercase and lowercase the way people do. Uppercase always comes before lowercase, so Pineapple precedes banana in a comparison: 'Pineapple' < 'banana' gives True even though p alphabetically precedes b! One common way around this is normalizing the strings’ style before comparing — turning everything to lowercase with lower (we meet it shortly). Keep this in mind whenever you compare words with mixed case.",
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'اسأل عن الوجود، ثم اسأل عن المكان', en: 'Ask about presence, then about position' },
+      code: "word = 'apple'\nprint(word == 'banana')\nprint(word < 'banana')\nprint('Pineapple' < 'banana')\nprint('pineapple' < 'banana')\nprint('na' in 'banana')",
+      explanation: {
+        ar: "خمسة أسهم من قوس واحد: apple لا تساوي banana فطبع False، لكنها تأتي قبلها أبجديًا فطبع True. ثم المفاجأة: Pineapple بحرفها الكبير طبع True — لأن الحروف الكبيرة تسبق كل الصغيرة في بايثون، بينما pineapple بحروفها الصغيرة طبع False لأنها تأتي بعد banana فعلًا. والسطر الأخير أثبت أن na جزء من banana. جرّب قلب الحروف الكبيرة والصغيرة وراقب النتائج تنقلب.",
+        en: "Five arrows from one bow: apple does not equal banana so False printed, yet it comes before banana alphabetically so True printed. Then the surprise: Pineapple with its capital printed True — because uppercase precedes all lowercase in Python — while pineapple in lowercase printed False because it truly comes after banana. And the last line proved na is part of banana. Flip the capitalization and watch the answers overturn.",
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.in-checks',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: "السلسلة word = 'pineapple' معطاة. اطبع نتيجة ثلاثة اختبارات in بالترتيب: هل 'pine' جزء منها؟ هل 'apple' جزء منها؟ هل 'pear' جزء منها؟ المتوقع: True ثم True ثم False.",
+        en: "The string word = 'pineapple' is given. Print the results of three in tests in order: is 'pine' part of it? is 'apple'? is 'pear'? Expected: True then True then False.",
+      },
+      starterCode: "word = 'pineapple'\n# ثلاث طباعات بعامل in / three prints with the in operator\n",
+      solution: "word = 'pineapple'\nprint('pine' in word)\nprint('apple' in word)\nprint('pear' in word)",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'يُطبع True مرتين', en: 'True is printed twice' },
+          code: "assert __learner_output__.count('True') == 2, ('expected: two True | actual: %r' % __learner_output__)",
+          expected: 'True\nTrue\nFalse',
+        },
+        {
+          id: 't2',
+          name: { ar: 'يُطبع False مرة', en: 'False is printed once' },
+          code: "assert __learner_output__.count('False') == 1, ('expected: one False | actual: %r' % __learner_output__)",
+          expected: 'True\nTrue\nFalse',
+        },
+      ],
+      hints: [
+        { ar: 'كل اختبار سطر طباعة واحد: print(سلسلة_فرعية in word).', en: 'Each test is one print line: print(substring in word).' },
+        { ar: "'pine' و'apple' كلاهما واقف داخل pineapple — لكن 'pear' ليس.", en: "'pine' and 'apple' both stand inside pineapple — but 'pear' does not." },
+        { ar: "الهيكل:\nprint('pine' in word)\nprint('apple' in word)\nprint('pear' in word)", en: "The skeleton:\nprint('pine' in word)\nprint('apple' in word)\nprint('pear' in word)" },
+        { ar: "word = 'pineapple'\nprint('pine' in word)\nprint('apple' in word)\nprint('pear' in word)", en: "word = 'pineapple'\nprint('pine' in word)\nprint('apple' in word)\nprint('pear' in word)" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-in',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقّع خرْجه بالضبط دون تشغيله.',
+        en: 'Read the code and predict its exact output without running it.',
+      },
+      code: "print('b' in 'abc')\nprint('d' in 'abc')",
+      solution: 'True\nFalse',
+      answer: 'True\nFalse',
+      hints: [
+        { ar: 'السؤال الأول: هل b واقفة في abc؟', en: 'First question: does b stand inside abc?' },
+        { ar: 'السؤال الثاني: وهل d واقفة فيه؟', en: 'Second question: and does d stand inside it?' },
+        { ar: 'in يفحص الوجود ويعيد قيمة منطقية لا المحرف نفسه.', en: 'in tests presence and returns a logical value, not the character itself.' },
+        { ar: 'الخرْج:\nTrue\nFalse', en: 'The output:\nTrue\nFalse' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.mcq-case-order',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: "ما نتيجة التعبير 'Pineapple' < 'banana'؟",
+        en: "What is the value of 'Pineapple' < 'banana'?",
+      },
+      options: [
+        { id: 'a', text: { ar: 'True — الحروف الكبيرة تأتي قبل الصغيرة دومًا في بايثون', en: 'True — uppercase always precedes lowercase in Python' } },
+        { id: 'b', text: { ar: 'False — لأن p تسبق b أبجديًا', en: 'False — because p alphabetically precedes b' } },
+        { id: 'c', text: { ar: 'TypeError — لا تقارن السلاسل بـ <', en: 'TypeError — strings cannot be compared with <' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'في جدول بايثون الداخلي تأتي كل الحروف الكبيرة قبل كل الصغيرة.', en: 'In Python’s internal table every uppercase letter precedes every lowercase one.' },
+        { ar: 'الحرف الكبير P ليس p — قارن أول حرفين مختلفين فقط.', en: 'Capital P is not p — compare only the first two differing characters.' },
+        { ar: 'طبّع الحالة بـ lower لو أردت المقارنة الأبجدية البشرية.', en: 'Normalize case with lower if you want the human alphabetical order.' },
+        { ar: 'الجواب: أ — True، فخ الكتاب الشهير: الحرف الكبير P يسبق كل الحروف الصغيرة في جدول بايثون الداخلي.', en: 'Answer: a — True, the book’s famous trap: capital P precedes every lowercase letter in Python’s internal table.' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.fill-in',
+      exKind: 'fill_blank',
+      required: true,
+      prompt: {
+        ar: 'املأ الفراغ: العامل الذي يفحص هل سلسلة فرعية واقعة داخل سلسلة أخرى ويعيد True أو False هو ____.',
+        en: 'Fill in the blank: the operator that tests whether a substring occurs inside another string, returning True or False, is ____.',
+      },
+      solution: 'in',
+      answer: 'in',
+      hints: [
+        { ar: 'كلمة من حرفين — تظهر أيضًا في ترويسة حلقة for.', en: 'A two-letter word — it also appears in the for loop header.' },
+        { ar: "'a' ____ 'banana' تعطي True.", en: "'a' ____ 'banana' gives True." },
+        { ar: 'هو عامل منطقي لا تابع — بلا أقواس.', en: 'It is a boolean operator, not a function — no parentheses.' },
+        { ar: 'الجواب: in', en: 'Answer: in' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "# ملعبك الحرّ — قاموس مصغّر\n# Your playground — a pocket dictionary\n\nword = 'cherry'\nif word == 'banana':\n    print('All right, bananas.')\nelif word < 'banana':\n    print(word, 'comes before banana')\nelse:\n    print(word, 'comes after banana')\n\nprint('an' in 'banana')\nprint('Band' in 'banana')\nprint('zebra' > 'apple')",
+      prompt: {
+        ar: 'جرّب بنفسك: بدّل قيمة word بين كلمات متعددة وراقب أي فرع يشتعل، واختبر in بكلمات كاملة وجزءية. ثم جرب المقارنات المختلطة الحالة مثل Apple < banana وapple < Banana ولاحظ التناقض الظاهري. لا اختبار هنا — فضولك فقط.',
+        en: 'Try it yourself: swap the value of word across several words and watch which branch ignites, and probe in with whole words and fragments. Then try mixed-case comparisons like Apple < banana and apple < Banana and notice the apparent contradiction. No tests here — just your curiosity.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz1',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: 'ما نوع القيمة التي يعيدها العامل in؟',
+            en: 'What kind of value does the in operator return?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'قيمة منطقية True أو False', en: 'A logical value, True or False' } },
+            { id: 'b', text: { ar: 'فهرس موضع السلسلة الفرعية', en: 'The index of the substring’s position' } },
+            { id: 'c', text: { ar: 'السلسلة الفرعية نفسها', en: 'The substring itself' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'in عامل منطقي بحت: يجيب نعم أو لا ولا يخبرك بالموقع. إن أردت الموقع فستحتاج find في الدرس القادم.',
+            en: 'in is purely boolean: it answers yes or no and never reveals the position. If you want the position, you will need find in the next lesson.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ومن الفصل الثالث: ما الفرق بين = و== عند التعامل مع السلاسل؟',
+            en: 'And from chapter 3: what is the difference between = and == when handling strings?',
+          },
+          options: [
+            { id: 'a', text: { ar: '= إسناد يخزّن السلسلة في متغيّر، و== مقارنة تسأل عن التساوي', en: '= assigns, storing the string in a variable; == compares, asking about equality' } },
+            { id: 'b', text: { ar: '= للمقارنة و== للتخزين', en: '= compares and == stores' } },
+            { id: 'c', text: { ar: 'لا فرق — كلاهما يقارن', en: 'No difference — both compare' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'القاعدة التي تحكم الأعداد تحكم السلاسل: تسأل باثنتين وتخزّن بواحدة — و if word = \'banana\': سيرفضه المفسّر SyntaxError.',
+            en: 'The rule that governed numbers governs strings: ask with two, store with one — and if word = \'banana\': is rejected by the interpreter with SyntaxError.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'كيف تتغلب على فخ الحروف الكبيرة قبل المقارنة الأبجدية؟',
+            en: 'How do you beat the uppercase trap before an alphabetical comparison?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'توحيد نمط السلسلتين — مثلًا تحويلهما إلى أحرف صغيرة أولًا', en: 'Normalize both strings — for example convert both to lowercase first' } },
+            { id: 'b', text: { ar: 'مضاعفة عامل المقارنة <<', en: 'Double the comparison operator to <<' } },
+            { id: 'c', text: { ar: 'لا حل — يجب إدخال الكلمات بالحروف الكبيرة', en: 'No fix — words must be entered in uppercase' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'توحيد النمط (أحرف صغيرة مثلًا) قبل المقارنة يجعل apple وApple متساويتين — وسنرى تابع lower ينفذ ذلك في الدرس القادم.',
+            en: 'Normalizing style (lowercase, say) before comparing makes apple and Apple equal — and the next lesson shows the lower method that does it.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'ومن الفصل الخامس مع فهرسة اليوم: في حلقة for letter in \'banana\' — ما قيمة letter في التكرار الأول؟',
+            en: "And from chapter 5 plus today’s indexing: in the loop for letter in 'banana' — what is letter on the first iteration?",
+          },
+          options: [
+            { id: 'a', text: { ar: "'b' — أول محرف في السلسلة", en: "'b' — the first character of the string" } },
+            { id: 'b', text: { ar: "'a' — لأن الفهرس الأول هو 1", en: "'a' — because the first index is 1" } },
+            { id: 'c', text: { ar: "'banana' كلها", en: "The whole 'banana'" } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'حلقة for تسند المحرف الأول أولًا وهو b ذو الفهرس 0 — ثم a ثم n… محرفًا محرفًا حتى النهاية.',
+            en: 'The for loop assigns the first character first — b at index 0 — then a, then n… character by character to the end.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: "print('Pineapple' < 'banana')  # أتوقع False",
+          right: "print('Pineapple'.lower() < 'banana')",
+          note: {
+            ar: 'الحروف الكبيرة تسبق الصغيرة دومًا: Pineapple < banana تعطي True zورًا. وحّد الحالة بـ lower قبل أي مقارنة أبجدية لكلمات مختلطة.',
+            en: 'Uppercase precedes lowercase always: Pineapple < banana falsely gives True. Normalize case with lower before any alphabetical comparison of mixed-case words.',
+          },
+        },
+        {
+          wrong: "if word == 'Banana':  # والمدخل banana",
+          right: "if word == 'banana':",
+          note: {
+            ar: 'المساواة حساسة للحالة: banana لا تساوي Banana ولا BANANA — النتيجة False بصمت. طبّع النص أولًا إن كان مصدره مستخدمًا.',
+            en: 'Equality is case-sensitive: banana does not equal Banana or BANANA — the result is a silent False. Normalize the text first when it comes from a user.',
+          },
+        },
+        {
+          wrong: "for x in 'banana':\n    print(x in 'banana')  # أريد المحارف",
+          right: "for x in 'banana':\n    print(x)",
+          note: {
+            ar: 'لخبط بين دورين للكلمة in: في ترويسة الحلقة تمرّ، وفي التعبير المنطقي تفحص. حرف x يمر في الحلقة أصلًا — فلا داعي لفحص وجوده في نفس السلسلة.',
+            en: 'The word in wears two hats: in a loop header it iterates, in a boolean expression it inspects. x already arrives through the loop — no need to test its presence in the same string.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'العامل in عامل منطقي يعيد True إذا كانت السلسلة الأولى سلسلة فرعية من الثانية — وهو نفسه الذي يمرّ في حلقة for لكن بدور مختلف.', en: 'The in operator is boolean, returning True when the first string is a substring of the second — the same word that iterates in a for loop, but in a different role.' },
+        { ar: 'عوامل المقارنة == و< و> تعمل على السلاسل: المساواة حساسة للحالة، والترتيب أبجدي بحسب جدول بايثون الداخلي.', en: 'The comparison operators == < > work on strings: equality is case-sensitive, and ordering follows Python’s internal table.' },
+        { ar: 'الحروف الكبيرة تأتي قبل الصغيرة دومًا — لذلك Pineapple تسبق banana؛ والحل توحيد النمط بـ lower قبل المقارنة.', en: 'Uppercase always comes before lowercase — so Pineapple precedes banana; the fix is normalizing style with lower before comparing.' },
+      ],
+      reflectPrompt: {
+        ar: 'فكّر في مرشّح تعليقات يمنع كلمة مسيئة: أي عامل اليوم يصلح للفحص، وأين تضع المقارنة داخل حلقة المرور على التعليقات؟ اكتب الشرط بصيغة بايثون.',
+        en: 'Think of a comment filter banning one offensive word: which operator from today fits the test, and where does the comparison sit inside the loop over comments? Write the condition in Python.',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'PY4E', section: 'py4e.ch6.s7', pages: 'ص91 / pp.91' },
+        { book: 'PY4E', section: 'py4e.ch6.s8', pages: 'ص91 / pp.91' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'PY4E', section: 'py4e.ch6.s7', pages: 'ص91 / pp.91' },
+    { book: 'PY4E', section: 'py4e.ch6.s8', pages: 'ص91 / pp.91' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

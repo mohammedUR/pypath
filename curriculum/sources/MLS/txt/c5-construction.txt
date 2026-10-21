@@ -1,0 +1,370 @@
+Construction — Machine Learning from Scratch
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+
+  
+  
+    
+
+    
+      
+          
+
+    
+        
+
+  
+  
+  
+  
+  Machine Learning from Scratch
+
+  
+
+  
+  
+
+  
+ 
+  Introduction
+ 
+
+ 
+  
+   Table of Contents
+  
+ 
+
+ 
+  
+   Conventions and Notation
+  
+ 
+
+ 
+  1. Ordinary Linear Regression
+ 
+
+ 
+  
+   Concept
+  
+ 
+
+ 
+  
+   Construction
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  2. Linear Regression Extensions
+ 
+
+ 
+  
+   Concept
+  
+ 
+
+ 
+  
+   Construction
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  3. Discriminative Classifiers (Logistic Regression)
+ 
+
+ 
+  
+   Concept
+  
+ 
+
+ 
+  
+   Construction
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  4. Generative Classifiers (Naive Bayes)
+ 
+
+ 
+  
+   Concept
+  
+ 
+
+ 
+  
+   Construction
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  5. Decision Trees
+ 
+
+ 
+  
+   Concept
+  
+ 
+
+ 
+  
+   Construction
+  
+  
+   
+    
+     Regression Trees
+    
+   
+
+   
+    
+     Classification Trees
+    
+   
+
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  6. Tree Ensemble Methods
+ 
+
+ 
+  
+   Concept
+  
+ 
+
+ 
+  
+   Construction
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  7. Neural Networks
+ 
+
+ 
+  
+   Concept
+  
+ 
+
+ 
+  
+   Construction
+  
+ 
+
+ 
+  
+   Implementation
+  
+ 
+
+ 
+  Appendix
+ 
+
+ 
+  
+   Math
+  
+ 
+
+ 
+  
+   Probability
+  
+ 
+
+ 
+  
+   Common Methods
+  
+ 
+
+ 
+  
+   Datasets
+  
+ 
+
+ 
+
+  Powered by Jupyter Book
+
+          
+
+          
+
+    
+    
+    
+    
+
+    
+        
+        
+            
+            
+            
+        
+        
+        
+    
+
+    
+    
+        
+        
+        
+        .md
+        
+        .pdf
+    
+
+    
+
+        
+
+    
+    
+        repository
+        open issue
+        suggest edit
+    
+
+         to have style consistency -->
+        
+
+        
+
+    
+
+    
+    
+        
+             Contents
+        
+
+        
+            
+        
+    
+
+    
+        
+        
+              
+                
+  
+Construction¶
+
+The next two pages demonstrate how to construct a regression tree and classification tree from scratch. These models are slightly more code-heavy than previous models we’ve seen due to their non-parametric and recursive nature.
+
+    
+    
+
+              
+
+              
+        
+
+    
+
+    
+    
+    
+        
+    Classification Trees
+    Regression Trees
+
+    
+
+    
+    
+      
+        
+          By Danny Friedman
+
+        
+            © Copyright 2020.

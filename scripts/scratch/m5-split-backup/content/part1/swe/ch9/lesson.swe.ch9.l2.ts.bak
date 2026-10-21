@@ -1,0 +1,320 @@
+import type { Lesson } from '@/lib/content/schema';
+
+/**
+ * swe.ch9.l2 — "Code Reviews: Intent and Trust /
+ * مراجعات الكود: النية والثقة"
+ * Aligned with SWE ch9 s3 (9.3 Code Reviews: Check Intent and Trust,
+ * pp.238–240).
+ * All expression is original (paraphrase of CC BY-SA 4.0 book text).
+ * The write_code exercise is a review-comment classifier (startswith/endswith
+ * rules + dict counters — py4e ch6 strings, ch4 functions, ch9 dicts), plus a
+ * trace of the rule table, a small-changes numeric, and a nit-vs-blocking mcq.
+ */
+const lesson = {
+  id: 'swe.ch9.l2',
+  version: 1,
+  part: 'I',
+  track: 'P3',
+  book: 'SWE',
+  chapter: 9,
+  title: { ar: 'مراجعات الكود: النية والثقة', en: 'Code Reviews: Intent and Trust' },
+  estimatedMinutes: 25,
+  prerequisites: ['swe.ch9.l1'],
+  blocks: [
+    {
+      kind: 'hook',
+      text: {
+        ar: 'التنقيح الرسمي ثقيل الكلفة، ولا يفحص به معظم الفرق إلا أخطر موادها. ما يفعله كل فريق محترف تقريبًا على كل تغيير تقريبًا هو نسخته الخفيفة: مراجعة الكود code review — قبل دمج أي تغيير يقرأه مهندس واحد على الأقل غير مؤلفه ويوافق عليه. وبعد أن تعلمت في الدرس الماضي عائلة الفحص الثابت كاملة، هذا هو وجهها اليومي في الصناعة. لكن انتبه: المراجعة الحديثة عبر pull requests ليست صيدًا لكل عيب — الأدوات الآلية (الدرس القادم) أسرع منك في الميكانيكي — بل سؤالان إنسانيان لا أداة تحسمهما: النية والثقة. وستبني اليوم مصغّرًا آليًا من عالم المراجعة نفسها: مصنّف تعليقات يفرز nit من blocking من question بقواعد بسيطة. بنهاية الدرس ستكون قادرًا على: شرح سؤالي النية والثقة ودور المراجع ضامنًا بالتغيير، وتطبيق مبدأ وصاية المستودع على تعليقات مراجعة حقيقية، وتفسير لماذا تُراجع التغييرات خلال ساعات لا أيام ولماذا التغييرات الصغيرة شرط ذلك، وكتابة مصنّف قواعد لتعليقات المراجعة بلغة بايثون.',
+        en: 'Full Fagan inspection is heavyweight, so most teams reserve it for the riskiest material. What virtually every professional team does on nearly every change is its lightweight descendant: the code review — before a change is merged, at least one engineer other than the author reads it and must approve it. Having met the whole static-checking family last lesson, this is its daily industrial face. But note: modern review through pull requests is not about hunting every defect — automated tools (next lesson) beat you at the mechanical ones — it is about two human questions no tool can settle: intent and trust. Today you also build a small automated piece of the review world itself: a comment classifier that sorts nit from blocking from question by simple rules. By the end of this lesson you will be able to: explain the intent and trust questions and the reviewer\u2019s role as voucher for a change; apply repository stewardship to real review comments; explain why reviews happen within hours not days and why small changes are the precondition; and write a rule-based classifier for review comments in Python.',
+      },
+    },
+    {
+      kind: 'predict',
+      code: "comment = 'nit: add a space after the comma'\nprint(comment.startswith('nit:'))\nprint('blocking' in comment)",
+      question: {
+        ar: 'سطرا فحص من صندوق أدوات السلاسل القديم. في عالم المراجعة: ما الكلمة الوحيدة في بداية التعليق التي تفصل اقتراحًا شكليًا يمكن تجاهله عن عيب يوقف الدمج؟ ومتى يكون الفصل بينهما مصيرياً؟',
+        en: 'Two checks from the old string toolbox. In the review world: what single word at the start of a comment separates a style suggestion you may ignore from a defect that stops the merge? And when does drawing that line become decisive?',
+      },
+      reveal: {
+        ar: "True ثم False — فالتعليق يبدأ بـ nit: ولا يحوي كلمة blocking. اتفاق الفريق على بادئة nit: هو عقد مصغر: «ملاحظة صغيرة، الإصلاح فيها اختياري، ولا تمنع الدمج». وبدونه يمزج المراجعون الشكلي بالجوهري فيتعطل التغيير على فاصلة ناقصة. وستبرمج هذا العقد حرفيًا في التمرين الأول.",
+        en: "True then False — the comment starts with nit: and contains no blocking. A team agreeing on the nit: prefix is a micro-contract: \u201cminor remark, fixing it optional, merge not blocked.\u201d Without it reviewers mix style with substance and a change stalls over a missing space. You will code exactly this contract in the first exercise.",
+      },
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'النية والثقة: السؤالان اللذان لا أداة تحسمهما', en: 'Intent and trust: the two questions no tool settles' },
+      chunks: [
+        {
+          ar: 'النية intent: هل يفعل هذا التغيير ما قصده مؤلفه فعلًا؟ وهل ما قصده هو الصواب أصلاً؟ مراجع يفهم النظام يرى ما لا يراه التغيير نفسه: تغيير صحيح تقنيًا يحل المسألة الخطأ، أو يكسر اتساقًا خفيًا مع بقية الشيفرة. أما الثقة trust فهي المكافأة الثقافية: المراجعة هي كيف يتحمل الفريق مسؤولية مستودعه جماعيًا. بعد الموافقة والدمج لم تعد الشيفرة «شيفرةك» أنت — صارت شيفرة الفريق، والمراجع الذي وافق عليها كفلها. ومن هنا يتضح سبب فساد عادتين: «سي catches المراجع خطئي» تفرغ المؤلف من مسؤوليته، و«أوافق فقط لفتح الطريق له» تفريغ للضمانة من طرف المراجع. الاثنان يهزمان المسؤولية المشتركة التي هي غاية المراجعة كلها.',
+          en: 'Intent: does this change do what its author meant it to do — and is what they meant actually right? A reviewer who understands the system sees what the change itself cannot: technically correct code solving the wrong problem, or quietly breaking consistency with the rest of the codebase. Trust is the cultural payoff: code review is how a team collectively takes responsibility for its repository. Once approved and merged, the change is no longer \u201cyours\u201d — it is the team\u2019s, and the reviewer who approved it has vouched for it. That is why two habits are corrosive: \u201cthe reviewer will catch my mistakes\u201d empties the author of responsibility, and \u201cI\u2019m just approving to unblock them\u201d empties the voucher from the reviewer\u2019s side. Both defeat the shared ownership review exists to build.',
+        },
+        {
+          ar: 'والسؤال الحاكم في كل تعليق مراجعة ليس «هل كنت أكتبه هكذا؟» بل «هل سيجعل هذا التغيير المستودع أصح مع الوقت؟» — هذا مبدأ وصاية المستودع repository stewardship. المراجع يرصد المخاطر ويصون المعايير دون فرض أذواقه الشخصية، والتغيير الواضح التحسين يوافق عليه حتى لو تخيل المراجع نسخة أفضل بهامش ضئيل. ويشمل الصحة ما وراء أسطر الفرق: إضافة اختبار ناقص، وتوضيح توثيق مجاور، وتحسين اسم مضلل، وإزالة تكرار، وتقوية الأتمتة. لكن التحسين يبقى مناسب الحجم ومتصل العمل — لا تقلب إصلاح ميزة مركزًا في إعادة كتابة غير مرتبطة؛ والتنظيف الكبير أو الخطِر أو المنفصل يسجل ويقدم تغييرًا صغيرًا مستقلًا.',
+          en: 'The governing question in every review comment is not \u201cis this how I would have written it?\u201d but \u201cwill this change make the repository healthier over time?\u201d — repository stewardship. Reviewers identify risks and maintain standards without imposing personal preferences, and a change that clearly improves the system is approved even when the reviewer can imagine a marginally better version. Health extends beyond the diff: adding a missing test, clarifying nearby documentation, improving a misleading name, removing duplication, strengthening the automation that verifies the code. But the improvement stays relevant and proportionate — do not turn a focused fix into an unrelated rewrite; when cleanup is large, risky or separable, record it and submit it as its own small change.',
+        },
+      ],
+    },
+    {
+      kind: 'concept',
+      heading: { ar: 'مراجع مستثمر وساعات لا أيام', en: 'Invested experts, and hours not days' },
+      chunks: [
+        {
+          ar: 'ليست كل المراجعات متكافئة، والفرق ليس المهارة الخام بل الاستثمار والسياق. أنفس مراجع للتغيير هو من يعرف هذه الجزئية بعمق ولهم فيها رهان طويل: من سيصونها، ومن لسعت خطأها الأخير، ومن يحفظ الاتفاقات غير المكتوبة. فهو يجلب ما ليس في الفرق diff: تاريخ شكل الشيفرة، والفشل الذي وجد له شرط غريب حارساً، وخطة المستقبل لهذه الوحدة. لهذا تُسند المراجعات بعناية: تغيير في منظومة الاستيثاق يراجعه من يفهم نموذج الأمن لا من صادف أنه حر. وتشيّد فرق كثيرة ذلك بترميز ملكية الشيفرة code ownership: ملفات وأدلة لها مالكوها الذي تطلب موافقتهم — ضمانًا بأن خبيرًا مستثمرًا يرى كل تغيير في الشيفرة الحساسة. وإن لم تملك أنت السياق لتقييم تغيير، فالتحرك الصادق أن تقول ذلك وتحيله لمن يملك — الموافقة ممن لم يفهم تمنح ثقة ليست حقيقية، وهي أسوأ من لا موافقة.',
+          en: 'Not all reviews are equal, and the difference is not raw skill — it is investment and context. The most valuable reviewer for a change knows that part of the system deeply and has a stake in its long-term health: the person who will maintain it, who was burned by its last bug, who holds the unwritten invariants. They bring what is not in the diff: the history of why the code is shaped this way, the failure a strange guard clause exists to prevent, where the module is heading. So reviews are assigned deliberately: a change to the authentication system goes to someone who understands the security model, not whoever is free. Many teams encode this as code ownership: files and directories have designated owners whose approval is required — guaranteeing an invested expert sees every change to sensitive code. And if you lack the context to judge a change, the honest move is to say so and route it to someone who can — an approval from someone who did not understand provides trust that is not real, which is worse than no approval.',
+        },
+        {
+          ar: 'ثم الزمن: تستجيب الفرق الحديثة خلال ساعات لا أيام. حين يجلس التغيير دون مراجعة أيامًا يحدث ثلاث سوءات: المؤلف المحجوب ينتقل لعمل آخر فيدفع كلفة العودة الذهنية، أو — والأسوأ — يبني تغييرات جديدة فوق غير المراجع فتتسلسل مشكلة التغيير الأول فيما بعده؛ والتغيير نفسه يطير عن موعده مع تحرك الشيفرة تحته فتنشأ تعارضات دمج؛ وتتلاشى ذاكرة المؤلف عن سبب كل قرار فتصير ردوده على التعليقات أضمد. والسرعة لا تعني الاستعجال المهمل: ما يجمع بين السرعة والدقة هو التغييرات الصغيرة — تغيير من خمسين سطرًا يُعطى قراءة جادة في دقائق ويُدار في يومه، أما الألفان فلا تُراجع جيدًا ولا سريعًا: يقلبها المراجع قلقًا ويوافق من باب الإنهاك وتصير المراجعة مسرحًا. تغييرات صغيرة تُراجع كثيرًا: هذه الآلية نفسها — أحفظ القطعة صغيرة وأبقِ المراجع منتبهًا — هي السليل الصناعي اليومي لبيانات التنقيح في الدرس الماضي.',
+          en: 'Then time: modern teams respond within hours rather than days. When a change sits unreviewed for days, three bad things happen: the blocked author switches away and pays the context-switching cost later — or, worse, stacks new changes on the unreviewed one, so a found problem cascades; the change drifts out of date as the codebase moves and merge conflicts appear; and the author\u2019s memory of each decision fades, so their responses get vaguer. Speed does not mean carelessness: what squares the two is small changes — a 50-line change gets a genuinely careful read in minutes and turns around the same day, while 2,000 lines cannot be reviewed well or quickly: the reviewer skims, approves out of fatigue, and review becomes theater. Small, frequently reviewed changes are the industrialized everyday descendant of last lesson\u2019s inspection data: keep the chunk small, keep the reviewer engaged, and the defects surface.',
+        },
+      ],
+    },
+    {
+      kind: 'worked',
+      title: { ar: 'إحصاء زمن الانتظار: نبض مراجعة الفريق', en: 'Wait-time stats: the team\u2019s review pulse' },
+      code: "waits = [2, 9, 1, 40, 3]\nwithin_day = 0\nfor w in waits:\n    if w <= 24:\n        within_day = within_day + 1\nprint('changes: %d' % len(waits))\nprint('reviewed within a day: %d' % within_day)\nprint('longest wait: %d' % max(waits))",
+      explanation: {
+        ar: 'التنقيح يقيس نفسه — والمراجعة اليومية فعل ذلك أيضًا. هذه القائمة ساعات انتظار خمسة تغييرات قبل أن يلتقطها مراجع: أربعة منها دُارت خلال يوم واحد، وواحد عطّل صاحبه أربعين ساعة كاملة — خلالها بنى فوقه وذاكرته بدت تتلاشى. تقرير من ثلاثة أسطر منسقة يقول للفريق أكثر من إحساس عام: أين نبض مراجعتنا؟ لو تكررت الأربعون أسبوعًا بعد أسبوع فالمشكلة ليست في مراجع مهمل بل في توزيع العمل أو حجم التغييرات. القياس يسبق العلاج.',
+        en: 'An inspection measures itself — the everyday review does too. This list holds the hours five changes waited before a reviewer picked them up: four turned around within a day, while one left its author blocked for forty hours — during which they built on top of it and their memory of the decisions began to fade. A three-line formatted report tells the team more than a vibe: where is our review pulse? If the forty shows up week after week, the fix is not a careless reviewer but workload distribution or change size. Measurement precedes treatment.',
+      },
+    },
+    {
+      kind: 'exercise',
+      id: 'ex1.comment-classifier',
+      exKind: 'write_code',
+      required: true,
+      prompt: {
+        ar: 'اتفقت فريقك على عقد تعليقات من ثلاث فئات: ما يبدأ بـ nit: فئة nit (ملاحظة شكلية اختيارية)، وما يبدأ بـ blocking: فئة blocking (عيب يوقف الدمج)، وما ينتهي بعلامة استفهام فئة question (سؤال عن النية)، وما عداهما فئة note. اكتب دالة classify(comment) تعيد اسم الفئة وفق هذه القواعد بالترتيب، ودالة classify_comments(comments) تعيد قاموس عدادات الفئات الأربعة مهيأة على الصفر وتعد كل تعليق في فئته، ثم اطبع أربع فئات بالترتيب: blocking ثم question ثم nit ثم note بصيغة فئة: عدد.',
+        en: 'Your team agreed on a three-plus-one comment contract: anything starting with nit: is category nit (optional style remark), anything starting with blocking: is category blocking (merge-stopping defect), anything ending with a question mark is category question (an intent question), and the rest are note. Write classify(comment) returning the category name by those rules in order, and classify_comments(comments) returning a dict of the four counters pre-seeded at zero with every comment counted into its category; then print the four categories in order — blocking, question, nit, note — as category: count.',
+      },
+      starterCode: "COMMENTS = [\n    'nit: rename x to total',\n    'blocking: this drops the last item',\n    'does this handle the empty list?',\n    'nit: add a space after the comma',\n    'question: why 79 and not 88?',\n]\n\ndef classify(comment):\n    # nit: في البداية؟ blocking: في البداية؟ ينتهي بعلامة استفهام؟ وإلا note\n    # starts with nit:? starts with blocking:? ends with ?? otherwise note\n    return ''\n\ndef classify_comments(comments):\n    # أعد قاموسا بالعدادات الأربعة على الصفر ثم عدّ كل فئة\n    # return a dict with the four counters at zero, then count each category\n    return {}\n\ncounts = classify_comments(COMMENTS)\nfor k in ['blocking', 'question', 'nit', 'note']:\n    print('%s: %d' % (k, counts.get(k, 0)))\n",
+      solution: "COMMENTS = [\n    'nit: rename x to total',\n    'blocking: this drops the last item',\n    'does this handle the empty list?',\n    'nit: add a space after the comma',\n    'question: why 79 and not 88?',\n]\n\ndef classify(comment):\n    if comment.startswith('nit:'):\n        return 'nit'\n    if comment.startswith('blocking:'):\n        return 'blocking'\n    if comment.endswith('?'):\n        return 'question'\n    return 'note'\n\ndef classify_comments(comments):\n    counts = {'nit': 0, 'blocking': 0, 'question': 0, 'note': 0}\n    for c in comments:\n        k = classify(c)\n        counts[k] = counts[k] + 1\n    return counts\n\ncounts = classify_comments(COMMENTS)\nfor k in ['blocking', 'question', 'nit', 'note']:\n    print('%s: %d' % (k, counts.get(k, 0)))",
+      tests: [
+        {
+          id: 't1',
+          name: { ar: 'العدادات الصحيحة لقائمة الفريق', en: 'Correct counters for the team list' },
+          code: "assert classify_comments(COMMENTS) == {'nit': 2, 'blocking': 1, 'question': 2, 'note': 0}, 'expected: {nit: 2, blocking: 1, question: 2, note: 0} | actual: %r' % (classify_comments(COMMENTS),)",
+          expected: '{nit: 2, blocking: 1, question: 2, note: 0}',
+        },
+        {
+          id: 't2',
+          name: { ar: 'قاعدة السؤال تعمل وحدها', en: 'The question rule works standalone' },
+          code: "assert classify('does this handle the empty list?') == 'question', 'expected: question | actual: %r' % (classify('does this handle the empty list?'),)",
+          expected: 'question',
+        },
+        {
+          id: 't3',
+          name: { ar: 'قاعدة البادئة تسبق غيرها', en: 'The prefix rules come first' },
+          code: "assert classify('nit: rename x to total') == 'nit' and classify('blocking: this drops the last item') == 'blocking', 'expected: nit and blocking | actual: %r %r' % (classify('nit: rename x to total'), classify('blocking: this drops the last item'))",
+          expected: 'nit and blocking',
+        },
+        {
+          id: 't4',
+          name: { ar: 'التقرير مطبوع منسقًا', en: 'The report is printed formatted' },
+          code: "assert 'blocking: 1' in __learner_output__ and 'question: 2' in __learner_output__ and 'nit: 2' in __learner_output__, 'expected: blocking: 1, question: 2, nit: 2 | actual: %r' % __learner_output__",
+          expected: 'blocking: 1, question: 2, nit: 2',
+        },
+      ],
+      hints: [
+        { ar: "startswith('nit:') تفحص بداية السلسلة وendswith('?') نهايتها — أدوات الفصل السادس تكفي كل العمل.", en: "startswith('nit:') checks the start of the string and endswith('?') its end — chapter 6 tools carry the whole job." },
+        { ar: 'ترتيب الفحص جوهري: بادئة nit: أو blocking: تسقط قبل قاعدة الاستفهام — وإلا صار كل تعليق يبدأ بـ nit: وينتهي بعلامة استفهام سؤالًا.', en: 'Order matters: the nit:/blocking: prefixes are tested before the question rule — otherwise a comment starting with nit: and ending in ? would count as a question.' },
+        { ar: 'هيكل classify_comments:\ncounts = {\'nit\': 0, \'blocking\': 0, \'question\': 0, \'note\': 0}\nfor c in comments:\n    k = classify(c)\n    counts[k] = counts[k] + 1\nreturn counts', en: "classify_comments skeleton:\ncounts = {'nit': 0, 'blocking': 0, 'question': 0, 'note': 0}\nfor c in comments:\n    k = classify(c)\n    counts[k] = counts[k] + 1\nreturn counts" },
+        { ar: "الحل الكامل:\ndef classify(comment):\n    if comment.startswith('nit:'):\n        return 'nit'\n    if comment.startswith('blocking:'):\n        return 'blocking'\n    if comment.endswith('?'):\n        return 'question'\n    return 'note'", en: "Full solution:\ndef classify(comment):\n    if comment.startswith('nit:'):\n        return 'nit'\n    if comment.startswith('blocking:'):\n        return 'blocking'\n    if comment.endswith('?'):\n        return 'question'\n    return 'note'" },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex2.trace-kind',
+      exKind: 'trace_output',
+      required: true,
+      prompt: {
+        ar: 'اقرأ الكود وتوقع خرجه بالضبط — سطر لكل طباعة — دون تشغيله. ركّز على أي قاعدة تلتقط كل تعليق.',
+        en: 'Read the code and predict its exact output — one line per print — without running it. Focus on which rule catches each comment.',
+      },
+      code: "def kind(c):\n    if c.startswith('nit:'):\n        return 'nit'\n    if c.startswith('blocking:'):\n        return 'blocking'\n    return 'note'\n\nprint(kind('nit: spacing'))\nprint(kind('blocking: data loss'))\nprint(kind('looks right to me'))",
+      solution: 'nit\nblocking\nnote',
+      answer: 'nit\nblocking\nnote',
+      hints: [
+        { ar: 'أول شرط يتحقق يفوز — وreturn يخرج من الدالة فورًا فلا تُفحص القواعد بعده.', en: 'The first matching condition wins — return leaves the function immediately, so later rules are never checked.' },
+        { ar: "كل من 'nit: spacing' و'blocking: data loss' يطابق بادئته حرفيًا.", en: "Both 'nit: spacing' and 'blocking: data loss' match their prefix literally." },
+        { ar: "و'looks right to me' لا يطابق بادئة من الاثنتين فيقع في السلة الأخيرة.", en: "And 'looks right to me' matches neither prefix, so it falls into the last bucket." },
+        { ar: 'الخرج:\nnit\nblocking\nnote', en: 'The output:\nnit\nblocking\nnote' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex3.numeric-chunks',
+      exKind: 'numeric',
+      required: true,
+      prompt: {
+        ar: 'بلا تشغيل: الكتاب يقول إن تغييرًا من خمسين سطرًا يمنحه المراجع قراءة جادة في دقائق، بينما تغيير الألفي سطر لا يمكن مراجعته جيدًا ولا سريعًا. قرار فريقك: لا تغيير يفوق 400 سطر — قسّم تغييرًا من 2000 سطر إلى مراجعات بحجم لا يتجاوز 400 سطر. كم مراجعة على الأقل؟ (عدد صحيح)',
+        en: 'Without running: the book says a 50-line change gets a genuinely careful read in minutes, while a 2,000-line change cannot be reviewed well or quickly. Your team caps changes at 400 lines — split a 2,000-line change into reviews of at most 400 lines each. How many reviews at minimum? (an integer)',
+      },
+      answer: '5',
+      solution: '5',
+      tolerance: 0,
+      hints: [
+        { ar: 'اقسم الحجم الكلي على الحجم الأقصى للجلسة الواحدة.', en: 'Divide the total size by the maximum size of one sitting.' },
+        { ar: '2000 على 400 تساوي 5 بالضبط — لا كسور ولا تقريب للأعلى مطلوب.', en: '2000 over 400 is exactly 5 — no fractions, no rounding up needed.' },
+        { ar: 'كل جلسة تأخذ 400 سطر كاملة، فالأسطر توزع بالتساوي دون بقايا.', en: 'Each sitting takes a full 400 lines, so the lines divide evenly with no remainder.' },
+        { ar: 'الجواب: 5', en: 'Answer: 5' },
+      ],
+    },
+    {
+      kind: 'exercise',
+      id: 'ex4.mcq-nit',
+      exKind: 'mcq',
+      required: true,
+      prompt: {
+        ar: 'ماذا يعني برمجيًا وثقافيًا أن يبدأ تعليق مراجعة ببادئة nit:؟',
+        en: 'What does a review comment beginning with the nit: prefix mean, mechanically and culturally?',
+      },
+      options: [
+        { id: 'a', text: { ar: 'ملاحظة صغيرة اختيارية الإصلاح لا تمنع الدمج — عقد مصغر يحمي سير التغيير من التوقف على تفاصيل الشكل', en: 'A minor remark whose fix is optional and which does not block the merge — a micro-contract protecting the change from stalling over style details' } },
+        { id: 'b', text: { ar: 'عيب مؤكد يجب إصلاحه قبل الموافقة وإلا انهار الإصدار', en: 'A confirmed defect that must be fixed before approval or the release collapses' } },
+        { id: 'c', text: { ar: 'سؤال عن نية المؤلف يستحق اجتماعًا كاملًا للنقاش', en: 'A question about the author\u2019s intent that deserves a full meeting to discuss' } },
+      ],
+      answer: 'a',
+      solution: 'a',
+      hints: [
+        { ar: 'الاسم من كلمة nitpick — التقاط الهوامش الصغيرة.', en: 'The name comes from nitpick — picking at tiny margins.' },
+        { ar: 'تذكر قاعدة وصاية المستودع: المراجع يرصد المخاطر ولا يفرض أذواقه.', en: 'Recall repository stewardship: reviewers identify risks without imposing preferences.' },
+        { ar: 'المقابل هو blocking: ما يوقف الدمج فعلًا — والفرق بينهما عقد الفريق لا مزاج كل مراجع.', en: 'Its counterpart is blocking: what actually stops the merge — and the line between them is a team contract, not each reviewer\u2019s mood.' },
+        { ar: 'الجواب: أ — nit ملاحظة اختيارية لا تمنع الدمج.', en: 'Answer: a — a nit is optional and does not block the merge.' },
+      ],
+    },
+    {
+      kind: 'sandbox',
+      starterCode: "# ملعبك الحر — مصنّف تعليقات المراجعة\n# Your playground — the review-comment classifier\n\nCOMMENTS = [\n    'nit: add a space after the comma',\n    'blocking: this drops the last item',\n    'does this handle the empty list?',\n    'why is this 79 and not 88?',\n    'nit: rename x to total',\n    'looks good to me',\n]\n\ndef classify(comment):\n    if comment.startswith('nit:'):\n        return 'nit'\n    if comment.startswith('blocking:'):\n        return 'blocking'\n    if comment.endswith('?'):\n        return 'question'\n    return 'note'\n\nfor c in COMMENTS:\n    print('%s -> %s' % (classify(c), c))\n\n# جرّب: أضف تعليقًا يبدأ بـ nit: وينتهي بعلامة استفهام — أي فئة أمسكته؟ ولماذا؟\n# try: add a comment starting with nit: and ending with ? — which bucket caught it, and why?\n# جرّب: قلب ترتيب القواعد (الاستفهام أولًا) وأعد التشغيل — ما الذي تغير؟\n# try: reorder the rules (question first) and rerun — what changed?\n",
+      prompt: {
+        ar: 'جرّب بنفسك: التعليق الجديد الذي يبدأ بـ nit: وينتهي بعلامة استفهام أين يسقط؟ هذا هو درس ترتيب القواعد في الأنظمة القاعدية كلها — أول قاعدة تلتقط تغلب. ثم اجمع عدادات الفئات في قاموس كما في التمرين الأول واطبع تقريرًا منسقًا لتعليقاتك.',
+        en: 'Try it yourself: where does the new comment starting with nit: and ending with ? land? That is the lesson of rule order in every rule-based system — the first rule that catches wins. Then aggregate the category counters into a dict as in the first exercise and print a formatted report for your comments.',
+      },
+    },
+    {
+      kind: 'quiz',
+      id: 'quiz2',
+      items: [
+        {
+          id: 'q1',
+          question: {
+            ar: "ومن الفصل السادس من مسار بايثون (السلاسل): comment.startswith('nit:') — متى تعيد True؟",
+            en: "From chapter 6 of the Python track (strings): comment.startswith('nit:') — when does it return True?",
+          },
+          options: [
+            { id: 'a', text: { ar: 'حين تبدأ السلسلة بالبادئة nit: حرفيًا في مواضعها الأولى — ولا تنظر إلى ما بعدها إطلاقًا', en: 'When the string starts with the prefix nit: literally in its first positions — it never looks past them' } },
+            { id: 'b', text: { ar: 'حين تحتوي السلسلة nit: في أي موضع من مواضعها', en: 'When the string contains nit: anywhere at all' } },
+            { id: 'c', text: { ar: 'حين تنتهي السلسلة بـ nit:', en: 'When the string ends with nit:' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'startswith تفحص البداية فقط، وendswith يقابلها للنهاية — وبهاتين بُني مصنّف اليوم كله. تذكر من الفصل السادس أن السلاسل مجمدة: كلتا الدالتين تعيدان قيمة منطقية ولا تغيران شيئًا.',
+            en: 'startswith checks only the beginning, endswith its mirror for the end — and the two built all of today\u2019s classifier. Recall from chapter 6 that strings are immutable: both return a boolean and change nothing.',
+          },
+        },
+        {
+          id: 'q2',
+          question: {
+            ar: 'ماذا تعني موافقة المراجع على التغيير من منظور الثقة trust؟',
+            en: 'What does a reviewer\u2019s approval mean in terms of trust?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'أن المراجع كفل التغيير: بعد الدمج صارت الشيفرة ملك الفريق المشترك — والمراجعة هي آلية تحمل الفريق مسؤولية مستودعه جماعيًا', en: 'The reviewer vouched for the change: after the merge the code belongs to the team — review is the mechanism by which the team collectively owns its repository' } },
+            { id: 'b', text: { ar: 'أن المراجع تعهد شخصيًا بإصلاح كل عيوبه المستقبلية بنفسه', en: 'The reviewer personally pledges to fix all its future defects themselves' } },
+            { id: 'c', text: { ar: 'أن الشيفرة أصبحت مضمونة الخلو التام من العيوب', en: 'The code is now guaranteed entirely defect-free' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الكتاب يسمي الموافقة «كفالة»: الشيفرة بعد الدمج ليست للمؤلف وحدنا. ومن هنا فساد عبارتا «المراجع سيمسك خطئي» و«أوافق لفتح الطريق فقط» — كلتاهما تفرغ أحد طرفي الكفالة من معناه.',
+            en: 'The book calls approval a voucher: merged code is not the author\u2019s alone. Hence the two corrosive habits — \u201cthe reviewer will catch it\u201d and \u201cjust approving to unblock\u201d — each empties one end of the voucher of its meaning.',
+          },
+        },
+        {
+          id: 'q3',
+          question: {
+            ar: 'مراجع لا يملك سياق تقييم تغيير حساس صافح على «أوافق» ليسدل الستار — ماذا صنع؟',
+            en: 'A reviewer without the context to judge a sensitive change rubber-stamps an approval to move things along — what have they created?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'ثقة ليست حقيقية — وأسوأ من لا موافقة؛ الصادق أن يقول «لا أملك السياق» ويحيله إلى من يفهم نموذج الأمن', en: 'Trust that is not real — worse than no approval at all; the honest move is to say \u201cI lack the context\u201d and route it to someone who understands the security model' } },
+            { id: 'b', text: { ar: 'لا شيء — الموافقة موافقة أينما جاءت', en: 'Nothing — an approval is an approval wherever it comes from' } },
+            { id: 'c', text: { ar: 'سرعة صحية للفريق ترفع الجودة', en: 'A healthy team speed-up that raises quality' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'الكتاب حرفي: الموافقة ممن لم يفهم التغيير توفر ثقة ليست حقيقية وهي أسوأ من غيابها. ولهذا تُرمّز ملكية الشيفرة code ownership: مالكو الملفات الحساسة يجب أن يروا كل تغيير فيها.',
+            en: 'The book is literal: approval from someone who did not understand provides trust that is not real, worse than none. That is why code ownership exists: designated owners must see every change to sensitive files.',
+          },
+        },
+        {
+          id: 'q4',
+          question: {
+            ar: 'تغيير ضخم يمس أربعين ملفًا في 1500 سطر — لماذا تكون مراجعته «مسرحًا» وما العلاج؟',
+            en: 'A giant change touching forty files across 1,500 lines — why is its review \u201ctheater\u201d and what is the cure?',
+          },
+          options: [
+            { id: 'a', text: { ar: 'انتباه المراجع ينفد قبل النهاية فيأخذ النصف الثاني نظرة عابرة وموافقة من باب الإنهاك — والعلاج تقسيم العمل إلى تغييرات صغيرة مستقلة تُراجع كل منها خلال ساعات', en: 'The reviewer\u2019s attention runs out before the end, so the last half gets a glance and a fatigue-driven approval — the cure is splitting the work into small independent changes, each reviewable within hours' } },
+            { id: 'b', text: { ar: 'لأن الملفات كثيرة يصعب عدّها فتضيع المراجعة في الحساب', en: 'Because counting forty files distracts the reviewer' } },
+            { id: 'c', text: { ar: 'لأن Git يرفض فتح الفرق الضخمة أصلًا', en: 'Because Git refuses to open giant diffs in the first place' } },
+          ],
+          answer: 'a',
+          explanation: {
+            ar: 'هذا فخ «الـ PR العملاق» من الكتاب: لا يمكن مراجعة الألفي سطر جيدًا وسريعًا معاً، فمن يريد مراجعة حقيقية يقسم العمل — ومن يتسلم واحدًا من الحق أن يطلب تقسيمه. التغييرات الصغيرة هي الآلية التي تجعل السرعة والدقة يتقاسمان الغرفة.',
+            en: 'This is the book\u2019s giant-PR pitfall: 2,000 lines cannot be reviewed well and quickly at once, so real review means splitting the work — and receiving a giant PR legitimately entitles you to ask for the split. Small changes are the mechanism that lets speed and care coexist.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'pitfalls',
+      items: [
+        {
+          wrong: '«لقد كتبته أنا هكذا: total = total * 2 — غيّره»',
+          right: '«هل يجعل هذا التغيير المستودع أصح مع الوقت؟» — إن حسّنه وُفق حتى مع تفضيل بديل أفضل بهامش',
+          note: {
+            ar: 'وصاية المستودع لا الأذواق: المراجع يرصد المخاطر ويصون المعايير ولا يفرض ذوقه الشخصي — وإلا صارت المراجعة ساحة انتصارات صغيرة ويقهر التعاون.',
+            en: 'Stewardship, not taste: reviewers identify risks and maintain standards without imposing personal preferences — otherwise review becomes a arena of small victories and collaboration loses.',
+          },
+        },
+        {
+          wrong: 'PR واحد بـ 1500 سطر ينتظر «مراجعة شاملة في نهاية الأسبوع»',
+          right: 'تقسيمه إلى تغييرات صغيرة مستقلة — كل منها يُقرأ جادة ويُدار خلال ساعات',
+          note: {
+            ar: 'التغييرات الصغيرة ليست تحفظًا — هي الآلية الوحيدة التي تجعل المراجعة السريعة الدقيقة ممكنة معاً، وهي سليل بيانات التنقيح اليومية: قطعة صغيرة ومراجع منتبه فيظهر العيب.',
+            en: 'Small changes are not a nicety — they are the only mechanism that makes fast, careful review possible at once, the everyday descendant of inspection data: keep the chunk small and the reviewer engaged, and defects surface.',
+          },
+        },
+        {
+          wrong: '«أوافق — لأحرّك زميلي فقط، لم أقرأ فعليًا»',
+          right: '«لا أملك السياق لتقييم هذا — أحيله إلى مالك هذه الوحدة»',
+          note: {
+            ar: 'موافقة من لم يفهم = ثقة زائفة، وهي أسوأ من لا موافقة لأنها تكسو التغيير ضمانة فارغة. الأمانة في التحويل ليست ضعفًا — هي حرفيًا ما يجعل نظام الملكية يعمل.',
+            en: 'Approval without understanding = fake trust, worse than none, because it drapes an empty warranty over the change. Honest routing is not weakness — it is literally what makes the ownership system work.',
+          },
+        },
+      ],
+    },
+    {
+      kind: 'summary',
+      bullets: [
+        { ar: 'مراجعة الكود اليومية سؤالان إنسانيان: النية — هل يفعل التغيير ما قصده صاحبه وهل القصد صواب؟ — والثقة — الشيفرة بعد الدمج ملك الفريق والمراجع كفلها.', en: 'Everyday code review is two human questions: intent — does the change do what its author meant, and is that right? — and trust — merged code belongs to the team and the reviewer vouched for it.' },
+        { ar: 'وصاية المستودع: السؤال الحاكم «هل يجعل المستودع أصح مع الوقت؟» لا «هل أكتبه هكذا؟» — تحسينات متناسبة متصلة العمل، والتنظيف الكبير تغيير مستقل.', en: 'Repository stewardship: the governing question is \u201cwill this make the repository healthier over time?\u201d not \u201cis this how I would write it?\u201d — improvements stay proportionate, and large cleanups become their own change.' },
+        { ar: 'خلال ساعات لا أيام: التغييرات الصغيرة (نحو الخمسين سطرًا للقراءة الجادة، وسقف الفرق الشائع 400) هي ما يجعل المراجعة سريعة ودقيقة معًا — والمراجع الخبير المستثمر يستحق التغييرات الحساسة.', en: 'Within hours, not days: small changes (about 50 lines for a careful read, a common 400-line cap) are what make fast and thorough coexist — and invested expert reviewers belong on sensitive changes.' },
+      ],
+      reflectPrompt: {
+        ar: 'صغ عقد فريقك: في ثلاثة أسطر، متى يقول المراجع nit ومتى blocking ومتى يحول التغيير لمراجع آخر؟ ثم خذ التعليقين الأولين من تمرين التصنيف وأعد صياغتهما بصيغة وصاية مستودع — «هذا التغيير سيفعل كذا مع الوقت...» بدل «أنا كنت سأكتب...».',
+        en: 'Draft your team contract: in three lines, when does a reviewer say nit, when blocking, and when do they route a change to another reviewer? Then take the first two comments from the classifier exercise and rewrite them as stewardship — \u201cover time this change will...\u201d instead of \u201cI would have written...\u201d.',
+      },
+    },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch9.s3', pages: 'ص238-240 / pp.238-240' },
+      ],
+    },
+  ],
+  sources: [
+    { book: 'SWE', section: 'swe.ch9.s3', pages: 'ص238-240 / pp.238-240' },
+  ],
+} satisfies Lesson;
+
+export default lesson;

@@ -1,0 +1,292 @@
+[
+ {
+  "lesson": "py4e.ch7.l1",
+  "id": "ex1.open-read",
+  "solution": "out = open('mbox-l1.txt', 'w')\nout.write('Hello py4e\\n')\nout.write('Files are fun\\n')\nout.close()\nfhand = open('mbox-l1.txt')\ndata = fhand.read()\nfhand.close()\nprint(data)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "data تحوي السطرين كاملين",
+     "en": "data holds both complete lines"
+    },
+    "code": "assert data == 'Hello py4e\\nFiles are fun\\n', 'expected: two full lines | actual: %r' % data",
+    "expected": "Hello py4e / Files are fun"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع السطر الثاني",
+     "en": "The second line is printed"
+    },
+    "code": "assert 'Files are fun' in __learner_output__, ('expected: Files are fun | actual: %r' % __learner_output__)",
+    "expected": "Files are fun"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الملف نفسه سليم في الذاكرة",
+     "en": "The file itself is intact in memory"
+    },
+    "code": "chk = open('mbox-l1.txt')\ncontent = chk.read()\nchk.close()\nassert content == 'Hello py4e\\nFiles are fun\\n', 'expected: file content preserved | actual: %r' % content",
+    "expected": "file content preserved"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch7.l2",
+  "id": "ex1.read-count",
+  "solution": "out = open('notes-l2.txt', 'w')\nout.write('ab\\n')\nout.write('cd\\n')\nout.close()\nfhand = open('notes-l2.txt')\ndata = fhand.read()\nfhand.close()\nprint(len(data))\nprint(data)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "data تساوي ab وcd مع محرفي سطر جديد",
+     "en": "data equals ab and cd with two newlines"
+    },
+    "code": "assert data == 'ab\\ncd\\n', 'expected: ab\\ncd\\n | actual: %r' % data",
+    "expected": "ab / cd"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع عدد المحارف 6",
+     "en": "The character count 6 is printed"
+    },
+    "code": "assert '6' in __learner_output__, ('expected: 6 | actual: %r' % __learner_output__)",
+    "expected": "6"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الملف محفوظ في الذاكرة كما كُتب",
+     "en": "The file is stored in memory as written"
+    },
+    "code": "chk = open('notes-l2.txt')\ncontent = chk.read()\nchk.close()\nassert content == 'ab\\ncd\\n', 'expected: file intact | actual: %r' % content",
+    "expected": "file intact"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch7.l3",
+  "id": "ex1.spam-average",
+  "solution": "out = open('spamconf.txt', 'w')\nout.write('From: sara@x.com\\n')\nout.write('X-DSPAM-Confidence: 0.8475\\n')\nout.write('Subject: hello\\n')\nout.write('X-DSPAM-Confidence: 0.6178\\n')\nout.close()\nfhand = open('spamconf.txt')\ntotal = 0\ncount = 0\nfor line in fhand:\n    line = line.rstrip()\n    if not line.startswith('X-DSPAM-Confidence:'):\n        continue\n    pos = line.find(':')\n    piece = line[pos + 2:]\n    try:\n        value = float(piece)\n    except:\n        print('Cannot parse:', piece)\n        continue\n    total = total + value\n    count = count + 1\nfhand.close()\nprint('count:', count)\nprint('average:', round(total / count, 5))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "عدد سطور الثقة 2",
+     "en": "Two confidence lines counted"
+    },
+    "code": "assert count == 2, 'expected: 2 | actual: %r' % count",
+    "expected": "2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "مجموع القيمتين 1.4653 تقريبًا",
+     "en": "The two values sum to 1.4653"
+    },
+    "code": "assert abs(total - 1.4653) < 0.0001, 'expected: 1.4653 | actual: %r' % total",
+    "expected": "1.4653"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "يُطبع العدّ والمتوسط الموقّعان",
+     "en": "The labeled count and average are printed"
+    },
+    "code": "assert 'count: 2' in __learner_output__ and 'average: 0.73265' in __learner_output__, ('expected: count: 2, average: 0.73265 | actual: %r' % __learner_output__)",
+    "expected": "count: 2 / average: 0.73265"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch7.l4",
+  "id": "ex1.typed-count",
+  "solution": "out = open('inbox.txt', 'w')\nout.write('Subject: py4e\\n')\nout.write('From: sara@x.com\\n')\nout.write('Subject: files\\n')\nout.close()\ntyped = 'inbox.txt'\nfhand = open(typed)\ncount = 0\nfor line in fhand:\n    if line.startswith('Subject:'):\n        count = count + 1\nfhand.close()\nprint('There were', count, 'subject lines in', typed)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "count يساوي 2",
+     "en": "count equals 2"
+    },
+    "code": "assert count == 2, 'expected: 2 | actual: %r' % count",
+    "expected": "2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع التقرير الموقّع كاملاً",
+     "en": "The full labeled report is printed"
+    },
+    "code": "assert 'There were 2 subject lines in inbox.txt' in __learner_output__, ('expected: There were 2 subject lines in inbox.txt | actual: %r' % __learner_output__)",
+    "expected": "There were 2 subject lines in inbox.txt"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "اسم الملف في متغيّر لا في شيفرة ثابتة",
+     "en": "The file name lives in a variable, not fixed code"
+    },
+    "code": "assert typed == 'inbox.txt', 'expected: inbox.txt | actual: %r' % typed",
+    "expected": "inbox.txt"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch7.l4",
+  "id": "ex4.two-files",
+  "solution": "out = open('good.txt', 'w')\nout.write('ready\\n')\nout.close()\nfor fname in ['good.txt', 'missing.txt']:\n    try:\n        fhand = open(fname)\n    except:\n        print('File cannot be opened:', fname)\n        continue\n    print(fname, 'opened')\n    fhand.close()",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الملف الجيد أُعلن مفتوحًا",
+     "en": "The good file is announced opened"
+    },
+    "code": "assert 'good.txt opened' in __learner_output__, ('expected: good.txt opened | actual: %r' % __learner_output__)",
+    "expected": "good.txt opened"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "الملف الغائب رُفض برسالة أنيقة",
+     "en": "The missing file is refused gracefully"
+    },
+    "code": "assert 'File cannot be opened: missing.txt' in __learner_output__, ('expected: File cannot be opened: missing.txt | actual: %r' % __learner_output__)",
+    "expected": "File cannot be opened: missing.txt"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "لا تتبع أخطاء — البرنامج اكتمل",
+     "en": "No traceback — the program completed"
+    },
+    "code": "lines = [l for l in __learner_output__.splitlines() if l.strip()]\nassert len(lines) == 2, 'expected: exactly 2 output lines | actual: %r' % __learner_output__",
+    "expected": "exactly 2 output lines"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch7.l5",
+  "id": "ex1.write-reread",
+  "solution": "out = open('letter.txt', 'w')\nout.write('Dear py4e\\n')\nout.write('Files rock\\n')\nout.close()\nfhand = open('letter.txt')\ndata = fhand.read()\nfhand.close()\nprint(data)\nprint(len(data))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "data يحمل السطرين كاملين",
+     "en": "data carries both complete lines"
+    },
+    "code": "assert data == 'Dear py4e\\nFiles rock\\n', 'expected: Dear py4e\\nFiles rock\\n | actual: %r' % data",
+    "expected": "Dear py4e / Files rock"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "يُطبع عدد المحارف 21",
+     "en": "The character count 21 is printed"
+    },
+    "code": "assert '21' in __learner_output__, ('expected: 21 | actual: %r' % __learner_output__)",
+    "expected": "21"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "إعادة قراءة الملف من الذاكرة تؤكد الكتابة",
+     "en": "Re-reading the file from memory confirms the write"
+    },
+    "code": "chk = open('letter.txt')\ncontent = chk.read()\nchk.close()\nassert content == 'Dear py4e\\nFiles rock\\n', 'expected: file holds both lines | actual: %r' % content",
+    "expected": "file holds both lines"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch7.l6",
+  "id": "ex2.file-notebook",
+  "solution": "notes = ['note one\\n', 'files in memory\\n', 'note three\\n', 'files again\\n']\nout = open('notebook.txt', 'w')\nfor note in notes:\n    out.write(note)\nout.close()\nfhand = None\ntry:\n    fhand = open('notebook.txt')\nexcept:\n    print('File cannot be opened: notebook.txt')\nif fhand is not None:\n    lines = 0\n    chars = 0\n    hits = 0\n    for line in fhand:\n        lines = lines + 1\n        chars = chars + len(line)\n        if 'files' in line:\n            hits = hits + 1\n    fhand.close()\n    print('lines: %d' % lines)\n    print('chars: %d' % chars)\n    print('keyword hits: %d' % hits)",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "lines يساوي 4",
+     "en": "lines equals 4"
+    },
+    "code": "assert lines == 4, 'expected: 4 | actual: %r' % lines",
+    "expected": "4"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "chars يساوي 48",
+     "en": "chars equals 48"
+    },
+    "code": "assert chars == 48, 'expected: 48 | actual: %r' % chars",
+    "expected": "48"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "hits يساوي 2",
+     "en": "hits equals 2"
+    },
+    "code": "assert hits == 2, 'expected: 2 | actual: %r' % hits",
+    "expected": "2"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "التقرير مطبوع بثلاثة أسطر موقّعة بعامل %",
+     "en": "The report prints as three %-formatted labeled lines"
+    },
+    "code": "assert 'lines: 4' in __learner_output__ and 'chars: 48' in __learner_output__ and 'keyword hits: 2' in __learner_output__, ('expected: lines: 4, chars: 48, keyword hits: 2 | actual: %r' % __learner_output__)",
+    "expected": "lines: 4 / chars: 48 / keyword hits: 2"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "الملف نفسه يحوي الملاحظات الأربع",
+     "en": "The file itself holds the four notes"
+    },
+    "code": "chk = open('notebook.txt')\ncontent = chk.read()\nchk.close()\nassert content == ''.join(notes), 'expected: file mirrors the notes list | actual: %r' % content",
+    "expected": "file mirrors the notes list"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch7.l6",
+  "id": "ex5.debug-reopen-w",
+  "solution": "notes = ['first note\\n', 'second note\\n']\nout = open('mybook.txt', 'w')\nfor note in notes:\n    out.write(note)\nout.close()\n\nfhand = open('mybook.txt')\ndata = fhand.read()\nfhand.close()\nprint('chars: %d' % len(data))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "data يحمل الملاحظتين كاملتين",
+     "en": "data carries both complete notes"
+    },
+    "code": "assert data == 'first note\\nsecond note\\n', 'expected: both notes | actual: %r' % data",
+    "expected": "first note / second note"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "التقرير يطبع chars: 23",
+     "en": "The report prints chars: 23"
+    },
+    "code": "assert 'chars: 23' in __learner_output__, ('expected: chars: 23 | actual: %r' % __learner_output__)",
+    "expected": "chars: 23"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الملف نفسه احتفظ بالملاحظات",
+     "en": "The file itself kept the notes"
+    },
+    "code": "chk = open('mybook.txt')\ncontent = chk.read()\nchk.close()\nassert content == 'first note\\nsecond note\\n', 'expected: file intact | actual: %r' % content",
+    "expected": "file intact"
+   }
+  ]
+ }
+]

@@ -1,0 +1,133 @@
+[
+ {
+  "lesson": "swe.ch7.l1",
+  "id": "ex1.layer-walk",
+  "solution": "def data_layer(query):\n    rows = {\"appts\": 3, \"bills\": 5}\n    return \"data->rows=\" + str(rows[query])\n\ndef logic_layer(query):\n    return \"logic->\" + data_layer(query)\n\ndef ui_layer(query):\n    return \"ui->\" + logic_layer(query)\n\nprint(ui_layer(\"appts\"))\n",
+  "tests": [
+   {
+    "id": "walk-output",
+    "name": {
+     "ar": "مسار الطلب كامل عبر الطبقات",
+     "en": "full walk output through the layers"
+    },
+    "code": "assert 'ui->logic->data->rows=3' in __learner_output__, 'expected: ui->logic->data->rows=3 | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "logic-layer-direct",
+    "name": {
+     "ar": "الطبقة الوسطى تعمل وحدها",
+     "en": "middle layer works on its own"
+    },
+    "code": "assert logic_layer(\"bills\") == 'logic->data->rows=5', 'expected: logic->data->rows=5 | actual: %r' % logic_layer(\"bills\")"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch7.l2",
+  "id": "ex1.mvc-cart",
+  "solution": "model = {\"items\": 0}\n\ndef render(m):\n    return \"cart: items=\" + str(m[\"items\"])\n\ndef controller(m, events):\n    for e in events:\n        if e == \"add\":\n            m[\"items\"] += 1\n        elif e == \"remove\":\n            m[\"items\"] -= 1\n        print(render(m))\n\ncontroller(model, [\"add\", \"add\", \"remove\"])\n",
+  "tests": [
+   {
+    "id": "renders-after-each",
+    "name": {
+     "ar": "رسم بعد كل حدث",
+     "en": "renders after each event"
+    },
+    "code": "assert 'cart: items=1' in __learner_output__ and 'cart: items=2' in __learner_output__, 'expected: cart: items=1..2 lines | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "final-state",
+    "name": {
+     "ar": "حالة النموذج النهائية",
+     "en": "final model state"
+    },
+    "code": "assert model[\"items\"] == 1, 'expected: model[items] == 1 | actual: %r' % model[\"items\"]"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch7.l3",
+  "id": "ex1.pipeline",
+  "solution": "NUMS = [1, 2, 3, 4, 5, 6]\n\ndef keep_evens(xs):\n    return [x for x in xs if x % 2 == 0]\n\ndef double(xs):\n    return [x * 2 for x in xs]\n\ndef total(xs):\n    return sum(xs)\n\nstage1 = keep_evens(NUMS)\nstage2 = double(stage1)\nstage3 = total(stage2)\nprint(\"evens:\", stage1)\nprint(\"doubled:\", stage2)\nprint(\"total:\", stage3)\n",
+  "tests": [
+   {
+    "id": "stage1-evens",
+    "name": {
+     "ar": "مرحلة الترشيح",
+     "en": "filter stage"
+    },
+    "code": "assert 'evens: [2, 4, 6]' in __learner_output__, 'expected: evens: [2, 4, 6] | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "stage2-double",
+    "name": {
+     "ar": "مرحلة التحويل",
+     "en": "map stage"
+    },
+    "code": "assert 'doubled: [4, 8, 12]' in __learner_output__, 'expected: doubled: [4, 8, 12] | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "stage3-total",
+    "name": {
+     "ar": "مرحلة التجميع",
+     "en": "aggregate stage"
+    },
+    "code": "assert 'total: 24' in __learner_output__, 'expected: total: 24 | actual: %r' % __learner_output__"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch7.l4",
+  "id": "ex1.pattern-catalog",
+  "solution": "RULES = [\n    (\"pipe-filter\", (\"stream\",)),\n    (\"client-server\", (\"shared\", \"remote\")),\n    (\"mvc\", (\"ui\",)),\n]\n\nSCENARIOS = [\n    (\"S1\", {\"stream\": True, \"ui\": False, \"shared\": False, \"remote\": False}),\n    (\"S2\", {\"shared\": True, \"remote\": True, \"stream\": False, \"ui\": False}),\n    (\"S3\", {\"ui\": True, \"stream\": False, \"shared\": False, \"remote\": False}),\n]\nEXPECTED = {\"S1\": \"pipe-filter\", \"S2\": \"client-server\", \"S3\": \"mvc\"}\n\ndef select(traits):\n    for name, needs in RULES:\n        if all(traits.get(t, False) for t in needs):\n            return name\n    return \"layered\"\n\nhits = 0\nfor sid, traits in SCENARIOS:\n    pick = select(traits)\n    print(sid + \": \" + str(pick))\n    if pick == EXPECTED[sid]:\n        hits += 1\nprint(\"matched: %d/%d\" % (hits, len(SCENARIOS)))\n",
+  "tests": [
+   {
+    "id": "s1-s2-verdicts",
+    "name": {
+     "ar": "أحكام السيناريوهين الأولين",
+     "en": "first two scenario verdicts"
+    },
+    "code": "assert 'S1: pipe-filter' in __learner_output__ and 'S2: client-server' in __learner_output__, 'expected: S1: pipe-filter + S2: client-server | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "s3-verdict",
+    "name": {
+     "ar": "حكم السيناريو الثالث",
+     "en": "third scenario verdict"
+    },
+    "code": "assert 'S3: mvc' in __learner_output__, 'expected: S3: mvc | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "full-match",
+    "name": {
+     "ar": "مطابقة كاملة",
+     "en": "full match rate"
+    },
+    "code": "assert 'matched: 3/3' in __learner_output__, 'expected: matched: 3/3 | actual: %r' % __learner_output__"
+   }
+  ]
+ },
+ {
+  "lesson": "swe.ch7.l4",
+  "id": "ex5.debug-wrong-layer",
+  "solution": "RULES = [\n    (\"pipe-filter\", (\"stream\",)),\n    (\"client-server\", (\"shared\", \"remote\")),\n    (\"mvc\", (\"ui\",)),\n]\n\ndef select(traits):\n    for name, needs in RULES:\n        if all(traits.get(t, False) for t in needs):\n            return name\n    return \"layered\"\n\nSCENARIOS = [\n    (\"S1\", {\"stream\": True, \"ui\": False, \"shared\": False, \"remote\": False}),\n    (\"S2\", {\"shared\": True, \"remote\": True, \"stream\": False, \"ui\": False}),\n    (\"S3\", {\"ui\": True, \"stream\": False, \"shared\": False, \"remote\": False}),\n]\nEXPECTED = {\"S1\": \"pipe-filter\", \"S2\": \"client-server\", \"S3\": \"mvc\"}\n\nhits = 0\nfor sid, traits in SCENARIOS:\n    pick = select(traits)\n    print(sid + \": \" + pick)\n    if pick == EXPECTED[sid]:\n        hits += 1\nprint(\"matched: %d/%d\" % (hits, len(SCENARIOS)))\n",
+  "tests": [
+   {
+    "id": "s1-fixed-verdict",
+    "name": {
+     "ar": "حكم S1 بعد الإصلاح",
+     "en": "S1 verdict after the fix"
+    },
+    "code": "assert 'S1: pipe-filter' in __learner_output__, 'expected: S1: pipe-filter | actual: %r' % __learner_output__"
+   },
+   {
+    "id": "full-match-fixed",
+    "name": {
+     "ar": "مطابقة كاملة بعد الإصلاح",
+     "en": "full match rate after the fix"
+    },
+    "code": "assert 'matched: 3/3' in __learner_output__, 'expected: matched: 3/3 | actual: %r' % __learner_output__"
+   }
+  ]
+ }
+]

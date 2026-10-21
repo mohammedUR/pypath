@@ -1,0 +1,332 @@
+    24→14.1 SaaS and the Cloud
+    25→14.1.1 From Shipped Artifact to Running Service
+    26→For most of software history, delivering software meant producing an artifact — a binary on tape, a shrink-
+    27→wrapped CD, an installer download — that customers took away and ran on their machines. The vendor’s job
+    28→ended at the factory gate. Under that model, releases are naturally rare and heavy: every artifact that leaves the
+    29→building is effectively unpatchable for months, so it must be as close to perfect as testing can make it, and
+    30→mistakes are answered with recalls, patch disks, and support calls.
+    31→
+    32→===== صفحة الكتاب 376 =====
+    33→Software as a service (SaaS) inverts the arrangement: the software runs on machines the vendor controls, and
+    34→users reach it over the network, usually through a browser or a thin client. In its pure form, nothing ships. That
+    35→single change rearranges almost everything downstream. The provider controls what runs in production —
+    36→canaries, staged rollouts, and feature flags may briefly mix versions, but there is no museum of old customer
+    37→installs to support. The vendor can observe actual usage through logs, errors, and performance data, reducing its
+    38→dependence on support reports. And because the vendor owns the machines, an update is an internal operation
+    39→rather than a request to thousands of customers: it can happen at any time, invisibly, many times a day.
+    40→Customers also benefit from the move toward SaaS: their data lives on the service, so a stolen laptop or a dead
+    41→phone loses a device, not the work; several people can collaborate on the same data at once instead of emailing
+    42→copies back and forth; and datasets that are large or constantly changing can live in one central, managed place
+    43→rather than being squeezed onto whatever machine each user happens to own. For a whole class of applications —
+    44→shared documents, shared calendars, anything with one truth that many people touch — the service model is both
+    45→cheaper to operate and a better product.
+    46→On the user’s side of the wire, the near-universal thin client is the browser: a program every device already has,
+    47→speaking a front-end stack of HTML for the document’s structure, CSS for its presentation, and JavaScript for
+    48→behavior that runs on the client — while the server side can be written in whatever language the team prefers,
+    49→because the browser never sees it. Native mobile apps are the sibling front end, trading the browser’s universality
+    50→for tighter platform integration; either way, the architecture is the same service behind a thin client.
+    51→14.1.2 Multi-Tenancy and Horizontal Scaling
+    52→Running the software yourself raises a design question: does each customer get their own copy? In a multi-tenant
+    53→design, one running instance of the system serves many customers — tenants — whose data is kept logically
+    54→separate inside shared infrastructure. Multi-tenancy is what makes SaaS economical: one fleet, one deployment,
+    55→one upgrade for everyone, with the cost of operations amortized across all tenants. The price is that isolation
+    56→becomes a software problem. A bug that leaks one tenant’s data to another, or one tenant’s heavy load that starves
+    57→the rest (the “noisy neighbor”), are failure modes a shipped artifact simply could not have.
+    58→Serving many tenants also means serving unpredictable load, and the cloud’s answer is horizontal scaling:
+    59→instead of buying a bigger machine (vertical scaling), you run more copies of the same service behind a load
+    60→balancer and add or remove copies as demand moves. Horizontal scaling only works cleanly if any copy can serve
+    61→any request — which is exactly why the statelessness convention of RESTful design matters (§7.5.4). A service
+    62→that keeps per-client session state on one server has silently welded each user to that server; a stateless one lets the
+    63→platform treat servers as interchangeable, replaceable cattle. Architecture decisions from Chapter 7 are, it turns
+    64→out, delivery decisions too.
+    65→
+    66→===== صفحة الكتاب 377 =====
+    67→14.1.3 What the Cloud Does to the Iron Triangle
+    68→Recall the iron triangle of Chapter 1 (§1.5): scope, schedule, and cost constrain each other, and the classic pressure
+    69→point was the release date — a single, high-stakes deadline toward which scope was cut and quality was crunched.
+    70→SaaS dissolves that pressure point. When deploying is cheap and continuous, release stops being an event and
+    71→becomes a decision — a small, revocable, per-feature decision made many times a week. You no longer ask
+    72→“what can we finish by the ship date?” but “is this one change ready to meet users now?” Schedule pressure does
+    73→not vanish; it decomposes into many tiny pressures, each too small to justify heroics.
+    74→That is the economic root of the deploy-early culture. Teams that deploy each small change as it is finished get
+    75→feedback while the change is still fresh in their heads, keep the gap between “works on my machine” and “works
+    76→in production” permanently small, and never build up a terrifying pile of unreleased work whose first contact with
+    77→reality is a big bang — the same pathology, at the release level, that §2.4.1 diagnosed at the integration level. The
+    78→practices in the remainder of this chapter reduce the risk of early deployment.
+    79→14.1.4 The Cloud Landscape: Providers, Components, and Responsibility
+    80→The vendor-controlled machines of §14.1.1 have to live somewhere, and today they mostly live in a public cloud:
+    81→vast provider-owned datacenters whose capacity is rented out over the network, by the hour or by the request. As
+    82→of 2025, the market is led by Amazon Web Services (AWS), Google Cloud, and Microsoft Azure, with a long tail
+    83→of smaller providers — DigitalOcean, Linode, Hetzner — that trade breadth of catalog for simplicity and price.1
+    84→Hold the names loosely: provider names and product lists date quickly, but the concepts beneath them do not.
+    85→Every cloud, whatever its branding, sells the same four component families. Compute is processing capacity —
+    86→virtual machines, containers, or functions that run your code. Storage is durable data — disks, object stores,
+    87→managed databases. Network is the plumbing — private networks, load balancers, DNS — that lets those pieces
+    88→reach each other and the world. And security and identity is the control plane over the other three: who, and
+    89→which programs, may do what to which resources.
+    90→The cloud’s economic promise is threefold. You pay only for what you use, turning a large up-front hardware
+    91→purchase into a metered utility bill. You can place your system in regions around the world, near your users,
+    92→without signing a lease on another continent. And the hardware is someone else’s problem — provisioning, failed
+    93→disks, power, cooling, and physical security are all handled below the waterline of the service you rent.
+    94→What the provider explicitly does not handle is captured by the shared responsibility model: the provider secures
+    95→the cloud — the facilities, the hardware, the hypervisor — while you secure what is in it — your operating-system
+    96→configuration, your code, your data, and who can access all three.2 This is a legal line as much as a practical one,
+    97→and teams forget it at their peril: a world-readable storage bucket full of customer records is your breach, however
+    98→secure the datacenter around it was.
+    99→None of this makes the cloud automatic. The alternatives — on-premises servers you own, or rented space and
+   100→machines in a shared datacenter (co-location) — never went away, and the honest question is when each wins.
+   101→
+   102→===== صفحة الكتاب 378 =====
+   103→Cloud makes clear sense when you do not yet know what hardware you need, when demand is spiky or
+   104→unpredictable (provision for the spike and pay for it forever, or scale for the hour it lasts), when speed to a first
+   105→MVP matters more than unit cost, and when a small team has no one to spare for operations.
+   106→Case study. Cloud repatriation. The trade cuts the other way, too. In 2022–23, 37signals — the company
+   107→behind Basecamp — publicly moved its products off the cloud and onto purchased hardware, documenting
+   108→seven-figure annual savings for workloads that were steady and predictable rather than spiky.3 4 And
+   109→Amazon’s own Prime Video team published an account of cutting the cost of one audio/video monitoring
+   110→service by roughly 90 percent — by moving it away from a serverless, distributed-microservices design and
+   111→back into a monolith-style process.5 None of this means the cloud is over. The cloud is a cost-and-flexibility
+   112→trade, not an axiom. Elastic, uncertain load is where renting wins; steady, predictable load is where owning
+   113→wins. Run the numbers, not the fashion.
+   114→14.1.5 Containers, Clusters, and Kubernetes
+   115→The unit of cloud deployment that has won in practice is the container: a package containing an application plus
+   116→everything it needs to run — language runtime, libraries, configuration — isolated from other software on the
+   117→same machine while sharing the host operating system’s kernel. Sharing the kernel is what distinguishes a
+   118→container from a virtual machine, which carries an entire guest operating system of its own: a container starts in
+   119→seconds rather than minutes, and a single host can run dozens of them.6 The container image is the immutable,
+   120→versioned artifact that a CI pipeline (§14.2.2) builds exactly once and then deploys everywhere — the same byte-
+   121→for-byte thing on a laptop, in the test environment, and in production, which retires “works on my machine” as a
+   122→category of excuse.
+   123→One host is rarely enough, so containers are run on a cluster: a set of network-connected machines managed as a
+   124→single pool of compute, storage, and memory. And the de-facto standard software for managing that pool is
+   125→Kubernetes (84% of organizations in CNCF’s 2023 survey were using or evaluating it), often described as the
+   126→operating system for the cloud: just as an OS schedules processes onto CPU cores, Kubernetes schedules
+   127→containers onto the machines of a cluster.7 Around that core job it handles ingress (routing incoming traffic to the
+   128→right containers), scaling the number of running copies up and down with demand, restarting containers that crash
+   129→or fail health checks, and attaching storage to containers that need it — the operational chores of §14.1.2’s
+   130→horizontal scaling, automated.
+   131→One caveat: Kubernetes earns its considerable complexity at fleet scale. For a small team — certainly for a class
+   132→project — a single container on one host, or a platform-as-a-service that runs your container for you, delivers most
+   133→of the benefit at a small fraction of the operational cost. Learn what Kubernetes is for; reach for it when you have
+   134→the problem it solves.
+   135→
+   136→===== صفحة الكتاب 379 =====
+   137→14.1.6 Distributed Trade-Offs: The CAP Theorem
+   138→Horizontal scaling (§14.1.2) eventually reaches the data layer, and the moment state is replicated — living on
+   139→more than one machine — a hard theoretical limit applies. Eric Brewer’s CAP theorem concerns three properties
+   140→of a distributed data system: consistency (every read sees the most recent write), availability (every request
+   141→receives a response), and partition tolerance (the system keeps operating when the network splits and some
+   142→machines cannot reach others).8 Its real content is narrower than the popular “pick two of three”: in the presence
+   143→of a partition, a replicated system cannot guarantee both strong consistency and availability, so for that data it
+   144→must choose which of the two to weaken until the network heals.9
+   145→Since partitions are a fact of real networks — switches fail, cables get cut, datacenters lose connectivity —
+   146→partition tolerance is not really optional, and the practical content of the theorem is a forced choice during a
+   147→partition: consistency or availability. A replica that cannot reach the others can either refuse to answer (staying
+   148→consistent but unavailable) or answer from possibly stale data (staying available but inconsistent). Which to
+   149→sacrifice is a requirements question, not a technical one. A bank chooses consistency: better to refuse service for a
+   150→minute than to show two customers different balances for the same account. A social feed chooses availability: a
+   151→like count that is a few seconds stale harms no one, but an unreachable feed is a product failure.
+   152→System
+   153→Under partition, it keeps…
+   154→What users see
+   155→Bank ledger
+   156→Consistency
+   157→Brief “service unavailable” — never a wrong balance
+   158→Social feed
+   159→Availability
+   160→The feed always loads; counts may lag and converge later
+   161→The theorem is why architecture and delivery keep meeting in this chapter: the shared-data pattern (§7.2.1) put
+   162→one authoritative store at the center of a system, and scaling that store horizontally (§14.1.2) replicates it — at
+   163→which point CAP stops being theory and becomes a decision your team must make on purpose, per feature, with
+   164→the requirements in hand.
+   165→14.2 Continuous Integration Pipelines
+   166→Chapter 2 introduced continuous integration (CI) as an XP engineering practice: everyone merges into a shared
+   167→mainline many times a day, and an automated build-and-test run verifies each merge (§2.3.4). That definition told
+   168→you what CI is and why it exists — to surface integration mismatches one small change at a time instead of all at
+   169→once. This section goes deeper: what the automation actually consists of, what branching discipline it demands,
+   170→and what social contract makes it work.
+   171→14.2.1 Trunk-Based Development
+   172→CI is first a branching policy, and only second a server. In trunk-based development, the whole team commits to
+   173→a single shared mainline (the trunk), directly or through short-lived branches that live hours to a couple of days
+   174→
+   175→===== صفحة الكتاب 380 =====
+   176→before merging. The alternative — long-lived feature branches, where each developer or feature camps on its
+   177→own branch for weeks — feels safer because nobody’s half-done work disturbs anyone else. But the safety is an
+   178→illusion with interest due at merge time: the longer two branches evolve apart, the more their eventual merge
+   179→resembles the big-bang integration of §2.4.1, with conflicting assumptions surfacing all at once, weeks after they
+   180→were made.
+   181→Integration becomes more difficult as branches diverge, and divergence increases with time. Trunk-based
+   182→development keeps divergence permanently small by construction. Merging several times a day means each merge
+   183→carries at most a few hours of divergence — small enough that conflicts are rare, and trivial when they occur. The
+   184→obvious objection — “how do I commit work that isn’t finished?” — has a standard answer you will meet in
+   185→§14.3.3: hide unfinished work behind a feature flag so it can be integrated without being released. Integration
+   186→and release become independent decisions, which is one of the most useful separations in this whole chapter.
+   187→14.2.2 The Stages of a Pipeline
+   188→A CI pipeline is the automated gauntlet every commit runs before it is declared good. The pipeline is where
+   189→earlier chapters’ verification techniques stop being activities a diligent person might perform and become gates no
+   190→change can skip. A typical pipeline runs stages in increasing order of cost, failing fast on the cheap ones:
+   191→
+   192→===== صفحة الكتاب 381 =====
+   193→Take the stages in order. The build proves the change even compiles and its dependencies resolve — the cheapest
+   194→possible check, so it runs first. Static checks run the automated analysis of Chapter 9 (§9.4) — linters, type
+   195→checkers, style and bug-pattern analyzers — catching whole classes of defects without executing a line. Then the
+   196→tests by level from Chapter 10 run in pyramid order: unit tests first because they are fast and localize failures
+   197→precisely, then integration, then a thin layer of end-to-end tests. If everything passes, the pipeline produces a
+   198→versioned artifact — a container image, a package, a binary — that is stored and never rebuilt. This last rule
+   199→matters more than it looks: the artifact you tested is byte-for-byte the artifact you will deploy. Rebuilding “the
+   200→same code” later invites the possibility that a changed compiler, dependency, or build machine produces
+   201→something subtly different from what passed the tests. Mature pipelines add one more gate on the far side of
+   202→deployment itself: a smoke-test stage — a fast is-it-alive check (does the service start, answer a trivial request,
+   203→
+   204→===== صفحة الكتاب 382 =====
+   205→reach its database?) run against the newly deployed version, gating the rollout before real traffic widens onto it
+   206→(the testing levels these stages draw on are Chapter 10’s).
+   207→14.2.3 Broken-Build Discipline
+   208→A pipeline is only as good as the team’s response when it turns red. The working culture of CI rests on a small
+   209→social contract. First, a red mainline is everyone’s emergency: when the trunk build breaks, fixing it (or
+   210→reverting the breaking commit) takes priority over new work, because every hour the build stays red, every other
+   211→developer is either blocked or building on sand. Second, never commit onto a broken build — you would be
+   212→stacking unverified change on unverified change, exactly the divergence CI exists to prevent. Third, do not leave
+   213→a broken build overnight; revert if you cannot fix quickly. Reverting is not an insult. It is the cheap, always-
+   214→available path back to a known-good state, and teams that treat it as routine stay green far more than teams that
+   215→treat it as defeat.
+   216→A broken build interrupts the entire team’s work and should be treated as an urgent operational problem. While it
+   217→is green, every developer has a continuous, machine-checked guarantee that the shared codebase works and can
+   218→build on top of it; while it is red, nobody knows whether the system works, and restoring it comes before other
+   219→work.
+   220→Pitfall. The flaky test. A test that fails intermittently without a code change is more corrosive than a test that
+   221→always fails, because it teaches the team to ignore red. Once “just re-run it, that one’s flaky” enters the
+   222→vocabulary, the build has become a slot machine, and real failures start slipping through on the same shrug.
+   223→Quarantine flaky tests immediately, fix or delete them promptly, and treat their existence as a defect in the
+   224→suite. §10.2.4 catalogs the usual causes — races, shared state, order dependence, unstable externals — and
+   225→their fixes.
+   226→14.2.4 Keeping Pipelines Fast
+   227→Pipeline speed is a hard constraint, not a convenience. Developers are supposed to merge several times a day and
+   228→to wait for green before moving on. If the pipeline takes an hour, they will not wait — they will batch up bigger
+   229→changes to amortize the wait, which re-creates the large, risky merges CI exists to eliminate. A useful target is
+   230→roughly ten minutes from push to verdict for the merge-blocking stages.10
+   231→Achieving that is the testing pyramid of §10.2.4 applied as an engineering budget: push checks down the pyramid,
+   232→where they are fast, and keep the slow end-to-end layer thin. Beyond that, run independent stages in parallel,
+   233→cache dependencies and build outputs so unchanged parts are not rebuilt, and split the pipeline into a fast merge-
+   234→blocking core plus deeper suites (full end-to-end runs, performance tests, long fuzzing) that run continuously
+   235→against the trunk without holding up merges.
+   236→
+   237→===== صفحة الكتاب 383 =====
+   238→Order matters inside the merge-blocking core, too. The pipeline’s verdict arrives when the first test fails, not when
+   239→the last one passes — so run the tests most likely to fail first: the ones nearest the changed code, and the ones that
+   240→have failed most recently. At the largest scale, teams select per change the subset of tests worth running at all — a
+   241→budgeted-selection problem (the knapsack problem in disguise) that §10.1.6 examines, and that industrial CI
+   242→systems implement as predictive test selection. Treat a slow pipeline as a process defect that changes how your
+   243→team behaves, not as a tooling annoyance to live with.
+   244→14.3 Continuous Deployment
+   245→14.3.1 Delivery versus Deployment
+   246→Two similar terms name genuinely different commitments. Continuous delivery means every change that passes
+   247→the pipeline yields an artifact that is proven deployable — the release decision is a business choice, but it is always
+   248→available, at the push of a button, with no additional engineering work. Continuous deployment goes one step
+   249→further: every change that passes the pipeline is deployed to production automatically, with no human in the loop.
+   250→Delivery makes release possible at any moment; deployment makes it actual at every moment.
+   251→Continuous deployment sounds reckless until you notice what it forbids. If every green commit goes to
+   252→production, then there is no such thing as a “safe to merge but not ready to ship” change without a flag, no manual
+   253→pre-release checklist to lean on, and no batching of changes into a big release whose failures cannot be attributed.
+   254→Every safety property must be automated, because automation is all there is. Teams that adopt it report a
+   255→paradoxical result that §14.7 will make precise: deploying more often makes each deployment less risky, because
+   256→each one is smaller, better attributed, and easier to undo.
+   257→14.3.2 Deployment Strategies
+   258→However often you deploy, how you swap new code into a live system determines the blast radius when
+   259→something is wrong. Two infrastructure-level strategies dominate practice; a third approach moves the switch into
+   260→code, and it gets its own section (§14.3.3).
+   261→Blue-green deployment runs two identical production environments. At any moment one (say, blue) serves all
+   262→traffic while the other (green) sits idle. To release, you deploy the new version to the idle environment, verify it
+   263→there against production conditions, then switch the router so all traffic flows to it. The old environment stays
+   264→warm, so if the new version misbehaves, recovery is one router change back. You pay for this in doubled
+   265→infrastructure and in the care demanded by anything stateful: a database schema shared by both environments
+   266→must remain compatible with both versions during the switch.
+   267→Canary deployment releases the new version to a small slice of traffic first — one server, one percent of users,
+   268→one region — and watches error rates, latency, and business metrics before widening. The name comes from the
+   269→caged canary that warned miners of gas: the small exposed population absorbs the harm and sounds the alarm
+   270→
+   271→===== صفحة الكتاب 384 =====
+   272→while the damage is still bounded. Large operators generalize canaries into staged rings: the change rolls to ring
+   273→after ring — internal users, then a small public slice, then broader populations — with automated health checks
+   274→gating each promotion and halting the rollout on regression. The essential idea is progressive exposure: no change
+   275→reaches everyone until it has demonstrably survived contact with someone.
+   276→14.3.3 Feature Flags: Decoupling Deploy from Release
+   277→Blue-green and canary deployments control exposure with infrastructure — routers, server pools, traffic slices. A
+   278→feature flag (or feature toggle) moves the same control into code: a runtime conditional that turns a code path on
+   279→or off without redeploying.11 Deploying and releasing become fully independent acts. A feature’s code can sit in
+   280→production for weeks, dark and disabled, while the team keeps merging; when the moment comes, “releasing” it is
+   281→a configuration change that takes effect in seconds, and un-releasing it is the same change in reverse. This is the
+   282→endpoint of §14.1.3’s argument: release is no longer even a deployment decision — it is a bit you flip.
+   283→Flags are also the standard answer to §14.2.1’s objection (“how do I commit work that isn’t finished?”):
+   284→unfinished work merges to trunk dark and disabled, so integration stays continuous while release waits. In practice
+   285→flags come in a few kinds with very different lifespans, and confusing them is where trouble starts:
+   286→Release flags hide work in progress until it is ready. They should live days to weeks — a release flag whose
+   287→feature has fully rolled out is a deletion you owe.
+   288→Operational flags — including the kill switch — guard risky paths so an operator can disable a
+   289→misbehaving feature instantly, without a deploy. These are deliberately long-lived, few in number, and
+   290→tested like the safety equipment they are.
+   291→Experiment flags split traffic between variants so you can measure a change (the A/B tests your metrics
+   292→chapter made honest — §12.5). They live exactly as long as the experiment.
+   293→Targeting is what makes flags more than an on/off switch: a flag can be on for one user, one tenant, or three
+   294→percent of traffic — a percentage rollout, which is canary deployment’s progressive-exposure idea (§14.3.2)
+   295→implemented in code, with no second environment to pay for.
+   296→In the clinic scheduler, both are one conditional — only the predicate changes:
+   297→
+   298→===== صفحة الكتاب 385 =====
+   299→How does a flip actually reach production? In real systems the flag’s state lives outside the code, in a flag-
+   300→management service — LaunchDarkly and Unleash are common platforms, and open-source flag libraries exist
+   301→for every major language — while the application’s SDK keeps a local, in-memory copy of every flag rule.
+   302→Evaluation happens locally in microseconds, so the hot path never waits on a network call; changes stream to the
+   303→SDKs within seconds of someone flipping the toggle.12 And the failure mode is designed in advance: if the flag
+   304→service becomes unreachable, SDKs keep serving the last configuration they saw — the flag system must never be
+   305→the outage.13
+   306→The practice is older than the tooling. Flickr described running trunk-only development with flags and multiple
+   307→deploys a day back in 2009, in the post that popularized the term feature flipper.14 Facebook’s quasi-continuous
+   308→release keeps many changes “behind our Gatekeeper system,” rolling out code and features independently — “if
+   309→we do find a problem, we can simply switch the gatekeeper off rather than revert back to a previous version or fix
+   310→forward.”15 That sentence is the next section’s economics in miniature: the cheapest rollback is the one that is a
+   311→config flip. And flag management has graduated from house hack to shared infrastructure — OpenFeature, a
+   312→vendor-neutral flag API, is now a CNCF incubating project.16
+   313→None of this is free. Every long-lived flag doubles the configuration space your tests must consider — Chapter
+   314→10’s combinatorial lesson (§10.6) applies directly, so test both states of any flag that will live past a sprint, and at
+   315→least pairwise across flags that interact. And flags demand hygiene because they are so easy to add: every flag
+   316→needs an owner, an intended lifespan, and a removal date, and a retired flag’s code — both the dead branch and
+   317→the conditional — must be deleted promptly. Stale flags are technical debt (§15.5) of an unusually dangerous kind:
+   318→dormant behavior sitting in production, waiting for someone to trip it. The first case study below turned that
+   319→danger from hypothetical to historical.
+   320→from zlib import crc32
+   321→def scheduler_page(user_id, flags):
+   322→if flags["new_scheduler"]:                        # release flag: one bit, everyone
+   323→return render_new(user_id)
+   324→return render_old(user_id)
+   325→def scheduler_page_rollout(user_id, flags):           # same conditional, new predicate
+   326→if crc32(user_id.encode()) % 100 < flags["new_scheduler_pct"]:  # stable bucket 0..99
+   327→return render_new(user_id)
+   328→return render_old(user_id)
+   329→
+   330→===== صفحة الكتاب 386 =====
+   331→Pitfall. Never repurpose an existing flag to control new behavior. The old name still points at whatever code
+   332→the flag used to trigger, and that code is often dormant rather than deleted — Knight Capital’s repurposed
+   333→Power Peg flag (§14.3.5) is the canonical demonstration of what happens when it runs again. Retire the old
+   334→flag, delete its dead code, and mint a new one; flag names are cheap, and the alternative was not.
+   335→14.3.4 Rollback versus Roll-Forward
+   336→When a deployment goes wrong, you have two exits. Rollback returns production to the previous version; roll-
+   337→forward ships a new fix on top of the broken state. Rollback is usually faster and requires no new (unverified)
+   338→code, so mature teams treat it as the default reflex. But a rollback path is a mechanism, and Chapter 10’s lesson
+   339→applies to mechanisms too: an untested rollback is a rumor, not a capability. Version skew can make the old code
+   340→unable to read data the new code wrote; a config change may have accompanied the code; the “previous artifact”
+   341→may no longer exist. Teams that take this seriously rehearse rollback routinely — some by making it the normal
+   342→end of every canary that fails a health check, so the path is exercised weekly rather than discovered during a crisis.
+   343→And some changes cannot be rolled back at all (an irreversible data migration, a security fix you must not un-
+   344→ship), which is why roll-forward speed — how fast your pipeline can carry a one-line fix to production — is itself
+   345→a safety property.
+   346→14.3.5 When Deployment Goes Wrong: Two Case Studies
+   347→The two case studies below are, respectively, the strongest argument on record for deployment automation and the
+   348→strongest argument that automation alone is not safety. They are worth studying closely, and honestly, from the
+   349→primary sources.
+   350→
+   351→===== صفحة الكتاب 387 =====
+   352→Case study. Knight Capital, August 1, 2012. Knight Capital was one of the largest equity market makers in
+   353→the United States. When the New York Stock Exchange launched its Retail Liquidity Program, Knight
+
+[showing lines 24-353 of 1128; use offset=354 with limit to continue reading]

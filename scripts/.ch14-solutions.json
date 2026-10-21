@@ -1,0 +1,267 @@
+[
+ {
+  "lesson": "py4e.ch14.l1",
+  "id": "ex1.build-team",
+  "solution": "team = list()\nteam.append('chuck')\nteam.append('sally')\nteam.append('ana')\nteam.sort()\nprint(team[0])\nprint(team[-1])\nprint(len(team))",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "القائمة مرتبة بأسمائها الثلاثة",
+     "en": "The list is sorted with its three names"
+    },
+    "code": "assert team == ['ana', 'chuck', 'sally'], 'expected: [ana, chuck, sally] | actual: %r' % (team,)",
+    "expected": "[ana, chuck, sally]"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "أول عنصر وآخر عنصر مطبوعان",
+     "en": "First and last element printed"
+    },
+    "code": "assert 'ana' in __learner_output__ and 'sally' in __learner_output__, 'expected: ana then sally | actual: %r' % __learner_output__",
+    "expected": "ana then sally"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الطول 3 مطبوع",
+     "en": "The length 3 printed"
+    },
+    "code": "assert '3' in __learner_output__, 'expected: 3 | actual: %r' % __learner_output__",
+    "expected": "3"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch14.l2",
+  "id": "ex1.first-class",
+  "solution": "class BeatCounter:\n    x = 0\n\n    def beat(self):\n        self.x = self.x + 1\n        print('So far', self.x)\n\nan = BeatCounter()\nan.beat()\nan.beat()",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "an كائن من صنف BeatCounter",
+     "en": "an is an instance of BeatCounter"
+    },
+    "code": "assert isinstance(an, BeatCounter), 'expected: an instance of BeatCounter | actual: %r' % (an,)",
+    "expected": "an instance of BeatCounter"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "العدد وصل 2 بعد استدعاءين",
+     "en": "The count reached 2 after two calls"
+    },
+    "code": "assert an.x == 2, 'expected: 2 | actual: %r' % (an.x,)",
+    "expected": "2"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "السطران مطبوعان بترتيبهما",
+     "en": "Both lines printed in order"
+    },
+    "code": "assert 'So far 1' in __learner_output__ and 'So far 2' in __learner_output__, 'expected: So far 1 / So far 2 | actual: %r' % __learner_output__",
+    "expected": "So far 1 / So far 2"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch14.l3",
+  "id": "ex1.ticket-class",
+  "solution": "class Ticket:\n    def __init__(self, code):\n        self.code = code\n\n    def show(self):\n        print('Ticket: %s' % self.code)\n\nt = Ticket('A17')\nt.show()",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الكود مخزن على الكائن",
+     "en": "The code stored on the object"
+    },
+    "code": "assert t.code == 'A17', 'expected: A17 | actual: %r' % (t.code,)",
+    "expected": "A17"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "t نسخة من Ticket",
+     "en": "t is an instance of Ticket"
+    },
+    "code": "assert isinstance(t, Ticket), 'expected: an instance of Ticket | actual: %r' % (t,)",
+    "expected": "an instance of Ticket"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "السطر المنسق مطبوع",
+     "en": "The formatted line printed"
+    },
+    "code": "assert 'Ticket: A17' in __learner_output__, 'expected: Ticket: A17 | actual: %r' % __learner_output__",
+    "expected": "Ticket: A17"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch14.l4",
+  "id": "ex1.independent-counters",
+  "solution": "class Counter:\n    def __init__(self, tag):\n        self.tag = tag\n        self.n = 0\n\n    def tick(self):\n        self.n = self.n + 1\n        print(self.tag, self.n)\n\na = Counter('red')\nb = Counter('blue')\na.tick()\nb.tick()\na.tick()",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "عداد a وصل 2",
+     "en": "The counter of a reached 2"
+    },
+    "code": "assert a.n == 2, 'expected: 2 | actual: %r' % (a.n,)",
+    "expected": "2"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "عداد b ما زال 1 — استقلال الحالة",
+     "en": "The counter of b stayed at 1 — independent state"
+    },
+    "code": "assert b.n == 1, 'expected: 1 | actual: %r' % (b.n,)",
+    "expected": "1"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "الأسطر الثلاثة مطبوعة بترتيبها",
+     "en": "The three lines printed in order"
+    },
+    "code": "assert 'red 1' in __learner_output__ and 'blue 1' in __learner_output__ and 'red 2' in __learner_output__, 'expected: red 1 / blue 1 / red 2 | actual: %r' % __learner_output__",
+    "expected": "red 1 / blue 1 / red 2"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch14.l5",
+  "id": "ex1.cricket-fan",
+  "solution": "class PartyAnimal:\n    def __init__(self, nam):\n        self.name = nam\n        self.x = 0\n\n    def party(self):\n        self.x = self.x + 1\n        print(self.name, 'party', self.x)\n\n\nclass CricketFan(PartyAnimal):\n    points = 0\n\n    def six(self):\n        self.points = self.points + 6\n        self.party()\n        print(self.name, 'points', self.points)\n\n\nj = CricketFan('Jim')\nj.six()",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "j من الابن ومن الأب معًا",
+     "en": "j is of the child and of the parent too"
+    },
+    "code": "assert isinstance(j, CricketFan) and isinstance(j, PartyAnimal), 'expected: CricketFan and PartyAnimal | actual: %r' % (type(j),)",
+    "expected": "CricketFan and PartyAnimal"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "النقاط 6 بعد six واحدة",
+     "en": "The points are 6 after one six"
+    },
+    "code": "assert j.points == 6, 'expected: 6 | actual: %r' % (j.points,)",
+    "expected": "6"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "العدد الموروث رُفع إلى 1",
+     "en": "The inherited count rose to 1"
+    },
+    "code": "assert j.x == 1, 'expected: 1 | actual: %r' % (j.x,)",
+    "expected": "1"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "السطران مطبوعان",
+     "en": "Both lines printed"
+    },
+    "code": "assert 'Jim party 1' in __learner_output__ and 'Jim points 6' in __learner_output__, 'expected: Jim party 1 / Jim points 6 | actual: %r' % __learner_output__",
+    "expected": "Jim party 1 / Jim points 6"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch14.l6",
+  "id": "ex2.objects-team",
+  "solution": "class Team:\n    def __init__(self, nam):\n        self.name = nam\n        self.players = list()\n\n    def add_player(self, player):\n        self.players.append(player)\n\n    def describe(self):\n        print('team: %s' % self.name)\n        print('players: %d' % len(self.players))\n\n\nclass Coach(Team):\n    def lead(self):\n        print('Coach of %s' % self.name)\n\n\nred = Team('red')\nred.add_player('ana')\nred.add_player('bo')\nred.describe()\n\nblue = Coach('blue')\nblue.add_player('cy')\nblue.describe()\nblue.lead()",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "فريق red بحالته المستقلة: لاعبان",
+     "en": "The red team with its independent state: two players"
+    },
+    "code": "assert red.name == 'red' and len(red.players) == 2, 'expected: red with 2 players | actual: %r' % ((red.name, len(red.players)),)",
+    "expected": "red with 2 players"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "فريق blue بحالته المستقلة: لاعب واحد",
+     "en": "The blue team with its independent state: one player"
+    },
+    "code": "assert blue.name == 'blue' and len(blue.players) == 1, 'expected: blue with 1 player | actual: %r' % ((blue.name, len(blue.players)),)",
+    "expected": "blue with 1 player"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "Coach هو Team أيضًا — علاقة is-a",
+     "en": "Coach is also a Team — the is-a relationship"
+    },
+    "code": "assert isinstance(blue, Team) and isinstance(blue, Coach), 'expected: Coach and Team | actual: %r' % (type(blue),)",
+    "expected": "Coach and Team"
+   },
+   {
+    "id": "t4",
+    "name": {
+     "ar": "الأسطر المنسقة الأربعة مطبوعة",
+     "en": "The four formatted lines printed"
+    },
+    "code": "assert 'team: red' in __learner_output__ and 'players: 2' in __learner_output__ and 'team: blue' in __learner_output__ and 'players: 1' in __learner_output__, 'expected: team: red / players: 2 / team: blue / players: 1 | actual: %r' % __learner_output__",
+    "expected": "team: red / players: 2 / team: blue / players: 1"
+   },
+   {
+    "id": "t5",
+    "name": {
+     "ar": "صوت المدرّب مطبوع",
+     "en": "The coach’s voice printed"
+    },
+    "code": "assert 'Coach of blue' in __learner_output__, 'expected: Coach of blue | actual: %r' % __learner_output__",
+    "expected": "Coach of blue"
+   }
+  ]
+ },
+ {
+  "lesson": "py4e.ch14.l6",
+  "id": "ex5.debug-shared-list",
+  "solution": "class Team:\n    def __init__(self, nam):\n        self.name = nam\n        self.players = list()\n\n    def add_player(self, player):\n        self.players.append(player)\n\n    def describe(self):\n        print('team: %s' % self.name)\n        print('players: %d' % len(self.players))\n\nred = Team('red')\nred.add_player('ana')\nblue = Team('blue')\nblue.add_player('bo')\nred.describe()\nblue.describe()",
+  "tests": [
+   {
+    "id": "t1",
+    "name": {
+     "ar": "الفريقان كلاهما وصف نفسه",
+     "en": "Both teams described themselves"
+    },
+    "code": "assert 'team: red' in __learner_output__ and 'team: blue' in __learner_output__, 'expected: team: red / team: blue | actual: %r' % __learner_output__",
+    "expected": "team: red / team: blue"
+   },
+   {
+    "id": "t2",
+    "name": {
+     "ar": "كل فريق يرى لاعبه وحده: players: 1 مرتين",
+     "en": "Each team sees only its own player: players: 1 twice"
+    },
+    "code": "assert __learner_output__.count('players: 1') == 2, 'expected: players: 1 twice | actual: %r' % __learner_output__",
+    "expected": "players: 1 twice"
+   },
+   {
+    "id": "t3",
+    "name": {
+     "ar": "لا تسرب: لا players: 2 في الخرج",
+     "en": "No leak: no players: 2 in the output"
+    },
+    "code": "assert 'players: 2' not in __learner_output__, 'expected: no leaked count | actual: %r' % __learner_output__",
+    "expected": "no leaked count"
+   }
+  ]
+ }
+]

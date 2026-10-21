@@ -1,0 +1,212 @@
+{
+ "traces": [
+  {
+   "lesson": "py4e.ch7.l1",
+   "id": "ex2.trace-read",
+   "code": "out = open('notes.txt', 'w')\nout.write('AB\\nCD\\n')\nout.close()\nfhand = open('notes.txt')\ndata = fhand.read()\nprint(len(data))\nprint(data)\nfhand.close()",
+   "answer": "6\nAB\nCD"
+  },
+  {
+   "lesson": "py4e.ch7.l2",
+   "id": "ex2.trace-slice",
+   "code": "out = open('tiny.txt', 'w')\nout.write('X\\nY\\n')\nout.close()\nfhand = open('tiny.txt')\ninp = fhand.read()\nprint(len(inp))\nprint(inp[:3])\nfhand.close()",
+   "answer": "4\nX\nY"
+  },
+  {
+   "lesson": "py4e.ch7.l3",
+   "id": "ex2.trace-extract",
+   "code": "line = 'X-DSPAM-Confidence: 0.75\\n'\nline = line.rstrip()\npos = line.find(':')\npiece = line[pos + 2:]\nprint(piece)\nprint(float(piece) * 2)",
+   "answer": "0.75\n1.5"
+  },
+  {
+   "lesson": "py4e.ch7.l4",
+   "id": "ex2.trace-guard",
+   "code": "fname = 'missing.txt'\ntry:\n    fhand = open(fname)\n    print('opened')\nexcept:\n    print('File cannot be opened:', fname)",
+   "answer": "File cannot be opened: missing.txt"
+  },
+  {
+   "lesson": "py4e.ch7.l5",
+   "id": "ex2.trace-write-returns",
+   "code": "out = open('abc.txt', 'w')\nprint(out.write('AB\\n'))\nprint(out.write('CDE\\n'))\nout.close()\nfhand = open('abc.txt')\nprint(len(fhand.read()))\nfhand.close()",
+   "answer": "3\n4\n7"
+  },
+  {
+   "lesson": "py4e.ch7.l6",
+   "id": "ex1.trace-notebook",
+   "code": "out = open('tinybook.txt', 'w')\nout.write('hi\\n')\nout.write('bye\\n')\nout.close()\nfhand = open('tinybook.txt')\ndata = fhand.read()\nfhand.close()\nprint(len(data))\nprint(data)",
+   "answer": "7\nhi\nbye"
+  }
+ ],
+ "runnables": [
+  {
+   "lesson": "py4e.ch7.l1",
+   "kind": "predict",
+   "id": "predict",
+   "code": "out = open('mbox.txt', 'w')\nout.write('Hi\\n')\nout.close()\nfhand = open('mbox.txt')\nprint(fhand)"
+  },
+  {
+   "lesson": "py4e.ch7.l1",
+   "kind": "worked",
+   "id": "worked",
+   "code": "out = open('mbox.txt', 'w')\nout.write('From: sara@x.com\\n')\nout.write('Subject: hi\\n')\nout.close()\n\nfhand = open('mbox.txt')\nprint(fhand)\nprint(fhand.read())\nfhand.close()"
+  },
+  {
+   "lesson": "py4e.ch7.l1",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — صانع ملفات وفتّاح أبواب\n# Your playground — a file maker and door opener\n\nout = open(\"sandbox.txt\", \"w\")\nout.write(\"first line\\n\")\nout.write(\"second line\\n\")\nout.close()\n\nfhand = open(\"sandbox.txt\")\nprint(fhand)          # الباب نفسه / the door itself\nprint(fhand.read())   # ما خلف الباب / what is behind it\nfhand.close()"
+  },
+  {
+   "lesson": "py4e.ch7.l2",
+   "kind": "predict",
+   "id": "predict",
+   "code": "stuff = 'Hello\\nWorld!'\nprint(stuff)\nprint(len(stuff))"
+  },
+  {
+   "lesson": "py4e.ch7.l2",
+   "kind": "worked",
+   "id": "worked",
+   "code": "out = open('mbox.txt', 'w')\nout.write('From: sara@x.com\\n')\nout.write('Subject: hi\\n')\nout.write('data line\\n')\nout.close()\n\nfhand = open('mbox.txt')\ninp = fhand.read()\nfhand.close()\nprint(len(inp))\n\nfhand = open('mbox.txt')\ncount = 0\nfor line in fhand:\n    count = count + 1\nfhand.close()\nprint('Line Count:', count)"
+  },
+  {
+   "lesson": "py4e.ch7.l2",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — جرّب القراءتين\n# Your playground — try both readings\n\nout = open(\"sandbox2.txt\", \"w\")\nout.write(\"alpha\\n\")\nout.write(\"beta\\n\")\nout.write(\"gamma\\n\")\nout.close()\n\n# القراءة الكاملة / the whole-file read\nfhand = open(\"sandbox2.txt\")\ninp = fhand.read()\nfhand.close()\nprint(len(inp))\nprint(inp[:8])\n\n# القراءة السطرية / the line-by-line read\nfhand = open(\"sandbox2.txt\")\nfor line in fhand:\n    print(\"line:\", line, end=\"\")\nfhand.close()"
+  },
+  {
+   "lesson": "py4e.ch7.l3",
+   "kind": "predict",
+   "id": "predict",
+   "code": "line = 'From: sara@x.com\\n'\nprint(line.startswith('From:'))\nprint('hello'.find('z'))"
+  },
+  {
+   "lesson": "py4e.ch7.l3",
+   "kind": "worked",
+   "id": "worked",
+   "code": "out = open('spamconf.txt', 'w')\nout.write('From: sara@x.com\\n')\nout.write('X-DSPAM-Confidence: 0.8475\\n')\nout.write('Subject: hello\\n')\nout.write('X-DSPAM-Confidence: 0.6178\\n')\nout.close()\n\nfhand = open('spamconf.txt')\ntotal = 0\ncount = 0\nfor line in fhand:\n    line = line.rstrip()\n    if not line.startswith('X-DSPAM-Confidence:'):\n        continue\n    pos = line.find(':')\n    piece = line[pos + 2:]\n    try:\n        value = float(piece)\n    except:\n        print('Cannot parse:', piece)\n        continue\n    total = total + value\n    count = count + 1\nfhand.close()\nprint('count:', count)\nprint('average:', round(total / count, 5))"
+  },
+  {
+   "lesson": "py4e.ch7.l3",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — مكتشف بيانات\n# Your playground — the data detector\n\nout = open(\"inbox.txt\", \"w\")\nout.write(\"From: sara@x.com\\n\")\nout.write(\"From: omar@y.org\\n\")\nout.write(\"Subject: files\\n\")\nout.write(\"From: lina@x.com\\n\")\nout.close()\n\nfhand = open(\"inbox.txt\")\nfor line in fhand:\n    line = line.rstrip()\n    if line.find(\"@x.com\") == -1:\n        continue\n    print(line)\nfhand.close()"
+  },
+  {
+   "lesson": "py4e.ch7.l4",
+   "kind": "predict",
+   "id": "predict",
+   "code": "# نحاكي ما يكتبه المستخدم / simulate the user's typing\ntyped = 'box.txt'\nout = open(typed, 'w')\nout.write('Subject: a\\n')\nout.write('hello\\n')\nout.write('Subject: b\\n')\nout.close()\n\nfname = typed\nfhand = open(fname)\ncount = 0\nfor line in fhand:\n    if line.startswith('Subject:'):\n        count = count + 1\nfhand.close()\nprint('There were', count, 'subject lines in', fname)"
+  },
+  {
+   "lesson": "py4e.ch7.l4",
+   "kind": "worked",
+   "id": "worked",
+   "code": "out = open('subjects.txt', 'w')\nout.write('Subject: one\\n')\nout.write('Body line\\n')\nout.close()\n\n# المستخدم المطيع / the obedient user\ntyped = 'subjects.txt'\nfhand = None\ntry:\n    fhand = open(typed)\nexcept:\n    print('File cannot be opened:', typed)\nif fhand is not None:\n    count = 0\n    for line in fhand:\n        if line.startswith('Subject:'):\n            count = count + 1\n    fhand.close()\n    print('There were', count, 'subject lines in', typed)\n\n# المستخدم الشرّير / the evil user\ntyped2 = 'na na boo boo'\nfhand2 = None\ntry:\n    fhand2 = open(typed2)\nexcept:\n    print('File cannot be opened:', typed2)\nif fhand2 is not None:\n    fhand2.close()"
+  },
+  {
+   "lesson": "py4e.ch7.l4",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — بواب أرشيف\n# Your playground — the archive gatekeeper\n\nout = open(\"archive.txt\", \"w\")\nout.write(\"Subject: meeting\\n\")\nout.write(\"note\\n\")\nout.close()\n\ntyped = \"archive.txt\"   # غيّرها وجرّب / change it and experiment\n# في برنامج حقيقي: typed = input('Enter the file name: ')\ntry:\n    fhand = open(typed)\nexcept:\n    print(\"File cannot be opened:\", typed)\nif fhand is not None:\n    for line in fhand:\n        print(line.rstrip())\n    fhand.close()"
+  },
+  {
+   "lesson": "py4e.ch7.l5",
+   "kind": "predict",
+   "id": "predict",
+   "code": "out = open('letter.txt', 'w')\nn1 = out.write('Hi\\n')\nn2 = out.write('Bye\\n')\nout.close()\nprint(n1 + n2)"
+  },
+  {
+   "lesson": "py4e.ch7.l5",
+   "kind": "worked",
+   "id": "worked",
+   "code": "out = open('diary.txt', 'w')\nprint(out.write('Day 1: learned files\\n'))\nprint(out.write('Day 2: wrote files\\n'))\nout.close()\n\nfhand = open('diary.txt')\ndata = fhand.read()\nfhand.close()\nprint(len(data))\nprint(data)\n\n# والآن فخ الإعادة / and now the replay trap\nout = open('diary.txt', 'w')\nout.write('overwritten!\\n')\nout.close()\nfhand = open('diary.txt')\nprint(fhand.read())\nfhand.close()"
+  },
+  {
+   "lesson": "py4e.ch7.l5",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — قلمك في يدك\n# Your playground — your pen, your rules\n\nout = open(\"log.txt\", \"w\")\nfor i in [1, 2, 3]:\n    out.write(\"entry \" + str(i) + \"\\n\")\nout.close()\n\nfhand = open(\"log.txt\")\nprint(fhand.read())\nfhand.close()\n\n# جرّب القراءة من معرّف الكتابة / try reading from the write handle\nout = open(\"log.txt\", \"w\")\n# print(out.read())  # أزل التعليق وشاهد الرفض / uncomment and watch the refusal\nout.close()"
+  },
+  {
+   "lesson": "py4e.ch7.l6",
+   "kind": "predict",
+   "id": "predict",
+   "code": "out = open('notes.txt', 'w')\nout.write('a\\nb\\n')\nout.close()\n\nout2 = open('notes.txt', 'w')\nout2.close()\n\nfhand = open('notes.txt')\ndata = fhand.read()\nfhand.close()\nprint(data == '')"
+  },
+  {
+   "lesson": "py4e.ch7.l6",
+   "kind": "worked",
+   "id": "worked",
+   "code": "notes = ['learning files\\n', 'files remember\\n', 'py4e rocks\\n', 'close your files\\n']\nout = open('notebook.txt', 'w')\nfor note in notes:\n    out.write(note)\nout.close()\n\nfhand = None\ntry:\n    fhand = open('notebook.txt')\nexcept:\n    print('File cannot be opened: notebook.txt')\nif fhand is not None:\n    lines = 0\n    chars = 0\n    hits = 0\n    for line in fhand:\n        lines = lines + 1\n        chars = chars + len(line)\n        if 'files' in line:\n            hits = hits + 1\n    fhand.close()\n    print('lines: %d' % lines)\n    print('chars: %d' % chars)\n    print('keyword hits: %d' % hits)"
+  },
+  {
+   "lesson": "py4e.ch7.l6",
+   "kind": "sandbox",
+   "id": "sandbox",
+   "code": "# ملعبك الحرّ — دفترك الخاص\n# Your playground — your very own notebook\n\nnotes = [\"day 1: files breathe\\n\", \"day 2: python loops\\n\", \"day 3: try guards me\\n\"]\nout = open(\"journal.txt\", \"w\")\nfor note in notes:\n    out.write(note)\nout.close()\n\nfhand = open(\"journal.txt\")\nlines = 0\nhits = 0\nfor line in fhand:\n    lines = lines + 1\n    if \"python\" in line:\n        hits = hits + 1\nfhand.close()\nprint(\"lines: %d\" % lines)\nprint(\"python hits: %d\" % hits)"
+  }
+ ],
+ "mcqs": [
+  {
+   "lesson": "py4e.ch7.l1",
+   "id": "ex3.mcq-handle",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch7.l2",
+   "id": "ex4.mcq-exhausted",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch7.l3",
+   "id": "ex3.mcq-rstrip",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch7.l4",
+   "id": "ex3.mcq-missing",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch7.l5",
+   "id": "ex3.mcq-truncate",
+   "answer": "a",
+   "solution": "a"
+  },
+  {
+   "lesson": "py4e.ch7.l6",
+   "id": "ex3.mcq-wipe",
+   "answer": "a",
+   "solution": "a"
+  }
+ ],
+ "fills": [
+  {
+   "lesson": "py4e.ch7.l1",
+   "id": "ex4.fill-open",
+   "answer": "open"
+  },
+  {
+   "lesson": "py4e.ch7.l3",
+   "id": "ex4.fill-rstrip",
+   "answer": "rstrip"
+  },
+  {
+   "lesson": "py4e.ch7.l5",
+   "id": "ex4.fill-close",
+   "answer": "close"
+  }
+ ],
+ "broken": [
+  {
+   "lesson": "py4e.ch7.l6",
+   "id": "ex5.debug-reopen-w",
+   "brokenCode": "notes = ['first note\\n', 'second note\\n']\nout = open('mybook.txt', 'w')\nfor note in notes:\n    out.write(note)\nout.close()\n\n# أردت التأكد أن الملف جاهز — فتحته مرة ثانية / wanted to be sure the file is ready — reopened it\nout = open('mybook.txt', 'w')\nout.close()\n\nfhand = open('mybook.txt')\ndata = fhand.read()\nfhand.close()\nprint('chars: %d' % len(data))"
+  }
+ ]
+}

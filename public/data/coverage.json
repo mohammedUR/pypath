@@ -1,0 +1,5158 @@
+{
+ "generatedBy": "scripts/gen_coverage.py",
+ "books": {
+  "PY4E": {
+   "title": "بايثون للجميع (Python for Everybody)",
+   "chapters": [
+    {
+     "id": "py4e.ch1",
+     "title": "لماذا نتعلّم البرمجة؟",
+     "sections": [
+      {
+       "sectionId": "py4e.ch1.s1",
+       "title": "الإبداع والحافز",
+       "lessonIds": [
+        "py4e.ch1.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch1.s2",
+       "title": "بنية الحاسوب",
+       "lessonIds": [
+        "py4e.ch1.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch1.s3",
+       "title": "فهم البرمجة",
+       "lessonIds": [
+        "py4e.ch1.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch1.s4",
+       "title": "مفردات بايثون وجملُها",
+       "lessonIds": [
+        "py4e.ch1.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch1.s5",
+       "title": "مخاطبة بايثون",
+       "lessonIds": [
+        "py4e.ch1.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch1.s6",
+       "title": "المفسِّر والمترجم",
+       "lessonIds": [
+        "py4e.ch1.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch1.s7",
+       "title": "كتابة برنامج",
+       "lessonIds": [
+        "py4e.ch1.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch1.s8",
+       "title": "ما هو البرنامج؟",
+       "lessonIds": [
+        "py4e.ch1.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch1.s9",
+       "title": "المكوّنات الأساسية للبرامج",
+       "lessonIds": [
+        "py4e.ch1.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch1.s10",
+       "title": "ما الأخطاء التي يمكن أن نواجهها؟",
+       "lessonIds": [
+        "py4e.ch1.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch1.s11",
+       "title": "التنقيح",
+       "lessonIds": [
+        "py4e.ch1.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch1.s12",
+       "title": "رحلة التعلّم",
+       "lessonIds": [
+        "py4e.ch1.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch1.s13",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch1.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch1.s14",
+       "title": "تمارين",
+       "lessonIds": [
+        "py4e.ch1.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch2",
+     "title": "المتغيّرات والتعابير والتعليمات",
+     "sections": [
+      {
+       "sectionId": "py4e.ch2.s1",
+       "title": "القيم وأنواع البيانات",
+       "lessonIds": [
+        "py4e.ch2.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s2",
+       "title": "المتغيّرات",
+       "lessonIds": [
+        "py4e.ch2.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s3",
+       "title": "أسماء المتغيّرات والكلمات المفتاحية",
+       "lessonIds": [
+        "py4e.ch2.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s4",
+       "title": "التعليمات",
+       "lessonIds": [
+        "py4e.ch2.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s5",
+       "title": "العوامل والمعاملات",
+       "lessonIds": [
+        "py4e.ch2.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s6",
+       "title": "التعابير",
+       "lessonIds": [
+        "py4e.ch2.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s7",
+       "title": "ترتيب العمليات",
+       "lessonIds": [
+        "py4e.ch2.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s8",
+       "title": "عامل القسمة الصحيحة (باقي القسمة)",
+       "lessonIds": [
+        "py4e.ch2.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s9",
+       "title": "العمليات على السلاسل النصية",
+       "lessonIds": [
+        "py4e.ch2.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s10",
+       "title": "إدخال البيانات من المستخدم",
+       "lessonIds": [
+        "py4e.ch2.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s11",
+       "title": "التعليقات",
+       "lessonIds": [
+        "py4e.ch2.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s12",
+       "title": "اختيار أسماء متغيرات سهلة التذكر",
+       "lessonIds": [
+        "py4e.ch2.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s13",
+       "title": "التنقيح",
+       "lessonIds": [
+        "py4e.ch2.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s14",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch2.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch2.s15",
+       "title": "تمارين",
+       "lessonIds": [
+        "py4e.ch2.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch3",
+     "title": "التنفيذ الشرطي",
+     "sections": [
+      {
+       "sectionId": "py4e.ch3.s1",
+       "title": "التعابير المنطقية",
+       "lessonIds": [
+        "py4e.ch3.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch3.s2",
+       "title": "العوامل المنطقية",
+       "lessonIds": [
+        "py4e.ch3.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch3.s3",
+       "title": "التنفيذ المشروط",
+       "lessonIds": [
+        "py4e.ch3.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch3.s4",
+       "title": "التنفيذ البديل",
+       "lessonIds": [
+        "py4e.ch3.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch3.s5",
+       "title": "التسلسل الشرطي",
+       "lessonIds": [
+        "py4e.ch3.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch3.s6",
+       "title": "الشرط المتداخل",
+       "lessonIds": [
+        "py4e.ch3.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch3.s7",
+       "title": "الاستثناء باستخدام بنية TRY و EXCEPT",
+       "lessonIds": [
+        "py4e.ch3.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch3.s8",
+       "title": "تجاوز حق التعبيرات المنطقية",
+       "lessonIds": [
+        "py4e.ch3.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch3.s9",
+       "title": "التنقيح",
+       "lessonIds": [
+        "py4e.ch3.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch3.s10",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch3.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch3.s11",
+       "title": "تمارين",
+       "lessonIds": [
+        "py4e.ch3.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch4",
+     "title": "التوابع",
+     "sections": [
+      {
+       "sectionId": "py4e.ch4.s1",
+       "title": "استدعاء التوابع",
+       "lessonIds": [
+        "py4e.ch4.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch4.s2",
+       "title": "التوابع الجاهزة",
+       "lessonIds": [
+        "py4e.ch4.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch4.s3",
+       "title": "توابع تحويل النوع",
+       "lessonIds": [
+        "py4e.ch4.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch4.s4",
+       "title": "التوابع الرياضية",
+       "lessonIds": [
+        "py4e.ch4.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch4.s5",
+       "title": "الأعداد العشوائية",
+       "lessonIds": [
+        "py4e.ch4.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch4.s6",
+       "title": "إضافة توابع جديدة",
+       "lessonIds": [
+        "py4e.ch4.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch4.s7",
+       "title": "التعاريف واستخداماتها",
+       "lessonIds": [
+        "py4e.ch4.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch4.s8",
+       "title": "تسلسل التنفيذ",
+       "lessonIds": [
+        "py4e.ch4.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch4.s9",
+       "title": "المعاملات والوسائط",
+       "lessonIds": [
+        "py4e.ch4.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch4.s10",
+       "title": "التوابع المُنتجة والتوابع الخالية",
+       "lessonIds": [
+        "py4e.ch4.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch4.s11",
+       "title": "لماذا نستخدم التوابع؟",
+       "lessonIds": [
+        "py4e.ch4.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch4.s12",
+       "title": "التنقيح",
+       "lessonIds": [
+        "py4e.ch4.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch4.s13",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch4.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch4.s14",
+       "title": "تمارين",
+       "lessonIds": [
+        "py4e.ch4.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch5",
+     "title": "التكرار",
+     "sections": [
+      {
+       "sectionId": "py4e.ch5.s1",
+       "title": "تحديث قيم المتغيرات",
+       "lessonIds": [
+        "py4e.ch5.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch5.s2",
+       "title": "حلقة WHILE",
+       "lessonIds": [
+        "py4e.ch5.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch5.s3",
+       "title": "الحلقات اللانهائية",
+       "lessonIds": [
+        "py4e.ch5.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch5.s4",
+       "title": "إنهاء التكرار باستخدام تعليمة CONTINUE",
+       "lessonIds": [
+        "py4e.ch5.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch5.s5",
+       "title": "الحلقات المحددة باستخدام FOR",
+       "lessonIds": [
+        "py4e.ch5.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch5.s6",
+       "title": "أنماط كتابة الحلقات",
+       "lessonIds": [
+        "py4e.ch5.l4",
+        "py4e.ch5.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch5.s7",
+       "title": "التنقيح",
+       "lessonIds": [
+        "py4e.ch5.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch5.s8",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch5.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch5.s9",
+       "title": "تمارين",
+       "lessonIds": [
+        "py4e.ch5.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch6",
+     "title": "السلاسل النصية",
+     "sections": [
+      {
+       "sectionId": "py4e.ch6.s1",
+       "title": "السلسلة النصية سلسلة من المحارف",
+       "lessonIds": [
+        "py4e.ch6.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch6.s2",
+       "title": "الحصول على طول السلسلة النصية باستخدام LEN",
+       "lessonIds": [
+        "py4e.ch6.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch6.s3",
+       "title": "التعامل مع محارف السلسلة النصية باستخدام الحلقات",
+       "lessonIds": [
+        "py4e.ch6.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch6.s4",
+       "title": "تجزئة السلاسل النصية",
+       "lessonIds": [
+        "py4e.ch6.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch6.s5",
+       "title": "السلاسل النصية غير قابلة للتعديل",
+       "lessonIds": [
+        "py4e.ch6.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch6.s6",
+       "title": "استخدام الحلقات والعدّ",
+       "lessonIds": [
+        "py4e.ch6.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch6.s7",
+       "title": "العامل IN",
+       "lessonIds": [
+        "py4e.ch6.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch6.s8",
+       "title": "مقارنة السلاسل النصية",
+       "lessonIds": [
+        "py4e.ch6.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch6.s9",
+       "title": "توابع السلاسل النصية",
+       "lessonIds": [
+        "py4e.ch6.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch6.s10",
+       "title": "تحليل السلاسل النصية",
+       "lessonIds": [
+        "py4e.ch6.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch6.s11",
+       "title": "عامل التنسيق",
+       "lessonIds": [
+        "py4e.ch6.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch6.s12",
+       "title": "التنقيح",
+       "lessonIds": [
+        "py4e.ch6.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch6.s13",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch6.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch6.s14",
+       "title": "تمارين",
+       "lessonIds": [
+        "py4e.ch6.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch7",
+     "title": "الملفات",
+     "sections": [
+      {
+       "sectionId": "py4e.ch7.s1",
+       "title": "الإصرار على التعلم",
+       "lessonIds": [
+        "py4e.ch7.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch7.s2",
+       "title": "فتح الملفات",
+       "lessonIds": [
+        "py4e.ch7.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch7.s3",
+       "title": "ملفات النصوص والأسطر",
+       "lessonIds": [
+        "py4e.ch7.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch7.s4",
+       "title": "قراءة الملفات",
+       "lessonIds": [
+        "py4e.ch7.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch7.s5",
+       "title": "البحث خلال ملف",
+       "lessonIds": [
+        "py4e.ch7.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch7.s6",
+       "title": "السماح للمستخدم باختيار الملف",
+       "lessonIds": [
+        "py4e.ch7.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch7.s7",
+       "title": "استخدام TRY و EXCEPT و OPEN",
+       "lessonIds": [
+        "py4e.ch7.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch7.s8",
+       "title": "كتابة الملفات",
+       "lessonIds": [
+        "py4e.ch7.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch7.s9",
+       "title": "التنقيح",
+       "lessonIds": [
+        "py4e.ch7.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch7.s10",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch7.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch7.s11",
+       "title": "تمارين",
+       "lessonIds": [
+        "py4e.ch7.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch8",
+     "title": "القوائم",
+     "sections": [
+      {
+       "sectionId": "py4e.ch8.s1",
+       "title": "القائمة سلسلة من العناصر",
+       "lessonIds": [
+        "py4e.ch8.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s2",
+       "title": "القوائم قابلة للتعديل",
+       "lessonIds": [
+        "py4e.ch8.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s3",
+       "title": "المرور على عناصر قائمة",
+       "lessonIds": [
+        "py4e.ch8.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s4",
+       "title": "العمليات على القوائم",
+       "lessonIds": [
+        "py4e.ch8.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s5",
+       "title": "تجزئة القوائم",
+       "lessonIds": [
+        "py4e.ch8.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s6",
+       "title": "توابع خاصة بالقوائم",
+       "lessonIds": [
+        "py4e.ch8.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s7",
+       "title": "حذف العناصر",
+       "lessonIds": [
+        "py4e.ch8.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s8",
+       "title": "القوائم والتوابع",
+       "lessonIds": [
+        "py4e.ch8.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s9",
+       "title": "القوائم والسلاسل النصية",
+       "lessonIds": [
+        "py4e.ch8.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s10",
+       "title": "التعامل مع الأسطر وملفات القوائم",
+       "lessonIds": [
+        "py4e.ch8.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s11",
+       "title": "الكائنات والقيَم",
+       "lessonIds": [
+        "py4e.ch8.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s12",
+       "title": "التسمية البديلة",
+       "lessonIds": [
+        "py4e.ch8.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s13",
+       "title": "وسائط القائمة",
+       "lessonIds": [
+        "py4e.ch8.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s14",
+       "title": "التنقيح",
+       "lessonIds": [
+        "py4e.ch8.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s15",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch8.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch8.s16",
+       "title": "تمارين",
+       "lessonIds": [
+        "py4e.ch8.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch9",
+     "title": "القواميس",
+     "sections": [
+      {
+       "sectionId": "py4e.ch9.s1",
+       "title": "استخدام القواميس",
+       "lessonIds": [
+        "py4e.ch9.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch9.s2",
+       "title": "العدّ",
+       "lessonIds": [
+        "py4e.ch9.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch9.s3",
+       "title": "القواميس والملفات",
+       "lessonIds": [
+        "py4e.ch9.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch9.s4",
+       "title": "الحلقات والقواميس",
+       "lessonIds": [
+        "py4e.ch9.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch9.s5",
+       "title": "التعامل مع النصوص",
+       "lessonIds": [
+        "py4e.ch9.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch9.s6",
+       "title": "التنقيح",
+       "lessonIds": [
+        "py4e.ch9.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch9.s7",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch9.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch9.s8",
+       "title": "تمارين",
+       "lessonIds": [
+        "py4e.ch9.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch10",
+     "title": "الصفوف",
+     "sections": [
+      {
+       "sectionId": "py4e.ch10.s1",
+       "title": "الصفوف غير قابلة للتعديل",
+       "lessonIds": [
+        "py4e.ch10.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch10.s2",
+       "title": "مقارنة الصفوف",
+       "lessonIds": [
+        "py4e.ch10.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch10.s3",
+       "title": "إسناد الصفوف",
+       "lessonIds": [
+        "py4e.ch10.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch10.s4",
+       "title": "القواميس والصفوف",
+       "lessonIds": [
+        "py4e.ch10.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch10.s5",
+       "title": "الإسناد المتعدد مع القواميس",
+       "lessonIds": [
+        "py4e.ch10.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch10.s6",
+       "title": "الكلمات الأكثر تكرارًا",
+       "lessonIds": [
+        "py4e.ch10.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch10.s7",
+       "title": "استخدام الصفوف كمفاتيح ضمن القواميس",
+       "lessonIds": [
+        "py4e.ch10.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch10.s8",
+       "title": "السلاسل النصية والقوائم والصفوف",
+       "lessonIds": [
+        "py4e.ch10.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch10.s9",
+       "title": "التنقيح",
+       "lessonIds": [
+        "py4e.ch10.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch10.s10",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch10.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch10.s11",
+       "title": "تمارين",
+       "lessonIds": [
+        "py4e.ch10.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch11",
+     "title": "التعابير النمطية",
+     "sections": [
+      {
+       "sectionId": "py4e.ch11.s1",
+       "title": "مطابقة المحارف",
+       "lessonIds": [
+        "py4e.ch11.l1",
+        "py4e.ch11.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch11.s2",
+       "title": "استخراج البيانات باستخدام التعابير النمطية",
+       "lessonIds": [
+        "py4e.ch11.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch11.s3",
+       "title": "تنفيذ عمليتي البحث والاستخراج معًا",
+       "lessonIds": [
+        "py4e.ch11.l3",
+        "py4e.ch11.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch11.s4",
+       "title": "محرف الهروب",
+       "lessonIds": [
+        "py4e.ch11.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch11.s5",
+       "title": "ملخص",
+       "lessonIds": [
+        "py4e.ch11.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch11.s6",
+       "title": "معلومات إضافية لمستخدمي نظام UNIX و LINUX",
+       "lessonIds": [
+        "py4e.ch11.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch11.s7",
+       "title": "التنقيح",
+       "lessonIds": [
+        "py4e.ch11.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch11.s8",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch11.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch11.s9",
+       "title": "تمارين",
+       "lessonIds": [
+        "py4e.ch11.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch12",
+     "title": "البرامج المرتبطة بالشبكات",
+     "sections": [
+      {
+       "sectionId": "py4e.ch12.s1",
+       "title": "بروتوكول نقل النص التشعبي HTTP",
+       "lessonIds": [
+        "py4e.ch12.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch12.s2",
+       "title": "أبسط متصفح ويب في العالم",
+       "lessonIds": [
+        "py4e.ch12.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch12.s3",
+       "title": "استعادة صورة عن طريق بروتوكول HTTP",
+       "lessonIds": [
+        "py4e.ch12.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch12.s4",
+       "title": "استعادة صفحات الويب باستخدام مكتبة URLLIB",
+       "lessonIds": [
+        "py4e.ch12.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch12.s5",
+       "title": "قراءة الملفات المُشفّرة ثنائيًا باستخدام URLLIB",
+       "lessonIds": [
+        "py4e.ch12.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch12.s6",
+       "title": "تحليل واستخراج البيانات من صفحات HTML",
+       "lessonIds": [
+        "py4e.ch12.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch12.s7",
+       "title": "تحليل صفحات HTML باستخدام التعابير النمطية",
+       "lessonIds": [
+        "py4e.ch12.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch12.s8",
+       "title": "تحليل صفحات HTML باستخدام مكتبة BEAUTIFULSOUP",
+       "lessonIds": [
+        "py4e.ch12.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch12.s9",
+       "title": "ملاحظات خاصة لمستخدمي أنظمة UNIX أو لينكس",
+       "lessonIds": [
+        "py4e.ch12.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch12.s10",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch12.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch12.s11",
+       "title": "تمارين",
+       "lessonIds": [
+        "py4e.ch12.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch13",
+     "title": "استخدام خدمات الويب",
+     "sections": [
+      {
+       "sectionId": "py4e.ch13.s1",
+       "title": "لغة التوصيف الموسعة XML",
+       "lessonIds": [
+        "py4e.ch13.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch13.s2",
+       "title": "تحليل نصوص XML",
+       "lessonIds": [
+        "py4e.ch13.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch13.s3",
+       "title": "استخدام الحلقات للمرور على العقد",
+       "lessonIds": [
+        "py4e.ch13.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch13.s4",
+       "title": "JSON",
+       "lessonIds": [
+        "py4e.ch13.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch13.s5",
+       "title": "تحليل نصوص JSON",
+       "lessonIds": [
+        "py4e.ch13.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch13.s6",
+       "title": "واجهات برمجة التطبيقات",
+       "lessonIds": [
+        "py4e.ch13.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch13.s7",
+       "title": "الأمان واستخدام واجهات برمجة التطبيقات",
+       "lessonIds": [
+        "py4e.ch13.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch13.s8",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch13.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch13.s9",
+       "title": "التطبيق الأول: خدمة جوغل للجغرافيا",
+       "lessonIds": [
+        "py4e.ch13.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch13.s10",
+       "title": "التطبيق الثاني: تويتر",
+       "lessonIds": [
+        "py4e.ch13.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch14",
+     "title": "البرمجة الكائنية التوجه",
+     "sections": [
+      {
+       "sectionId": "py4e.ch14.s1",
+       "title": "إدارة البرامج الكبيرة",
+       "lessonIds": [
+        "py4e.ch14.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch14.s2",
+       "title": "مقدمة",
+       "lessonIds": [
+        "py4e.ch14.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch14.s3",
+       "title": "استخدام الكائنات",
+       "lessonIds": [
+        "py4e.ch14.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch14.s4",
+       "title": "البدء مع البرامج",
+       "lessonIds": [
+        "py4e.ch14.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch14.s5",
+       "title": "تقسيم المشكلة",
+       "lessonIds": [
+        "py4e.ch14.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch14.s6",
+       "title": "إنشاء كائن بلغة بايثون",
+       "lessonIds": [
+        "py4e.ch14.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch14.s7",
+       "title": "الصنف كنوع بيانات",
+       "lessonIds": [
+        "py4e.ch14.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch14.s8",
+       "title": "دورة حياة الكائن",
+       "lessonIds": [
+        "py4e.ch14.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch14.s9",
+       "title": "تعدد الكائنات",
+       "lessonIds": [
+        "py4e.ch14.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch14.s10",
+       "title": "الوراثة",
+       "lessonIds": [
+        "py4e.ch14.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch14.s11",
+       "title": "ملخص",
+       "lessonIds": [
+        "py4e.ch14.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch14.s12",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch14.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch15",
+     "title": "قواعد البيانات ولغة SQL",
+     "sections": [
+      {
+       "sectionId": "py4e.ch15.s1",
+       "title": "ما هي قاعدة البيانات؟",
+       "lessonIds": [
+        "py4e.ch15.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch15.s2",
+       "title": "مفاهيم قواعد البيانات",
+       "lessonIds": [
+        "py4e.ch15.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch15.s3",
+       "title": "متصفح قاعدة البيانات SQLITE",
+       "lessonIds": [
+        "py4e.ch15.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch15.s4",
+       "title": "إنشاء جدول لقاعدة بيانات",
+       "lessonIds": [
+        "py4e.ch15.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch15.s5",
+       "title": "ملخص عن لغة الاستعلام البنيوية SQL",
+       "lessonIds": [
+        "py4e.ch15.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch15.s6",
+       "title": "استكشاف تويتر باستخدام قواعد البيانات",
+       "lessonIds": [
+        "py4e.ch15.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch15.s7",
+       "title": "نمذجة البيانات",
+       "lessonIds": [
+        "py4e.ch15.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch15.s8",
+       "title": "برمجة قاعدة بيانات ذات الجداول المتعددة",
+       "lessonIds": [
+        "py4e.ch15.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch15.s9",
+       "title": "أنواع المفاتيح الثلاثة",
+       "lessonIds": [
+        "py4e.ch15.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch15.s10",
+       "title": "استخدام عبارة JOIN لاستعادة البيانات",
+       "lessonIds": [
+        "py4e.ch15.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch15.s11",
+       "title": "الملخص",
+       "lessonIds": [
+        "py4e.ch15.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch15.s12",
+       "title": "التنقيح",
+       "lessonIds": [
+        "py4e.ch15.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch15.s13",
+       "title": "فهرس المصطلحات",
+       "lessonIds": [
+        "py4e.ch15.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "py4e.ch16",
+     "title": "العرض المرئي للبيانات",
+     "sections": [
+      {
+       "sectionId": "py4e.ch16.s1",
+       "title": "عرض خريطة باستخدام بيانات جغرافية من غوغل",
+       "lessonIds": [
+        "py4e.ch16.l1",
+        "py4e.ch16.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch16.s2",
+       "title": "العرض المرئي للشبكات والارتباطات",
+       "lessonIds": [
+        "py4e.ch16.l3",
+        "py4e.ch16.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "py4e.ch16.s3",
+       "title": "تحليل وعرض البيانات الواردة بريديًا",
+       "lessonIds": [
+        "py4e.ch16.l5",
+        "py4e.ch16.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    }
+   ]
+  },
+  "SWE": {
+   "title": "Software Engineering: Standing on the Shoulders of Giants — Python Edition",
+   "chapters": [
+    {
+     "id": "swe.ch1",
+     "title": "Introduction",
+     "sections": [
+      {
+       "sectionId": "swe.ch1.s1",
+       "title": "1.1 What Is Software Engineering?",
+       "lessonIds": [
+        "swe.ch1.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch1.s2",
+       "title": "1.2 The Requirements Challenge",
+       "lessonIds": [
+        "swe.ch1.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch1.s3",
+       "title": "1.3 Software Is Intrinsically Complex",
+       "lessonIds": [
+        "swe.ch1.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch1.s4",
+       "title": "1.4 Defects Are Inevitable",
+       "lessonIds": [
+        "swe.ch1.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch1.s5",
+       "title": "1.5 Balancing Constraints: The Iron Triangle",
+       "lessonIds": [
+        "swe.ch1.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch1.s6",
+       "title": "1.6 Social Responsibility",
+       "lessonIds": [
+        "swe.ch1.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch1.s7",
+       "title": "1.7 Conclusion",
+       "lessonIds": [
+        "swe.ch1.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch2",
+     "title": "Software Development Processes",
+     "sections": [
+      {
+       "sectionId": "swe.ch2.s1",
+       "title": "2.1 Processes and Values Guide Development",
+       "lessonIds": [
+        "swe.ch2.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch2.s2",
+       "title": "2.2 Structuring Teamwork: The Scrum Framework",
+       "lessonIds": [
+        "swe.ch2.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch2.s3",
+       "title": "2.3 Agile Development: Extreme Programming",
+       "lessonIds": [
+        "swe.ch2.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch2.s4",
+       "title": "2.4 Limitations of Waterfall Processes",
+       "lessonIds": [
+        "swe.ch2.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch2.s5",
+       "title": "2.5 Levels of Design and Testing: V Processes",
+       "lessonIds": [
+        "swe.ch2.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch2.s6",
+       "title": "2.6 Additional Project Risks",
+       "lessonIds": [
+        "swe.ch2.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch2.s7",
+       "title": "2.7 Risk Reduction: The Spiral Framework",
+       "lessonIds": [
+        "swe.ch2.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch2.s8",
+       "title": "2.8 Shape Up: Fixed Time, Variable Scope",
+       "lessonIds": [
+        "swe.ch2.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch2.s9",
+       "title": "2.9 Conclusion",
+       "lessonIds": [
+        "swe.ch2.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch3",
+     "title": "User Requirements",
+     "sections": [
+      {
+       "sectionId": "swe.ch3.s1",
+       "title": "3.1 What Is a Requirement?",
+       "lessonIds": [
+        "swe.ch3.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch3.s2",
+       "title": "3.2 Developing Requirements and Software",
+       "lessonIds": [
+        "swe.ch3.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch3.s3",
+       "title": "3.3 Eliciting User Needs",
+       "lessonIds": [
+        "swe.ch3.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch3.s4",
+       "title": "3.4 Writing Requirements: Stories and Features",
+       "lessonIds": [
+        "swe.ch3.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch3.s5",
+       "title": "3.5 Writing User-Experience Scenarios",
+       "lessonIds": [
+        "swe.ch3.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch3.s6",
+       "title": "3.6 Clarifying User Goals",
+       "lessonIds": [
+        "swe.ch3.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch3.s7",
+       "title": "3.7 Identifying Security Attacks",
+       "lessonIds": [
+        "swe.ch3.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch3.s8",
+       "title": "3.8 Conclusion",
+       "lessonIds": [
+        "swe.ch3.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch4",
+     "title": "Requirements Analysis",
+     "sections": [
+      {
+       "sectionId": "swe.ch4.s1",
+       "title": "4.1 A Checklist Approach",
+       "lessonIds": [
+        "swe.ch4.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch4.s2",
+       "title": "4.2 Relative Estimation: Iteration Planning",
+       "lessonIds": [
+        "swe.ch4.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch4.s3",
+       "title": "4.3 Structured Group Consensus Estimates",
+       "lessonIds": [
+        "swe.ch4.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch4.s4",
+       "title": "4.4 Balancing Priorities",
+       "lessonIds": [
+        "swe.ch4.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch4.s5",
+       "title": "4.5 Customer Satisfiers and Dissatisfiers",
+       "lessonIds": [
+        "swe.ch4.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch4.s6",
+       "title": "4.6 Plan-Driven Estimation Models",
+       "lessonIds": [
+        "swe.ch4.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch4.s7",
+       "title": "4.7 Conclusion",
+       "lessonIds": [
+        "swe.ch4.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch5",
+     "title": "Use Cases",
+     "sections": [
+      {
+       "sectionId": "swe.ch5.s1",
+       "title": "5.1 Elements of a Use Case",
+       "lessonIds": [
+        "swe.ch5.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch5.s2",
+       "title": "5.2 Alternative Flows: Conditional Behaviors",
+       "lessonIds": [
+        "swe.ch5.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch5.s3",
+       "title": "5.3 Writing Use Cases",
+       "lessonIds": [
+        "swe.ch5.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch5.s4",
+       "title": "5.4 Use-Case Diagrams",
+       "lessonIds": [
+        "swe.ch5.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch5.s5",
+       "title": "5.5 Relationships between Use Cases",
+       "lessonIds": [
+        "swe.ch5.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch5.s6",
+       "title": "5.6 Conclusion",
+       "lessonIds": [
+        "swe.ch5.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch6",
+     "title": "Design and Architecture",
+     "sections": [
+      {
+       "sectionId": "swe.ch6.s1",
+       "title": "6.1 The Role of Architecture",
+       "lessonIds": [
+        "swe.ch6.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch6.s2",
+       "title": "6.2 Designing Modular Systems",
+       "lessonIds": [
+        "swe.ch6.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch6.s3",
+       "title": "6.3 Class Diagrams",
+       "lessonIds": [
+        "swe.ch6.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch6.s4",
+       "title": "6.4 Architectural Views",
+       "lessonIds": [
+        "swe.ch6.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch6.s5",
+       "title": "6.5 Describing System Architecture",
+       "lessonIds": [
+        "swe.ch6.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch6.s6",
+       "title": "6.6 Conclusion",
+       "lessonIds": [
+        "swe.ch6.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch7",
+     "title": "Architectural Patterns",
+     "sections": [
+      {
+       "sectionId": "swe.ch7.s1",
+       "title": "7.1 Software Layering",
+       "lessonIds": [
+        "swe.ch7.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch7.s2",
+       "title": "7.2 Three Building Blocks",
+       "lessonIds": [
+        "swe.ch7.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch7.s3",
+       "title": "7.3 User Interfaces: Model-View-Controller",
+       "lessonIds": [
+        "swe.ch7.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch7.s4",
+       "title": "7.4 Dataflow Architectures",
+       "lessonIds": [
+        "swe.ch7.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch7.s5",
+       "title": "7.5 Connecting Clients with Servers",
+       "lessonIds": [
+        "swe.ch7.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch7.s6",
+       "title": "7.6 Families and Product Lines",
+       "lessonIds": [
+        "swe.ch7.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch7.s7",
+       "title": "7.7 Conclusion",
+       "lessonIds": [
+        "swe.ch7.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch8",
+     "title": "Version Control with Git",
+     "sections": [
+      {
+       "sectionId": "swe.ch8.s1",
+       "title": "8.1 Why Version Control",
+       "lessonIds": [
+        "swe.ch8.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch8.s2",
+       "title": "8.2 The Everyday Workflow",
+       "lessonIds": [
+        "swe.ch8.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch8.s3",
+       "title": "8.3 Branching and Merging",
+       "lessonIds": [
+        "swe.ch8.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch8.s4",
+       "title": "8.4 Working with Others",
+       "lessonIds": [
+        "swe.ch8.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch8.s5",
+       "title": "8.5 Merge Conflicts",
+       "lessonIds": [
+        "swe.ch8.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch8.s6",
+       "title": "8.6 Habits That Make Git Work for a Team",
+       "lessonIds": [
+        "swe.ch8.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch8.s7",
+       "title": "8.7 Markdown, READMEs, and Project Documentation",
+       "lessonIds": [
+        "swe.ch8.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch8.s8",
+       "title": "8.8 Conclusion",
+       "lessonIds": [
+        "swe.ch8.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch9",
+     "title": "Static Checking",
+     "sections": [
+      {
+       "sectionId": "swe.ch9.s1",
+       "title": "9.1 Architecture Reviews",
+       "lessonIds": [
+        "swe.ch9.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch9.s2",
+       "title": "9.2 Conducting Software Inspections",
+       "lessonIds": [
+        "swe.ch9.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch9.s3",
+       "title": "9.3 Code Reviews: Check Intent and Trust",
+       "lessonIds": [
+        "swe.ch9.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch9.s4",
+       "title": "9.4 Automated Static Analysis",
+       "lessonIds": [
+        "swe.ch9.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch9.s5",
+       "title": "9.5 Conclusion",
+       "lessonIds": [
+        "swe.ch9.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch10",
+     "title": "Testing",
+     "sections": [
+      {
+       "sectionId": "swe.ch10.s1",
+       "title": "10.1 Overview of Testing",
+       "lessonIds": [
+        "swe.ch10.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch10.s2",
+       "title": "10.2 Levels of Testing",
+       "lessonIds": [
+        "swe.ch10.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch10.s3",
+       "title": "10.3 Code Coverage I: White-Box Testing",
+       "lessonIds": [
+        "swe.ch10.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch10.s4",
+       "title": "10.4 Input Coverage I: Black-Box Testing",
+       "lessonIds": [
+        "swe.ch10.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch10.s5",
+       "title": "10.5 Code Coverage II: MC/DC",
+       "lessonIds": [
+        "swe.ch10.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch10.s6",
+       "title": "10.6 Input Coverage II: Combinatorial Testing",
+       "lessonIds": [
+        "swe.ch10.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch10.s7",
+       "title": "10.7 Conclusion",
+       "lessonIds": [
+        "swe.ch10.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch11",
+     "title": "Software Security",
+     "sections": [
+      {
+       "sectionId": "swe.ch11.s1",
+       "title": "11.1 Security Is a Lifecycle Property",
+       "lessonIds": [
+        "swe.ch11.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch11.s2",
+       "title": "11.2 The OWASP Top 10",
+       "lessonIds": [
+        "swe.ch11.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch11.s3",
+       "title": "11.3 Finding Vulnerabilities, from Manual to Autonomous",
+       "lessonIds": [
+        "swe.ch11.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch11.s4",
+       "title": "11.4 The Software Supply Chain: A World of Weak Links",
+       "lessonIds": [
+        "swe.ch11.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch11.s5",
+       "title": "11.5 Building Security In",
+       "lessonIds": [
+        "swe.ch11.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch11.s6",
+       "title": "11.6 Conclusion",
+       "lessonIds": [
+        "swe.ch11.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch12",
+     "title": "Quality Metrics",
+     "sections": [
+      {
+       "sectionId": "swe.ch12.s1",
+       "title": "12.1 Meaningful Metrics",
+       "lessonIds": [
+        "swe.ch12.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch12.s2",
+       "title": "12.2 Software Quality",
+       "lessonIds": [
+        "swe.ch12.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch12.s3",
+       "title": "12.3 Graphical Displays of Data Sets",
+       "lessonIds": [
+        "swe.ch12.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch12.s4",
+       "title": "12.4 Product Quality: Measuring Defects",
+       "lessonIds": [
+        "swe.ch12.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch12.s5",
+       "title": "12.5 Ops Quality Improvement: A Case Study",
+       "lessonIds": [
+        "swe.ch12.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch12.s6",
+       "title": "12.6 Data Dispersion: Boxplots and Histograms",
+       "lessonIds": [
+        "swe.ch12.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch12.s7",
+       "title": "12.7 Data Dispersion: Statistics",
+       "lessonIds": [
+        "swe.ch12.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch12.s8",
+       "title": "12.8 Confidence Intervals",
+       "lessonIds": [
+        "swe.ch12.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch12.s9",
+       "title": "12.9 Simple Linear Regression",
+       "lessonIds": [
+        "swe.ch12.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch12.s10",
+       "title": "12.10 Conclusion",
+       "lessonIds": [
+        "swe.ch12.l6"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch13",
+     "title": "Software Engineering in the Age of AI",
+     "sections": [
+      {
+       "sectionId": "swe.ch13.s1",
+       "title": "13.1 What AI Changes — and What It Doesn't",
+       "lessonIds": [
+        "swe.ch13.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch13.s2",
+       "title": "13.2 AI Across the Lifecycle",
+       "lessonIds": [
+        "swe.ch13.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch13.s3",
+       "title": "13.3 The Evidence: Productivity, Quality, Security",
+       "lessonIds": [
+        "swe.ch13.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch13.s4",
+       "title": "13.4 Outcome Engineering: The o16g Manifesto",
+       "lessonIds": [
+        "swe.ch13.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch13.s5",
+       "title": "13.5 Spec-Driven Development",
+       "lessonIds": [
+        "swe.ch13.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch13.s6",
+       "title": "13.6 Context as Infrastructure: CLAUDE.md, AGENTS.md, and Skills",
+       "lessonIds": [
+        "swe.ch13.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch13.s7",
+       "title": "13.7 Loop Engineering",
+       "lessonIds": [
+        "swe.ch13.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch13.s8",
+       "title": "13.8 Principles for the AI-Augmented Engineer",
+       "lessonIds": [
+        "swe.ch13.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch13.s9",
+       "title": "13.9 Conclusion",
+       "lessonIds": [
+        "swe.ch13.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch14",
+     "title": "Delivery: CI/CD, DevOps, and Operations",
+     "sections": [
+      {
+       "sectionId": "swe.ch14.s1",
+       "title": "14.1 SaaS and the Cloud",
+       "lessonIds": [
+        "swe.ch14.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch14.s2",
+       "title": "14.2 Continuous Integration Pipelines",
+       "lessonIds": [
+        "swe.ch14.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch14.s3",
+       "title": "14.3 Continuous Deployment",
+       "lessonIds": [
+        "swe.ch14.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch14.s4",
+       "title": "14.4 Packaging and Running a Service: Docker and Compose",
+       "lessonIds": [
+        "swe.ch14.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch14.s5",
+       "title": "14.5 Reaching Users: DNS, TLS, and the Edge",
+       "lessonIds": [
+        "swe.ch14.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch14.s6",
+       "title": "14.6 Continuous Security Pipelines",
+       "lessonIds": [
+        "swe.ch14.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch14.s7",
+       "title": "14.7 DORA Delivery Metrics",
+       "lessonIds": [
+        "swe.ch14.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch14.s8",
+       "title": "14.8 Conclusion",
+       "lessonIds": [
+        "swe.ch14.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.ch15",
+     "title": "Maintenance and Evolution",
+     "sections": [
+      {
+       "sectionId": "swe.ch15.s1",
+       "title": "15.1 What Makes Code Legacy",
+       "lessonIds": [
+        "swe.ch15.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch15.s2",
+       "title": "15.2 Characterization Tests",
+       "lessonIds": [
+        "swe.ch15.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch15.s3",
+       "title": "15.3 Refactoring Under Green Tests",
+       "lessonIds": [
+        "swe.ch15.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch15.s4",
+       "title": "15.4 Repository Stewardship",
+       "lessonIds": [
+        "swe.ch15.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch15.s5",
+       "title": "15.5 Technical Debt",
+       "lessonIds": [
+        "swe.ch15.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch15.s6",
+       "title": "15.6 Strangler Fig versus Big-Bang Rewrite",
+       "lessonIds": [
+        "swe.ch15.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.ch15.s7",
+       "title": "15.7 Conclusion",
+       "lessonIds": [
+        "swe.ch15.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "swe.appendixA",
+     "title": "The Team Project",
+     "sections": [
+      {
+       "sectionId": "swe.A.s1",
+       "title": "Overview",
+       "lessonIds": [
+        "swe.appa.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.A.s2",
+       "title": "Project Proposal",
+       "lessonIds": [
+        "swe.appa.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.A.s3",
+       "title": "Skeletal System: Status Report 1",
+       "lessonIds": [
+        "swe.appa.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.A.s4",
+       "title": "Viable System: Status Report 2",
+       "lessonIds": [
+        "swe.appa.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.A.s5",
+       "title": "Comprehensive Final Report",
+       "lessonIds": [
+        "swe.appa.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.A.s6",
+       "title": "Grading Your Own Repository",
+       "lessonIds": [
+        "swe.appa.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "swe.A.s7",
+       "title": "Conclusion",
+       "lessonIds": [
+        "swe.appa.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    }
+   ]
+  },
+  "MLS": {
+   "title": "Machine Learning from Scratch",
+   "chapters": [
+    {
+     "id": "mls.ch1",
+     "title": "Ordinary Linear Regression",
+     "sections": [
+      {
+       "sectionId": "mls.ch1.s1",
+       "title": "The Loss-Minimization Perspective",
+       "lessonIds": [
+        "mls.ch1.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch1.s2",
+       "title": "The Likelihood-Maximization Perspective",
+       "lessonIds": [
+        "mls.ch1.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch1.s3",
+       "title": "Construction",
+       "lessonIds": [
+        "mls.ch1.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch1.s4",
+       "title": "Implementation",
+       "lessonIds": [
+        "mls.ch1.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "mls.ch2",
+     "title": "Linear Regression Extensions",
+     "sections": [
+      {
+       "sectionId": "mls.ch2.s1",
+       "title": "Regularized Regression (Ridge and Lasso)",
+       "lessonIds": [
+        "mls.ch2.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch2.s2",
+       "title": "Bayesian Regression",
+       "lessonIds": [
+        "mls.ch2.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch2.s3",
+       "title": "Generalized Linear Models (GLMs)",
+       "lessonIds": [
+        "mls.ch2.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch2.s4",
+       "title": "Construction",
+       "lessonIds": [
+        "mls.ch2.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch2.s5",
+       "title": "Implementation",
+       "lessonIds": [
+        "mls.ch2.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "mls.ch3",
+     "title": "Discriminative Classification",
+     "sections": [
+      {
+       "sectionId": "mls.ch3.s1",
+       "title": "Logistic Regression",
+       "lessonIds": [
+        "mls.ch3.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch3.s2",
+       "title": "The Perceptron Algorithm",
+       "lessonIds": [
+        "mls.ch3.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch3.s3",
+       "title": "Fisher's Linear Discriminant",
+       "lessonIds": [
+        "mls.ch3.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch3.s4",
+       "title": "Construction",
+       "lessonIds": [
+        "mls.ch3.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch3.s5",
+       "title": "Implementation",
+       "lessonIds": [
+        "mls.ch3.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "mls.ch4",
+     "title": "Generative Classification",
+     "sections": [
+      {
+       "sectionId": "mls.ch4.s1",
+       "title": "Linear and Quadratic Discriminant Analysis",
+       "lessonIds": [
+        "mls.ch4.l1",
+        "mls.ch4.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch4.s2",
+       "title": "Naive Bayes",
+       "lessonIds": [
+        "mls.ch4.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch4.s3",
+       "title": "Construction",
+       "lessonIds": [
+        "mls.ch4.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch4.s4",
+       "title": "Implementation",
+       "lessonIds": [
+        "mls.ch4.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "mls.ch5",
+     "title": "Decision Trees",
+     "sections": [
+      {
+       "sectionId": "mls.ch5.s1",
+       "title": "Regression Trees",
+       "lessonIds": [
+        "mls.ch5.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch5.s2",
+       "title": "Classification Trees",
+       "lessonIds": [
+        "mls.ch5.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch5.s3",
+       "title": "Construction",
+       "lessonIds": [
+        "mls.ch5.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch5.s4",
+       "title": "Implementation",
+       "lessonIds": [
+        "mls.ch5.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "mls.ch6",
+     "title": "Tree Ensemble Methods",
+     "sections": [
+      {
+       "sectionId": "mls.ch6.s1",
+       "title": "Bagging",
+       "lessonIds": [
+        "mls.ch6.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch6.s2",
+       "title": "Random Forests",
+       "lessonIds": [
+        "mls.ch6.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch6.s3",
+       "title": "Boosting",
+       "lessonIds": [
+        "mls.ch6.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch6.s4",
+       "title": "Construction",
+       "lessonIds": [
+        "mls.ch6.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch6.s5",
+       "title": "Implementation",
+       "lessonIds": [
+        "mls.ch6.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "mls.ch7",
+     "title": "Neural Networks",
+     "sections": [
+      {
+       "sectionId": "mls.ch7.s1",
+       "title": "Concept",
+       "lessonIds": [
+        "mls.ch7.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch7.s2",
+       "title": "Construction",
+       "lessonIds": [
+        "mls.ch7.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.ch7.s3",
+       "title": "Implementation",
+       "lessonIds": [
+        "mls.ch7.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "mls.appendix",
+     "title": "Appendix (Math, Gradient Descent, Cross Validation, Datasets)",
+     "sections": [
+      {
+       "sectionId": "mls.A.s1",
+       "title": "Derivatives and Gradient Descent",
+       "lessonIds": [
+        "mls.appendix.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.A.s2",
+       "title": "Cross Validation",
+       "lessonIds": [
+        "mls.appendix.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "mls.A.s3",
+       "title": "Datasets (Boston, Breast Cancer, Penguins, Tips, Wine)",
+       "lessonIds": [
+        "mls.appendix.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    }
+   ]
+  },
+  "D2L": {
+   "title": "Dive into Deep Learning",
+   "chapters": [
+    {
+     "id": "d2l.ch1",
+     "title": "Introduction",
+     "sections": [
+      {
+       "sectionId": "d2l.ch1.s1",
+       "title": "A Motivating Example",
+       "lessonIds": [
+        "d2l.ch1.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch1.s2",
+       "title": "Key Components",
+       "lessonIds": [
+        "d2l.ch1.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch1.s3",
+       "title": "Kinds of Machine Learning Problems",
+       "lessonIds": [
+        "d2l.ch1.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch1.s4",
+       "title": "Roots",
+       "lessonIds": [
+        "d2l.ch1.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch1.s5",
+       "title": "The Road to Deep Learning",
+       "lessonIds": [
+        "d2l.ch1.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch1.s6",
+       "title": "Success Stories",
+       "lessonIds": [
+        "d2l.ch1.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch1.s7",
+       "title": "The Essence of Deep Learning",
+       "lessonIds": [
+        "d2l.ch1.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch1.s8",
+       "title": "Summary",
+       "lessonIds": [
+        "d2l.ch1.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch1.s9",
+       "title": "Exercises",
+       "lessonIds": [
+        "d2l.ch1.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch2",
+     "title": "Preliminaries",
+     "sections": [
+      {
+       "sectionId": "d2l.ch2.s1",
+       "title": "Data Manipulation",
+       "lessonIds": [
+        "d2l.ch2.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch2.s2",
+       "title": "Data Preprocessing",
+       "lessonIds": [
+        "d2l.ch2.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch2.s3",
+       "title": "Linear Algebra",
+       "lessonIds": [
+        "d2l.ch2.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch2.s4",
+       "title": "Calculus",
+       "lessonIds": [
+        "d2l.ch2.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch2.s5",
+       "title": "Automatic Differentiation",
+       "lessonIds": [
+        "d2l.ch2.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch2.s6",
+       "title": "Probability and Statistics",
+       "lessonIds": [
+        "d2l.ch2.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch2.s7",
+       "title": "Documentation",
+       "lessonIds": [
+        "d2l.ch2.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch3",
+     "title": "Linear Neural Networks for Regression",
+     "sections": [
+      {
+       "sectionId": "d2l.ch3.s1",
+       "title": "Linear Regression",
+       "lessonIds": [
+        "d2l.ch3.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch3.s2",
+       "title": "Object-Oriented Design for Implementation",
+       "lessonIds": [
+        "d2l.ch3.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch3.s3",
+       "title": "Synthetic Regression Data",
+       "lessonIds": [
+        "d2l.ch3.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch3.s4",
+       "title": "Linear Regression Implementation from Scratch",
+       "lessonIds": [
+        "d2l.ch3.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch3.s5",
+       "title": "Concise Implementation of Linear Regression",
+       "lessonIds": [
+        "d2l.ch3.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch3.s6",
+       "title": "Generalization",
+       "lessonIds": [
+        "d2l.ch3.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch3.s7",
+       "title": "Weight Decay",
+       "lessonIds": [
+        "d2l.ch3.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch4",
+     "title": "Linear Neural Networks for Classification",
+     "sections": [
+      {
+       "sectionId": "d2l.ch4.s1",
+       "title": "Softmax Regression",
+       "lessonIds": [
+        "d2l.ch4.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch4.s2",
+       "title": "The Image Classification Dataset",
+       "lessonIds": [
+        "d2l.ch4.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch4.s3",
+       "title": "The Base Classification Model",
+       "lessonIds": [
+        "d2l.ch4.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch4.s4",
+       "title": "Softmax Regression Implementation from Scratch",
+       "lessonIds": [
+        "d2l.ch4.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch4.s5",
+       "title": "Concise Implementation of Softmax Regression",
+       "lessonIds": [
+        "d2l.ch4.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch4.s6",
+       "title": "Generalization in Classification",
+       "lessonIds": [
+        "d2l.ch4.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch4.s7",
+       "title": "Environment and Distribution Shift",
+       "lessonIds": [
+        "d2l.ch4.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch5",
+     "title": "Multilayer Perceptrons",
+     "sections": [
+      {
+       "sectionId": "d2l.ch5.s1",
+       "title": "Multilayer Perceptrons",
+       "lessonIds": [
+        "d2l.ch5.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch5.s2",
+       "title": "Implementation of Multilayer Perceptrons",
+       "lessonIds": [
+        "d2l.ch5.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch5.s3",
+       "title": "Forward Propagation, Backward Propagation, and Computational Graphs",
+       "lessonIds": [
+        "d2l.ch5.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch5.s4",
+       "title": "Numerical Stability and Initialization",
+       "lessonIds": [
+        "d2l.ch5.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch5.s5",
+       "title": "Generalization in Deep Learning",
+       "lessonIds": [
+        "d2l.ch5.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch5.s6",
+       "title": "Dropout",
+       "lessonIds": [
+        "d2l.ch5.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch5.s7",
+       "title": "Predicting House Prices on Kaggle",
+       "lessonIds": [
+        "d2l.ch5.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch6",
+     "title": "Builders' Guide",
+     "sections": [
+      {
+       "sectionId": "d2l.ch6.s1",
+       "title": "Layers and Modules",
+       "lessonIds": [
+        "d2l.ch6.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch6.s2",
+       "title": "Parameter Management",
+       "lessonIds": [
+        "d2l.ch6.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch6.s3",
+       "title": "Parameter Initialization",
+       "lessonIds": [
+        "d2l.ch6.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch6.s4",
+       "title": "Lazy Initialization",
+       "lessonIds": [
+        "d2l.ch6.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch6.s5",
+       "title": "Custom Layers",
+       "lessonIds": [
+        "d2l.ch6.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch6.s6",
+       "title": "File I/O",
+       "lessonIds": [
+        "d2l.ch6.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch6.s7",
+       "title": "GPUs",
+       "lessonIds": [
+        "d2l.ch6.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch7",
+     "title": "Convolutional Neural Networks",
+     "sections": [
+      {
+       "sectionId": "d2l.ch7.s1",
+       "title": "From Fully Connected Layers to Convolutions",
+       "lessonIds": [
+        "d2l.ch7.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch7.s2",
+       "title": "Convolutions for Images",
+       "lessonIds": [
+        "d2l.ch7.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch7.s3",
+       "title": "Padding and Stride",
+       "lessonIds": [
+        "d2l.ch7.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch7.s4",
+       "title": "Multiple Input and Multiple Output Channels",
+       "lessonIds": [
+        "d2l.ch7.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch7.s5",
+       "title": "Pooling",
+       "lessonIds": [
+        "d2l.ch7.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch7.s6",
+       "title": "Convolutional Neural Networks (LeNet)",
+       "lessonIds": [
+        "d2l.ch7.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch8",
+     "title": "Modern Convolutional Neural Networks",
+     "sections": [
+      {
+       "sectionId": "d2l.ch8.s1",
+       "title": "Deep Convolutional Neural Networks (AlexNet)",
+       "lessonIds": [
+        "d2l.ch8.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch8.s2",
+       "title": "Networks Using Blocks (VGG)",
+       "lessonIds": [
+        "d2l.ch8.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch8.s3",
+       "title": "Network in Network (NiN)",
+       "lessonIds": [
+        "d2l.ch8.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch8.s4",
+       "title": "Multi-Branch Networks (GoogLeNet)",
+       "lessonIds": [
+        "d2l.ch8.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch8.s5",
+       "title": "Batch Normalization",
+       "lessonIds": [
+        "d2l.ch8.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch8.s6",
+       "title": "Residual Networks (ResNet) and ResNeXt",
+       "lessonIds": [
+        "d2l.ch8.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch8.s7",
+       "title": "Densely Connected Networks (DenseNet)",
+       "lessonIds": [
+        "d2l.ch8.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch8.s8",
+       "title": "Designing Convolution Network Architectures",
+       "lessonIds": [
+        "d2l.ch8.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch9",
+     "title": "Recurrent Neural Networks",
+     "sections": [
+      {
+       "sectionId": "d2l.ch9.s1",
+       "title": "Working with Sequences",
+       "lessonIds": [
+        "d2l.ch9.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch9.s2",
+       "title": "Converting Raw Text into Sequence Data",
+       "lessonIds": [
+        "d2l.ch9.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch9.s3",
+       "title": "Language Models",
+       "lessonIds": [
+        "d2l.ch9.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch9.s4",
+       "title": "Recurrent Neural Networks",
+       "lessonIds": [
+        "d2l.ch9.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch9.s5",
+       "title": "Recurrent Neural Network Implementation from Scratch",
+       "lessonIds": [
+        "d2l.ch9.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch9.s6",
+       "title": "Concise Implementation of Recurrent Neural Networks",
+       "lessonIds": [
+        "d2l.ch9.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch9.s7",
+       "title": "Backpropagation Through Time",
+       "lessonIds": [
+        "d2l.ch9.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch10",
+     "title": "Modern Recurrent Neural Networks",
+     "sections": [
+      {
+       "sectionId": "d2l.ch10.s1",
+       "title": "Long Short-Term Memory (LSTM)",
+       "lessonIds": [
+        "d2l.ch10.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch10.s2",
+       "title": "Gated Recurrent Units (GRU)",
+       "lessonIds": [
+        "d2l.ch10.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch10.s3",
+       "title": "Deep Recurrent Neural Networks",
+       "lessonIds": [
+        "d2l.ch10.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch10.s4",
+       "title": "Bidirectional Recurrent Neural Networks",
+       "lessonIds": [
+        "d2l.ch10.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch10.s5",
+       "title": "Machine Translation and the Dataset",
+       "lessonIds": [
+        "d2l.ch10.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch10.s6",
+       "title": "The Encoder-Decoder Architecture",
+       "lessonIds": [
+        "d2l.ch10.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch10.s7",
+       "title": "Sequence-to-Sequence Learning for Machine Translation",
+       "lessonIds": [
+        "d2l.ch10.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch10.s8",
+       "title": "Beam Search",
+       "lessonIds": [
+        "d2l.ch10.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch11",
+     "title": "Attention Mechanisms and Transformers",
+     "sections": [
+      {
+       "sectionId": "d2l.ch11.s1",
+       "title": "Queries, Keys, and Values",
+       "lessonIds": [
+        "d2l.ch11.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch11.s2",
+       "title": "Attention Pooling by Similarity",
+       "lessonIds": [
+        "d2l.ch11.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch11.s3",
+       "title": "Attention Scoring Functions",
+       "lessonIds": [
+        "d2l.ch11.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch11.s4",
+       "title": "The Bahdanau Attention Mechanism",
+       "lessonIds": [
+        "d2l.ch11.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch11.s5",
+       "title": "Multi-Head Attention",
+       "lessonIds": [
+        "d2l.ch11.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch11.s6",
+       "title": "Self-Attention and Positional Encoding",
+       "lessonIds": [
+        "d2l.ch11.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch11.s7",
+       "title": "The Transformer Architecture",
+       "lessonIds": [
+        "d2l.ch11.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch11.s8",
+       "title": "Transformers for Vision",
+       "lessonIds": [
+        "d2l.ch11.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch11.s9",
+       "title": "Large-Scale Pretraining with Transformers",
+       "lessonIds": [
+        "d2l.ch11.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch12",
+     "title": "Optimization Algorithms",
+     "sections": [
+      {
+       "sectionId": "d2l.ch12.s1",
+       "title": "Optimization and Deep Learning",
+       "lessonIds": [
+        "d2l.ch12.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch12.s2",
+       "title": "Convexity",
+       "lessonIds": [
+        "d2l.ch12.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch12.s3",
+       "title": "Gradient Descent",
+       "lessonIds": [
+        "d2l.ch12.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch12.s4",
+       "title": "Stochastic Gradient Descent",
+       "lessonIds": [
+        "d2l.ch12.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch12.s5",
+       "title": "Minibatch Stochastic Gradient Descent",
+       "lessonIds": [
+        "d2l.ch12.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch12.s6",
+       "title": "Momentum",
+       "lessonIds": [
+        "d2l.ch12.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch12.s7",
+       "title": "Adagrad",
+       "lessonIds": [
+        "d2l.ch12.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch12.s8",
+       "title": "RMSProp",
+       "lessonIds": [
+        "d2l.ch12.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch12.s9",
+       "title": "Adadelta",
+       "lessonIds": [
+        "d2l.ch12.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch12.s10",
+       "title": "Adam",
+       "lessonIds": [
+        "d2l.ch12.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch12.s11",
+       "title": "Learning Rate Scheduling",
+       "lessonIds": [
+        "d2l.ch12.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch13",
+     "title": "Computational Performance",
+     "sections": [
+      {
+       "sectionId": "d2l.ch13.s1",
+       "title": "Compilers and Interpreters",
+       "lessonIds": [
+        "d2l.ch13.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch13.s2",
+       "title": "Asynchronous Computation",
+       "lessonIds": [
+        "d2l.ch13.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch13.s3",
+       "title": "Automatic Parallelism",
+       "lessonIds": [
+        "d2l.ch13.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch13.s4",
+       "title": "Hardware",
+       "lessonIds": [
+        "d2l.ch13.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch13.s5",
+       "title": "Training on Multiple GPUs",
+       "lessonIds": [
+        "d2l.ch13.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch13.s6",
+       "title": "Concise Implementation for Multiple GPUs",
+       "lessonIds": [
+        "d2l.ch13.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch13.s7",
+       "title": "Parameter Servers",
+       "lessonIds": [
+        "d2l.ch13.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch14",
+     "title": "Computer Vision",
+     "sections": [
+      {
+       "sectionId": "d2l.ch14.s1",
+       "title": "Image Augmentation",
+       "lessonIds": [
+        "d2l.ch14.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch14.s2",
+       "title": "Fine-Tuning",
+       "lessonIds": [
+        "d2l.ch14.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch14.s3",
+       "title": "Object Detection and Bounding Boxes",
+       "lessonIds": [
+        "d2l.ch14.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch14.s4",
+       "title": "Anchor Boxes",
+       "lessonIds": [
+        "d2l.ch14.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch14.s5",
+       "title": "Multiscale Object Detection",
+       "lessonIds": [
+        "d2l.ch14.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch14.s6",
+       "title": "The Object Detection Dataset",
+       "lessonIds": [
+        "d2l.ch14.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch14.s7",
+       "title": "Single Shot Multibox Detection",
+       "lessonIds": [
+        "d2l.ch14.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch14.s8",
+       "title": "Region-based CNNs (R-CNNs)",
+       "lessonIds": [
+        "d2l.ch14.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch14.s9",
+       "title": "Semantic Segmentation and the Dataset",
+       "lessonIds": [
+        "d2l.ch14.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch14.s10",
+       "title": "Transposed Convolution",
+       "lessonIds": [
+        "d2l.ch14.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch14.s11",
+       "title": "Fully Convolutional Networks",
+       "lessonIds": [
+        "d2l.ch14.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch14.s12",
+       "title": "Neural Style Transfer",
+       "lessonIds": [
+        "d2l.ch14.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch14.s13",
+       "title": "Image Classification (CIFAR-10) on Kaggle",
+       "lessonIds": [
+        "d2l.ch14.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch14.s14",
+       "title": "Dog Breed Identification (ImageNet Dogs) on Kaggle",
+       "lessonIds": [
+        "d2l.ch14.l5"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch15",
+     "title": "Natural Language Processing: Pretraining",
+     "sections": [
+      {
+       "sectionId": "d2l.ch15.s1",
+       "title": "Word Embedding (word2vec)",
+       "lessonIds": [
+        "d2l.ch15.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch15.s2",
+       "title": "Approximate Training",
+       "lessonIds": [
+        "d2l.ch15.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch15.s3",
+       "title": "The Dataset for Pretraining Word Embeddings",
+       "lessonIds": [
+        "d2l.ch15.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch15.s4",
+       "title": "Pretraining word2vec",
+       "lessonIds": [
+        "d2l.ch15.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch15.s5",
+       "title": "Word Embedding with Global Vectors (GloVe)",
+       "lessonIds": [
+        "d2l.ch15.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch15.s6",
+       "title": "Subword Embedding",
+       "lessonIds": [
+        "d2l.ch15.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch15.s7",
+       "title": "Word Similarity and Analogy",
+       "lessonIds": [
+        "d2l.ch15.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch15.s8",
+       "title": "Bidirectional Encoder Representations from Transformers (BERT)",
+       "lessonIds": [
+        "d2l.ch15.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch15.s9",
+       "title": "The Dataset for Pretraining BERT",
+       "lessonIds": [
+        "d2l.ch15.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch15.s10",
+       "title": "Pretraining BERT",
+       "lessonIds": [
+        "d2l.ch15.l4"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch16",
+     "title": "Natural Language Processing: Applications",
+     "sections": [
+      {
+       "sectionId": "d2l.ch16.s1",
+       "title": "Sentiment Analysis and the Dataset",
+       "lessonIds": [
+        "d2l.ch16.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch16.s2",
+       "title": "Sentiment Analysis: Using Recurrent Neural Networks",
+       "lessonIds": [
+        "d2l.ch16.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch16.s3",
+       "title": "Sentiment Analysis: Using Convolutional Neural Networks",
+       "lessonIds": [
+        "d2l.ch16.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch16.s4",
+       "title": "Natural Language Inference and the Dataset",
+       "lessonIds": [
+        "d2l.ch16.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch16.s5",
+       "title": "Natural Language Inference: Using Attention",
+       "lessonIds": [
+        "d2l.ch16.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch16.s6",
+       "title": "Fine-Tuning BERT for Sequence-Level and Token-Level Applications",
+       "lessonIds": [
+        "d2l.ch16.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch16.s7",
+       "title": "Natural Language Inference: Fine-Tuning BERT",
+       "lessonIds": [
+        "d2l.ch16.l3"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch17",
+     "title": "Reinforcement Learning",
+     "sections": [
+      {
+       "sectionId": "d2l.ch17.s1",
+       "title": "Markov Decision Process (MDP)",
+       "lessonIds": [
+        "d2l.ch17.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch17.s2",
+       "title": "Value Iteration",
+       "lessonIds": [
+        "d2l.ch17.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch17.s3",
+       "title": "Q-Learning",
+       "lessonIds": [
+        "d2l.ch17.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch18",
+     "title": "Gaussian Processes",
+     "sections": [
+      {
+       "sectionId": "d2l.ch18.s1",
+       "title": "Introduction to Gaussian Processes",
+       "lessonIds": [
+        "d2l.ch18.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch18.s2",
+       "title": "Gaussian Process Priors",
+       "lessonIds": [
+        "d2l.ch18.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch18.s3",
+       "title": "Gaussian Process Inference",
+       "lessonIds": [
+        "d2l.ch18.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch19",
+     "title": "Hyperparameter Optimization",
+     "sections": [
+      {
+       "sectionId": "d2l.ch19.s1",
+       "title": "What Is Hyperparameter Optimization?",
+       "lessonIds": [
+        "d2l.ch19.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch19.s2",
+       "title": "Hyperparameter Optimization API",
+       "lessonIds": [
+        "d2l.ch19.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch19.s3",
+       "title": "Asynchronous Random Search",
+       "lessonIds": [
+        "d2l.ch19.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch19.s4",
+       "title": "Multi-Fidelity Hyperparameter Optimization",
+       "lessonIds": [
+        "d2l.ch19.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch19.s5",
+       "title": "Asynchronous Successive Halving",
+       "lessonIds": [
+        "d2l.ch19.l2"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch20",
+     "title": "Generative Adversarial Networks",
+     "sections": [
+      {
+       "sectionId": "d2l.ch20.s1",
+       "title": "Generative Adversarial Networks",
+       "lessonIds": [
+        "d2l.ch20.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      },
+      {
+       "sectionId": "d2l.ch20.s2",
+       "title": "Deep Convolutional Generative Adversarial Networks",
+       "lessonIds": [
+        "d2l.ch20.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    },
+    {
+     "id": "d2l.ch21",
+     "title": "Recommender Systems",
+     "sections": [
+      {
+       "sectionId": "d2l.ch21.s1",
+       "title": "Overview of Recommender Systems",
+       "lessonIds": [
+        "d2l.ch21.l1"
+       ],
+       "labIds": [],
+       "quizIds": [],
+       "status": "published"
+      }
+     ]
+    }
+   ]
+  }
+ }
+}

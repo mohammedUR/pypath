@@ -1,14 +1,16 @@
 // Faithful test: run the worker's SETUP_PY harness, then call __pypath_run_tests
 // with sqlite3 code + print-check tests, exactly like the browser does.
-import { readFileSync } from 'node:fs';
-import { loadPyodide } from '../public/vendor/pyodide/pyodide.mjs';
+import { readFileSync, readdirSync } from 'node:fs';
+
+const distDir = '../public/vendor/pyodide/' + readdirSync('../public/vendor/pyodide')[0];
+const { loadPyodide } = await import(distDir + '/pyodide.mjs');
 
 const workerSrc = readFileSync('../public/pyodide-worker.js', 'utf8');
 const m = workerSrc.match(/const SETUP_PY = `([\s\S]*?)`;\s*\n/);
 if (!m) throw new Error('SETUP_PY not found');
 const SETUP_PY = m[1];
 
-const py = await loadPyodide({ indexURL: '../public/vendor/pyodide/' });
+const py = await loadPyodide({ indexURL: distDir + '/' });
 await py.loadPackage('sqlite3');
 py.runPython(SETUP_PY);
 
@@ -49,3 +51,4 @@ cur.execute('SELECT COUNT(*) FROM Tracks')
 print('persisted rows:', cur.fetchone()[0])
 conn.close()
 `);
+

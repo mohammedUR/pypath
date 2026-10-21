@@ -28,7 +28,7 @@ src/
     store/              progress.ts (IndexedDB + zustand), certification.ts
 public/
   pyodide-worker.js     self-contained classic worker (importScripts vendored Pyodide)
-  vendor/pyodide/       Pyodide 0.27.7 + sqlite3 wheel, sha256-verified
+  vendor/pyodide/0.29.5/  Pyodide 0.29.5 + sqlite3 wheel (versioned path, sha256-verified)
   py-modules/           minigrad.py (scalar reverse-mode autograd, M3)
   data/                 manifest.json, coverage.json (fetched, not bundled)
 content/                258 lesson files (part1 = PY4E+SWE, part2 = MLS+D2L) + exam bank
@@ -46,7 +46,7 @@ scripts/                content CI: validators, dumpers, replay harnesses, oracl
 ## 3. Runtime model (ADR-0002)
 
 1. First run request → main thread spawns `/pyodide-worker.js` (classic worker, importScripts-compatible).
-2. Worker imports `/vendor/pyodide/pyodide.js`, boots Pyodide 0.27.7, preloads the vendored `sqlite3` wheel and `/py-modules/minigrad.py` into the FS.
+2. Worker imports `/vendor/pyodide/0.29.5/pyodide.js`, boots Pyodide 0.29.5, preloads the vendored `sqlite3` wheel and `/py-modules/minigrad.py` into the FS. If the self-hosted boot fails, the runner retries once after purging Cache Storage, then falls back to the same pinned version on the official jsDelivr dist.
 3. `execute()` assigns an id, starts a watchdog (deadline + grace). Overrun ⇒ `worker.terminate()` + lazy respawn (no `SharedArrayBuffer` anywhere).
 4. Results stream back as `stdout`/`stderr`/`result`/`testsResult` events; the UI renders live-region announcements for run outcomes.
 5. `loadLesson(id)` runs `LessonSchema.safeParse` before the view touches the lesson; invalid/missing ids degrade to explicit states, never crashes.
@@ -70,7 +70,7 @@ Authoring → validation → registration:
 
 ## 6. Security & privacy (R-ARC-09/10)
 
-- CSP: `default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; connect-src 'self'; worker-src 'self'; frame-ancestors 'none'; object-src 'none'` — zero third-party origins (Pyodide vendored, not CDN).
+- CSP: `default-src 'self'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; connect-src 'self' https://cdn.jsdelivr.net; worker-src 'self'; frame-ancestors 'none'; object-src 'none'` — same-origin except the official pinned Pyodide CDN, used only as a last-resort boot fallback (Pyodide otherwise vendored).
 - No `dangerouslySetInnerHTML` in the codebase; prose renders as text nodes.
 - User code executes only in the worker; the main thread never evaluates learner input.
 - `bun audit`: 0 findings after the M5 dependency pass (25 unused/heavy deps removed).

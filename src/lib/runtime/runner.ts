@@ -41,8 +41,10 @@ class PyodideRunner {
   private status: RunnerStatus = 'idle';
   private loadPhase: 'download' | 'boot' = 'download';
   private everReady = false;
-  /** Last terminal load failure message (null while loading/ready). */
-  private loadFailed: string | null = null;
+  /** Where the current worker booted its dist from (sticky for the session). */
+  private assetSource: 'local' | 'cdn' = 'local';
+  /** Serializes the boot ladder so concurrent runs share one attempt chain. */
+  private booting: Promise<void> | null = null;
   private seq = 0;
 
   getStatus(): RunnerStatus {
@@ -71,22 +73,24 @@ class PyodideRunner {
     // Static asset worker (ADR-0002 amendment): self-contained classic worker,
     // served from /public — immune to bundler worker-chunk issues.
     const w = new Worker('/pyodide-worker.js');
-    this.loadFailed = null;
     w.addEventListener('message', (ev: MessageEvent<WorkerEvent>) => {
       const e = ev.data;
       if (e.type === 'loading' || e.type === 'ready' || e.type === 'loadError') {
         if (e.type === 'loading') this.setStatus('loading', e.phase);
         if (e.type === 'ready') {
           this.everReady = true;
-          this.loadFailed = null;
           this.setStatus('idle');
         }
         if (e.type === 'loadError') {
-          this.loadFailed = e.message;
           this.setStatus('idle');
         }
-        this.loadWaiters.forEach((cb) => cb(e));
-        if (e.type === 'ready' || e.type === 'loadError') this.loadWaiters.clear();
+        // Only terminal load signals settle an attempt: a 'loading' event
+        // (download/boot phases) must NOT resolve the waiter, otherwise the
+        // ladder terminates a perfectly healthy worker mid-boot.
+        if (e.type === 'ready' || e.type === 'loadError') {
+          this.loadWaiters.forEach((cb) => cb(e));
+          this.loadWaiters.clear();
+        }
       } else if ('id' in e && typeof e.id === 'string') {
         const p = this.pending.get(e.id);
         if (!p) return;
@@ -104,7 +108,6 @@ class PyodideRunner {
     w.addEventListener('error', (ev) => {
       const message = ev.message || 'worker crashed';
       const err: WorkerEvent = { type: 'loadError', message };
-      this.loadFailed = message;
       this.loadWaiters.forEach((cb) => cb(err));
       this.loadWaiters.clear();
       this.worker = null;
@@ -126,53 +129,87 @@ class PyodideRunner {
   }
 
   /** Warm up (e.g. when the user opens a lesson) without running code.
-   * A previous load failure no longer poisons the session: re-kicking
-   * retries the boot (the worker resets its own loading flag on failure,
-   * and a crashed worker is respawned fresh).
+   * A previous load failure no longer poisons the session: the boot ladder
+   * retries (cache purge, then the pinned CDN) on the next preload/run.
    */
   preload(): void {
     if (this.everReady) return;
-    const w = this.ensureWorker();
-    w.postMessage({ type: 'load', id: 'load-kick' });
+    void this.ensureReady().catch(() => undefined);
   }
 
-  private waitForLoadSignal(): Promise<WorkerEvent> {
+  private waitForLoadSignal(timeoutMs: number): Promise<WorkerEvent> {
     return new Promise((resolve) => {
+      let timer: ReturnType<typeof setTimeout>;
       const cb = (e: WorkerEvent) => {
-        if (e.type === 'ready' || e.type === 'loadError') {
-          this.loadWaiters.delete(cb);
-          resolve(e);
-        }
+        if (e.type !== 'ready' && e.type !== 'loadError') return;
+        clearTimeout(timer);
+        this.loadWaiters.delete(cb);
+        resolve(e);
       };
+      timer = setTimeout(() => {
+        this.loadWaiters.delete(cb);
+        resolve({ type: 'loadError', message: 'runtime load timeout' });
+      }, timeoutMs);
       this.loadWaiters.add(cb);
     });
   }
 
-  /** Resolves once Pyodide is usable; rejects with the load error message.
-   * Never hangs: a bounded grace period covers the ~10MB boot, and a past
-   * failure triggers ONE fresh retry instead of throwing forever — a
-   * transient outage (server restart, flaky proxy) self-heals on the next
-   * run/preload without requiring a full page reload.
+  /** Best-effort: drop poisoned Cache Storage entries (stale/mismatched vendor
+   * assets). The offline shell re-populates on the next navigations.
+   */
+  private async purgeBootCaches(): Promise<void> {
+    try {
+      if (typeof caches === 'undefined') return;
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    } catch {
+      /* best effort — the next attempt still runs */
+    }
+  }
+
+  private async bootAttempt(source: 'local' | 'cdn', timeoutMs: number): Promise<WorkerEvent> {
+    this.terminateWorker();
+    this.setStatus('loading', 'download');
+    // Register the waiter BEFORE kicking the worker so a very fast
+    // ready/loadError cannot be missed.
+    const wait = this.waitForLoadSignal(timeoutMs);
+    const w = this.ensureWorker();
+    w.postMessage({ type: 'load', id: 'load-kick', source });
+    return wait;
+  }
+
+  /** Boot ladder: self-hosted → (purge caches) self-hosted → pinned CDN.
+   * The versioned asset path plus this ladder makes a stale or mismatched
+   * Pyodide dist self-heal instead of surfacing "exit(1)" forever.
+   */
+  private async bootLadder(timeoutMs: number): Promise<void> {
+    const plan: Array<'local' | 'cdn'> =
+      this.assetSource === 'cdn' ? ['cdn'] : ['local', 'local', 'cdn'];
+    let lastMessage = 'runtime load failed';
+    for (let i = 0; i < plan.length; i += 1) {
+      if (i === 1) await this.purgeBootCaches();
+      const ev = await this.bootAttempt(plan[i], timeoutMs);
+      if (ev.type === 'ready') {
+        this.assetSource = plan[i];
+        this.everReady = true;
+        return;
+      }
+      if (ev.type === 'loadError') lastMessage = ev.message;
+    }
+    throw new Error(lastMessage);
+  }
+
+  /** Resolves once Pyodide is usable; rejects with the last load error message.
+   * Boot attempts are serialized: concurrent runs/preloads join one ladder.
    */
   async ensureReady(timeoutMs = 60000): Promise<void> {
     if (this.everReady) return;
-    if (this.loadFailed) {
-      // Fresh attempt: drop the recorded failure and force a clean worker.
-      this.loadFailed = null;
-      this.worker = null;
+    if (!this.booting) {
+      this.booting = this.bootLadder(timeoutMs).finally(() => {
+        this.booting = null;
+      });
     }
-    if (!this.worker) this.spawn();
-    if (!this.worker) throw new Error('worker spawn failed');
-    // The worker boots lazily on its first message — kick it so boot starts now.
-    this.worker.postMessage({ type: 'load', id: 'load-kick' });
-    const ev = await Promise.race([
-      this.waitForLoadSignal(),
-      new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('runtime load timeout')), timeoutMs),
-      ),
-    ]);
-    if (ev.type === 'loadError') throw new Error(ev.message);
-    this.everReady = true;
+    return this.booting;
   }
 
   private newId(): string {

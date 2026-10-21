@@ -3,13 +3,17 @@
  * deterministic loss curve (mirrors public/pyodide-worker.js FS preload).
  * Run: bun scripts/test_pyodide_minigrad.ts
  */
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 const root = path.resolve(import.meta.dir, '..');
-const { loadPyodide } = await import(path.join(root, 'public/vendor/pyodide/pyodide.mjs'));
+// The dist lives under a versioned path (ADR-0002); resolve the single
+// version directory instead of hardcoding it in the harness.
+const vendorRoot = path.join(root, 'public/vendor/pyodide');
+const distDir = path.join(vendorRoot, readdirSync(vendorRoot)[0]);
+const { loadPyodide } = await import(path.join(distDir, 'pyodide.mjs'));
 
-const py = await loadPyodide({ indexURL: path.join(root, 'public/vendor/pyodide/') + '/' });
+const py = await loadPyodide({ indexURL: distDir + '/' });
 const mgSrc = readFileSync(path.join(root, 'public/py-modules/minigrad.py'), 'utf-8');
 py.FS.writeFile('/home/pyodide/minigrad.py', mgSrc);
 

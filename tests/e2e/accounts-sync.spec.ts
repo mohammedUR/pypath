@@ -54,10 +54,13 @@ async function goToLessonAndRunInterpreter(page: Page) {
   const run = page.getByRole('button', { name: AR.runWorked });
   await expect(run).toBeVisible({ timeout: 20_000 });
   await run.click();
-  // Pyodide boot + eval; stdout must produce text (interpreter healthy).
+  // Pyodide boot + eval; stdout must contain the worked example's real output
+  // (a boot failure also renders text, so presence alone is not enough).
   const consoleBox = page.locator('[aria-label="لوحة الخرْج"], [aria-label="Output console"]').first();
   await expect(consoleBox).toBeVisible({ timeout: 60_000 });
   await expect(consoleBox.locator('pre').first()).toBeVisible({ timeout: 60_000 });
+  await expect(consoleBox).toContainText('مرحبًا! أنا بايثون', { timeout: 60_000 });
+  await expect(consoleBox).not.toContainText('تعذّر تحميل بايثون');
 }
 
 async function writeReflectionNote(page: Page, note: string) {

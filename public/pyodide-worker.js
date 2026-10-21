@@ -11,9 +11,22 @@
 
 const ctx = self;
 
-// Self-hosted (ADR-0002): no CDN dependency — works offline once cached.
-const PYODIDE_URL = '/vendor/pyodide/pyodide.js';
-const PYODIDE_INDEX = '/vendor/pyodide/';
+// Pyodide 0.29.5 is self-hosted under a VERSIONED path (ADR-0002): a URL that
+// changes whenever the dist changes, so stale service-worker/browser caches can
+// never mix files from two Pyodide builds (which boots Python into
+// "Program terminated with exit(1)"). If the self-hosted boot still fails
+// (bad deploy, partial upload, poisoned cache), the runner respawns this worker
+// with source:'cdn' and the same pinned version is loaded from the official
+// jsDelivr dist — never a floating "latest".
+const PYODIDE_VERSION = '0.29.5';
+const LOCAL_INDEX = `/vendor/pyodide/${PYODIDE_VERSION}/`;
+const CDN_INDEX = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
+
+let bootSource = 'local';
+
+function indexFor(source) {
+  return source === 'cdn' ? CDN_INDEX : LOCAL_INDEX;
+}
 
 /* ------------------------------------------------------------------ */
 /* Python harness (installed once at boot) — every entry returns JSON   */
@@ -124,21 +137,36 @@ function emit(msg) {
 async function ensurePyodide() {
   if (pyodide || loading) return;
   loading = true;
-  console.log('[pypath-worker] boot start');
+  console.log('[pypath-worker] boot start source=' + bootSource);
   emit({ type: 'loading', phase: 'download' });
   try {
-    ctx.importScripts(PYODIDE_URL);
+    ctx.importScripts(indexFor(bootSource) + 'pyodide.js');
     console.log('[pypath-worker] importScripts OK, loadPyodide =', typeof loadPyodide);
   } catch (e) {
+    // The local script itself is unreachable. Nothing has been initialised yet,
+    // so falling back to the CDN inside THIS worker is safe. Runtime (wasm)
+    // failures are handled by the runner, which respawns a clean worker.
     console.log('[pypath-worker] importScripts FAILED', e);
-    loading = false;
-    emit({ type: 'loadError', message: 'importScripts failed: ' + (e && e.message ? e.message : String(e)) });
-    return;
+    if (bootSource !== 'cdn') {
+      bootSource = 'cdn';
+      try {
+        ctx.importScripts(CDN_INDEX + 'pyodide.js');
+        console.log('[pypath-worker] importScripts OK (cdn fallback)');
+      } catch (e2) {
+        loading = false;
+        emit({ type: 'loadError', message: 'importScripts failed: ' + (e2 && e2.message ? e2.message : String(e2)) });
+        return;
+      }
+    } else {
+      loading = false;
+      emit({ type: 'loadError', message: 'importScripts failed: ' + (e && e.message ? e.message : String(e)) });
+      return;
+    }
   }
   emit({ type: 'loading', phase: 'boot' });
   console.log('[pypath-worker] loadPyodide starting');
   try {
-    pyodide = await loadPyodide({ indexURL: PYODIDE_INDEX });
+    pyodide = await loadPyodide({ indexURL: indexFor(bootSource) });
     console.log('[pypath-worker] loadPyodide DONE');
   } catch (e) {
     console.log('[pypath-worker] loadPyodide FAILED', e);
@@ -146,7 +174,7 @@ async function ensurePyodide() {
     emit({ type: 'loadError', message: 'loadPyodide failed: ' + (e && e.message ? e.message : String(e)) });
     return;
   }
-  // Preload sqlite3 (vendored wheel from the pinned 0.27.7 dist, sha256-verified
+  // Preload sqlite3 (vendored wheel from the pinned 0.29.5 dist, sha256-verified
   // against pyodide-lock.json) so lesson code can `import sqlite3` offline.
   // Non-fatal: if the wheel is missing, SQL lessons fall back to their simulated-DB framing.
   try {
@@ -203,7 +231,10 @@ ctx.addEventListener('message', (ev) => {
   const msg = ev.data;
 
   // Kick message: start (or join) Pyodide boot without running user code.
+  // `source` selects the pinned dist location: 'local' (default) or 'cdn'
+  // when the runner retries after a failed self-hosted boot.
   if (msg && msg.type === 'load') {
+    if (msg.source === 'cdn' || msg.source === 'local') bootSource = msg.source;
     ensurePyodide().catch((e) => {
       emit({ type: 'loadError', message: (e && e.message) ? e.message : String(e) });
     });

@@ -6,10 +6,14 @@
  *  - Static assets (hashed chunks, vendored Pyodide, py-modules, data JSON):
  *    cache-first (immutable by nature; manifest/coverage are re-fetched in the
  *    background on every boot via the network-first shell data path).
- * The cache is versioned; stale caches are purged on activate.
+ * The cache is versioned; stale caches are purged on activate. Bump VERSION on
+ * every deploy that changes vendored assets: a cache-first entry is otherwise
+ * reused forever, and a Pyodide dist mixed across versions boots Python into
+ * "Program terminated with exit(1)". Pyodide itself lives under a
+ * version-segment path (/vendor/pyodide/<version>/) as a second guard.
  * Privacy: same-origin only — nothing is sent anywhere (R-ARC-10).
  */
-const VERSION = 'pypath-v2';
+const VERSION = 'pypath-v4';
 const SHELL = `${VERSION}-shell`;
 const ASSETS = `${VERSION}-assets`;
 
@@ -34,6 +38,13 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
 
+  // Never intercept the vendored Pyodide dist: those files ship immutable
+  // cache headers under a versioned path, so the HTTP cache is both faster
+  // and safer. SW cache-first double-stores ~12 MB and used to race the
+  // runtime's boot-cache purge, which could surface as "the script
+  // .../pyodide.js failed to load" and re-trigger the exit(1) failure class.
+  if (url.pathname.startsWith('/vendor/pyodide/')) return;
+
   if (req.mode === 'navigate') {
     event.respondWith(
       fetch(req)
@@ -56,7 +67,10 @@ self.addEventListener('fetch', (event) => {
       (hit) =>
         hit ||
         fetch(req).then((res) => {
-          if (res.ok && (url.pathname.startsWith('/_next/') || url.pathname.startsWith('/vendor/') || url.pathname.startsWith('/py-modules/') || url.pathname.startsWith('/data/'))) {
+          // Never cache an HTML error page under an asset URL: a host 200
+          // fallback must not poison the next boot (Pyodide unzips these).
+          const type = res.headers.get('content-type') || '';
+          if (res.ok && !type.includes('text/html') && (url.pathname.startsWith('/_next/') || url.pathname.startsWith('/vendor/') || url.pathname.startsWith('/py-modules/') || url.pathname.startsWith('/data/'))) {
             const copy = res.clone();
             caches.open(ASSETS).then((c) => c.put(req, copy));
           }

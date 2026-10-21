@@ -73,6 +73,6 @@ export type RunOutcome =
   | { kind: 'stopped' }
   | { kind: 'loadError'; message: string };
 
-export const PYODIDE_VERSION = '0.27.7';
+export const PYODIDE_VERSION = '0.29.5';
 export const PYODIDE_CDN = `https://cdn.jsdelivr.net/pyodide/v${PYODIDE_VERSION}/full/`;
 export const DEFAULT_RUN_TIMEOUT_MS = 10_000;

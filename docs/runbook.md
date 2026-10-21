@@ -42,7 +42,7 @@ Reference numbers (2026-10-19): JS 193 KB · LCP 132–184 ms · CLS 0 (fresh & 
 
 ## 4. Pyodide runtime notes
 
-- Vendored at `public/vendor/pyodide/` (0.27.7 + sqlite3 wheel, sha256-verified). **Do not** point the worker at a CDN (CSP `default-src 'self'` forbids it by design).
+- Vendored at `public/vendor/pyodide/0.29.5/` (0.29.5 + sqlite3 wheel, sha256-verified against the lock file). The path is versioned so stale caches can never mix builds; on a failed self-hosted boot the runner purges Cache Storage, retries, then falls back to the same pinned version on the official jsDelivr dist. Do not point the primary source anywhere else.
 - To bump Pyodide: replace the vendor dir with the pinned dist (pyodide.js, pyodide.asm.{js,wasm}, python_stdlib.zip, pyodide-lock.json, sqlite3 wheel), update `PYODIDE_VERSION` in `src/lib/runtime/protocol.ts`, then run `bun scripts/test_pyodide_minigrad.ts` (minigrad regression: identical loss curves) and one E2E lesson run.
 - The worker is self-contained on purpose (classic worker + importScripts). Do not add ES imports to `public/pyodide-worker.js`.
 - Watchdog: a run exceeding deadline+grace terminates the worker; the next run respawns lazily. If the sandboxed environment blocks workers entirely, the UI degrades to `noRuntime` states with honest messaging (mcq/fill/trace/numeric grading still works pattern-based).
@@ -58,7 +58,7 @@ Reference numbers (2026-10-19): JS 193 KB · LCP 132–184 ms · CLS 0 (fresh & 
 | Symptom | Likely cause | Fix |
 |---------|--------------|-----|
 | Lesson stuck on skeleton | manifest fetch failed | check `public/data/manifest.json` served; reload (hydrate retries on next navigation) |
-| "المفسّر غير متاح" | Pyodide blocked/old cache | hard-reload; verify `/vendor/pyodide/pyodide.js` 200 |
+| "المفسّر غير متاح" | Pyodide blocked/old cache | hard-reload; verify `/vendor/pyodide/0.29.5/pyodide.js` 200 |
 | A lesson reports invalid | schema drift after edits | `bun scripts/wave3-validate.ts <file>` prints the Zod path |
 | Gate 3 fails on a debug block | symptom oracle mismatch | re-verify the symptom by hand, then update `scripts/.w3-oracles.json` |
 | tsc errors in `examples/`/`skills/` | out-of-scope dirs | not part of the app build; ignore (documented baseline) |

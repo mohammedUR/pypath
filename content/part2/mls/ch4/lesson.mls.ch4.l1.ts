@@ -274,6 +274,12 @@ print("qda pick:", 0 if d0 > d1 else 1)`,
         en: 'If all data in the world followed Gaussians with a shared variance, what would QDA ever be good for? And what does it cost you when the true variances are nearly equal?',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.ch4.s1', pages: 'ص38-53 / pp.38-53' },
+      ],
+    },
   ],
   sources: [
     { book: 'MLS', section: 'mls.ch4.s1', pages: 'ص38-53 / pp.38-53' },

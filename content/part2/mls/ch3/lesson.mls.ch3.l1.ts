@@ -259,6 +259,12 @@ print(f"bce(0.9, 1) = {bce(0.9, 1.0):.4f}")`,
         en: 'Why pass the linear score through a sigmoid instead of hard-cutting it at zero? What would we lose if the model only ever said 0 or 1?',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.ch3.s1', pages: 'ص33-37 / pp.33-37' },
+      ],
+    },
   ],
   sources: [
     { book: 'MLS', section: 'mls.ch3.s1', pages: 'ص33-37 / pp.33-37' },

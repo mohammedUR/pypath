@@ -270,6 +270,12 @@ print("best split: t =", t, " sse =", s)`,
         en: 'If you replaced the right-side 6.0 and 7.0 with 6.0 and 100.0, would t=4.5 still win? Re-run the scan numerically and explain how extreme values steer threshold choice.',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.ch5.s1', pages: 'ص54-65 / pp.54-65' },
+      ],
+    },
   ],
   sources: [
     { book: 'MLS', section: 'mls.ch5.s1', pages: 'ص54-65 / pp.54-65' },

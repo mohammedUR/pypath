@@ -358,6 +358,12 @@ print(f"accuracy fisher = {accuracy(preds_fisher)}")`,
         en: 'If a point labeled 1 at x = 20 were added to the example data: which of the three models do you expect to improve most, and why should you distrust any such improvement?',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.ch3.s5', pages: 'ص33-37 / pp.33-37' },
+      ],
+    },
   ],
   sources: [
     { book: 'MLS', section: 'mls.ch3.s5', pages: 'ص33-37 / pp.33-37' },

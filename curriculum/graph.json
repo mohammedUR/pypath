@@ -4017,6 +4017,11 @@
    "type": "sequence"
   },
   {
+   "from": "lesson:mls.appendix.l3",
+   "to": "lesson:d2l.ch2.l1",
+   "type": "sequence"
+  },
+  {
    "from": "lesson:d2l.ch2.l1",
    "to": "lesson:d2l.ch2.l2",
    "type": "sequence"
@@ -4027,11 +4032,6 @@
    "type": "sequence"
   },
   {
-   "from": "lesson:d2l.ch2.l3",
-   "to": "lesson:d2l.ch1.l1",
-   "type": "sequence"
-  },
-  {
    "from": "lesson:d2l.ch1.l1",
    "to": "lesson:d2l.ch1.l2",
    "type": "sequence"
@@ -4039,11 +4039,6 @@
   {
    "from": "lesson:d2l.ch1.l2",
    "to": "lesson:d2l.ch1.l3",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:d2l.ch1.l3",
-   "to": "lesson:mls.ch1.l1",
    "type": "sequence"
   },
   {
@@ -4177,7 +4172,17 @@
    "type": "sequence"
   },
   {
-   "from": "lesson:mls.ch6.l5",
+   "from": "lesson:mls.ch7.l1",
+   "to": "lesson:mls.ch7.l2",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:mls.ch7.l2",
+   "to": "lesson:mls.ch7.l3",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:mls.ch7.l3",
    "to": "lesson:d2l.ch3.l1",
    "type": "sequence"
   },
@@ -4237,11 +4242,6 @@
    "type": "sequence"
   },
   {
-   "from": "lesson:d2l.ch6.l3",
-   "to": "lesson:d2l.ch7.l1",
-   "type": "sequence"
-  },
-  {
    "from": "lesson:d2l.ch7.l1",
    "to": "lesson:d2l.ch7.l2",
    "type": "sequence"
@@ -4289,11 +4289,6 @@
   {
    "from": "lesson:d2l.ch14.l4",
    "to": "lesson:d2l.ch14.l5",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:d2l.ch14.l5",
-   "to": "lesson:d2l.ch9.l1",
    "type": "sequence"
   },
   {
@@ -4362,11 +4357,6 @@
    "type": "sequence"
   },
   {
-   "from": "lesson:d2l.ch16.l3",
-   "to": "lesson:d2l.ch11.l1",
-   "type": "sequence"
-  },
-  {
    "from": "lesson:d2l.ch11.l1",
    "to": "lesson:d2l.ch11.l2",
    "type": "sequence"
@@ -4374,11 +4364,6 @@
   {
    "from": "lesson:d2l.ch11.l2",
    "to": "lesson:d2l.ch11.l3",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:d2l.ch11.l3",
-   "to": "lesson:d2l.ch12.l1",
    "type": "sequence"
   },
   {
@@ -4417,11 +4402,6 @@
    "type": "sequence"
   },
   {
-   "from": "lesson:d2l.ch19.l2",
-   "to": "lesson:d2l.ch17.l1",
-   "type": "sequence"
-  },
-  {
    "from": "lesson:d2l.ch17.l1",
    "to": "lesson:d2l.ch18.l1",
    "type": "sequence"
@@ -4434,16 +4414,6 @@
   {
    "from": "lesson:d2l.ch20.l1",
    "to": "lesson:d2l.ch21.l1",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:mls.ch7.l1",
-   "to": "lesson:mls.ch7.l2",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:mls.ch7.l2",
-   "to": "lesson:mls.ch7.l3",
    "type": "sequence"
   },
   {

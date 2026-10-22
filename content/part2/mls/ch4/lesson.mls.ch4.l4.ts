@@ -309,6 +309,13 @@ print("disagree =", [x for x, a, b in zip(xs, lda_preds, qda_preds) if a != b])`
         en: 'If the narrow class variance grew from 0.3125 to 3.0, would 5.0 remain a disagreement point between LDA and QDA? Try it numerically and explain what happens to the two boundaries.',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.ch4.s4', pages: 'ص38-53 / pp.38-53' },
+        { book: 'MLS', section: 'mls.ch4.s1', pages: 'ص38-53 / pp.38-53' },
+      ],
+    },
   ],
   sources: [
     { book: 'MLS', section: 'mls.ch4.s4', pages: 'ص38-53 / pp.38-53' },

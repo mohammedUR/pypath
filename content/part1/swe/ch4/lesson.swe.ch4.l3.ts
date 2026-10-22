@@ -492,6 +492,13 @@ for mode, (a, b) in MODES.items():
         en: 'Which feature did you once see as a Delighter and is now a Must-be in your products? And where are you spending past the threshold of sufficiency?',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch4.s5', pages: 'ص105-108 / pp.105-108' },
+        { book: 'SWE', section: 'swe.ch4.s6', pages: 'ص108-111 / pp.108-111' },
+      ],
+    },
   ],
   sources: [
     { book: 'SWE', section: 'swe.ch4.s5', pages: 'ص105-108 / pp.105-108' },

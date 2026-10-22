@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 """R-COV-01/03: generate curriculum/coverage.json + curriculum/graph.json
 from curriculum/sources/*.toc.json and content/manifest.json (published lessons)."""
-import json, os
+import json
+from pathlib import Path
 
-CUR = "/home/z/my-project/curriculum"
+ROOT = Path(__file__).resolve().parents[1]
+CUR = ROOT / "curriculum"
 # Published lessons this milestone (see content/manifest.json authoring)
-PUBLISHED = json.load(open("/home/z/my-project/content/manifest.json")) if os.path.exists("/home/z/my-project/content/manifest.json") else {"lessons": []}
+manifest_path = ROOT / "content" / "manifest.json"
+PUBLISHED = json.loads(manifest_path.read_text(encoding="utf-8")) if manifest_path.exists() else {"lessons": []}
 pub_ids = {l["id"] for l in PUBLISHED["lessons"]}
 # sections covered by at least one published lesson
 covered_sections = set()
@@ -17,7 +20,7 @@ coverage = {"generatedBy": "scripts/gen_coverage.py", "books": {}}
 graph_nodes, graph_edges = [], []
 
 for code in ["PY4E", "SWE", "MLS", "D2L"]:
-    toc = json.load(open(f"{CUR}/sources/{code}.toc.json"))
+    toc = json.loads((CUR / "sources" / f"{code}.toc.json").read_text(encoding="utf-8"))
     book_cov = {"title": toc["title"], "chapters": []}
     for ch in toc["chapters"]:
         ch_cov = {"id": ch["id"], "title": ch["title"], "sections": []}
@@ -52,8 +55,8 @@ for track, ls in by_track.items():
     for a, b in zip(ls, ls[1:]):
         graph_edges.append({"from": f"lesson:{a['id']}", "to": f"lesson:{b['id']}", "type": "sequence"})
 
-json.dump(coverage, open(f"{CUR}/coverage.json", "w"), ensure_ascii=False, indent=1)
-json.dump({"nodes": graph_nodes, "edges": graph_edges}, open(f"{CUR}/graph.json", "w"), ensure_ascii=False, indent=1)
+(CUR / "coverage.json").write_text(json.dumps(coverage, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+(CUR / "graph.json").write_text(json.dumps({"nodes": graph_nodes, "edges": graph_edges}, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
 # report
 print("book       chapters  sections  published  %")

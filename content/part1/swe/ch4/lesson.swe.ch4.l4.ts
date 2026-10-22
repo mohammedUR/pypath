@@ -557,6 +557,12 @@ print("picked:", " ".join(picked), f"({used}/{VELOCITY} pts)")
         en: 'Which tool from this chapter will enter your first planning meeting, and why? Which number will you state as a range instead of a single figure?',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch4.s7', pages: 'ص111-112 / pp.111-112' },
+      ],
+    },
   ],
   sources: [{ book: 'SWE', section: 'swe.ch4.s7', pages: 'ص111-112 / pp.111-112' }],
 } satisfies Lesson;

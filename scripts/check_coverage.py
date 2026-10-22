@@ -6,10 +6,11 @@ Default (report mode): prints the true coverage table, exits 0.
 Graph checks (R-CUR-04): cycles, orphans (published lessons with no edge), unreachable nodes.
 """
 import json, sys
+from pathlib import Path
 
-CUR = "/home/z/my-project/curriculum"
-coverage = json.load(open(f"{CUR}/coverage.json"))
-graph = json.load(open(f"{CUR}/graph.json"))
+CUR = Path(__file__).resolve().parents[1] / "curriculum"
+coverage = json.loads((CUR / "coverage.json").read_text(encoding="utf-8"))
+graph = json.loads((CUR / "graph.json").read_text(encoding="utf-8"))
 strict = "--strict" in sys.argv
 
 fail = False

@@ -338,6 +338,12 @@ print("preds =", fisher_predict(c0, c1, [1.5, 2.0, 6.0, 8.0]))`,
         en: 'The three classifiers ask different questions of the same data: which update rule would you understand deepest if you had to explain it to a colleague without equations, and why?',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.ch3.s4', pages: 'ص33-37 / pp.33-37' },
+      ],
+    },
   ],
   sources: [
     { book: 'MLS', section: 'mls.ch3.s4', pages: 'ص33-37 / pp.33-37' },

@@ -4217,7 +4217,7 @@
   },
   {
    "id": "d2l.ch2.l1",
-   "track": "A2",
+   "track": "A0",
    "part": "II",
    "book": "D2L",
    "chapter": 2,
@@ -4242,7 +4242,7 @@
   },
   {
    "id": "d2l.ch2.l2",
-   "track": "A2",
+   "track": "A0",
    "part": "II",
    "book": "D2L",
    "chapter": 2,
@@ -4267,7 +4267,7 @@
   },
   {
    "id": "d2l.ch2.l3",
-   "track": "A2",
+   "track": "A0",
    "part": "II",
    "book": "D2L",
    "chapter": 2,
@@ -4296,7 +4296,7 @@
   },
   {
    "id": "d2l.ch1.l1",
-   "track": "A2",
+   "track": "A1",
    "part": "II",
    "book": "D2L",
    "chapter": 1,
@@ -4325,7 +4325,7 @@
   },
   {
    "id": "d2l.ch1.l2",
-   "track": "A2",
+   "track": "A1",
    "part": "II",
    "book": "D2L",
    "chapter": 1,
@@ -4354,7 +4354,7 @@
   },
   {
    "id": "d2l.ch1.l3",
-   "track": "A2",
+   "track": "A1",
    "part": "II",
    "book": "D2L",
    "chapter": 1,
@@ -5017,7 +5017,7 @@
   },
   {
    "id": "d2l.ch3.l1",
-   "track": "A2",
+   "track": "A3",
    "part": "II",
    "book": "D2L",
    "chapter": 3,
@@ -5042,7 +5042,7 @@
   },
   {
    "id": "d2l.ch3.l2",
-   "track": "A2",
+   "track": "A3",
    "part": "II",
    "book": "D2L",
    "chapter": 3,
@@ -5067,7 +5067,7 @@
   },
   {
    "id": "d2l.ch3.l3",
-   "track": "A2",
+   "track": "A3",
    "part": "II",
    "book": "D2L",
    "chapter": 3,
@@ -5096,7 +5096,7 @@
   },
   {
    "id": "d2l.ch4.l1",
-   "track": "A2",
+   "track": "A3",
    "part": "II",
    "book": "D2L",
    "chapter": 4,
@@ -5121,7 +5121,7 @@
   },
   {
    "id": "d2l.ch4.l2",
-   "track": "A2",
+   "track": "A3",
    "part": "II",
    "book": "D2L",
    "chapter": 4,
@@ -5146,7 +5146,7 @@
   },
   {
    "id": "d2l.ch4.l3",
-   "track": "A2",
+   "track": "A3",
    "part": "II",
    "book": "D2L",
    "chapter": 4,
@@ -5175,7 +5175,7 @@
   },
   {
    "id": "d2l.ch5.l1",
-   "track": "A2",
+   "track": "A3",
    "part": "II",
    "book": "D2L",
    "chapter": 5,
@@ -5200,7 +5200,7 @@
   },
   {
    "id": "d2l.ch5.l2",
-   "track": "A2",
+   "track": "A3",
    "part": "II",
    "book": "D2L",
    "chapter": 5,
@@ -5225,7 +5225,7 @@
   },
   {
    "id": "d2l.ch5.l3",
-   "track": "A2",
+   "track": "A3",
    "part": "II",
    "book": "D2L",
    "chapter": 5,
@@ -5254,7 +5254,7 @@
   },
   {
    "id": "d2l.ch6.l1",
-   "track": "A2",
+   "track": "A3",
    "part": "II",
    "book": "D2L",
    "chapter": 6,
@@ -5279,7 +5279,7 @@
   },
   {
    "id": "d2l.ch6.l2",
-   "track": "A2",
+   "track": "A3",
    "part": "II",
    "book": "D2L",
    "chapter": 6,
@@ -5304,7 +5304,7 @@
   },
   {
    "id": "d2l.ch6.l3",
-   "track": "A2",
+   "track": "A3",
    "part": "II",
    "book": "D2L",
    "chapter": 6,
@@ -5333,7 +5333,7 @@
   },
   {
    "id": "d2l.ch7.l1",
-   "track": "A2",
+   "track": "A4",
    "part": "II",
    "book": "D2L",
    "chapter": 7,
@@ -5358,7 +5358,7 @@
   },
   {
    "id": "d2l.ch7.l2",
-   "track": "A2",
+   "track": "A4",
    "part": "II",
    "book": "D2L",
    "chapter": 7,
@@ -5383,7 +5383,7 @@
   },
   {
    "id": "d2l.ch7.l3",
-   "track": "A2",
+   "track": "A4",
    "part": "II",
    "book": "D2L",
    "chapter": 7,
@@ -5408,7 +5408,7 @@
   },
   {
    "id": "d2l.ch8.l1",
-   "track": "A2",
+   "track": "A4",
    "part": "II",
    "book": "D2L",
    "chapter": 8,
@@ -5437,7 +5437,7 @@
   },
   {
    "id": "d2l.ch8.l2",
-   "track": "A2",
+   "track": "A4",
    "part": "II",
    "book": "D2L",
    "chapter": 8,
@@ -5462,7 +5462,7 @@
   },
   {
    "id": "d2l.ch8.l3",
-   "track": "A2",
+   "track": "A4",
    "part": "II",
    "book": "D2L",
    "chapter": 8,
@@ -5491,7 +5491,7 @@
   },
   {
    "id": "d2l.ch14.l1",
-   "track": "A2",
+   "track": "A4",
    "part": "II",
    "book": "D2L",
    "chapter": 14,
@@ -5516,7 +5516,7 @@
   },
   {
    "id": "d2l.ch14.l2",
-   "track": "A2",
+   "track": "A4",
    "part": "II",
    "book": "D2L",
    "chapter": 14,
@@ -5545,7 +5545,7 @@
   },
   {
    "id": "d2l.ch14.l3",
-   "track": "A2",
+   "track": "A4",
    "part": "II",
    "book": "D2L",
    "chapter": 14,
@@ -5574,7 +5574,7 @@
   },
   {
    "id": "d2l.ch14.l4",
-   "track": "A2",
+   "track": "A4",
    "part": "II",
    "book": "D2L",
    "chapter": 14,
@@ -5603,7 +5603,7 @@
   },
   {
    "id": "d2l.ch14.l5",
-   "track": "A2",
+   "track": "A4",
    "part": "II",
    "book": "D2L",
    "chapter": 14,
@@ -5632,7 +5632,7 @@
   },
   {
    "id": "d2l.ch9.l1",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 9,
@@ -5657,7 +5657,7 @@
   },
   {
    "id": "d2l.ch9.l2",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 9,
@@ -5682,7 +5682,7 @@
   },
   {
    "id": "d2l.ch9.l3",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 9,
@@ -5711,7 +5711,7 @@
   },
   {
    "id": "d2l.ch10.l1",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 10,
@@ -5736,7 +5736,7 @@
   },
   {
    "id": "d2l.ch10.l2",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 10,
@@ -5761,7 +5761,7 @@
   },
   {
    "id": "d2l.ch10.l3",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 10,
@@ -5786,7 +5786,7 @@
   },
   {
    "id": "d2l.ch10.l4",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 10,
@@ -5811,7 +5811,7 @@
   },
   {
    "id": "d2l.ch15.l1",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 15,
@@ -5840,7 +5840,7 @@
   },
   {
    "id": "d2l.ch15.l2",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 15,
@@ -5869,7 +5869,7 @@
   },
   {
    "id": "d2l.ch15.l3",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 15,
@@ -5894,7 +5894,7 @@
   },
   {
    "id": "d2l.ch15.l4",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 15,
@@ -5919,7 +5919,7 @@
   },
   {
    "id": "d2l.ch16.l1",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 16,
@@ -5948,7 +5948,7 @@
   },
   {
    "id": "d2l.ch16.l2",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 16,
@@ -5973,7 +5973,7 @@
   },
   {
    "id": "d2l.ch16.l3",
-   "track": "A2",
+   "track": "A5",
    "part": "II",
    "book": "D2L",
    "chapter": 16,
@@ -5998,7 +5998,7 @@
   },
   {
    "id": "d2l.ch11.l1",
-   "track": "A2",
+   "track": "A6",
    "part": "II",
    "book": "D2L",
    "chapter": 11,
@@ -6027,7 +6027,7 @@
   },
   {
    "id": "d2l.ch11.l2",
-   "track": "A2",
+   "track": "A6",
    "part": "II",
    "book": "D2L",
    "chapter": 11,
@@ -6056,7 +6056,7 @@
   },
   {
    "id": "d2l.ch11.l3",
-   "track": "A2",
+   "track": "A6",
    "part": "II",
    "book": "D2L",
    "chapter": 11,
@@ -6085,7 +6085,7 @@
   },
   {
    "id": "d2l.ch12.l1",
-   "track": "A2",
+   "track": "A7",
    "part": "II",
    "book": "D2L",
    "chapter": 12,
@@ -6114,7 +6114,7 @@
   },
   {
    "id": "d2l.ch12.l2",
-   "track": "A2",
+   "track": "A7",
    "part": "II",
    "book": "D2L",
    "chapter": 12,
@@ -6143,7 +6143,7 @@
   },
   {
    "id": "d2l.ch12.l3",
-   "track": "A2",
+   "track": "A7",
    "part": "II",
    "book": "D2L",
    "chapter": 12,
@@ -6172,7 +6172,7 @@
   },
   {
    "id": "d2l.ch12.l4",
-   "track": "A2",
+   "track": "A7",
    "part": "II",
    "book": "D2L",
    "chapter": 12,
@@ -6197,7 +6197,7 @@
   },
   {
    "id": "d2l.ch13.l1",
-   "track": "A2",
+   "track": "A7",
    "part": "II",
    "book": "D2L",
    "chapter": 13,
@@ -6230,7 +6230,7 @@
   },
   {
    "id": "d2l.ch13.l2",
-   "track": "A2",
+   "track": "A7",
    "part": "II",
    "book": "D2L",
    "chapter": 13,
@@ -6259,7 +6259,7 @@
   },
   {
    "id": "d2l.ch19.l1",
-   "track": "A2",
+   "track": "A7",
    "part": "II",
    "book": "D2L",
    "chapter": 19,
@@ -6288,7 +6288,7 @@
   },
   {
    "id": "d2l.ch19.l2",
-   "track": "A2",
+   "track": "A7",
    "part": "II",
    "book": "D2L",
    "chapter": 19,
@@ -6313,7 +6313,7 @@
   },
   {
    "id": "d2l.ch17.l1",
-   "track": "A2",
+   "track": "A8",
    "part": "II",
    "book": "D2L",
    "chapter": 17,
@@ -6342,7 +6342,7 @@
   },
   {
    "id": "d2l.ch18.l1",
-   "track": "A2",
+   "track": "A8",
    "part": "II",
    "book": "D2L",
    "chapter": 18,
@@ -6371,7 +6371,7 @@
   },
   {
    "id": "d2l.ch20.l1",
-   "track": "A2",
+   "track": "A8",
    "part": "II",
    "book": "D2L",
    "chapter": 20,
@@ -6396,7 +6396,7 @@
   },
   {
    "id": "d2l.ch21.l1",
-   "track": "A2",
+   "track": "A8",
    "part": "II",
    "book": "D2L",
    "chapter": 21,

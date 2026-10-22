@@ -475,6 +475,13 @@ for i, ids, pts in plan:
         en: 'Which story in your current work would your checklist reject today for lacking an acceptance test? What two lines from past surprises will you add to your checklist?',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch4.s1', pages: 'ص96-97 / pp.96-97' },
+        { book: 'SWE', section: 'swe.ch4.s2', pages: 'ص97-100 / pp.97-100' },
+      ],
+    },
   ],
   sources: [
     { book: 'SWE', section: 'swe.ch4.s1', pages: 'ص96-97 / pp.96-97' },

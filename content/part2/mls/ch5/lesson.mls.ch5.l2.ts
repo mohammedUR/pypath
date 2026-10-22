@@ -278,6 +278,12 @@ print("best split: t =", t, " weighted_gini =", g)`,
         en: 'If you added a seventh point x=7 labeled 0, would t=2.5 remain the winner? Re-run the scan by hand and watch how one row reshuffles the whole table.',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.ch5.s2', pages: 'ص54-65 / pp.54-65' },
+      ],
+    },
   ],
   sources: [
     { book: 'MLS', section: 'mls.ch5.s2', pages: 'ص54-65 / pp.54-65' },

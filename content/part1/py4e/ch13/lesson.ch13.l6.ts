@@ -389,6 +389,7 @@ const lesson = {
       items: [
         { book: 'PY4E', section: 'py4e.ch13.s8', pages: 'ص221 / pp.221' },
         { book: 'PY4E', section: 'py4e.ch13.s9', pages: 'ص222 / pp.222' },
+        { book: 'PY4E', section: 'py4e.ch13.s10', pages: 'ص227 / pp.227' },
       ],
     },
   ],

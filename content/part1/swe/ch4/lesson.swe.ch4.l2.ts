@@ -471,6 +471,13 @@ for i, (name, v, c) in enumerate(sorted(features, key=lambda f: (f[1] + risk[f[0
         en: 'When did your team last vote with private cards? What would the reveal have exposed — and who held the outlier number, and why?',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'SWE', section: 'swe.ch4.s3', pages: 'ص101-102 / pp.101-102' },
+        { book: 'SWE', section: 'swe.ch4.s4', pages: 'ص102-105 / pp.102-105' },
+      ],
+    },
   ],
   sources: [
     { book: 'SWE', section: 'swe.ch4.s3', pages: 'ص101-102 / pp.101-102' },

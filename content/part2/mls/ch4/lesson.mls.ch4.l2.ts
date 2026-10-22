@@ -289,6 +289,12 @@ print("pick:", "spam" if s > h else "ham")`,
         en: 'The independence assumption is linguistically wrong yet practically successful: name one case where the damage is real, and one where it is overstated.',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.ch4.s2', pages: 'ص38-53 / pp.38-53' },
+      ],
+    },
   ],
   sources: [
     { book: 'MLS', section: 'mls.ch4.s2', pages: 'ص38-53 / pp.38-53' },

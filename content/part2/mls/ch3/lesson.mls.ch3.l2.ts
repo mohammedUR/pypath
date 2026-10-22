@@ -246,6 +246,12 @@ print("updates =", updates)`,
         en: 'Logistic regression minimizes a smooth loss; the perceptron only fixes mistakes. Which behavior do you want when the data has poison points, and when you need a confidence score?',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.ch3.s2', pages: 'ص33-37 / pp.33-37' },
+      ],
+    },
   ],
   sources: [
     { book: 'MLS', section: 'mls.ch3.s2', pages: 'ص33-37 / pp.33-37' },

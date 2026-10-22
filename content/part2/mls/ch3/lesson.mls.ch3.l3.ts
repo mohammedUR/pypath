@@ -246,6 +246,12 @@ print("proj class1 =", [round(v, 4) for v in project([4.0, 6.0, 8.0], w)])`,
         en: "Two classes with the same center distance but very different spreads: why does Fisher assign the wider pair a smaller direction, and when is that the right call in practice?",
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.ch3.s3', pages: 'ص33-37 / pp.33-37' },
+      ],
+    },
   ],
   sources: [
     { book: 'MLS', section: 'mls.ch3.s3', pages: 'ص33-37 / pp.33-37' },

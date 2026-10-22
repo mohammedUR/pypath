@@ -357,6 +357,12 @@ print("doc C [0, 0, 3] ->", nb_predict([0, 0, 3]))`,
         en: 'Bayes rule ran through every build: where exactly did the denominator p(x) vanish? And what would we have to do if we needed a true posterior number instead of just a decision?',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.ch4.s3', pages: 'ص38-53 / pp.38-53' },
+      ],
+    },
   ],
   sources: [
     { book: 'MLS', section: 'mls.ch4.s3', pages: 'ص38-53 / pp.38-53' },

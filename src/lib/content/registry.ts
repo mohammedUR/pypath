@@ -314,7 +314,7 @@ export const loaders: Record<string, Loader> = {
   'swe.ch13.l4': () => import('../../../content/part1/swe/ch13/lesson.swe.ch13.l4'),
 };
 
-/** All M1 lesson ids in path order (ch1–ch10). */
+/** All published lesson ids in curriculum order. */
 export function allLessonIds(): string[] {
   return manifest.map((m) => m.id);
 }
@@ -331,12 +331,15 @@ export function isLessonUnlocked(id: string, completedLessons: string[]): boolea
   return entry.prerequisites.every((p) => completedLessons.includes(p));
 }
 
-/** Next incomplete lesson in manifest order (dashboard "continue" card). */
-export function nextLessonId(completedLessons: string[]): string | undefined {
-  return allLessonIds().find((id) => !completedLessons.includes(id));
+/** Next incomplete, currently accessible lesson in curriculum order. */
+export function nextLessonId(
+  completedLessons: string[],
+  isAccessible: (id: string) => boolean = (id) => isLessonUnlocked(id, completedLessons),
+): string | undefined {
+  return manifest.find((m) => !completedLessons.includes(m.id) && isAccessible(m.id))?.id;
 }
 
-/** Per-part progress (Part I only for M1; Part II arrives later milestones). */
+/** Per-part completion totals across the full published curriculum. */
 export function partProgress(part: 'I' | 'II', completedLessons: string[]) {
   const ids = manifest.filter((m) => m.part === part).map((m) => m.id);
   const done = ids.filter((id) => completedLessons.includes(id)).length;

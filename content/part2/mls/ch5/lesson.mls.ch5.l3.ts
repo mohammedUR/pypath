@@ -436,6 +436,12 @@ print("MSE =", sum((p - y) ** 2 for p, y in zip(preds, ys)) / len(ys))`,
         en: 'What happens if you call build(xs, ys, 8) on our data? Trace by hand: when do the calls stop, how many leaves appear, and why does the MSE not change?',
       },
     },
+    {
+      kind: 'sources',
+      items: [
+        { book: 'MLS', section: 'mls.ch5.s3', pages: 'ص54-65 / pp.54-65' },
+      ],
+    },
   ],
   sources: [
     { book: 'MLS', section: 'mls.ch5.s3', pages: 'ص54-65 / pp.54-65' },

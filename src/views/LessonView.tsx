@@ -5,7 +5,8 @@ import { toast } from 'sonner';
 import { useI18n } from '@/lib/i18n';
 import { useRouter } from '@/lib/router';
 import { useProgress } from '@/lib/store/progress';
-import { allLessonIds, type LessonResult } from '@/lib/content/registry';
+import type { LessonResult } from '@/lib/content/registry';
+import { useCurriculumAccess } from '@/lib/content/access';
 import { loadLesson } from '@/lib/content/loadLesson';
 import { requiredExerciseIds, type Block, type Lesson } from '@/lib/content/schema';
 import { ExerciseCard } from '@/components/lab/ExerciseCard';
@@ -469,7 +470,18 @@ export function LessonView({ lessonId }: { lessonId: string }) {
     setLoading(true);
   }
 
+  const {
+    ready: manifestReady,
+    entries,
+    completedLessons: completed,
+    accessFor,
+  } = useCurriculumAccess();
+  const entry = entries.find((item) => item.id === lessonId);
+  const access = accessFor(lessonId);
+  const canRead = manifestReady && access === 'unlocked';
+
   useEffect(() => {
+    if (!canRead) return;
     let alive = true;
     void loadLesson(loadedId).then((r) => {
       if (!alive) return;
@@ -479,40 +491,42 @@ export function LessonView({ lessonId }: { lessonId: string }) {
     return () => {
       alive = false;
     };
-  }, [loadedId]);
+  }, [loadedId, canRead]);
 
   const lesson = result?.status === 'found' ? result.lesson : null;
 
-  const completed = useProgress((s) => s.completedLessons);
   const exerciseResults = useProgress((s) => s.exerciseResults);
   const completeLesson = useProgress((s) => s.completeLesson);
   const markLessonStarted = useProgress((s) => s.markLessonStarted);
   const calm = useProgress((s) => s.settings.calm);
 
   useEffect(() => {
-    if (lesson) markLessonStarted(lessonId);
-  }, [lesson, lessonId, markLessonStarted]);
+    if (lesson && canRead) markLessonStarted(lessonId);
+  }, [lesson, lessonId, markLessonStarted, canRead]);
 
   const requiredIds = useMemo(() => (lesson ? requiredExerciseIds(lesson) : []), [lesson]);
   const allPassed = requiredIds.length > 0 && requiredIds.every((id) => exerciseResults[`${lessonId}:${id}`]?.passed);
   const isCompleted = completed.includes(lessonId);
 
   const nextId = useMemo(() => {
-    const ids = allLessonIds();
-    const i = ids.indexOf(lessonId);
-    return i >= 0 && i < ids.length - 1 ? ids[i + 1] : undefined;
-  }, [lessonId]);
+    const index = entries.findIndex((item) => item.id === lessonId);
+    if (index < 0) return undefined;
+    for (let i = index + 1; i < entries.length; i++) {
+      if (accessFor(entries[i].id) === 'unlocked') return entries[i].id;
+    }
+    return undefined;
+  }, [entries, lessonId, accessFor]);
 
-  const showCeremony = allPassed && isCompleted;
+  const showCeremony = canRead && allPassed && isCompleted;
   // Completion is committed to the external store (allowed effect work):
   useEffect(() => {
-    if (allPassed && !isCompleted) {
+    if (canRead && allPassed && !isCompleted) {
       const ev = completeLesson(lessonId);
       if (ev && !calm) {
         toast.success(t('toast.lessonDoneTitle'), { description: t('toast.lessonDoneBody', { xp: ev.amount }) });
       }
     }
-  }, [allPassed, isCompleted, lessonId, completeLesson, calm, t]);
+  }, [canRead, allPassed, isCompleted, lessonId, completeLesson, calm, t]);
 
   // Reduce motion default per OS preference is handled in AppShell.
 
@@ -555,7 +569,71 @@ export function LessonView({ lessonId }: { lessonId: string }) {
     return () => window.removeEventListener('keydown', onKey);
   }, [isCompleted, goNext]);
 
-  /* -------------------- loading / missing / invalid -------------------- */
+  /* -------------------- loading / locked / missing / invalid -------------------- */
+  if (!manifestReady) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-4" aria-busy="true">
+        <Skeleton className="h-8 w-2/3" />
+        <Skeleton className="h-40 w-full" />
+        <Skeleton className="h-56 w-full" />
+      </div>
+    );
+  }
+
+  if (access === 'part-locked' || access === 'prereq-locked') {
+    const prereqEntries = entry
+      ? entry.prerequisites
+          .map((id) => entries.find((item) => item.id === id))
+          .filter((item): item is (typeof entries)[number] => Boolean(item))
+      : [];
+    return (
+      <Card className="py-card mx-auto max-w-xl">
+        <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
+          <Lock className="size-8 text-muted-foreground" aria-hidden="true" />
+          <div>
+            <p className="font-semibold">
+              {access === 'part-locked' ? t('lesson.partLockedTitle') : t('lesson.lockedTitle')}
+            </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {access === 'part-locked' ? t('lesson.partLockedBody') : t('lesson.lockedBody')}
+            </p>
+          </div>
+          {access === 'prereq-locked' && prereqEntries.length > 0 && (
+            <ul className="flex w-full flex-col gap-2 text-start">
+              {prereqEntries.map((item) => (
+                <li key={item.id} className="flex items-center gap-2 rounded-xl border p-3 text-sm">
+                  <Lock className="size-3.5 text-muted-foreground" aria-hidden="true" />
+                  <span className="flex-1 font-medium">{pick(item.title)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <Button variant="outline" className="h-11 rounded-xl" onClick={() => navigate('path')}>
+            {t('lesson.backToPath')}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (access === 'missing') {
+    return (
+      <Card className="py-card mx-auto max-w-xl">
+        <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
+          <Lock className="size-8 text-muted-foreground" aria-hidden="true" />
+          <p className="text-sm text-muted-foreground">
+            {locale === 'ar'
+              ? 'هذا الدرس غير منشور في النسخة الحالية.'
+              : 'This lesson is not published in the current build.'}
+          </p>
+          <Button variant="outline" className="h-11 rounded-xl" onClick={() => navigate('path')}>
+            {t('lesson.backToPath')}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   if (loading) {
     return (
       <div className="mx-auto max-w-3xl space-y-4" aria-busy="true">

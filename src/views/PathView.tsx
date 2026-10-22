@@ -1,21 +1,15 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import { useI18n } from '@/lib/i18n';
 import { useRouter } from '@/lib/router';
-import { useProgress } from '@/lib/store/progress';
-import {
-  useCertification,
-  capstoneReadiness,
-  certificationGateStatus,
-} from '@/lib/store/certification';
-import { allLessonIds, getManifestEntry, isLessonUnlocked, useManifestStore, type ManifestEntry } from '@/lib/content/registry';
+import { useCurriculumAccess, type LessonAccess } from '@/lib/content/access';
+import { getManifestEntry, type ManifestEntry } from '@/lib/content/registry';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
-import { CheckCircle2, CircleDashed, Lock, Play, Sparkle } from 'lucide-react';
+import { CheckCircle2, CircleDashed, Lock, Sparkle } from 'lucide-react';
 
 function MasteryRing({ state }: { state: 'done' | 'started' | 'locked' }) {
   const R = 15;
@@ -41,10 +35,20 @@ function MasteryRing({ state }: { state: 'done' | 'started' | 'locked' }) {
   );
 }
 
-function LessonNode({ entry, completed, onOpen }: { entry: ManifestEntry; completed: string[]; onOpen: (id: string) => void }) {
+function LessonNode({
+  entry,
+  completed,
+  access,
+  onOpen,
+}: {
+  entry: ManifestEntry;
+  completed: string[];
+  access: LessonAccess;
+  onOpen: (id: string) => void;
+}) {
   const { t, pick } = useI18n();
   const done = completed.includes(entry.id);
-  const unlocked = isLessonUnlocked(entry.id, completed);
+  const unlocked = access === 'unlocked';
   const state = done ? 'done' : unlocked ? 'started' : 'locked';
 
   const body = (
@@ -80,9 +84,11 @@ function LessonNode({ entry, completed, onOpen }: { entry: ManifestEntry; comple
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Lock className="size-4" aria-hidden="true" />
-            {t('path.lockedTitle')}
+            {access === 'part-locked' ? t('lesson.partLockedTitle') : t('path.lockedTitle')}
           </DialogTitle>
-          <DialogDescription>{t('path.lockedBody')}</DialogDescription>
+          <DialogDescription>
+            {access === 'part-locked' ? t('lesson.partLockedBody') : t('path.lockedBody')}
+          </DialogDescription>
         </DialogHeader>
         <ul className="flex flex-col gap-2">
           {prereqEntries.map((p) => (
@@ -102,43 +108,109 @@ function LessonNode({ entry, completed, onOpen }: { entry: ManifestEntry; comple
   );
 }
 
+interface BookGroup {
+  book: string;
+  chapters: { chapter: number; lessons: ManifestEntry[] }[];
+}
+
+function groupByBook(entries: ManifestEntry[]): BookGroup[] {
+  const books = new Map<string, Map<number, ManifestEntry[]>>();
+  for (const entry of entries) {
+    const chapters = books.get(entry.book) ?? new Map<number, ManifestEntry[]>();
+    const lessons = chapters.get(entry.chapter) ?? [];
+    lessons.push(entry);
+    chapters.set(entry.chapter, lessons);
+    books.set(entry.book, chapters);
+  }
+
+  const firstOrder = (lessons: ManifestEntry[]) => Math.min(...lessons.map((entry) => entry.order));
+
+  return [...books.entries()]
+    .map(([book, chapters]) => ({
+      book,
+      chapters: [...chapters.entries()]
+        .map(([chapter, lessons]) => ({
+          chapter,
+          lessons: [...lessons].sort((a, b) => a.order - b.order),
+        }))
+        .sort((a, b) => firstOrder(a.lessons) - firstOrder(b.lessons)),
+    }))
+    .sort(
+      (a, b) =>
+        firstOrder(a.chapters.flatMap((chapter) => chapter.lessons)) -
+        firstOrder(b.chapters.flatMap((chapter) => chapter.lessons)),
+    );
+}
+
+function BookSections({
+  groups,
+  completed,
+  accessFor,
+  onOpen,
+}: {
+  groups: BookGroup[];
+  completed: string[];
+  accessFor: (id: string) => LessonAccess;
+  onOpen: (id: string) => void;
+}) {
+  const { t } = useI18n();
+  return groups.map((group) => (
+    <div key={group.book} className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-2 px-1">
+        <h3 className="text-sm font-bold tracking-wide">{group.book}</h3>
+        <Badge variant="outline" className="rounded-full text-[11px]">
+          {group.chapters.reduce((sum, chapter) => sum + chapter.lessons.length, 0)} {t('path.lessonUnit')}
+        </Badge>
+      </div>
+      {group.chapters.map(({ chapter, lessons }) => (
+        <Card key={`${group.book}:${chapter}`} className="py-card">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-semibold text-muted-foreground">
+              {t('path.chapterLabel')} {chapter} — {lessons.length} {t('path.lessonUnit')}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {lessons.map((entry) => (
+              <LessonNode
+                key={entry.id}
+                entry={entry}
+                completed={completed}
+                access={accessFor(entry.id)}
+                onOpen={onOpen}
+              />
+            ))}
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  ));
+}
+
 export function PathView() {
   const { t, pick, locale } = useI18n();
   const ar = locale === 'ar';
   const { navigate } = useRouter();
-  const completed = useProgress((s) => s.completedLessons);
-  const manifest = useManifestStore((s) => s.manifest);
-  const manifestReady = useManifestStore((s) => s.ready);
-  const capArtifacts = useCertification((s) => s.capstoneArtifacts);
-  const capRubric = useCertification((s) => s.capstoneRubric);
-  const attempts = useCertification((s) => s.attempts);
-  const gateMode = useCertification((s) => s.gateMode);
+  const {
+    ready: manifestReady,
+    entries: manifest,
+    completedLessons: completed,
+    gateMode,
+    certified,
+    partIIOpen: partIIUnlocked,
+    accessFor,
+  } = useCurriculumAccess();
 
-  const chapters = useMemo(() => {
-    const byCh = new Map<number, ManifestEntry[]>();
-    manifest.filter((m) => m.part === 'I').forEach((m) => {
-      const arr = byCh.get(m.chapter) ?? [];
-      arr.push(m);
-      byCh.set(m.chapter, arr);
-    });
-    return [...byCh.entries()].sort((a, b) => a[0] - b[0]);
-  }, [manifest]);
+  const partIGroups = useMemo(() => groupByBook(manifest.filter((m) => m.part === 'I')), [manifest]);
+  const partIIGroups = useMemo(() => groupByBook(manifest.filter((m) => m.part === 'II')), [manifest]);
 
   const partITotal = manifest.filter((m) => m.part === 'I').length;
   const partIDone = manifest.filter((m) => m.part === 'I' && completed.includes(m.id)).length;
-  const partIAllDone = allLessonIds().every((id) => completed.includes(id));
-  const capReady = capstoneReadiness(
-    Object.values(capArtifacts).filter(Boolean).length,
-    Object.values(capRubric).reduce((a, b) => a + b, 0),
-  );
-  const { certified } = certificationGateStatus(attempts, capReady);
-  // Gate mode (OQ note): advisory = Part II opens on Part I completion, the
-  // certification is a visible recommendation; enforced = certification is
-  // additionally required. Default is advisory (documented safe default).
-  const partIIUnlocked = partIAllDone && (gateMode === 'advisory' || certified);
+  const partIITotal = manifest.filter((m) => m.part === 'II').length;
+  const partIIDone = manifest.filter((m) => m.part === 'II' && completed.includes(m.id)).length;
+  const partIAllDone = partITotal > 0 && partIDone === partITotal;
 
   const open = (id: string) => {
-    if (isLessonUnlocked(id, completed)) navigate('lesson', id);
+    if (accessFor(id) === 'unlocked') navigate('lesson', id);
   };
 
   if (!manifestReady) {
@@ -174,65 +246,68 @@ export function PathView() {
         </div>
         <p className="text-sm text-muted-foreground">{t('path.partISubtitle')}</p>
 
-        {chapters.map(([ch, lessons]) => (
-          <Card key={ch} className="py-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold text-muted-foreground">
-                {t('path.chapterLabel')} {ch} — {lessons.length} {t('path.lessonUnit')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {lessons.map((m) => (
-                <LessonNode key={m.id} entry={m} completed={completed} onOpen={open} />
-              ))}
-            </CardContent>
-          </Card>
-        ))}
+        <BookSections
+          groups={partIGroups}
+          completed={completed}
+          accessFor={accessFor}
+          onOpen={open}
+        />
       </section>
 
-      {/* Part II — locked world */}
-      <section aria-label={t('path.partIITitle')}>
-        <Card className="py-card" style={{ background: 'var(--accent-ai-soft)' }}>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base" style={{ color: 'var(--accent-ai)' }}>
-              <Sparkle className="size-4" aria-hidden="true" />
-              {t('path.partIITitle')}
-              <Badge variant="outline" className="gap-1 border-[var(--accent-ai)]">
-                <Lock className="size-3" aria-hidden="true" />
-                {t('common.locked')}
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm">{t('path.partIILockedBody')}</p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {t('path.requirementDone', { count: partITotal - partIDone })}
-            </p>
-            {gateMode === 'enforced' && !certified && (
+      {/* Part II — opens after Part I (and certification when enforced) */}
+      <section id="part-ii" className="flex flex-col gap-4" aria-label={t('path.partIITitle')}>
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="flex items-center gap-2 text-lg font-bold" style={{ color: 'var(--accent-ai)' }}>
+            <Sparkle className="size-4" aria-hidden="true" />
+            {t('path.partIITitle')}
+          </h2>
+          <Badge variant="secondary" className="rounded-full">
+            {partIIDone}/{partIITotal} {t('path.lessonUnit')}
+          </Badge>
+          {!partIIUnlocked && (
+            <Badge variant="outline" className="gap-1 border-[var(--accent-ai)]">
+              <Lock className="size-3" aria-hidden="true" />
+              {t('common.locked')}
+            </Badge>
+          )}
+        </div>
+
+        {!partIIUnlocked ? (
+          <Card className="py-card" style={{ background: 'var(--accent-ai-soft)' }}>
+            <CardContent className="pt-6">
+              <p className="text-sm">{t('path.partIILockedBody')}</p>
               <p className="mt-2 text-xs text-muted-foreground">
-                {ar
-                  ? 'وضع الفرض مُفعّل: يُشترط أيضًا اجتياز الاعتماد (الامتحان ≥ 80٪ + جاهزية كابستون ≥ 80٪) — انظر صفحتي الامتحان والكابستون.'
-                  : 'Enforced gate is on: certification (exam ≥ 80% + capstone readiness ≥ 80%) is also required — see the Exam and Capstone views.'}
+                {partIAllDone
+                  ? t('path.requirementPartIComplete')
+                  : t('path.requirementDone', { count: partITotal - partIDone })}
               </p>
-            )}
+              {gateMode === 'enforced' && !certified && (
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {ar
+                    ? 'وضع الفرض مُفعّل: يُشترط أيضًا اجتياز الاعتماد (الامتحان ≥ 80٪ + جاهزية كابستون ≥ 80٪) — انظر صفحتي الامتحان والكابستون.'
+                    : 'Enforced gate is on: certification (exam ≥ 80% + capstone readiness ≥ 80%) is also required — see the Exam and Capstone views.'}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            <p className="text-sm text-muted-foreground">{t('path.partIIOpenBody')}</p>
             {gateMode === 'enforced' && certified && partIAllDone && (
-              <p className="mt-2 text-xs font-medium">
+              <p className="text-xs font-medium">
                 {ar
                   ? 'بوابة الاعتماد مستوفاة في وضع الفرض ✓'
                   : 'Certification gate satisfied in enforced mode ✓'}
               </p>
             )}
-            <Button
-              variant="outline"
-              className="mt-4 h-11 rounded-xl"
-              disabled={!partIIUnlocked}
-              onClick={() => undefined}
-            >
-              <Lock className="me-1 size-3.5" aria-hidden="true" />
-              {t('common.locked')}
-            </Button>
-          </CardContent>
-        </Card>
+            <BookSections
+              groups={partIIGroups}
+              completed={completed}
+              accessFor={accessFor}
+              onOpen={open}
+            />
+          </>
+        )}
       </section>
     </div>
   );

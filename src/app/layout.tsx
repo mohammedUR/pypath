@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import nextDynamic from "next/dynamic";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import {
   GOOGLE_SITE_VERIFICATION,
@@ -83,6 +84,7 @@ export default function RootLayout({
       <body className="antialiased bg-background text-foreground">
         {children}
         <Toaster position="top-center" />
+        <Analytics />
       </body>
     </html>
   );

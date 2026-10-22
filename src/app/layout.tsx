@@ -1,6 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import nextDynamic from "next/dynamic";
 import "./globals.css";
+import {
+  GOOGLE_SITE_VERIFICATION,
+  SITE_DESCRIPTION,
+  SITE_KEYWORDS,
+  SITE_NAME,
+  SITE_OG_IMAGE,
+  SITE_TITLE,
+  SITE_URL,
+} from "@/lib/site";
 const Toaster = nextDynamic(() => import("@/components/ui/sonner").then((m) => ({ default: m.Toaster })));
 
 /**
@@ -10,10 +19,52 @@ const Toaster = nextDynamic(() => import("@/components/ui/sonner").then((m) => (
  * System font stacks only (no network fonts) — see src/styles/tokens.css.
  */
 export const metadata: Metadata = {
-  title: "PyPath — بايثون إلى الاحتراف",
-  description:
-    "Interactive bilingual (Arabic/English) Python & AI learning platform. Learn Python in your browser — local-first, calm, and warm.",
-  icons: { icon: "/logo.svg" },
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_TITLE,
+    template: `%s | ${SITE_NAME}`,
+  },
+  description: SITE_DESCRIPTION,
+  keywords: SITE_KEYWORDS,
+  applicationName: SITE_NAME,
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  category: "education",
+  alternates: { canonical: "/" },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  verification: { google: GOOGLE_SITE_VERIFICATION },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: SITE_NAME,
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    locale: "ar_SA",
+    alternateLocale: ["en_US"],
+    images: [SITE_OG_IMAGE],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    images: [SITE_OG_IMAGE],
+  },
+  icons: {
+    icon: [{ url: "/python.ico", type: "image/x-icon", sizes: "256x256" }],
+    shortcut: [{ url: "/python.ico", type: "image/x-icon", sizes: "256x256" }],
+    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+  },
 };
 
 export const viewport: Viewport = {

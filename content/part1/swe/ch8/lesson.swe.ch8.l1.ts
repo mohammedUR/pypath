@@ -21,7 +21,7 @@ const lesson = {
   chapter: 8,
   title: { ar: 'لماذا التحكم بالإصدارات؟', en: 'Why Version Control?' },
   estimatedMinutes: 25,
-  prerequisites: ['py4e.ch16.l6'],
+  prerequisites: ['swe.ch7.l4'],
   blocks: [
     {
       kind: 'hook',

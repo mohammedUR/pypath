@@ -5,8 +5,9 @@
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = path.resolve(import.meta.dir, '..');
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // The dist lives under a versioned path (ADR-0002); resolve the single
 // version directory instead of hardcoding it in the harness.
 const vendorRoot = path.join(root, 'public/vendor/pyodide');

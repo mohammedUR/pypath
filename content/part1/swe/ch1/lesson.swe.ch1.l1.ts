@@ -21,7 +21,7 @@ const lesson = {
   chapter: 1,
   title: { ar: 'ما الهندسة البرمجية؟ ولماذا هي صعبة', en: 'What Is Software Engineering and Why Is It Hard' },
   estimatedMinutes: 30,
-  prerequisites: ['swe.ch15.l4'],
+  prerequisites: ['py4e.ch16.l6'],
   blocks: [
     {
       kind: 'hook',

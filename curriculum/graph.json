@@ -943,6 +943,186 @@
    "status": "published"
   },
   {
+   "id": "lesson:swe.ch1.l1",
+   "kind": "lesson",
+   "title": "swe.ch1.l1",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch1.l2",
+   "kind": "lesson",
+   "title": "swe.ch1.l2",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch1.l3",
+   "kind": "lesson",
+   "title": "swe.ch1.l3",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch1.l4",
+   "kind": "lesson",
+   "title": "swe.ch1.l4",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch2.l1",
+   "kind": "lesson",
+   "title": "swe.ch2.l1",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch2.l2",
+   "kind": "lesson",
+   "title": "swe.ch2.l2",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch2.l3",
+   "kind": "lesson",
+   "title": "swe.ch2.l3",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch2.l4",
+   "kind": "lesson",
+   "title": "swe.ch2.l4",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch2.l5",
+   "kind": "lesson",
+   "title": "swe.ch2.l5",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch3.l1",
+   "kind": "lesson",
+   "title": "swe.ch3.l1",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch3.l2",
+   "kind": "lesson",
+   "title": "swe.ch3.l2",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch3.l3",
+   "kind": "lesson",
+   "title": "swe.ch3.l3",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch3.l4",
+   "kind": "lesson",
+   "title": "swe.ch3.l4",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch3.l5",
+   "kind": "lesson",
+   "title": "swe.ch3.l5",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch4.l1",
+   "kind": "lesson",
+   "title": "swe.ch4.l1",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch4.l2",
+   "kind": "lesson",
+   "title": "swe.ch4.l2",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch4.l3",
+   "kind": "lesson",
+   "title": "swe.ch4.l3",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch4.l4",
+   "kind": "lesson",
+   "title": "swe.ch4.l4",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch5.l1",
+   "kind": "lesson",
+   "title": "swe.ch5.l1",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch5.l2",
+   "kind": "lesson",
+   "title": "swe.ch5.l2",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch5.l3",
+   "kind": "lesson",
+   "title": "swe.ch5.l3",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch5.l4",
+   "kind": "lesson",
+   "title": "swe.ch5.l4",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch6.l1",
+   "kind": "lesson",
+   "title": "swe.ch6.l1",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch6.l2",
+   "kind": "lesson",
+   "title": "swe.ch6.l2",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch6.l3",
+   "kind": "lesson",
+   "title": "swe.ch6.l3",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch6.l4",
+   "kind": "lesson",
+   "title": "swe.ch6.l4",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch7.l1",
+   "kind": "lesson",
+   "title": "swe.ch7.l1",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch7.l2",
+   "kind": "lesson",
+   "title": "swe.ch7.l2",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch7.l3",
+   "kind": "lesson",
+   "title": "swe.ch7.l3",
+   "status": "published"
+  },
+  {
+   "id": "lesson:swe.ch7.l4",
+   "kind": "lesson",
+   "title": "swe.ch7.l4",
+   "status": "published"
+  },
+  {
    "id": "lesson:swe.ch8.l1",
    "kind": "lesson",
    "title": "swe.ch8.l1",
@@ -1138,186 +1318,6 @@
    "id": "lesson:swe.ch15.l4",
    "kind": "lesson",
    "title": "swe.ch15.l4",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch1.l1",
-   "kind": "lesson",
-   "title": "swe.ch1.l1",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch1.l2",
-   "kind": "lesson",
-   "title": "swe.ch1.l2",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch1.l3",
-   "kind": "lesson",
-   "title": "swe.ch1.l3",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch1.l4",
-   "kind": "lesson",
-   "title": "swe.ch1.l4",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch2.l1",
-   "kind": "lesson",
-   "title": "swe.ch2.l1",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch2.l2",
-   "kind": "lesson",
-   "title": "swe.ch2.l2",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch2.l3",
-   "kind": "lesson",
-   "title": "swe.ch2.l3",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch2.l4",
-   "kind": "lesson",
-   "title": "swe.ch2.l4",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch2.l5",
-   "kind": "lesson",
-   "title": "swe.ch2.l5",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch3.l1",
-   "kind": "lesson",
-   "title": "swe.ch3.l1",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch3.l2",
-   "kind": "lesson",
-   "title": "swe.ch3.l2",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch3.l3",
-   "kind": "lesson",
-   "title": "swe.ch3.l3",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch3.l4",
-   "kind": "lesson",
-   "title": "swe.ch3.l4",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch3.l5",
-   "kind": "lesson",
-   "title": "swe.ch3.l5",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch4.l1",
-   "kind": "lesson",
-   "title": "swe.ch4.l1",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch4.l2",
-   "kind": "lesson",
-   "title": "swe.ch4.l2",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch4.l3",
-   "kind": "lesson",
-   "title": "swe.ch4.l3",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch4.l4",
-   "kind": "lesson",
-   "title": "swe.ch4.l4",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch5.l1",
-   "kind": "lesson",
-   "title": "swe.ch5.l1",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch5.l2",
-   "kind": "lesson",
-   "title": "swe.ch5.l2",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch5.l3",
-   "kind": "lesson",
-   "title": "swe.ch5.l3",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch5.l4",
-   "kind": "lesson",
-   "title": "swe.ch5.l4",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch6.l1",
-   "kind": "lesson",
-   "title": "swe.ch6.l1",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch6.l2",
-   "kind": "lesson",
-   "title": "swe.ch6.l2",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch6.l3",
-   "kind": "lesson",
-   "title": "swe.ch6.l3",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch6.l4",
-   "kind": "lesson",
-   "title": "swe.ch6.l4",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch7.l1",
-   "kind": "lesson",
-   "title": "swe.ch7.l1",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch7.l2",
-   "kind": "lesson",
-   "title": "swe.ch7.l2",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch7.l3",
-   "kind": "lesson",
-   "title": "swe.ch7.l3",
-   "status": "published"
-  },
-  {
-   "id": "lesson:swe.ch7.l4",
-   "kind": "lesson",
-   "title": "swe.ch7.l4",
    "status": "published"
   },
   {
@@ -2393,6 +2393,156 @@
   },
   {
    "from": "lesson:py4e.ch16.l6",
+   "to": "lesson:swe.ch1.l1",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch1.l1",
+   "to": "lesson:swe.ch1.l2",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch1.l2",
+   "to": "lesson:swe.ch1.l3",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch1.l3",
+   "to": "lesson:swe.ch1.l4",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch1.l4",
+   "to": "lesson:swe.ch2.l1",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch2.l1",
+   "to": "lesson:swe.ch2.l2",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch2.l2",
+   "to": "lesson:swe.ch2.l3",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch2.l3",
+   "to": "lesson:swe.ch2.l4",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch2.l4",
+   "to": "lesson:swe.ch2.l5",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch2.l5",
+   "to": "lesson:swe.ch3.l1",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch3.l1",
+   "to": "lesson:swe.ch3.l2",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch3.l2",
+   "to": "lesson:swe.ch3.l3",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch3.l3",
+   "to": "lesson:swe.ch3.l4",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch3.l4",
+   "to": "lesson:swe.ch3.l5",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch3.l5",
+   "to": "lesson:swe.ch4.l1",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch4.l1",
+   "to": "lesson:swe.ch4.l2",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch4.l2",
+   "to": "lesson:swe.ch4.l3",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch4.l3",
+   "to": "lesson:swe.ch4.l4",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch4.l4",
+   "to": "lesson:swe.ch5.l1",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch5.l1",
+   "to": "lesson:swe.ch5.l2",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch5.l2",
+   "to": "lesson:swe.ch5.l3",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch5.l3",
+   "to": "lesson:swe.ch5.l4",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch5.l4",
+   "to": "lesson:swe.ch6.l1",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch6.l1",
+   "to": "lesson:swe.ch6.l2",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch6.l2",
+   "to": "lesson:swe.ch6.l3",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch6.l3",
+   "to": "lesson:swe.ch6.l4",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch6.l4",
+   "to": "lesson:swe.ch7.l1",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch7.l1",
+   "to": "lesson:swe.ch7.l2",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch7.l2",
+   "to": "lesson:swe.ch7.l3",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch7.l3",
+   "to": "lesson:swe.ch7.l4",
+   "type": "hard"
+  },
+  {
+   "from": "lesson:swe.ch7.l4",
    "to": "lesson:swe.ch8.l1",
    "type": "hard"
   },
@@ -2558,156 +2708,6 @@
   },
   {
    "from": "lesson:swe.ch15.l4",
-   "to": "lesson:swe.ch1.l1",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch1.l1",
-   "to": "lesson:swe.ch1.l2",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch1.l2",
-   "to": "lesson:swe.ch1.l3",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch1.l3",
-   "to": "lesson:swe.ch1.l4",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch1.l4",
-   "to": "lesson:swe.ch2.l1",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch2.l1",
-   "to": "lesson:swe.ch2.l2",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch2.l2",
-   "to": "lesson:swe.ch2.l3",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch2.l3",
-   "to": "lesson:swe.ch2.l4",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch2.l4",
-   "to": "lesson:swe.ch2.l5",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch2.l5",
-   "to": "lesson:swe.ch3.l1",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch3.l1",
-   "to": "lesson:swe.ch3.l2",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch3.l2",
-   "to": "lesson:swe.ch3.l3",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch3.l3",
-   "to": "lesson:swe.ch3.l4",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch3.l4",
-   "to": "lesson:swe.ch3.l5",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch3.l5",
-   "to": "lesson:swe.ch4.l1",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch4.l1",
-   "to": "lesson:swe.ch4.l2",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch4.l2",
-   "to": "lesson:swe.ch4.l3",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch4.l3",
-   "to": "lesson:swe.ch4.l4",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch4.l4",
-   "to": "lesson:swe.ch5.l1",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch5.l1",
-   "to": "lesson:swe.ch5.l2",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch5.l2",
-   "to": "lesson:swe.ch5.l3",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch5.l3",
-   "to": "lesson:swe.ch5.l4",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch5.l4",
-   "to": "lesson:swe.ch6.l1",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch6.l1",
-   "to": "lesson:swe.ch6.l2",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch6.l2",
-   "to": "lesson:swe.ch6.l3",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch6.l3",
-   "to": "lesson:swe.ch6.l4",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch6.l4",
-   "to": "lesson:swe.ch7.l1",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch7.l1",
-   "to": "lesson:swe.ch7.l2",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch7.l2",
-   "to": "lesson:swe.ch7.l3",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch7.l3",
-   "to": "lesson:swe.ch7.l4",
-   "type": "hard"
-  },
-  {
-   "from": "lesson:swe.ch7.l4",
    "to": "lesson:swe.appa.l1",
    "type": "hard"
   },
@@ -3677,6 +3677,156 @@
    "type": "sequence"
   },
   {
+   "from": "lesson:swe.ch1.l1",
+   "to": "lesson:swe.ch1.l2",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch1.l2",
+   "to": "lesson:swe.ch1.l3",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch1.l3",
+   "to": "lesson:swe.ch1.l4",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch1.l4",
+   "to": "lesson:swe.ch2.l1",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch2.l1",
+   "to": "lesson:swe.ch2.l2",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch2.l2",
+   "to": "lesson:swe.ch2.l3",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch2.l3",
+   "to": "lesson:swe.ch2.l4",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch2.l4",
+   "to": "lesson:swe.ch2.l5",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch2.l5",
+   "to": "lesson:swe.ch3.l1",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch3.l1",
+   "to": "lesson:swe.ch3.l2",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch3.l2",
+   "to": "lesson:swe.ch3.l3",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch3.l3",
+   "to": "lesson:swe.ch3.l4",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch3.l4",
+   "to": "lesson:swe.ch3.l5",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch3.l5",
+   "to": "lesson:swe.ch4.l1",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch4.l1",
+   "to": "lesson:swe.ch4.l2",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch4.l2",
+   "to": "lesson:swe.ch4.l3",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch4.l3",
+   "to": "lesson:swe.ch4.l4",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch4.l4",
+   "to": "lesson:swe.ch5.l1",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch5.l1",
+   "to": "lesson:swe.ch5.l2",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch5.l2",
+   "to": "lesson:swe.ch5.l3",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch5.l3",
+   "to": "lesson:swe.ch5.l4",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch5.l4",
+   "to": "lesson:swe.ch6.l1",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch6.l1",
+   "to": "lesson:swe.ch6.l2",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch6.l2",
+   "to": "lesson:swe.ch6.l3",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch6.l3",
+   "to": "lesson:swe.ch6.l4",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch6.l4",
+   "to": "lesson:swe.ch7.l1",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch7.l1",
+   "to": "lesson:swe.ch7.l2",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch7.l2",
+   "to": "lesson:swe.ch7.l3",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch7.l3",
+   "to": "lesson:swe.ch7.l4",
+   "type": "sequence"
+  },
+  {
+   "from": "lesson:swe.ch7.l4",
+   "to": "lesson:swe.ch8.l1",
+   "type": "sequence"
+  },
+  {
    "from": "lesson:swe.ch8.l1",
    "to": "lesson:swe.ch8.l2",
    "type": "sequence"
@@ -3838,156 +3988,6 @@
   },
   {
    "from": "lesson:swe.ch15.l4",
-   "to": "lesson:swe.ch1.l1",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch1.l1",
-   "to": "lesson:swe.ch1.l2",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch1.l2",
-   "to": "lesson:swe.ch1.l3",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch1.l3",
-   "to": "lesson:swe.ch1.l4",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch1.l4",
-   "to": "lesson:swe.ch2.l1",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch2.l1",
-   "to": "lesson:swe.ch2.l2",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch2.l2",
-   "to": "lesson:swe.ch2.l3",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch2.l3",
-   "to": "lesson:swe.ch2.l4",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch2.l4",
-   "to": "lesson:swe.ch2.l5",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch2.l5",
-   "to": "lesson:swe.ch3.l1",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch3.l1",
-   "to": "lesson:swe.ch3.l2",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch3.l2",
-   "to": "lesson:swe.ch3.l3",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch3.l3",
-   "to": "lesson:swe.ch3.l4",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch3.l4",
-   "to": "lesson:swe.ch3.l5",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch3.l5",
-   "to": "lesson:swe.ch4.l1",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch4.l1",
-   "to": "lesson:swe.ch4.l2",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch4.l2",
-   "to": "lesson:swe.ch4.l3",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch4.l3",
-   "to": "lesson:swe.ch4.l4",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch4.l4",
-   "to": "lesson:swe.ch5.l1",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch5.l1",
-   "to": "lesson:swe.ch5.l2",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch5.l2",
-   "to": "lesson:swe.ch5.l3",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch5.l3",
-   "to": "lesson:swe.ch5.l4",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch5.l4",
-   "to": "lesson:swe.ch6.l1",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch6.l1",
-   "to": "lesson:swe.ch6.l2",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch6.l2",
-   "to": "lesson:swe.ch6.l3",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch6.l3",
-   "to": "lesson:swe.ch6.l4",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch6.l4",
-   "to": "lesson:swe.ch7.l1",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch7.l1",
-   "to": "lesson:swe.ch7.l2",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch7.l2",
-   "to": "lesson:swe.ch7.l3",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch7.l3",
-   "to": "lesson:swe.ch7.l4",
-   "type": "sequence"
-  },
-  {
-   "from": "lesson:swe.ch7.l4",
    "to": "lesson:swe.appa.l1",
    "type": "sequence"
   },

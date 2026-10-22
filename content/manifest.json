@@ -2382,783 +2382,18 @@
    ]
   },
   {
-   "id": "swe.ch8.l1",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 8,
-   "order": 97,
-   "title": {
-    "ar": "لماذا التحكم بالإصدارات؟",
-    "en": "Why Version Control?"
-   },
-   "prerequisites": [
-    "py4e.ch16.l6"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch8.s1"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch8.s2"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch8.l2",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 8,
-   "order": 98,
-   "title": {
-    "ar": "التفرّع والدمج",
-    "en": "Branching and Merging"
-   },
-   "prerequisites": [
-    "swe.ch8.l1"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch8.s3"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch8.l3",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 8,
-   "order": 99,
-   "title": {
-    "ar": "العمل مع الآخرين وتعارضات الدمج",
-    "en": "Working with Others and Merge Conflicts"
-   },
-   "prerequisites": [
-    "swe.ch8.l2"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch8.s4"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch8.s5"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch8.l4",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 8,
-   "order": 100,
-   "title": {
-    "ar": "عادات Git الجماعية والتوثيق",
-    "en": "Team Habits and Documentation"
-   },
-   "prerequisites": [
-    "swe.ch8.l3"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch8.s6"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch8.s7"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch8.l5",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 8,
-   "order": 101,
-   "title": {
-    "ar": "مراجعة الفصل 8 ومشروع: نموذج Git المصغّر",
-    "en": "Chapter 8 Review and Project: The Mini-Git Model"
-   },
-   "prerequisites": [
-    "swe.ch8.l4"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch8.s8"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch9.l1",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 9,
-   "order": 102,
-   "title": {
-    "ar": "مراجعات المعمارية والفحوص",
-    "en": "Architecture Reviews and Inspections"
-   },
-   "prerequisites": [
-    "swe.ch8.l5"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch9.s1"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch9.s2"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch9.l2",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 9,
-   "order": 103,
-   "title": {
-    "ar": "مراجعات الكود: النية والثقة",
-    "en": "Code Reviews: Intent and Trust"
-   },
-   "prerequisites": [
-    "swe.ch9.l1"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch9.s3"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch9.l3",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 9,
-   "order": 104,
-   "title": {
-    "ar": "التحليل الثابت الآلي",
-    "en": "Automated Static Analysis"
-   },
-   "prerequisites": [
-    "swe.ch9.l2"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch9.s4"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch9.l4",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 9,
-   "order": 105,
-   "title": {
-    "ar": "مراجعة الفصل 9 ومشروع: المنقّح المصغّر",
-    "en": "Chapter 9 Review and Project: The Mini Linter"
-   },
-   "prerequisites": [
-    "swe.ch9.l3"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch9.s5"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch10.l1",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 10,
-   "order": 106,
-   "title": {
-    "ar": "لماذا نختبر؟ ومستويات الاختبار",
-    "en": "Why Test? Levels of Testing"
-   },
-   "prerequisites": [
-    "swe.ch9.l4"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch10.s1"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch10.s2"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch10.l2",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 10,
-   "order": 107,
-   "title": {
-    "ar": "تغطية الكود: الاختبار بالصندوق الأبيض",
-    "en": "Code Coverage: White-Box Testing"
-   },
-   "prerequisites": [
-    "swe.ch10.l1"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch10.s3"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch10.l3",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 10,
-   "order": 108,
-   "title": {
-    "ar": "تغطية المدخلات: الاختبار بالصندوق الأسود",
-    "en": "Input Coverage: Black-Box Testing"
-   },
-   "prerequisites": [
-    "swe.ch10.l2"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch10.s4"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch10.l4",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 10,
-   "order": 109,
-   "title": {
-    "ar": "MC/DC والاختبار التوافقي",
-    "en": "MC/DC and Combinatorial Testing"
-   },
-   "prerequisites": [
-    "swe.ch10.l3"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch10.s5"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch10.s6"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch10.l5",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 10,
-   "order": 110,
-   "title": {
-    "ar": "مراجعة الفصل 10 ومشروع: حزمة الاختبارات",
-    "en": "Chapter 10 Review and Project: The Test Suite"
-   },
-   "prerequisites": [
-    "swe.ch10.l4"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch10.s7"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch11.l1",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 11,
-   "order": 111,
-   "title": {
-    "ar": "الأمن صفة عبر دورة الحياة وقائمة OWASP العشرة",
-    "en": "Security as a Lifecycle Property and the OWASP Top 10"
-   },
-   "prerequisites": [
-    "swe.ch10.l5"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch11.s1"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch11.s2"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch11.l2",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 11,
-   "order": 112,
-   "title": {
-    "ar": "البحث عن الثغرات: من الفحص اليدوي إلى المستقل",
-    "en": "Finding Vulnerabilities: from Manual Review to Autonomous Agents"
-   },
-   "prerequisites": [
-    "swe.ch11.l1"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch11.s3"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch11.l3",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 11,
-   "order": 113,
-   "title": {
-    "ar": "سلسلة توريد البرمجيات وبناء الأمن داخليًا",
-    "en": "The Software Supply Chain and Building Security In"
-   },
-   "prerequisites": [
-    "swe.ch11.l2"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch11.s4"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch11.s5"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch11.l4",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 11,
-   "order": 114,
-   "title": {
-    "ar": "مراجعة الفصل 11 ومشروع: مدقّق كلمات المرور والسياسات",
-    "en": "Chapter 11 Review and Project: Password and Policy Auditor"
-   },
-   "prerequisites": [
-    "swe.ch11.l3"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch11.s6"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch12.l1",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 12,
-   "order": 115,
-   "title": {
-    "ar": "مقاييس ذات معنى وجودة البرمجيات",
-    "en": "Meaningful Metrics and Software Quality"
-   },
-   "prerequisites": [
-    "swe.ch11.l4"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch12.s1"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch12.s2"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch12.l2",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 12,
-   "order": 116,
-   "title": {
-    "ar": "عرض البيانات بيانيًا",
-    "en": "Graphical Displays of Data Sets"
-   },
-   "prerequisites": [
-    "swe.ch12.l1"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch12.s3"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch12.l3",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 12,
-   "order": 117,
-   "title": {
-    "ar": "قياس العيوب وتحسين جودة العمليات: دراسة حالة",
-    "en": "Measuring Defects and an Ops Quality Case Study"
-   },
-   "prerequisites": [
-    "swe.ch12.l2"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch12.s4"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch12.s5"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch12.l4",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 12,
-   "order": 118,
-   "title": {
-    "ar": "تشتت البيانات: الصناديق والمدرجات والإحصاء",
-    "en": "Data Dispersion: Boxplots, Histograms, and Statistics"
-   },
-   "prerequisites": [
-    "swe.ch12.l3"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch12.s6"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch12.s7"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch12.l5",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 12,
-   "order": 119,
-   "title": {
-    "ar": "فترات الثقة والانحدار الخطي البسيط",
-    "en": "Confidence Intervals and Simple Linear Regression"
-   },
-   "prerequisites": [
-    "swe.ch12.l4"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch12.s8"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch12.s9"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch12.l6",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 12,
-   "order": 120,
-   "title": {
-    "ar": "مراجعة الفصل 12 ومشروع: لوحة مقاييس الجودة",
-    "en": "Chapter 12 Review and Project: Quality Metrics Dashboard"
-   },
-   "prerequisites": [
-    "swe.ch12.l5"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch12.s10"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch14.l1",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 14,
-   "order": 121,
-   "title": {
-    "ar": "الخدمات السحابية وخطوط التكامل المستمر",
-    "en": "SaaS and the Cloud and Continuous Integration Pipelines"
-   },
-   "prerequisites": [
-    "swe.ch12.l6"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch14.s1"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch14.s2"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch14.l2",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 14,
-   "order": 122,
-   "title": {
-    "ar": "النشر المستمر: الإصدارات الكنارية والتراجع",
-    "en": "Continuous Deployment: Canaries and Rollbacks"
-   },
-   "prerequisites": [
-    "swe.ch14.l1"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch14.s3"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch14.l3",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 14,
-   "order": 123,
-   "title": {
-    "ar": "حزم الخدمات وتشغيلها، والوصول إلى المستخدمين",
-    "en": "Packaging a Service, and Reaching Users"
-   },
-   "prerequisites": [
-    "swe.ch14.l2"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch14.s4"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch14.s5"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch14.l4",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 14,
-   "order": 124,
-   "title": {
-    "ar": "خطوط الأمن المستمر ومقاييس DORA للتسليم",
-    "en": "Continuous Security Pipelines and DORA Delivery Metrics"
-   },
-   "prerequisites": [
-    "swe.ch14.l3"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch14.s6"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch14.s7"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch14.l5",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 14,
-   "order": 125,
-   "title": {
-    "ar": "مراجعة الفصل 14 ومشروع: خط تسليم مصغّر",
-    "en": "Chapter 14 Review and Project: a Mini Delivery Pipeline"
-   },
-   "prerequisites": [
-    "swe.ch14.l4"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch14.s8"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch15.l1",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 15,
-   "order": 126,
-   "title": {
-    "ar": "الشيفرة العتيقة واختبارات التوصيف",
-    "en": "What Makes Code Legacy and Characterization Tests"
-   },
-   "prerequisites": [
-    "swe.ch14.l5"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch15.s1"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch15.s2"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch15.l2",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 15,
-   "order": 127,
-   "title": {
-    "ar": "إعادة الهيكلة تحت اختبارات خضراء وحوكمة المستودع",
-    "en": "Refactoring Under Green Tests and Repository Stewardship"
-   },
-   "prerequisites": [
-    "swe.ch15.l1"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch15.s3"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch15.s4"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch15.l3",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 15,
-   "order": 128,
-   "title": {
-    "ar": "الدين التقني: شجرة الخنزير مقابل إعادة الكتابة الكاملة",
-    "en": "Technical Debt and Strangler Fig versus Big-Bang Rewrite"
-   },
-   "prerequisites": [
-    "swe.ch15.l2"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch15.s5"
-    },
-    {
-     "book": "SWE",
-     "section": "swe.ch15.s6"
-    }
-   ]
-  },
-  {
-   "id": "swe.ch15.l4",
-   "track": "P3",
-   "part": "I",
-   "book": "SWE",
-   "chapter": 15,
-   "order": 129,
-   "title": {
-    "ar": "مراجعة الفصل 15 ومشروع: ورشة إحياء شيفرة عتيقة",
-    "en": "Chapter 15 Review and Project: Legacy Revival Workshop"
-   },
-   "prerequisites": [
-    "swe.ch15.l3"
-   ],
-   "sources": [
-    {
-     "book": "SWE",
-     "section": "swe.ch15.s7"
-    }
-   ]
-  },
-  {
    "id": "swe.ch1.l1",
    "track": "P3",
    "part": "I",
    "book": "SWE",
    "chapter": 1,
-   "order": 130,
+   "order": 97,
    "title": {
     "ar": "ما الهندسة البرمجية؟ ولماذا هي صعبة",
     "en": "What Is Software Engineering and Why Is It Hard"
    },
    "prerequisites": [
-    "swe.ch15.l4"
+    "py4e.ch16.l6"
    ],
    "sources": [
     {
@@ -3185,7 +2420,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 1,
-   "order": 131,
+   "order": 98,
    "title": {
     "ar": "التعقيد الذاتي وحتمية العيوب",
     "en": "Intrinsic Complexity and Inevitable Defects"
@@ -3218,7 +2453,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 1,
-   "order": 132,
+   "order": 99,
    "title": {
     "ar": "مثلث القيود والمسؤولية الاجتماعية",
     "en": "The Iron Triangle and Social Responsibility"
@@ -3251,7 +2486,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 1,
-   "order": 133,
+   "order": 100,
    "title": {
     "ar": "مراجعة الفصل 1 ومشروع: ميزان المهندس",
     "en": "Chapter 1 Review and Project: The Engineer’s Balance"
@@ -3276,7 +2511,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 2,
-   "order": 134,
+   "order": 101,
    "title": {
     "ar": "القيم والعمليات: من البيان إلى سكرم",
     "en": "Processes and Values: From Manifesto to Scrum"
@@ -3309,7 +2544,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 2,
-   "order": 135,
+   "order": 102,
    "title": {
     "ar": "التطوير الرشيق: البرمجة الفائقة",
     "en": "Agile Development: Extreme Programming"
@@ -3334,7 +2569,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 2,
-   "order": 136,
+   "order": 103,
    "title": {
     "ar": "حدود الشلال وعروض V",
     "en": "Waterfall Limits and V Processes"
@@ -3367,7 +2602,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 2,
-   "order": 137,
+   "order": 104,
    "title": {
     "ar": "مخاطر المشروع وإطار الحلزون",
     "en": "Project Risks and the Spiral Framework"
@@ -3400,7 +2635,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 2,
-   "order": 138,
+   "order": 105,
    "title": {
     "ar": "مراجعة الفصل 2 ومشروع: مُحاكي العمليات",
     "en": "Chapter 2 Review and Project: The Process Simulator"
@@ -3433,7 +2668,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 3,
-   "order": 139,
+   "order": 106,
    "title": {
     "ar": "ما المتطلب؟ وكيف تنضج المتطلبات",
     "en": "What Is a Requirement and How Requirements Mature"
@@ -3466,7 +2701,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 3,
-   "order": 140,
+   "order": 107,
    "title": {
     "ar": "استنباط احتياجات المستخدمين",
     "en": "Eliciting User Needs"
@@ -3491,7 +2726,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 3,
-   "order": 141,
+   "order": 108,
    "title": {
     "ar": "القصص والميزات وسيناريوهات التجربة",
     "en": "Stories, Features, and Experience Scenarios"
@@ -3524,7 +2759,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 3,
-   "order": 142,
+   "order": 109,
    "title": {
     "ar": "توضيح الأهداف وهجمات الأمان",
     "en": "Clarifying Goals and Security Attacks"
@@ -3557,7 +2792,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 3,
-   "order": 143,
+   "order": 110,
    "title": {
     "ar": "مراجعة الفصل 3 ومشروع: حزمة المتطلبات",
     "en": "Chapter 3 Review and Project: The Requirements Pack"
@@ -3582,7 +2817,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 4,
-   "order": 144,
+   "order": 111,
    "title": {
     "ar": "قوائم الفحص والتقدير النسبي",
     "en": "Checklists and Relative Estimation"
@@ -3607,7 +2842,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 4,
-   "order": 145,
+   "order": 112,
    "title": {
     "ar": "توافق الفريق وموازنة الأولويات",
     "en": "Group Consensus and Balancing Priorities"
@@ -3632,7 +2867,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 4,
-   "order": 146,
+   "order": 113,
    "title": {
     "ar": "المُرضيات ونماذج التقدير المخطَّطة",
     "en": "Satisfiers and Plan-Driven Estimation"
@@ -3657,7 +2892,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 4,
-   "order": 147,
+   "order": 114,
    "title": {
     "ar": "مراجعة الفصل 4 ومشروع: لوحة تخطيط التكرار",
     "en": "Chapter 4 Review and Project: The Iteration Planning Board"
@@ -3678,7 +2913,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 5,
-   "order": 148,
+   "order": 115,
    "title": {
     "ar": "عناصر حالة الاستخدام",
     "en": "Elements of a Use Case"
@@ -3703,7 +2938,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 5,
-   "order": 149,
+   "order": 116,
    "title": {
     "ar": "التدفقات البديلة: السلوك الشرطي",
     "en": "Alternative Flows: Conditional Behavior"
@@ -3728,7 +2963,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 5,
-   "order": 150,
+   "order": 117,
    "title": {
     "ar": "كتابة حالات الاستخدام ورسمها",
     "en": "Writing Use Cases and Diagramming Them"
@@ -3761,7 +2996,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 5,
-   "order": 151,
+   "order": 118,
    "title": {
     "ar": "مراجعة الفصل 5 ومشروع: محرك تدفقات الاستخدام",
     "en": "Chapter 5 Review and Project: The Use-Case Flow Engine"
@@ -3794,7 +3029,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 6,
-   "order": 152,
+   "order": 119,
    "title": {
     "ar": "دور المعمارية وتصميم الأنظمة المعيارية",
     "en": "The Role of Architecture and Modular Design"
@@ -3827,7 +3062,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 6,
-   "order": 153,
+   "order": 120,
    "title": {
     "ar": "مخططات الأصناف",
     "en": "Class Diagrams"
@@ -3852,7 +3087,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 6,
-   "order": 154,
+   "order": 121,
    "title": {
     "ar": "مناظر المعمارية ووصفها",
     "en": "Architectural Views and Describing Architecture"
@@ -3885,7 +3120,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 6,
-   "order": 155,
+   "order": 122,
    "title": {
     "ar": "مراجعة الفصل 6 ومشروع: محلل التبعيات",
     "en": "Chapter 6 Review and Project: The Dependency Analyzer"
@@ -3910,7 +3145,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 7,
-   "order": 156,
+   "order": 123,
    "title": {
     "ar": "الطبقات واللبنات الثلاث",
     "en": "Layering and the Three Building Blocks"
@@ -3943,7 +3178,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 7,
-   "order": 157,
+   "order": 124,
    "title": {
     "ar": "واجهات المستخدم: النموذج-المنظر-المتحكم",
     "en": "User Interfaces: Model-View-Controller"
@@ -3968,7 +3203,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 7,
-   "order": 158,
+   "order": 125,
    "title": {
     "ar": "تدفقات البيانات وربط العملاء بالخوادم",
     "en": "Dataflow and Client-Server Patterns"
@@ -4001,7 +3236,7 @@
    "part": "I",
    "book": "SWE",
    "chapter": 7,
-   "order": 159,
+   "order": 126,
    "title": {
     "ar": "مراجعة الفصل 7 ومشروع: دليل الأنماط",
     "en": "Chapter 7 Review and Project: The Pattern Catalog"
@@ -4029,6 +3264,771 @@
    ]
   },
   {
+   "id": "swe.ch8.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 8,
+   "order": 127,
+   "title": {
+    "ar": "لماذا التحكم بالإصدارات؟",
+    "en": "Why Version Control?"
+   },
+   "prerequisites": [
+    "swe.ch7.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch8.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 8,
+   "order": 128,
+   "title": {
+    "ar": "التفرّع والدمج",
+    "en": "Branching and Merging"
+   },
+   "prerequisites": [
+    "swe.ch8.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch8.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 8,
+   "order": 129,
+   "title": {
+    "ar": "العمل مع الآخرين وتعارضات الدمج",
+    "en": "Working with Others and Merge Conflicts"
+   },
+   "prerequisites": [
+    "swe.ch8.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch8.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 8,
+   "order": 130,
+   "title": {
+    "ar": "عادات Git الجماعية والتوثيق",
+    "en": "Team Habits and Documentation"
+   },
+   "prerequisites": [
+    "swe.ch8.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch8.l5",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 8,
+   "order": 131,
+   "title": {
+    "ar": "مراجعة الفصل 8 ومشروع: نموذج Git المصغّر",
+    "en": "Chapter 8 Review and Project: The Mini-Git Model"
+   },
+   "prerequisites": [
+    "swe.ch8.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch8.s8"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch9.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 9,
+   "order": 132,
+   "title": {
+    "ar": "مراجعات المعمارية والفحوص",
+    "en": "Architecture Reviews and Inspections"
+   },
+   "prerequisites": [
+    "swe.ch8.l5"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch9.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch9.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch9.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 9,
+   "order": 133,
+   "title": {
+    "ar": "مراجعات الكود: النية والثقة",
+    "en": "Code Reviews: Intent and Trust"
+   },
+   "prerequisites": [
+    "swe.ch9.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch9.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch9.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 9,
+   "order": 134,
+   "title": {
+    "ar": "التحليل الثابت الآلي",
+    "en": "Automated Static Analysis"
+   },
+   "prerequisites": [
+    "swe.ch9.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch9.s4"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch9.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 9,
+   "order": 135,
+   "title": {
+    "ar": "مراجعة الفصل 9 ومشروع: المنقّح المصغّر",
+    "en": "Chapter 9 Review and Project: The Mini Linter"
+   },
+   "prerequisites": [
+    "swe.ch9.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch9.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch10.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 10,
+   "order": 136,
+   "title": {
+    "ar": "لماذا نختبر؟ ومستويات الاختبار",
+    "en": "Why Test? Levels of Testing"
+   },
+   "prerequisites": [
+    "swe.ch9.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch10.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 10,
+   "order": 137,
+   "title": {
+    "ar": "تغطية الكود: الاختبار بالصندوق الأبيض",
+    "en": "Code Coverage: White-Box Testing"
+   },
+   "prerequisites": [
+    "swe.ch10.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch10.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 10,
+   "order": 138,
+   "title": {
+    "ar": "تغطية المدخلات: الاختبار بالصندوق الأسود",
+    "en": "Input Coverage: Black-Box Testing"
+   },
+   "prerequisites": [
+    "swe.ch10.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s4"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch10.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 10,
+   "order": 139,
+   "title": {
+    "ar": "MC/DC والاختبار التوافقي",
+    "en": "MC/DC and Combinatorial Testing"
+   },
+   "prerequisites": [
+    "swe.ch10.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s6"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch10.l5",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 10,
+   "order": 140,
+   "title": {
+    "ar": "مراجعة الفصل 10 ومشروع: حزمة الاختبارات",
+    "en": "Chapter 10 Review and Project: The Test Suite"
+   },
+   "prerequisites": [
+    "swe.ch10.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch10.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch11.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 11,
+   "order": 141,
+   "title": {
+    "ar": "الأمن صفة عبر دورة الحياة وقائمة OWASP العشرة",
+    "en": "Security as a Lifecycle Property and the OWASP Top 10"
+   },
+   "prerequisites": [
+    "swe.ch10.l5"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch11.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch11.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch11.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 11,
+   "order": 142,
+   "title": {
+    "ar": "البحث عن الثغرات: من الفحص اليدوي إلى المستقل",
+    "en": "Finding Vulnerabilities: from Manual Review to Autonomous Agents"
+   },
+   "prerequisites": [
+    "swe.ch11.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch11.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch11.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 11,
+   "order": 143,
+   "title": {
+    "ar": "سلسلة توريد البرمجيات وبناء الأمن داخليًا",
+    "en": "The Software Supply Chain and Building Security In"
+   },
+   "prerequisites": [
+    "swe.ch11.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch11.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch11.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch11.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 11,
+   "order": 144,
+   "title": {
+    "ar": "مراجعة الفصل 11 ومشروع: مدقّق كلمات المرور والسياسات",
+    "en": "Chapter 11 Review and Project: Password and Policy Auditor"
+   },
+   "prerequisites": [
+    "swe.ch11.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch11.s6"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch12.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 12,
+   "order": 145,
+   "title": {
+    "ar": "مقاييس ذات معنى وجودة البرمجيات",
+    "en": "Meaningful Metrics and Software Quality"
+   },
+   "prerequisites": [
+    "swe.ch11.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch12.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 12,
+   "order": 146,
+   "title": {
+    "ar": "عرض البيانات بيانيًا",
+    "en": "Graphical Displays of Data Sets"
+   },
+   "prerequisites": [
+    "swe.ch12.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch12.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 12,
+   "order": 147,
+   "title": {
+    "ar": "قياس العيوب وتحسين جودة العمليات: دراسة حالة",
+    "en": "Measuring Defects and an Ops Quality Case Study"
+   },
+   "prerequisites": [
+    "swe.ch12.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch12.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 12,
+   "order": 148,
+   "title": {
+    "ar": "تشتت البيانات: الصناديق والمدرجات والإحصاء",
+    "en": "Data Dispersion: Boxplots, Histograms, and Statistics"
+   },
+   "prerequisites": [
+    "swe.ch12.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch12.l5",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 12,
+   "order": 149,
+   "title": {
+    "ar": "فترات الثقة والانحدار الخطي البسيط",
+    "en": "Confidence Intervals and Simple Linear Regression"
+   },
+   "prerequisites": [
+    "swe.ch12.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s8"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s9"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch12.l6",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 12,
+   "order": 150,
+   "title": {
+    "ar": "مراجعة الفصل 12 ومشروع: لوحة مقاييس الجودة",
+    "en": "Chapter 12 Review and Project: Quality Metrics Dashboard"
+   },
+   "prerequisites": [
+    "swe.ch12.l5"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch12.s10"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch14.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 14,
+   "order": 151,
+   "title": {
+    "ar": "الخدمات السحابية وخطوط التكامل المستمر",
+    "en": "SaaS and the Cloud and Continuous Integration Pipelines"
+   },
+   "prerequisites": [
+    "swe.ch12.l6"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch14.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 14,
+   "order": 152,
+   "title": {
+    "ar": "النشر المستمر: الإصدارات الكنارية والتراجع",
+    "en": "Continuous Deployment: Canaries and Rollbacks"
+   },
+   "prerequisites": [
+    "swe.ch14.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s3"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch14.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 14,
+   "order": 153,
+   "title": {
+    "ar": "حزم الخدمات وتشغيلها، والوصول إلى المستخدمين",
+    "en": "Packaging a Service, and Reaching Users"
+   },
+   "prerequisites": [
+    "swe.ch14.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s4"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s5"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch14.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 14,
+   "order": 154,
+   "title": {
+    "ar": "خطوط الأمن المستمر ومقاييس DORA للتسليم",
+    "en": "Continuous Security Pipelines and DORA Delivery Metrics"
+   },
+   "prerequisites": [
+    "swe.ch14.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s6"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s7"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch14.l5",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 14,
+   "order": 155,
+   "title": {
+    "ar": "مراجعة الفصل 14 ومشروع: خط تسليم مصغّر",
+    "en": "Chapter 14 Review and Project: a Mini Delivery Pipeline"
+   },
+   "prerequisites": [
+    "swe.ch14.l4"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch14.s8"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch15.l1",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 15,
+   "order": 156,
+   "title": {
+    "ar": "الشيفرة العتيقة واختبارات التوصيف",
+    "en": "What Makes Code Legacy and Characterization Tests"
+   },
+   "prerequisites": [
+    "swe.ch14.l5"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s1"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s2"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch15.l2",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 15,
+   "order": 157,
+   "title": {
+    "ar": "إعادة الهيكلة تحت اختبارات خضراء وحوكمة المستودع",
+    "en": "Refactoring Under Green Tests and Repository Stewardship"
+   },
+   "prerequisites": [
+    "swe.ch15.l1"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s3"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s4"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch15.l3",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 15,
+   "order": 158,
+   "title": {
+    "ar": "الدين التقني: شجرة الخنزير مقابل إعادة الكتابة الكاملة",
+    "en": "Technical Debt and Strangler Fig versus Big-Bang Rewrite"
+   },
+   "prerequisites": [
+    "swe.ch15.l2"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s5"
+    },
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s6"
+    }
+   ]
+  },
+  {
+   "id": "swe.ch15.l4",
+   "track": "P3",
+   "part": "I",
+   "book": "SWE",
+   "chapter": 15,
+   "order": 159,
+   "title": {
+    "ar": "مراجعة الفصل 15 ومشروع: ورشة إحياء شيفرة عتيقة",
+    "en": "Chapter 15 Review and Project: Legacy Revival Workshop"
+   },
+   "prerequisites": [
+    "swe.ch15.l3"
+   ],
+   "sources": [
+    {
+     "book": "SWE",
+     "section": "swe.ch15.s7"
+    }
+   ]
+  },
+  {
    "id": "swe.appa.l1",
    "track": "P3",
    "part": "I",
@@ -4040,7 +4040,7 @@
     "en": "The Team Project: Overview and the Proposal"
    },
    "prerequisites": [
-    "swe.ch7.l4"
+    "swe.ch15.l4"
    ],
    "sources": [
     {

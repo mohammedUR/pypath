@@ -19,7 +19,7 @@ const lesson = {
     en: 'The Team Project: Overview and the Proposal',
   },
   estimatedMinutes: 30,
-  prerequisites: ['swe.ch7.l4'],
+  prerequisites: ['swe.ch15.l4'],
   blocks: [
     {
       kind: 'hook',

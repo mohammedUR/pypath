@@ -43,9 +43,6 @@ const csp = [
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  typescript: {
-    ignoreBuildErrors: true,
-  },
   reactStrictMode: false,
   async headers() {
     return [

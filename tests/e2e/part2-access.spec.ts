@@ -87,11 +87,12 @@ test('enforced certification gate still holds Part II closed until certified', a
 
   await page.evaluate(() => {
     const attempts = [{ ts: Date.now(), score: 1, passed: true }];
+    // Canonical Capstone ids (CAP-001) — forged keys never count any more.
     const capstoneArtifacts = Object.fromEntries(
-      ['a1', 'a2', 'a3', 'a4', 'a5', 'a6'].map((id) => [id, true]),
+      ['proposal', 'skeletal', 'viable', 'tests', 'readme', 'final'].map((id) => [id, true]),
     );
     const capstoneRubric = Object.fromEntries(
-      ['r1', 'r2', 'r3', 'r4', 'r5'].map((id) => [id, 3]),
+      ['requirements', 'quality', 'testing', 'delivery', 'reflection'].map((id) => [id, 3]),
     );
     localStorage.setItem(
       'pypath.certification',

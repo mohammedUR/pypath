@@ -15,6 +15,8 @@ import {
   examPassed,
   bestExamScore,
   capstoneReadiness,
+  capstoneArtifactsDone,
+  capstoneRubricTotal,
   certificationGateStatus,
   CAPSTONE_ARTIFACTS_TOTAL,
   CAPSTONE_RUBRIC_MAX,
@@ -24,6 +26,8 @@ import {
   verifySignedProof,
   parseProofJson,
   downloadJson,
+  normalizeSubject,
+  CERT_PART1_LESSONS,
   type SignedProof,
   type VerifyResult,
 } from '@/lib/cert/proof';
@@ -77,7 +81,7 @@ export function CapstoneView() {
   const attempts = useCertification((s) => s.attempts);
   const subject = useCertification((s) => s.subject);
   const setSubject = useCertification((s) => s.setSubject);
-  const completedCount = useProgress((s) => s.completedLessons.length);
+  const completedLessons = useProgress((s) => s.completedLessons);
   const manifest = useManifestStore((s) => s.manifest);
 
   const [proof, setProof] = useState<SignedProof | null>(null);
@@ -85,9 +89,21 @@ export function CapstoneView() {
   const [verifyRes, setVerifyRes] = useState<VerifyResult | null>(null);
   const verifyFileRef = useRef<HTMLInputElement | null>(null);
 
-  const artifactDone = ARTIFACTS.filter((a) => artifacts[a.id]).length;
-  const rubricTotal = RUBRIC.reduce((sum, r) => sum + (rubric[r.id] ?? 0), 0);
+  const artifactDone = useMemo(() => capstoneArtifactsDone(artifacts), [artifacts]);
+  const rubricTotal = useMemo(() => capstoneRubricTotal(rubric), [rubric]);
   const rubricMax = RUBRIC.length * 3;
+
+  // Part I canonical coverage (CERT-001): the certificate binds to ALL 163
+  // canonical Part I lesson ids from the manifest, never to a bare count.
+  const part1CanonicalIds = useMemo(
+    () => manifest.filter((m) => m.part === 'I').map((m) => m.id),
+    [manifest],
+  );
+  const part1CompletedCount = useMemo(() => {
+    const done = new Set(completedLessons);
+    return part1CanonicalIds.filter((id) => done.has(id)).length;
+  }, [completedLessons, part1CanonicalIds]);
+  const part1Complete = part1CanonicalIds.length > 0 && part1CompletedCount === part1CanonicalIds.length;
 
   const readiness = useMemo(
     () => capstoneReadiness(artifactDone, rubricTotal),
@@ -95,33 +111,37 @@ export function CapstoneView() {
   );
 
   const { certified } = useMemo(
-    () => certificationGateStatus(attempts, readiness),
-    [attempts, readiness],
+    () => certificationGateStatus(attempts, readiness, artifactDone, part1Complete),
+    [attempts, readiness, artifactDone, part1Complete],
   );
+
+  const subjectValid = normalizeSubject(subject) !== null;
 
   const handleIssue = async () => {
     setProofState('issuing');
     try {
       const signed = await issueCertificateProof({
         subject,
-        examBest: bestExamScore(attempts),
-        examAttempts: attempts.length,
-        examPassed: examPassed(attempts),
-        examPassMark: 0.8,
+        attempts,
         readiness,
         artifactsDone: artifactDone,
-        artifactsTotal: CAPSTONE_ARTIFACTS_TOTAL,
         rubricTotal,
         rubricMax: CAPSTONE_RUBRIC_MAX,
-        lessonsCompleted: completedCount,
-        lessonsTotal: manifest.length,
+        part1CompletedIds: completedLessons,
+        part1CanonicalIds,
       });
       setProof(signed);
       setProofState('issued');
       setVerifyRes(await verifySignedProof(signed));
       downloadJson(`pypath-certificate-${new Date().toISOString().slice(0, 10)}.json`, signed);
-    } finally {
+    } catch (e) {
+      // validateProofInput rejected the snapshot (CERT-003): surface it, never sign.
+      setProof(null);
       setProofState('idle');
+      setVerifyRes({
+        valid: false,
+        reason: e instanceof Error ? e.message : 'issuance rejected',
+      });
     }
   };
 
@@ -219,6 +239,11 @@ export function CapstoneView() {
           <Progress value={readiness} aria-label={ar ? 'نسبة الجاهزية' : 'Readiness'} />
           <ul className="list-inside list-disc space-y-1 text-sm text-muted-foreground">
             <li>
+              {ar ? 'دروس الجزء الأول: ' : 'Part I lessons: '}
+              {part1CompletedCount} / {part1CanonicalIds.length || CERT_PART1_LESSONS}
+              {part1Complete ? ' ✓' : ''}
+            </li>
+            <li>
               {ar ? 'امتحان بايثون الاحترافي: ' : 'Python Professional exam: '}
               {examPassed(attempts)
                 ? ar
@@ -230,20 +255,20 @@ export function CapstoneView() {
             </li>
             <li>
               {ar ? 'جاهزية الكابستون: ' : 'Capstone readiness: '}
-              {readiness}%
+              {readiness}% ({artifactDone}/{CAPSTONE_ARTIFACTS_TOTAL} {ar ? 'أدوات' : 'artifacts'})
             </li>
           </ul>
           {certified ? (
             <p className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm font-medium">
               {ar
-                ? '🎉 اكتملت بوابة Part I: امتحان + كابستون. بوابة Part II مفتوحة أمامك.'
-                : '🎉 Part I gate complete: exam + capstone. Part II is open.'}
+                ? '🎉 اكتملت بوابة Part I: منهج كامل (163) + امتحان + كابستون. بوابة Part II مفتوحة أمامك.'
+                : '🎉 Part I gate complete: full curriculum (163) + exam + capstone. Part II is open.'}
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
               {ar
-                ? 'الاعتماد = نجاح الامتحان (≥80٪) + جاهزية كابستون ≥ 80٪.'
-                : 'Certification = exam pass (≥80%) + capstone readiness ≥ 80%.'}
+                ? 'الاعتماد = إكمال دروس الجزء الأول (163/163) + نجاح الامتحان (≥80٪) + جاهزية كابستون ≥ 80٪ مع الأدوات الست كاملة.'
+                : 'Certification = all 163 Part I lessons + exam pass (≥80%) + capstone readiness ≥ 80% with all 6 artifacts.'}
             </p>
           )}
         </CardContent>
@@ -271,7 +296,8 @@ export function CapstoneView() {
                 <Button
                   className="h-11 rounded-xl"
                   onClick={() => void handleIssue()}
-                  disabled={proofState !== 'idle'}
+                  disabled={proofState !== 'idle' || !subjectValid}
+                  title={!subjectValid ? (ar ? 'أدخل اسمًا صالحًا أولًا' : 'Enter a valid name first') : undefined}
                 >
                   {proofState === 'issuing'
                     ? ar

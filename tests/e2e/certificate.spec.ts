@@ -1,17 +1,25 @@
 import { expect, test } from '@playwright/test';
 import { EXAM_ITEMS } from '../../content/exam/python-professional';
+import { seedPartICompletion } from './helpers';
 
 /**
  * Exam → certification → signed certificate proof (R-GAM-02, OQ-7).
  * Answers are looked up from the real item bank, so the attempt passes
  * deterministically (16/16), unlocking the capstone certificate card and
- * the WebCrypto ECDSA P-256 signing flow end-to-end.
+ * the WebCrypto ECDSA P-256 signing flow end-to-end. Since Phase 3
+ * (CERT-001, Option 1) the certificate additionally requires ALL 163 Part I
+ * lessons completed — seeded up front here.
  */
 
 const DRAW = 16;
 
 test('passing the exam and capstone issues a verifiable signed proof', async ({ page }) => {
   test.setTimeout(180_000);
+
+  // 0) CERT-001: seed full Part I completion (163/163) first.
+  await page.goto('/#/ar/path');
+  await seedPartICompletion(page);
+  await expect(page.getByText(/أكملت الجزء الأول/)).toBeVisible({ timeout: 20_000 });
 
   // 1) Exam: draw 16, answer all correctly from the bank.
   await page.goto('/#/ar/exam');

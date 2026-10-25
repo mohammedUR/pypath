@@ -1,8 +1,9 @@
 /**
  * Python Professional certification exam — item bank (R-CUR-04, §4.2 P4 gate).
- * 48 items = 3× the 16 drawn per attempt (bank floor per R-CNT-02).
- * Bilingual, single-answer, four options. Draw is re-randomised per attempt
- * (R-GRD-04); pass mark ≥ 80% enforced by ExamView.
+ * 52 items = 20 PY4E + 22 SWE + 10 AI-era (> 3× the 16 drawn per attempt,
+ * bank floor per R-CNT-02). Bilingual, single-answer, four options. Each
+ * attempt draws a balanced, duplicate-free sample (R-GRD-04, EXAM-002);
+ * pass mark ≥ 80% (≙ ≥ 13/16) enforced by ExamView.
  */
 
 export interface ExamItem {
@@ -641,13 +642,47 @@ export const EXAM_ITEMS: ExamItem[] = [
   },
 ];
 
-/** Draw `count` distinct items (per-attempt variant, R-GRD-04). */
-export function drawExamItems(count: number): ExamItem[] {
-  const pool = [...EXAM_ITEMS];
-  const out: ExamItem[] = [];
-  while (out.length < count && pool.length > 0) {
-    const i = Math.floor(Math.random() * pool.length);
-    out.push(pool.splice(i, 1)[0]);
+/**
+ * Balanced draw quotas per topic for the standard 16-question exam
+ * (EXAM-002): 16 × 20/52 ≈ 6.2 → 6 PY4E, 16 × 22/52 ≈ 6.8 → 7 SWE,
+ * 16 × 10/52 ≈ 3.1 → 3 AI-era (6 + 7 + 3 = 16). Deterministic quotas with
+ * random selection inside each topic.
+ */
+const DRAW_QUOTAS: Record<ExamItem['topic'], number> = { py4e: 6, swe: 7, 'ai-era': 3 };
+
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
   }
-  return out;
+  return a;
+}
+
+/**
+ * Draw `count` distinct items with a balanced topic distribution and zero
+ * duplicates (per-attempt variant, R-GRD-04 / EXAM-002). Quotas are only
+ * applied for the canonical 16-question draw; any other count falls back to
+ * a plain uniform sample without replacement.
+ */
+export function drawExamItems(count: number): ExamItem[] {
+  if (count !== 16) {
+    return shuffle(EXAM_ITEMS).slice(0, Math.min(count, EXAM_ITEMS.length));
+  }
+  const byTopic = new Map<ExamItem['topic'], ExamItem[]>();
+  for (const item of EXAM_ITEMS) {
+    const list = byTopic.get(item.topic) ?? [];
+    list.push(item);
+    byTopic.set(item.topic, list);
+  }
+  const out: ExamItem[] = [];
+  for (const [topic, quota] of Object.entries(DRAW_QUOTAS) as [ExamItem['topic'], number][]) {
+    out.push(...shuffle(byTopic.get(topic) ?? []).slice(0, quota));
+  }
+  // Defensive: if a topic pool ever underfills, top up from the remainder.
+  if (out.length < count) {
+    const taken = new Set(out.map((i) => i.id));
+    out.push(...shuffle(EXAM_ITEMS.filter((i) => !taken.has(i.id))).slice(0, count - out.length));
+  }
+  return shuffle(out.slice(0, count));
 }

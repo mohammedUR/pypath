@@ -35,39 +35,66 @@ export function ExamView() {
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [secondsLeft, setSecondsLeft] = useState(MINUTES * 60);
   const [score, setScore] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** EXAM-001: synchronous submission lock — one attempt records exactly
+   * once no matter how submit is triggered (button, double-click, timer). */
+  const submittingRef = useRef(false);
+  /** Wall-clock deadline (EXAM-002): survives background-tab throttling. */
+  const deadlineRef = useRef(0);
 
   const passed = examPassed(attempts);
   const best = bestExamScore(attempts);
 
+  const clearTimer = () => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
   const start = () => {
+    if (submittingRef.current || submitting) return; // never restart mid-submit
+    clearTimer();
+    submittingRef.current = false; // fresh attempt: re-arm the one-shot lock
     const drawn = drawExamItems(DRAW);
     setItems(drawn);
     setIdx(0);
     setAnswers({});
+    setScore(0);
+    setSubmitting(false);
     setSecondsLeft(MINUTES * 60);
+    deadlineRef.current = Date.now() + MINUTES * 60 * 1000;
     setPhase('running');
-    if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => {
-      setSecondsLeft((s) => {
-        if (s <= 1) {
-          // Expiry handled as an event on the next tick callback (never in render).
-          queueMicrotask(() => finishRef.current());
-          return 0;
-        }
-        return s - 1;
-      });
-    }, 1000);
+      const left = Math.max(0, Math.ceil((deadlineRef.current - Date.now()) / 1000));
+      setSecondsLeft(left);
+      if (left <= 0) {
+        clearTimer();
+        // Submit from the timer task; the synchronous lock makes this safe
+        // against a concurrent manual click.
+        finishRef.current();
+      }
+    }, 500);
   };
 
   const finish = () => {
-    if (timerRef.current) clearInterval(timerRef.current);
+    // EXAM-001: first caller wins; every later invocation (double click,
+    // timer expiry racing the button, stale finishRef) is a no-op.
+    if (submittingRef.current) return;
+    submittingRef.current = true;
+    setSubmitting(true);
+    clearTimer();
+    // Unanswered items grade as incorrect (undefined never equals an option id).
     const correct = items.filter((it) => answers[it.id] === it.answer).length;
     const sc = correct / DRAW;
     setScore(sc);
     recordAttempt(sc, sc >= EXAM_PASS_MARK);
     setPhase('done');
   };
+
+  // Clear the countdown when the view unmounts (no stray timers across navigation).
+  useEffect(() => () => clearTimer(), []);
 
   // Keep the latest finish callable without re-creating the interval.
   const finishRef = useRef(finish);
@@ -162,7 +189,15 @@ export function ExamView() {
               {idx < DRAW - 1 ? (
                 <Button onClick={() => setIdx((i) => i + 1)}>{ar ? 'التالي' : 'Next'}</Button>
               ) : (
-                <Button onClick={finish}>{ar ? 'إنهاء وتسليم' : 'Finish & submit'}</Button>
+                <Button onClick={finish} disabled={submitting}>
+                  {submitting
+                    ? ar
+                      ? 'جارٍ التسليم…'
+                      : 'Submitting…'
+                    : ar
+                      ? 'إنهاء وتسليم'
+                      : 'Finish & submit'}
+                </Button>
               )}
             </div>
           </CardContent>

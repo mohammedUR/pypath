@@ -17,9 +17,22 @@
  * This is documented in docs/gamification.md (R-GAM-02) and OPEN-QUESTIONS.
  */
 
-export const CERT_PROOF_VERSION = 2 as const;
+export const CERT_PROOF_VERSION = 3 as const;
 export const CERT_ALG = 'ECDSA_P256_SHA256' as const;
 const KEYS_STORAGE = 'pypath.cert.keys.v1';
+
+/** Verification thresholds (CERT-002/003) — self-contained so verification
+ * never trusts caller-supplied numbers for the gates:
+ *  - Part I gate binds the certificate to all 163 canonical lessons.
+ *  - Capstone gate requires all 6 canonical artifacts.
+ *  - Exam gate requires a pass mark of at least 0.8 (≙ ≥ 13/16 on the
+ *    16-question draw); a forged payload with a lowered passMark is rejected.
+ */
+export const CERT_PART1_LESSONS = 163 as const;
+export const CERT_CAPSTONE_ARTIFACTS = 6 as const;
+export const CERT_MIN_EXAM_PASS_MARK = 0.8 as const;
+/** Subject: trimmed, non-empty, no control characters, bounded length. */
+const SUBJECT_MAX_LEN = 80;
 
 export interface CertProofPayload {
   v: typeof CERT_PROOF_VERSION;
@@ -130,42 +143,96 @@ async function importPublicKey(jwk: JsonWebKey): Promise<CryptoKey> {
 
 export interface ProofInput {
   subject: string;
-  examBest: number;
-  examAttempts: number;
-  examPassed: boolean;
-  examPassMark: number;
+  /** Genuine attempt records from the certification store (CERT-003). */
+  attempts: { ts: number; score: number; passed: boolean }[];
   readiness: number;
+  /** Canonical-counted artifacts (capstoneArtifactsDone) — must equal 6. */
   artifactsDone: number;
-  artifactsTotal: number;
   rubricTotal: number;
   rubricMax: number;
-  lessonsCompleted: number;
-  lessonsTotal: number;
+  /** The learner's completed lesson ids — validated as a superset of the
+   * canonical Part I ids before anything is signed (no bare counts). */
+  part1CompletedIds: readonly string[];
+  /** The canonical Part I lesson ids from the manifest (163 entries). */
+  part1CanonicalIds: readonly string[];
 }
 
-/** Issue (sign) a certificate proof with the device's local key. */
+/** Normalize a certificate subject: trim, collapse whitespace, strip control
+ * characters, bound length. Returns null when nothing substantive remains. */
+export function normalizeSubject(raw: string): string | null {
+  const cleaned = raw
+    // eslint-disable-next-line no-control-regex
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, SUBJECT_MAX_LEN);
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+/**
+ * Pre-issuance snapshot validation (CERT-003). Rejects — with a precise
+ * reason — any of: an empty/oversized subject, a missing genuine passing
+ * exam attempt (passed && score ≥ 0.8), capstone artifacts below 6/6 or a
+ * readiness below 80, a Part I completion set that does not cover ALL 163
+ * canonical ids (duplicates/fake ids never satisfy a set-equality check),
+ * or tampered total fields.
+ */
+export function validateProofInput(input: ProofInput): { ok: true } | { ok: false; reason: string } {
+  const subject = normalizeSubject(input.subject);
+  if (!subject) return { ok: false, reason: 'subject-empty-or-invalid' };
+  const hasPass = input.attempts.some(
+    (a) =>
+      a &&
+      a.passed === true &&
+      typeof a.score === 'number' &&
+      Number.isFinite(a.score) &&
+      a.score >= CERT_MIN_EXAM_PASS_MARK &&
+      a.score <= 1 &&
+      typeof a.ts === 'number',
+  );
+  if (!hasPass) return { ok: false, reason: 'exam-gate-not-satisfied' };
+  if (input.artifactsDone !== CERT_CAPSTONE_ARTIFACTS)
+    return { ok: false, reason: 'capstone-artifacts-incomplete' };
+  if (input.readiness < 80) return { ok: false, reason: 'capstone-readiness-below-80' };
+  if (input.rubricMax <= 0 || input.rubricTotal < 0 || input.rubricTotal > input.rubricMax)
+    return { ok: false, reason: 'rubric-out-of-range' };
+  if (input.part1CanonicalIds.length !== CERT_PART1_LESSONS)
+    return { ok: false, reason: 'canonical-part1-set-invalid' };
+  const completed = new Set(input.part1CompletedIds);
+  const missing = input.part1CanonicalIds.filter((id) => !completed.has(id));
+  if (missing.length > 0)
+    return { ok: false, reason: `part1-incomplete (${missing.length} missing)` };
+  return { ok: true };
+}
+
+/** Issue (sign) a certificate proof with the device's local key. Throws when
+ * the snapshot fails validateProofInput — the caller gates the UI, but the
+ * proof layer re-validates so nothing unsigned-worthy can ever be signed. */
 export async function issueCertificateProof(input: ProofInput): Promise<SignedProof> {
+  const verdict = validateProofInput(input);
+  if (!verdict.ok) throw new Error(`proof input rejected: ${verdict.reason}`);
+  const best = input.attempts.reduce((b, a) => Math.max(b, a.score), 0);
   const payload: CertProofPayload = {
     v: CERT_PROOF_VERSION,
     kind: 'pypath.certificate',
-    subject: input.subject.trim() || 'Python learner',
+    subject: normalizeSubject(input.subject) as string,
     issuedAt: Date.now(),
     exam: {
-      best: input.examBest,
-      attempts: input.examAttempts,
-      passed: input.examPassed,
-      passMark: input.examPassMark,
+      best,
+      attempts: input.attempts.length,
+      passed: true,
+      passMark: CERT_MIN_EXAM_PASS_MARK,
     },
     capstone: {
       readiness: input.readiness,
       artifactsDone: input.artifactsDone,
-      artifactsTotal: input.artifactsTotal,
+      artifactsTotal: CERT_CAPSTONE_ARTIFACTS,
       rubricTotal: input.rubricTotal,
       rubricMax: input.rubricMax,
     },
     curriculum: {
-      completed: input.lessonsCompleted,
-      total: input.lessonsTotal,
+      completed: CERT_PART1_LESSONS,
+      total: CERT_PART1_LESSONS,
     },
     platform: { name: 'pypath', gate: 'part1' },
   };
@@ -196,21 +263,30 @@ export async function verifySignedProof(
     if (!proof.payload || proof.payload.kind !== 'pypath.certificate')
       return { valid: false, reason: 'not-a-certificate' };
     if (proof.payload.v !== CERT_PROOF_VERSION) return { valid: false, reason: 'bad-version' };
+    const p = proof.payload;
     const key = await importPublicKey(trustedPublicKey ?? proof.publicKey);
     const data = new TextEncoder().encode(canonicalJson(proof.payload));
+    // Signature comparison happens inside WebCrypto's constant-time verify —
+    // no JS `===` ever compares digests (CERT-002).
     const ok = await crypto.subtle.verify(
       { name: 'ECDSA', hash: 'SHA-256' },
       key,
       fromBase64(proof.signature),
       data,
     );
-    if (!ok) return { valid: false, reason: 'bad-signature' };
-    // Semantic gates — a signature over a failing payload is still invalid.
-    const p = proof.payload;
-    if (!p.exam.passed || p.exam.best < p.exam.passMark)
+    if (!ok) return { valid: false, reason: 'bad-signature', payload: p };
+    // Semantic gates — a signature over a failing/forged payload is still
+    // invalid. Every gate value is checked against platform constants, never
+    // against numbers echoed back from the payload itself.
+    if (!normalizeSubject(p.subject)) return { valid: false, reason: 'subject-invalid', payload: p };
+    if (!p.exam.passed || p.exam.best < CERT_MIN_EXAM_PASS_MARK)
       return { valid: false, reason: 'exam-gate-failed', payload: p };
-    if (p.capstone.readiness < 80)
+    if (p.exam.passMark < CERT_MIN_EXAM_PASS_MARK)
+      return { valid: false, reason: 'pass-mark-lowered', payload: p };
+    if (p.capstone.readiness < 80 || p.capstone.artifactsDone !== CERT_CAPSTONE_ARTIFACTS)
       return { valid: false, reason: 'capstone-gate-failed', payload: p };
+    if (p.curriculum.total !== CERT_PART1_LESSONS || p.curriculum.completed !== p.curriculum.total)
+      return { valid: false, reason: 'curriculum-gate-failed', payload: p };
     return { valid: true, payload: p };
   } catch (e) {
     return { valid: false, reason: e instanceof Error ? e.message : 'error' };

@@ -5,6 +5,8 @@ import { useProgress } from '@/lib/store/progress';
 import {
   useCertification,
   capstoneReadiness,
+  capstoneArtifactsDone,
+  capstoneRubricTotal,
   certificationGateStatus,
   type GateMode,
 } from '@/lib/store/certification';
@@ -62,12 +64,12 @@ export function useCurriculumAccess(): CurriculumAccess {
   const gateMode = useCertification((s) => s.gateMode);
 
   return useMemo(() => {
-    const capReady = capstoneReadiness(
-      Object.values(capstoneArtifacts).filter(Boolean).length,
-      Object.values(capstoneRubric).reduce((a, b) => a + b, 0),
-    );
-    const { certified } = certificationGateStatus(attempts, capReady);
+    // CAP-001: canonical counting only — forged store keys never count.
+    const artifactsDone = capstoneArtifactsDone(capstoneArtifacts);
+    const capReady = capstoneReadiness(artifactsDone, capstoneRubricTotal(capstoneRubric));
     const partIComplete = isPartIComplete(completedLessons, entries);
+    // CERT-001 (Option 1): certified = Part I complete + exam pass + capstone.
+    const { certified } = certificationGateStatus(attempts, capReady, artifactsDone, partIComplete);
     const partIIOpen = isPartIIOpen(completedLessons, gateMode, certified, entries);
     return {
       ready,

@@ -398,7 +398,7 @@ function LabPanel({ code, onCodeChange, py, editorRef }: LabPanelProps) {
           <Play className="size-4" aria-hidden="true" />
           {t('common.run')}
         </Button>
-        <Button type="button" variant="outline" className="h-11 min-h-11 rounded-xl px-4" onClick={py.stop} disabled={py.status !== 'running'}>
+        <Button type="button" variant="outline" className="h-11 min-h-11 rounded-xl px-4" onClick={py.stop} disabled={py.status === 'idle'}>
           {t('common.stop')}
         </Button>
         <span className="ms-auto text-xs text-muted-foreground">{t('lesson.lab.runHint')}</span>

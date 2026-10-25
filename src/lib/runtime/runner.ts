@@ -33,6 +33,9 @@ const WATCHDOG_GRACE_MS = 2500;
 
 const TERMINAL_EVENTS = new Set(['result', 'testsResult', 'traceResult', 'timeout']);
 
+/** Thrown when a boot ladder is aborted by stop() — maps to a 'stopped' outcome. */
+class BootCancelledError extends Error {}
+
 class PyodideRunner {
   private worker: Worker | null = null;
   private pending = new Map<string, PendingRun>();
@@ -45,6 +48,12 @@ class PyodideRunner {
   private assetSource: 'local' | 'cdn' = 'local';
   /** Serializes the boot ladder so concurrent runs share one attempt chain. */
   private booting: Promise<void> | null = null;
+  /** Bumped on every worker spawn/terminate: late events from a replaced
+   * worker carry an old generation and are ignored (stale-event pollution). */
+  private generation = 0;
+  /** Bumped on every stop(): in-flight boot ladders abort instead of trying
+   * the next rung after the user cancelled. */
+  private stopEpoch = 0;
   private seq = 0;
 
   getStatus(): RunnerStatus {
@@ -73,7 +82,12 @@ class PyodideRunner {
     // Static asset worker (ADR-0002 amendment): self-contained classic worker,
     // served from /public — immune to bundler worker-chunk issues.
     const w = new Worker('/pyodide-worker.js');
+    const gen = ++this.generation;
+    // Events still queued from a terminated/replaced worker must never mutate
+    // the new worker's state (LAB stale-event pollution).
+    const isStale = () => gen !== this.generation;
     w.addEventListener('message', (ev: MessageEvent<WorkerEvent>) => {
+      if (isStale()) return;
       const e = ev.data;
       if (e.type === 'loading' || e.type === 'ready' || e.type === 'loadError') {
         if (e.type === 'loading') this.setStatus('loading', e.phase);
@@ -106,6 +120,7 @@ class PyodideRunner {
       }
     });
     w.addEventListener('error', (ev) => {
+      if (isStale()) return;
       const message = ev.message || 'worker crashed';
       const err: WorkerEvent = { type: 'loadError', message };
       this.loadWaiters.forEach((cb) => cb(err));
@@ -155,13 +170,19 @@ class PyodideRunner {
   }
 
   /** Best-effort: drop poisoned Cache Storage entries (stale/mismatched vendor
-   * assets). The offline shell re-populates on the next navigations.
+   * assets). Application caches owned by the service worker (`pypath-v*-shell`
+   * / `pypath-v*-assets`) power offline mode and must NEVER be deleted here
+   * (LAB-001) — only caches the app does not own (e.g. stray Pyodide boot
+   * caches from older builds) are purged. Pyodide dist files themselves are
+   * served from the HTTP cache under an immutable versioned path (sw.js
+   * bypasses /vendor/pyodide/), so they are unaffected either way.
    */
   private async purgeBootCaches(): Promise<void> {
     try {
       if (typeof caches === 'undefined') return;
       const keys = await caches.keys();
-      await Promise.all(keys.map((k) => caches.delete(k)));
+      const stray = keys.filter((k) => !/^pypath-v\d+-/.test(k));
+      await Promise.all(stray.map((k) => caches.delete(k)));
     } catch {
       /* best effort — the next attempt still runs */
     }
@@ -183,11 +204,16 @@ class PyodideRunner {
    * Pyodide dist self-heal instead of surfacing "exit(1)" forever.
    */
   private async bootLadder(timeoutMs: number): Promise<void> {
+    const epoch = this.stopEpoch;
     const plan: Array<'local' | 'cdn'> =
       this.assetSource === 'cdn' ? ['cdn'] : ['local', 'local', 'cdn'];
     let lastMessage = 'runtime load failed';
     for (let i = 0; i < plan.length; i += 1) {
+      // A stop() while booting must cancel the ladder, not advance it to the
+      // next rung (which would spawn a fresh worker after the user cancelled).
+      if (this.stopEpoch !== epoch) throw new BootCancelledError('runtime boot cancelled');
       if (i === 1) await this.purgeBootCaches();
+      if (this.stopEpoch !== epoch) throw new BootCancelledError('runtime boot cancelled');
       const ev = await this.bootAttempt(plan[i], timeoutMs);
       if (ev.type === 'ready') {
         this.assetSource = plan[i];
@@ -254,6 +280,7 @@ class PyodideRunner {
     try {
       await this.ensureReady();
     } catch (e) {
+      if (e instanceof BootCancelledError) return { kind: 'stopped' };
       return { kind: 'loadError', message: e instanceof Error ? e.message : String(e) };
     }
     const last = await this.execute(
@@ -285,6 +312,7 @@ class PyodideRunner {
     try {
       await this.ensureReady();
     } catch (e) {
+      if (e instanceof BootCancelledError) return { outcome: { kind: 'stopped' }, tests: null };
       return { outcome: { kind: 'loadError', message: e instanceof Error ? e.message : String(e) }, tests: null };
     }
     const last = await this.execute({ type: 'runTests', code, tests, timeoutMs }, () => undefined, timeoutMs);
@@ -317,6 +345,7 @@ class PyodideRunner {
     try {
       await this.ensureReady();
     } catch (e) {
+      if (e instanceof BootCancelledError) return { kind: 'stopped' };
       return { kind: 'loadError', message: e instanceof Error ? e.message : String(e) };
     }
     const last = await this.execute({ type: 'trace', code, timeoutMs }, () => undefined, timeoutMs);
@@ -327,20 +356,30 @@ class PyodideRunner {
     return { kind: 'stopped' };
   }
 
-  /** User-facing Stop: terminate the worker, settle all pending as stopped. */
+  /** User-facing Stop: terminate the worker, settle all pending as stopped,
+   * and settle boot waiters so nothing awaits a boot that will never finish.
+   */
   stop(): void {
+    // Invalidate the boot ladder first: in-flight waiters settle with a
+    // cancellation signal, and bootLadder aborts on the epoch check.
+    this.stopEpoch += 1;
+    const cancel: WorkerEvent = { type: 'loadError', message: 'runtime boot cancelled' };
+    this.loadWaiters.forEach((cb) => cb(cancel));
+    this.loadWaiters.clear();
     this.terminateWorker();
     this.pending.forEach((p) => {
       clearTimeout(p.watchdog);
       p.onSettle({ type: 'stopped', id: '*' });
     });
     this.pending.clear();
-    this.loadWaiters.clear();
     this.setStatus('idle');
   }
 
   private terminateWorker(): void {
     if (this.worker) {
+      // Invalidate any events still queued from this worker BEFORE
+      // terminating, so a late message/error cannot hit the next generation.
+      this.generation += 1;
       this.worker.terminate();
       this.worker = null;
       this.everReady = false;

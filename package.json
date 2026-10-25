@@ -17,7 +17,8 @@
     "gen:coverage": "python scripts/gen_coverage.py",
     "validate:content": "python scripts/check_coverage.py && tsc --noEmit",
     "test:e2e": "playwright test --project=chromium",
-    "test:e2e:update": "playwright test --project=chromium --update-snapshots"
+    "test:e2e:update": "playwright test --project=chromium --update-snapshots",
+    "check:grading": "node --import ./scripts/register_ts_hook.mjs scripts/check_grading_parity.mts"
   },
   "dependencies": {
     "@codemirror/lang-python": "^6.2.1",

@@ -39,7 +39,7 @@ export function useTracer() {
           error: payload.error,
           stdout: payload.stdout ?? '',
         });
-        setFailed(!payload.error ? false : false);
+        setFailed(Boolean(payload.error));
       } catch {
         setFailed(true);
         setState(null);

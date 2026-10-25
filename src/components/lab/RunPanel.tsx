@@ -77,7 +77,7 @@ export function RunPanel({ code, onOutcome, compact = false, runLabel, className
           type="button"
           variant="outline"
           onClick={stop}
-          disabled={!running}
+          disabled={!loading && !running}
           className="h-11 min-h-11 gap-2 rounded-xl px-4"
           aria-label={t('common.stop')}
         >

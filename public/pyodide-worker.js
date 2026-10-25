@@ -126,7 +126,10 @@ def __pypath_trace(code, max_steps=200):
 /* ------------------------- worker state ------------------------- */
 
 let pyodide = null;
-let loading = false;
+// Single in-flight boot promise (LAB-002): a 'load' kick and any queued
+// run/runTests/trace messages await the SAME attempt — a request is never
+// silently dropped because a boot is still in progress.
+let loadPromise = null;
 let currentId = null;
 let deadline = 0;
 
@@ -134,9 +137,8 @@ function emit(msg) {
   ctx.postMessage(msg);
 }
 
-async function ensurePyodide() {
-  if (pyodide || loading) return;
-  loading = true;
+/** Boot Pyodide; rejects (after emitting loadError) on failure. */
+async function bootPyodide() {
   console.log('[pypath-worker] boot start source=' + bootSource);
   emit({ type: 'loading', phase: 'download' });
   try {
@@ -153,14 +155,10 @@ async function ensurePyodide() {
         ctx.importScripts(CDN_INDEX + 'pyodide.js');
         console.log('[pypath-worker] importScripts OK (cdn fallback)');
       } catch (e2) {
-        loading = false;
-        emit({ type: 'loadError', message: 'importScripts failed: ' + (e2 && e2.message ? e2.message : String(e2)) });
-        return;
+        throw new Error('importScripts failed: ' + (e2 && e2.message ? e2.message : String(e2)));
       }
     } else {
-      loading = false;
-      emit({ type: 'loadError', message: 'importScripts failed: ' + (e && e.message ? e.message : String(e)) });
-      return;
+      throw new Error('importScripts failed: ' + (e && e.message ? e.message : String(e)));
     }
   }
   emit({ type: 'loading', phase: 'boot' });
@@ -169,10 +167,9 @@ async function ensurePyodide() {
     pyodide = await loadPyodide({ indexURL: indexFor(bootSource) });
     console.log('[pypath-worker] loadPyodide DONE');
   } catch (e) {
+    pyodide = null;
     console.log('[pypath-worker] loadPyodide FAILED', e);
-    loading = false;
-    emit({ type: 'loadError', message: 'loadPyodide failed: ' + (e && e.message ? e.message : String(e)) });
-    return;
+    throw new Error('loadPyodide failed: ' + (e && e.message ? e.message : String(e)));
   }
   // Preload sqlite3 (vendored wheel from the pinned 0.29.5 dist, sha256-verified
   // against pyodide-lock.json) so lesson code can `import sqlite3` offline.
@@ -212,8 +209,25 @@ async function ensurePyodide() {
     },
   });
   pyodide.runPython(SETUP_PY);
-  loading = false;
   emit({ type: 'ready' });
+}
+
+/** Join or start the single boot attempt. Resolves only when Pyodide is
+ * ready; rejects (loadError already emitted once) on failure. */
+function ensurePyodide() {
+  if (pyodide) return Promise.resolve();
+  if (!loadPromise) {
+    loadPromise = bootPyodide()
+      .catch((e) => {
+        const message = (e && e.message) ? e.message : String(e);
+        emit({ type: 'loadError', message });
+        throw e;
+      })
+      .finally(() => {
+        loadPromise = null; // a later call starts a fresh boot attempt
+      });
+  }
+  return loadPromise;
 }
 
 function callHarness(fnName, args) {
@@ -235,9 +249,9 @@ ctx.addEventListener('message', (ev) => {
   // when the runner retries after a failed self-hosted boot.
   if (msg && msg.type === 'load') {
     if (msg.source === 'cdn' || msg.source === 'local') bootSource = msg.source;
-    ensurePyodide().catch((e) => {
-      emit({ type: 'loadError', message: (e && e.message) ? e.message : String(e) });
-    });
+    // loadError (if any) is already emitted inside ensurePyodide — do not
+    // double-emit here.
+    ensurePyodide().catch(() => undefined);
     return;
   }
 
@@ -245,10 +259,20 @@ ctx.addEventListener('message', (ev) => {
     try {
       await ensurePyodide();
     } catch (e) {
-      emit({ type: 'loadError', message: (e && e.message) ? e.message : String(e) });
+      // Boot failed while THIS request was waiting: answer it with a
+      // structured terminal error instead of silently dropping it (LAB-002).
+      if (msg && typeof msg.id === 'string') {
+        emit({
+          type: 'result',
+          id: msg.id,
+          ok: false,
+          repr: null,
+          error: { type: 'LoadError', message: (e && e.message) ? e.message : String(e), lineno: 0 },
+        });
+      }
       return;
     }
-    if (!pyodide) return; // loadError already emitted
+    if (!pyodide) return; // defensive: ensurePyodide resolves only when ready
     if (!msg || typeof msg.id !== 'string') return;
     if (msg.type !== 'run' && msg.type !== 'runTests' && msg.type !== 'trace') return;
 

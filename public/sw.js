@@ -7,13 +7,14 @@
  *    cache-first (immutable by nature; manifest/coverage are re-fetched in the
  *    background on every boot via the network-first shell data path).
  * The cache is versioned; stale caches are purged on activate. Bump VERSION on
- * every deploy that changes vendored assets: a cache-first entry is otherwise
- * reused forever, and a Pyodide dist mixed across versions boots Python into
+ * every deploy that changes vendored assets or /data/ JSON (manifest/coverage):
+ * a cache-first entry is otherwise reused forever, and a Pyodide dist mixed
+ * across versions boots Python into
  * "Program terminated with exit(1)". Pyodide itself lives under a
  * version-segment path (/vendor/pyodide/<version>/) as a second guard.
  * Privacy: same-origin only — nothing is sent anywhere (R-ARC-10).
  */
-const VERSION = 'pypath-v4';
+const VERSION = 'pypath-v5';
 const SHELL = `${VERSION}-shell`;
 const ASSETS = `${VERSION}-assets`;
 

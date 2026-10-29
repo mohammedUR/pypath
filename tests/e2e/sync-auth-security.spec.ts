@@ -1,0 +1,443 @@
+import { expect, test } from '@playwright/test';
+import manifestData from '../../content/manifest.json';
+import {
+  sanitizeProgressSnapshot,
+  sanitizeXpEvent,
+  computeCanonicalXp,
+  parseSafeTimestamp,
+} from '../../src/lib/sync/canonical';
+import { mergeProgressSnapshot } from '../../src/lib/sync/merge';
+import { defaultProgress } from '../../src/lib/store/progress';
+import { rateLimit } from '../../src/lib/auth/rate-limit';
+import { sameOrigin } from '../../src/lib/api/guards';
+
+/**
+ * Phase 4 security & sync integrity gates:
+ *  - SYNC-001: client-reported XP/lesson ids are never trusted — everything
+ *    is canonicalized against the 258-lesson manifest and XP is recomputed.
+ *  - SYNC-002: malformed / proto-polluted / tampered import files are
+ *    rejected or sanitized; valid exports import with full fidelity.
+ *  - AUTH-001: rate limiter enforces limits with strictly bounded memory
+ *    (periodic sweep + FIFO eviction at MAX_BUCKETS).
+ *  - AUTH-002: oversized/malformed signup payloads → 400, never 500.
+ *  - AUTH-003: cross-origin or malformed-Referer mutations → 403, never 500.
+ */
+
+const CANONICAL = new Set<string>((manifestData.lessons as Array<{ id: string }>).map((l) => l.id));
+const REAL = 'py4e.ch1.l1';
+
+/* ------------------------- SYNC-001 (unit) ------------------------- */
+
+test('SYNC-001: inflated xp + fake lesson ids are stripped; xp recomputed canonically', () => {
+  const tampered = {
+    version: 1,
+    completedLessons: [REAL, 'fake.lesson.1', REAL],
+    exerciseResults: {
+      [`${REAL}:ex1`]: { passed: true, attempts: 1, hintsUsed: 0, ts: 1 },
+      'fake.lesson.1:ex1': { passed: true, attempts: 1, hintsUsed: 0, ts: 1 },
+    },
+    xp: 999_999,
+    xpEvents: [
+      { id: `xp:${REAL}:ex1:pass`, amount: 99_999, reason: 'exerciseFirstTry', ts: 10 }, // clamp → 20
+      { id: `xp:${REAL}:complete`, amount: 30, reason: 'lessonComplete', ts: 11 }, // exact 30
+      { id: 'xp:fake.lesson.1:ex1:pass', amount: 5_000, reason: 'debug', ts: 12 }, // dropped (fake lesson)
+      { id: `xp:${REAL}:ex2:pass`, amount: 99, reason: 'quizItem', ts: 13 }, // wrong reason shape → dropped
+    ],
+    notes: { 'fake.lesson.1': 'x' },
+    lessonStarted: { 'fake.lesson.1': 5 },
+    settings: { theme: 'system', calm: false, fontScale: 100, soundOff: true, reduceMotion: false },
+  };
+  const clean = sanitizeProgressSnapshot(tampered, CANONICAL);
+  expect(clean).not.toBeNull();
+  expect(clean!.completedLessons).toEqual([REAL]); // fake stripped, deduped
+  expect(Object.keys(clean!.exerciseResults)).toEqual([`${REAL}:ex1`]);
+  expect(Object.keys(clean!.notes)).toEqual([]);
+  expect(Object.keys(clean!.lessonStarted)).toEqual([]);
+  expect(clean!.xpEvents).toHaveLength(2);
+  expect(clean!.xp).toBe(20 + 30); // canonical — never 999999
+  expect(computeCanonicalXp(clean!.xpEvents)).toBe(clean!.xp);
+});
+
+test('SYNC-001: hint-discounted legit amounts survive with full fidelity', () => {
+  const clean = sanitizeProgressSnapshot(
+    {
+      version: 1,
+      completedLessons: [REAL],
+      xpEvents: [
+        { id: `xp:${REAL}:ex1:pass`, amount: 15, reason: 'exerciseFirstTry', ts: 1 }, // 20 - 1 hint
+        { id: `xp:${REAL}:quiz:q1:pass`, amount: 5, reason: 'quizItem', ts: 2 },
+        { id: `xp:${REAL}:complete`, amount: 30, reason: 'lessonComplete', ts: 3 },
+      ],
+      settings: {},
+    },
+    CANONICAL,
+  );
+  expect(clean!.xpEvents.map((e) => e.amount)).toEqual([15, 5, 30]);
+  expect(clean!.xp).toBe(50);
+});
+
+test('SYNC-002: __proto__/constructor keys never survive sanitization', () => {
+  const clean = sanitizeProgressSnapshot(
+    {
+      completedLessons: [],
+      exerciseResults: { __proto__: { x: 1 }, constructor: { passed: true, attempts: 1, hintsUsed: 0, ts: 1 } },
+      notes: { prototype: 'x', [REAL]: 'ok' },
+      settings: {},
+    },
+    CANONICAL,
+  );
+  expect(Object.keys(clean!.exerciseResults)).toEqual([]);
+  expect(Object.keys(clean!.notes)).toEqual([REAL]);
+  const protoProbe = clean as unknown as Record<string, unknown>;
+  expect((Object.prototype as unknown as Record<string, unknown>).polluted).toBeUndefined();
+  expect(protoProbe.polluted).toBeUndefined();
+});
+
+test('SYNC-002: non-object snapshots are rejected, not crashed on', () => {
+  expect(sanitizeProgressSnapshot(null, CANONICAL)).toBeNull();
+  expect(sanitizeProgressSnapshot([], CANONICAL)).toBeNull();
+  expect(sanitizeProgressSnapshot('nope', CANONICAL)).toBeNull();
+  expect(sanitizeProgressSnapshot(42, CANONICAL)).toBeNull();
+});
+
+test('SYNC-001: xp events with bad ids / bad reasons are dropped (unit)', () => {
+  expect(sanitizeXpEvent({ id: 'xp:not-in-manifest:ex:pass', amount: 20, reason: 'exerciseFirstTry', ts: 1 }, CANONICAL)).toBeNull();
+  expect(sanitizeXpEvent({ id: 'garbage', amount: 20, reason: 'exerciseFirstTry', ts: 1 }, CANONICAL)).toBeNull();
+  expect(sanitizeXpEvent({ id: `xp:${REAL}:complete`, amount: 30, reason: 'quizItem', ts: 1 }, CANONICAL)).toBeNull();
+  expect(sanitizeXpEvent({ id: `xp:${REAL}:ex1:pass`, amount: 20, reason: 'lessonComplete', ts: 1 }, CANONICAL)).toBeNull();
+  // structural-only mode (manifest not yet hydrated) still bounds the damage
+  const bounded = sanitizeXpEvent({ id: 'xp:any.lesson:ex:pass', amount: 99_999, reason: 'exerciseFirstTry', ts: 1 }, new Set());
+  expect(bounded?.amount).toBe(20);
+});
+
+const REAL2 = 'py4e.ch1.l2';
+
+test('SYNC-001: mergeProgressSnapshot preserves valid client/server unions, drops fake IDs and invalid keys, and recomputes XP deterministically', () => {
+  const local = {
+    ...defaultProgress,
+    completedLessons: [REAL],
+    exerciseResults: {
+      [`${REAL}:ex1`]: { passed: true, attempts: 1, hintsUsed: 0, ts: 1000 },
+    },
+    xpEvents: [
+      { id: `xp:${REAL}:ex1:pass`, amount: 20, reason: 'exerciseFirstTry' as const, ts: 1000 },
+    ],
+    xp: 20,
+    notes: { [REAL]: 'local note' },
+    lessonStarted: { [REAL]: 1000 },
+  };
+
+  const remoteRaw = {
+    version: 1,
+    completedLessons: [REAL2, 'fake.lesson.404', REAL],
+    exerciseResults: {
+      [`${REAL}:ex1`]: { passed: true, attempts: 3, hintsUsed: 1, ts: 2000 },
+      [`${REAL2}:ex1`]: { passed: true, attempts: 1, hintsUsed: 0, ts: 1500 },
+      'fake.lesson.404:ex1': { passed: true, attempts: 1, hintsUsed: 0, ts: 1500 },
+      'invalid:::key': { passed: true, attempts: 1, hintsUsed: 0, ts: 1500 },
+    },
+    xp: 999_999, // tampered client-controlled XP
+    xpEvents: [
+      { id: `xp:${REAL}:ex1:pass`, amount: 20, reason: 'exerciseFirstTry', ts: 1000 }, // duplicate
+      { id: `xp:${REAL2}:ex1:pass`, amount: 99_999, reason: 'exerciseFirstTry', ts: 1500 }, // clamp to 20
+      { id: `xp:${REAL2}:complete`, amount: 30, reason: 'lessonComplete', ts: 2500 }, // 30
+      { id: 'xp:fake.lesson.404:ex1:pass', amount: 5000, reason: 'debug', ts: 3000 }, // fake lesson -> dropped
+    ],
+    notes: { [REAL]: 'longer note from remote', 'fake.lesson.404': 'fake note' },
+    lessonStarted: { [REAL]: 500, [REAL2]: 1200, 'fake.lesson.404': 100 },
+    settings: { theme: 'dark', calm: true, fontScale: 120, soundOff: true, reduceMotion: false },
+  };
+
+  const merged = mergeProgressSnapshot(local, remoteRaw, CANONICAL);
+
+  // Completed lessons: union of real lessons, fake stripped
+  expect(merged.completedLessons.sort()).toEqual([REAL, REAL2].sort());
+
+  // Exercise results: fake and invalid keys stripped, valid merged with max attempts/hints
+  expect(Object.keys(merged.exerciseResults).sort()).toEqual([`${REAL}:ex1`, `${REAL2}:ex1`].sort());
+  expect(merged.exerciseResults[`${REAL}:ex1`]).toEqual({
+    passed: true,
+    attempts: 3,
+    hintsUsed: 1,
+    ts: 2000,
+  });
+
+  // Notes: longer string wins, fake dropped
+  expect(merged.notes).toEqual({ [REAL]: 'longer note from remote' });
+
+  // Lesson started: earliest ts wins, fake dropped
+  expect(merged.lessonStarted).toEqual({ [REAL]: 500, [REAL2]: 1200 });
+
+  // Settings: local settings win per-device design
+  expect(merged.settings).toEqual(local.settings);
+
+  // XP: never 999999, exactly 20 + 20 + 30 = 70 from deduplicated ledger
+  expect(merged.xpEvents).toHaveLength(3);
+  expect(merged.xp).toBe(70);
+  expect(computeCanonicalXp(merged.xpEvents)).toBe(70);
+});
+
+test('SYNC-001: repeated sync is idempotent and never multiplies XP or duplicates completions', () => {
+  const local = {
+    ...defaultProgress,
+    completedLessons: [REAL],
+    exerciseResults: {
+      [`${REAL}:ex1`]: { passed: true, attempts: 1, hintsUsed: 0, ts: 1000 },
+    },
+    xpEvents: [
+      { id: `xp:${REAL}:ex1:pass`, amount: 20, reason: 'exerciseFirstTry' as const, ts: 1000 },
+    ],
+    xp: 20,
+  };
+
+  const remote = {
+    version: 1,
+    completedLessons: [REAL2],
+    exerciseResults: {
+      [`${REAL2}:ex1`]: { passed: true, attempts: 1, hintsUsed: 0, ts: 1500 },
+    },
+    xp: 50,
+    xpEvents: [
+      { id: `xp:${REAL2}:ex1:pass`, amount: 20, reason: 'exerciseFirstTry', ts: 1500 },
+      { id: `xp:${REAL2}:complete`, amount: 30, reason: 'lessonComplete', ts: 1600 },
+    ],
+  };
+
+  const sync1 = mergeProgressSnapshot(local, remote, CANONICAL);
+  expect(sync1.xp).toBe(70);
+  expect(sync1.completedLessons.sort()).toEqual([REAL, REAL2].sort());
+  expect(sync1.xpEvents).toHaveLength(3);
+
+  // Second sync with identical remote
+  const sync2 = mergeProgressSnapshot(sync1, remote, CANONICAL);
+  expect(sync2.xp).toBe(70);
+  expect(sync2.completedLessons.sort()).toEqual([REAL, REAL2].sort());
+  expect(sync2.xpEvents).toHaveLength(3);
+
+  // Third sync with local and remote identical
+  const sync3 = mergeProgressSnapshot(sync2, sync2, CANONICAL);
+  expect(sync3.xp).toBe(70);
+  expect(sync3.completedLessons.sort()).toEqual([REAL, REAL2].sort());
+  expect(sync3.xpEvents).toHaveLength(3);
+});
+
+test('SYNC-001: malformed dates and negative/non-finite timestamps are safely normalized or rejected', () => {
+  // Test parseSafeTimestamp directly
+  expect(parseSafeTimestamp(1000)).toBe(1000);
+  expect(parseSafeTimestamp('2026-10-28T16:00:00.000Z')).toBe(Date.parse('2026-10-28T16:00:00.000Z'));
+  expect(parseSafeTimestamp(-500)).toBeNull();
+  expect(parseSafeTimestamp(NaN)).toBeNull();
+  expect(parseSafeTimestamp(Infinity)).toBeNull();
+  expect(parseSafeTimestamp('not-a-date')).toBeNull();
+  expect(parseSafeTimestamp(null)).toBeNull();
+  expect(parseSafeTimestamp({})).toBeNull();
+
+  // Test in progress snapshot
+  const dirty = {
+    version: 1,
+    completedLessons: [REAL],
+    exerciseResults: {
+      [`${REAL}:ex1`]: { passed: true, attempts: -5, hintsUsed: 9999999, ts: -100 }, // negative ts -> dropped
+      [`${REAL}:ex2`]: { passed: true, attempts: 2, hintsUsed: 0, ts: '2026-10-28T16:00:00.000Z' }, // ISO string -> normalized
+    },
+    xpEvents: [
+      { id: `xp:${REAL}:ex1:pass`, amount: 20, reason: 'exerciseFirstTry', ts: -50 }, // negative ts -> dropped
+      { id: `xp:${REAL}:ex2:pass`, amount: 20, reason: 'exerciseFirstTry', ts: '2026-10-28T16:00:00.000Z' }, // normalized
+    ],
+    lessonStarted: {
+      [REAL]: -500, // negative -> dropped
+    },
+    settings: { fontScale: -100 },
+  };
+
+  const clean = sanitizeProgressSnapshot(dirty, CANONICAL);
+  expect(clean).not.toBeNull();
+  expect(clean!.exerciseResults[`${REAL}:ex1`]).toBeUndefined(); // dropped due to negative ts
+  expect(clean!.exerciseResults[`${REAL}:ex2`]).toBeDefined();
+  expect(typeof clean!.exerciseResults[`${REAL}:ex2`].ts).toBe('number');
+  expect(clean!.exerciseResults[`${REAL}:ex2`].ts).toBeGreaterThan(0);
+  expect(clean!.xpEvents).toHaveLength(1); // negative ts event dropped
+  expect(clean!.lessonStarted[REAL]).toBeUndefined(); // negative ts dropped
+  expect(clean!.settings.fontScale).toBe(50); // clamped to min 50
+});
+
+test('SYNC-001: mergeProgressSnapshot without canonicalLessons argument still applies structural sanitization', () => {
+  const local = { ...defaultProgress };
+  const untrustedRemote = {
+    xp: 999_999,
+    xpEvents: [
+      { id: 'xp:some.lesson:ex1:pass', amount: 99_999, reason: 'exerciseFirstTry', ts: 100 },
+    ],
+    exerciseResults: {
+      'some.lesson:ex1': { passed: true, attempts: 1, hintsUsed: 0, ts: 100 },
+    },
+  };
+
+  // Called without canonicalLessons argument (undefined)
+  const merged = mergeProgressSnapshot(local, untrustedRemote);
+  // Remote xp is ignored; amount clamped to canonical 20
+  expect(merged.xp).toBe(20);
+  expect(merged.xpEvents[0].amount).toBe(20);
+});
+
+/* ------------------------- AUTH-001 (unit) ------------------------- */
+
+test('AUTH-001: limiter blocks past the threshold and bounds memory with FIFO eviction', () => {
+  const key = `unit-a:${Date.now()}`;
+  for (let i = 0; i < 5; i++) {
+    expect(rateLimit(key, 5, 60_000).allowed, `hit ${i + 1} allowed`).toBe(true);
+  }
+  const blocked = rateLimit(key, 5, 60_000);
+  expect(blocked.allowed).toBe(false);
+  expect(blocked.retryAfterSec).toBeGreaterThan(0);
+  expect(rateLimit(`${key}-other`, 5, 60_000).allowed, 'other keys unaffected').toBe(true);
+
+  // Hard capacity: fill past MAX_BUCKETS (10_000) with fresh one-hit keys;
+  // the OLDEST keys are evicted first, so the first key becomes allowed again.
+  const firstKey = `unit-evict:first:${Date.now()}`;
+  expect(rateLimit(firstKey, 1, 60_000).allowed).toBe(true);
+  expect(rateLimit(firstKey, 1, 60_000).allowed).toBe(false); // at its limit
+  for (let i = 0; i < 10_050; i++) rateLimit(`unit-evict:fill:${Date.now()}:${i}`, 1, 60_000);
+  expect(rateLimit(firstKey, 1, 60_000).allowed, 'oldest bucket evicted under pressure').toBe(true);
+});
+
+/* ------------------------- AUTH-003 (unit) ------------------------- */
+
+test('AUTH-003: sameOrigin accepts forwarded hosts, rejects evil origins and malformed Referers', () => {
+  const mk = (headers: Record<string, string>) =>
+    new Request('http://localhost:3000/api/x', { method: 'POST', headers });
+
+  expect(sameOrigin(mk({ origin: 'https://evil.example.com' }))).toBe(false);
+  expect(sameOrigin(mk({ origin: 'http://localhost:3000' }))).toBe(true);
+  // Reverse proxy: public host arrives via x-forwarded-host.
+  expect(sameOrigin(mk({ host: 'internal:3000', 'x-forwarded-host': 'app.vercel.app', origin: 'https://app.vercel.app' }))).toBe(true);
+  // No Origin: malformed Referer fails closed, valid same-host Referer passes.
+  expect(sameOrigin(mk({ referer: 'http://[::1' }))).toBe(false);
+  expect(sameOrigin(mk({ referer: 'http://localhost:3000/some/page' }))).toBe(true);
+  expect(sameOrigin(mk({}))).toBe(true);
+});
+
+/* ------------------- AUTH-002/003 (API, dev server) ------------------- */
+
+const ORIGIN = { origin: 'http://localhost:3000' };
+
+test('AUTH-003: cross-origin mutations are rejected with 403 (never 500)', async ({ request }) => {
+  for (const path of ['/api/auth/register', '/api/progress']) {
+    const res = await request.post(path, {
+      headers: { origin: 'https://evil.example.com' },
+      data: {},
+    });
+    expect(res.status(), `${path} forged origin`).toBe(403);
+  }
+  const badReferer = await request.post('/api/auth/register', {
+    headers: { referer: 'http://[::1' },
+    data: {},
+  });
+  expect(badReferer.status(), 'malformed referer fails closed').toBe(403);
+});
+
+test('AUTH-002: oversized password and malformed bodies are 400 (never 500)', async ({ request }) => {
+  const oversize = await request.post('/api/auth/register', {
+    headers: ORIGIN,
+    data: { email: 'oversize-pw@test.local', password: 'a'.repeat(200), name: 'x' },
+  });
+  expect(oversize.status()).toBe(400);
+
+  const shortPw = await request.post('/api/auth/register', {
+    headers: ORIGIN,
+    data: { email: 'short-pw@test.local', password: 'a'.repeat(4) },
+  });
+  expect(shortPw.status()).toBe(400);
+
+  const malformed = await request.post('/api/auth/register', {
+    headers: { ...ORIGIN, 'content-type': 'application/json' },
+    data: '{not-json',
+  });
+  expect(malformed.status()).toBe(400);
+});
+
+test('AUTH-001: hammering register trips the 429 limiter (no 500s)', async ({ request }) => {
+  const statuses: number[] = [];
+  for (let i = 0; i < 14; i++) {
+    // Empty bodies: the limiter runs BEFORE parsing, so these consume the
+    // budget (400) without creating any real account.
+    const res = await request.post('/api/auth/register', { headers: ORIGIN, data: {} });
+    statuses.push(res.status());
+  }
+  expect(Math.max(...statuses), 'at least one throttled response').toBe(429);
+  expect(statuses.includes(500), 'never a 500').toBe(false);
+});
+
+/* ------------------- SYNC-002 (import flow, browser) ------------------- */
+
+function tamperedImportFile(): string {
+  return JSON.stringify({
+    app: 'pypath',
+    schemaVersion: 1,
+    exportedAt: new Date().toISOString(),
+    data: {
+      version: 1,
+      completedLessons: [REAL, 'fake.lesson.1'],
+      exerciseResults: {},
+      xpEvents: [
+        { id: `xp:${REAL}:ex1:pass`, amount: 20, reason: 'exerciseFirstTry', ts: 10 },
+        { id: `xp:${REAL}:complete`, amount: 30, reason: 'lessonComplete', ts: 11 },
+        { id: 'xp:fake.lesson.1:ex1:pass', amount: 999_999, reason: 'debug', ts: 12 },
+      ],
+      xp: 999_999,
+      notes: {},
+      lessonStarted: {},
+      settings: { theme: 'system', calm: false, fontScale: 100, soundOff: true, reduceMotion: false },
+    },
+  });
+}
+
+test('SYNC-002: tampered import file sanitizes to canonical progress (UI end-to-end)', async ({ page }) => {
+  await page.goto('/#/ar/settings');
+  await expect(page.getByRole('heading', { name: /الإعدادات|Settings/ })).toBeVisible({ timeout: 20_000 });
+  // manifest must be hydrated for canonical filtering
+  await page.waitForFunction(
+    () => fetch('/data/manifest.json').then((r) => r.ok),
+    undefined,
+    { timeout: 15_000 },
+  );
+
+  await page.setInputFiles('input[type="file"]', {
+    name: 'tampered-progress.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from(tamperedImportFile()),
+  });
+  await expect(page.getByText('استوردنا تقدّمك بنجاح.')).toBeVisible({ timeout: 15_000 });
+
+  const stored = await page.evaluate(
+    () =>
+      new Promise<{ completedLessons?: string[]; xp?: number }>((resolve, reject) => {
+        const req = indexedDB.open('pypath', 1);
+        req.onsuccess = () => {
+          const db = req.result;
+          const tx = db.transaction('pypath-progress', 'readonly');
+          const get = tx.objectStore('pypath-progress').get('progress:local');
+          get.onsuccess = () => {
+            db.close();
+            const parsed = get.result ? (JSON.parse(String(get.result)) as { state: { completedLessons: string[]; xp: number } }) : { state: { completedLessons: [], xp: 0 } };
+            resolve({ completedLessons: parsed.state.completedLessons, xp: parsed.state.xp });
+          };
+          get.onerror = () => reject(get.error);
+        };
+        req.onerror = () => reject(req.error);
+      }),
+  );
+  expect(stored.completedLessons).toEqual([REAL]); // fake id stripped
+  expect(stored.xp).toBe(50); // canonical — never 999999
+});
+
+test('SYNC-002: corrupted import file fails cleanly and keeps existing progress', async ({ page }) => {
+  await page.goto('/#/ar/settings');
+  await expect(page.getByRole('heading', { name: /الإعدادات|Settings/ })).toBeVisible({ timeout: 20_000 });
+  await page.setInputFiles('input[type="file"]', {
+    name: 'corrupt.json',
+    mimeType: 'application/json',
+    buffer: Buffer.from('{"app":"pypath","data":{"completedLessons":["fake.lesson.1"]'),
+  });
+  await expect(page.getByText('الملف غير صالح')).toBeVisible({ timeout: 15_000 });
+});

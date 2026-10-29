@@ -45,6 +45,21 @@ async function credentialsLogin(email, password) {
   return { status: res.status, sessionCookie };
 }
 
+/** Public error code of a credentials login attempt ('' when none). */
+async function loginErrorCode(email, password) {
+  const { csrfToken, cookie } = await csrf();
+  const body = new URLSearchParams({ csrfToken, email, password, redirect: 'false', json: 'true' });
+  const res = await fetch(`${BASE}/api/auth/callback/credentials`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded', cookie },
+    body: body.toString(),
+    redirect: 'manual',
+  });
+  const json = await res.json().catch(() => ({}));
+  const m = /[?&]error=([^&]+)/.exec(typeof json.url === 'string' ? json.url : '');
+  return m ? decodeURIComponent(m[1]) : '';
+}
+
 async function register(email, password, name) {
   const attempt = async () => {
     const res = await fetch(`${BASE}/api/auth/register`, {
@@ -249,6 +264,69 @@ const B = { email: `iso-b.${stamp}@pypath.test`, password: 'battery-staple-99', 
   const json = await after.json();
   check('after wipe: A progress is empty and xp=0', json.xp === 0 && json.progress?.completedLessons?.length === 0, `xp=${json.xp} lessons=${JSON.stringify(json.progress?.completedLessons ?? json)}`);
   // Re-assert from server side: check DB row through API (not pryed B)
+}
+
+/* 11. AUTH-002: login enumeration parity + bounds ---------------------- */
+{
+  // (a) Unknown email and wrong password must surface the SAME public code.
+  const unknown = await loginErrorCode(`ghost-a.${stamp}@pypath.test`, 'password-12345');
+  const wrong = await loginErrorCode(A.email, 'definitely-not-it-9');
+  check('login: unknown email and wrong password share PYBADCREDS', unknown === 'PYBADCREDS' && wrong === 'PYBADCREDS', `unknown=${unknown} wrong=${wrong}`);
+
+  // (b) Signup stores trim+lowercase email; login normalizes the same way.
+  const mixedEmail = `  MiXeD.${stamp}@PYPATH.Test  `;
+  const regMixed = await register(mixedEmail, 'normalized-pass-1', 'Norm');
+  check('register: mixed-case/space email accepted', regMixed.status === 200 && regMixed.json.ok === true, `${regMixed.status} ${JSON.stringify(regMixed.json)}`);
+  const mixedLogin = await credentialsLogin(`MIXED.${stamp}@pypath.test `, 'normalized-pass-1');
+  check('email normalization: login via normalized form works', /next-auth\.session-token/i.test(mixedLogin.sessionCookie ?? ''), mixedLogin.sessionCookie?.slice(0, 20) ?? 'none');
+
+  // (c) Password length boundary: 72 accepted end-to-end, 73 rejected on
+  // signup (400) and on login (PYINVALID, no session).
+  const pw72 = 'b'.repeat(72);
+  const reg72 = await register(`b72.${stamp}@pypath.test`, pw72, 'B72');
+  check('register: 72-char password accepted', reg72.status === 200 && reg72.json.ok === true, `${reg72.status} ${JSON.stringify(reg72.json)}`);
+  const login72 = await credentialsLogin(`b72.${stamp}@pypath.test`, pw72);
+  check('login: 72-char password works', /next-auth\.session-token/i.test(login72.sessionCookie ?? ''), login72.sessionCookie?.slice(0, 20) ?? 'none');
+  const pw73 = 'b'.repeat(73);
+  const reg73 = await register(`b73.${stamp}@pypath.test`, pw73, 'B73');
+  check('register: 73-char password rejected 400', reg73.status === 400, String(reg73.status));
+  const login73 = await loginErrorCode(`b72.${stamp}@pypath.test`, pw73);
+  check('login: 73-char password rejected PYINVALID', login73 === 'PYINVALID', login73);
+
+  // (d) >8KB signup payload rejected before parsing.
+  const huge = await fetch(`${BASE}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ email: `huge.${stamp}@pypath.test`, password: 'h'.repeat(9_000) }),
+  });
+  check('register: >8KB body rejected 400', huge.status === 400, String(huge.status));
+
+  // (e) Lock oracle: after the 5-fail lock, a WRONG password must look like
+  // an unknown email (PYBADCREDS); the RIGHT password still reports PYLOCKED.
+  const v2 = { email: `lock2.${stamp}@pypath.test`, password: 'right-password-22' };
+  await register(v2.email, v2.password, 'V2');
+  for (let i = 0; i < 5; i += 1) await credentialsLogin(v2.email, 'totally-wrong-2');
+  const wrongWhileLocked = await loginErrorCode(v2.email, 'still-wrong-99');
+  check('locked + wrong password reports PYBADCREDS (no lock oracle)', wrongWhileLocked === 'PYBADCREDS', wrongWhileLocked);
+  const rightWhileLockedCode = await loginErrorCode(v2.email, v2.password);
+  const rightWhileLockedSess = await credentialsLogin(v2.email, v2.password);
+  check('locked + right password: PYLOCKED and no session', rightWhileLockedCode === 'PYLOCKED' && !rightWhileLockedSess.sessionCookie, `${rightWhileLockedCode} ${rightWhileLockedSess.sessionCookie?.slice(0, 16) ?? 'none'}`);
+
+  // (f) Timing parity: not-found must burn the same scrypt cost as a real
+  // wrong-password check (median of 3; ratio must not collapse to ~0).
+  const medLogin = async (email, password) => {
+    const ts = [];
+    for (let i = 0; i < 3; i += 1) {
+      const t0 = performance.now();
+      await loginErrorCode(email, password);
+      ts.push(performance.now() - t0);
+    }
+    ts.sort((x, y) => x - y);
+    return ts[1];
+  };
+  const tGhost = await medLogin(`ghost-b.${stamp}@pypath.test`, 'password-12345');
+  const tWrong = await medLogin(`b72.${stamp}@pypath.test`, 'wrong-but-long-1');
+  check('login: not-found burns scrypt cost (timing parity)', tGhost >= 0.2 * tWrong, `ghost=${tGhost.toFixed(1)}ms wrong=${tWrong.toFixed(1)}ms`);
 }
 
 console.log(results.join('\n'));

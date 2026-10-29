@@ -11,7 +11,23 @@ import { mailerConfigured, sendMail } from '@/lib/mailer';
  * Creates the user + an empty cloud progress row. Success does NOT
  * auto-authenticate; the client signs in through the credentials endpoint so
  * the session is issued exactly like a normal login.
+ *
+ * AUTH-002: email/password/name bounds live in accountSchema (email ≤ 254
+ * normalized trim+lowercase; password 8..72 — the 72 cap also protects the
+ * password hash from absurd-input DoS; name trimmed ≤ 60). Duplicate emails
+ * — both the pre-check race and the concurrent P2002 unique-constraint
+ * violation — return the SAME safe 409 PYEMAILEXISTS the frontend expects;
+ * every other failure is a bare PYSERVER with no stack or DB detail leak.
  */
+
+/** Prisma unique-constraint violation detector (code P2002), typed & safe. */
+function isUniqueViolation(e: unknown): boolean {
+  return (
+    (typeof e === 'object' && e !== null && (e as { code?: unknown }).code === 'P2002') ||
+    String(e).includes('Unique constraint')
+  );
+}
+
 export async function POST(req: Request) {
   if (!sameOrigin(req)) return jsonError('PYBADORIGIN', 403);
   const ip = clientIp(req);
@@ -24,11 +40,13 @@ export async function POST(req: Request) {
   if (!parsed.success) return jsonError('PYBADBODY', 400);
   const { email, password, name } = parsed.data;
 
-  const existing = await db.user.findUnique({ where: { email }, select: { id: true } });
-  if (existing) return jsonError('PYEMAILEXISTS', 409);
-
-  const passwordHash = await hashPassword(password);
   try {
+    // Every DB/crypto failure inside this block maps to a bare public code,
+    // so no raw Prisma message or stack can reach the response body.
+    const existing = await db.user.findUnique({ where: { email }, select: { id: true } });
+    if (existing) return jsonError('PYEMAILEXISTS', 409);
+
+    const passwordHash = await hashPassword(password);
     const user = await db.user.create({
       data: { email, passwordHash, name, progress: { create: {} } },
       select: { id: true },
@@ -48,7 +66,7 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ ok: true });
   } catch (e) {
-    if (String(e).includes('Unique constraint')) return jsonError('PYEMAILEXISTS', 409);
+    if (isUniqueViolation(e)) return jsonError('PYEMAILEXISTS', 409);
     return jsonError('PYSERVER', 500);
   }
 }

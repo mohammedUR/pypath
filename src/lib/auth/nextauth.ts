@@ -14,6 +14,18 @@ export const LOCK_MINUTES = 15;
 
 type CredentialsUser = { id: string; email: string; name: string | null };
 
+/** Error codes authorize() may deliberately surface to the client. */
+const PUBLIC_AUTH_ERRORS = new Set(['PYBADCREDS', 'PYLOCKED', 'PYSERVER']);
+
+/**
+ * AUTH-002 timing equalizer: a well-formed scrypt hash (same N/r/p as real
+ * password hashes) of an unguessable constant. Running verifyPassword()
+ * against it when the email matches no account makes not-found responses
+ * burn the same scrypt cost as wrong-password responses, closing the
+ * login-timing enumeration oracle.
+ */
+const DUMMY_HASH = 'scrypt$16384$8$1$fvGbE0Qz50PmIQVRz2ruIg==$QyHA4NPYskAwwxIA5JksHW0Eyz6MaipcUFMq2ItBI9I=';
+
 export const authOptions: NextAuthOptions = {
   providers: [
     Credentials({
@@ -28,44 +40,63 @@ export const authOptions: NextAuthOptions = {
         if (!email || !password) {
           throw new Error('PYINVALID');
         }
-        const user = await db.user.findUnique({
-          where: { email },
-          select: {
-            id: true,
-            email: true,
-            name: true,
-            passwordHash: true,
-            failedLoginCount: true,
-            lockedUntil: true,
-          },
-        });
-        if (!user) {
-          throw new Error('PYBADCREDS');
+        // AUTH-002: same bounds as signup (schema.ts) — the ≤72/≥8 password
+        // cap also protects the password verifier from absurd-input DoS.
+        if (email.length > 254 || password.length > 72 || password.length < 8) {
+          throw new Error('PYINVALID');
         }
-        if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
-          throw new Error('PYLOCKED');
-        }
-        const ok = await verifyPassword(password, user.passwordHash);
-        if (!ok) {
-          const failed = user.failedLoginCount + 1;
-          const locked = failed >= MAX_FAILED_LOGINS;
-          await db.user.update({
-            where: { id: user.id },
-            data: {
-              failedLoginCount: failed,
-              ...(locked ? { lockedUntil: new Date(Date.now() + LOCK_MINUTES * 60_000) } : {}),
+        try {
+          const user = await db.user.findUnique({
+            where: { email },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              passwordHash: true,
+              failedLoginCount: true,
+              lockedUntil: true,
             },
           });
-          throw new Error(locked ? 'PYLOCKED' : 'PYBADCREDS');
+          if (!user) {
+            await verifyPassword(password, DUMMY_HASH);
+            throw new Error('PYBADCREDS');
+          }
+          // AUTH-002: verify the password BEFORE consulting the lock, so a
+          // wrong password on a locked account is indistinguishable from an
+          // unknown email; the lock state only surfaces to someone already
+          // holding the correct password.
+          const locked = user.lockedUntil !== null && user.lockedUntil.getTime() > Date.now();
+          const ok = await verifyPassword(password, user.passwordHash);
+          if (!ok) {
+            if (locked) throw new Error('PYBADCREDS');
+            const failed = user.failedLoginCount + 1;
+            const nowLocked = failed >= MAX_FAILED_LOGINS;
+            await db.user.update({
+              where: { id: user.id },
+              data: {
+                failedLoginCount: failed,
+                ...(nowLocked ? { lockedUntil: new Date(Date.now() + LOCK_MINUTES * 60_000) } : {}),
+              },
+            });
+            throw new Error(nowLocked ? 'PYLOCKED' : 'PYBADCREDS');
+          }
+          if (locked) throw new Error('PYLOCKED');
+          if (user.failedLoginCount !== 0 || user.lockedUntil) {
+            await db.user.update({
+              where: { id: user.id },
+              data: { failedLoginCount: 0, lockedUntil: null },
+            });
+          }
+          const out: CredentialsUser = { id: user.id, email: user.email, name: user.name };
+          return out;
+        } catch (e) {
+          // next-auth mirrors the thrown message verbatim into the
+          // client-facing redirect URL, so only deliberate public codes may
+          // escape; anything else (e.g. a Prisma error) collapses to
+          // PYSERVER with no internal detail leaked.
+          if (e instanceof Error && PUBLIC_AUTH_ERRORS.has(e.message)) throw e;
+          throw new Error('PYSERVER');
         }
-        if (user.failedLoginCount !== 0 || user.lockedUntil) {
-          await db.user.update({
-            where: { id: user.id },
-            data: { failedLoginCount: 0, lockedUntil: null },
-          });
-        }
-        const out: CredentialsUser = { id: user.id, email: user.email, name: user.name };
-        return out;
       },
     }),
   ],

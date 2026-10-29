@@ -9,7 +9,7 @@ import {
 import { mergeProgressSnapshot } from '../../src/lib/sync/merge';
 import { defaultProgress, useProgress } from '../../src/lib/store/progress';
 import { useManifestStore } from '../../src/lib/content/registry';
-import { rateLimit } from '../../src/lib/auth/rate-limit';
+import { rateLimit, clientIp } from '../../src/lib/auth/rate-limit';
 import { sameOrigin } from '../../src/lib/api/guards';
 
 /**
@@ -524,6 +524,42 @@ test('AUTH-001: limiter blocks past the threshold and bounds memory with FIFO ev
   expect(rateLimit(firstKey, 1, 60_000).allowed).toBe(false); // at its limit
   for (let i = 0; i < 10_050; i++) rateLimit(`unit-evict:fill:${Date.now()}:${i}`, 1, 60_000);
   expect(rateLimit(firstKey, 1, 60_000).allowed, 'oldest bucket evicted under pressure').toBe(true);
+});
+
+test('AUTH-001: hits expire with the window and the block lifts', async () => {
+  const key = `unit-expire:${Date.now()}`;
+  expect(rateLimit(key, 1, 60_000).allowed).toBe(true);
+  const blocked = rateLimit(key, 1, 60_000);
+  expect(blocked.allowed).toBe(false);
+  // Retry hint is at least 1s and bounded by the 60s window.
+  expect(blocked.retryAfterSec).toBeGreaterThanOrEqual(1);
+  expect(blocked.retryAfterSec).toBeLessThanOrEqual(60);
+
+  // Once the window slides past, expired hits are dropped and the same
+  // key is allowed again — stale hits never accumulate against a client.
+  const shortKey = `unit-expire:short:${Date.now()}`;
+  expect(rateLimit(shortKey, 1, 40).allowed).toBe(true);
+  expect(rateLimit(shortKey, 1, 40).allowed).toBe(false);
+  await new Promise((resolve) => setTimeout(resolve, 80));
+  expect(rateLimit(shortKey, 1, 40).allowed, 'window slid past → allowed again').toBe(true);
+});
+
+test('AUTH-001: clientIp validates and bounds forwarded tokens, failing back safely', () => {
+  const req = (headers: Record<string, string>) =>
+    new Request('http://localhost:3000/api/x', { method: 'POST', headers });
+
+  // First x-forwarded-for token wins; the rest of the chain is ignored.
+  expect(clientIp(req({ 'x-forwarded-for': '203.0.113.7, 10.0.0.1, 10.0.0.2' }))).toBe('203.0.113.7');
+  // Surrounding whitespace is trimmed; IPv6 (colon/hex charset) passes.
+  expect(clientIp(req({ 'x-forwarded-for': '  2001:db8::1 ' }))).toBe('2001:db8::1');
+  // Malformed first tokens (unexpected charset) are rejected, never parsed.
+  expect(clientIp(req({ 'x-forwarded-for': '1.2.3.4; rm -rf /' }))).toBe('unknown');
+  expect(clientIp(req({ 'x-forwarded-for': '<script>1.2.3.4' }))).toBe('unknown');
+  // A valid-charset but oversized token (> 64 chars) cannot become a key.
+  expect(clientIp(req({ 'x-forwarded-for': 'a'.repeat(65) }))).toBe('unknown');
+  // Fallback chain: malformed forwarded → x-real-ip → 'unknown'.
+  expect(clientIp(req({ 'x-forwarded-for': 'not an ip', 'x-real-ip': '198.51.100.9' }))).toBe('198.51.100.9');
+  expect(clientIp(req({}))).toBe('unknown');
 });
 
 /* ------------------------- AUTH-003 (unit) ------------------------- */

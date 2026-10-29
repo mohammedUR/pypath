@@ -314,6 +314,9 @@ export const loaders: Record<string, Loader> = {
   'swe.ch13.l4': () => import('../../../content/part1/swe/ch13/lesson.swe.ch13.l4'),
 };
 
+/** Canonical set of all 258 lesson IDs from the loaders registry (ADR-0005). */
+export const CANONICAL_LESSON_IDS: ReadonlySet<string> = new Set<string>(Object.keys(loaders));
+
 /** All published lesson ids in curriculum order. */
 export function allLessonIds(): string[] {
   return manifest.map((m) => m.id);

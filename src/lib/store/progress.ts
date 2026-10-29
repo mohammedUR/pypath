@@ -10,6 +10,8 @@ import {
   levelFromXp,
   type XpReason,
 } from '@/lib/gamification/config';
+import { useManifestStore, CANONICAL_LESSON_IDS } from '@/lib/content/registry';
+import { sanitizeProgressSnapshot } from '@/lib/sync/canonical';
 
 /* ------------------------------------------------------------------ */
 /* Types (ADR-0004: namespaced, versioned, local-first)                */
@@ -250,23 +252,38 @@ export const useProgress = create<ProgressStore>()(
       },
 
       importProgress: (json) => {
+        // SYNC-002: strict envelope + schema validation, canonical-id
+        // filtering, dangerous-key stripping, and deterministic XP
+        // recomputation. Invalid payloads return false and never touch the
+        // existing store; valid exports import with full fidelity.
         try {
-          const parsed = JSON.parse(json) as { app?: string; data?: Partial<ProgressState> };
-          if (parsed.app !== 'pypath' || !parsed.data) return false;
-          const d = parsed.data;
-          // dedupe WITHIN the imported file too (R-GAM-04 idempotency):
-          // passing the payload as `incoming` with an empty ledger drops
-          // internal duplicates, not just collisions with current state.
-          const { events, xp } = appendXpEvents([], d.xpEvents ?? []);
+          const parsed: unknown = JSON.parse(json);
+          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return false;
+          const envelope = parsed as { app?: unknown; schemaVersion?: unknown; data?: unknown };
+          if (envelope.app !== 'pypath') return false;
+          if (envelope.schemaVersion !== PROGRESS_SCHEMA_VERSION) return false;
+          const manifestLessons = useManifestStore.getState().manifest;
+          const canonical =
+            manifestLessons.length > 0
+              ? new Set(manifestLessons.map((m) => m.id))
+              : CANONICAL_LESSON_IDS;
+          const d = sanitizeProgressSnapshot(envelope.data, canonical);
+          if (!d) return false;
           set({
-            version: d.version ?? PROGRESS_SCHEMA_VERSION,
-            completedLessons: Array.isArray(d.completedLessons) ? d.completedLessons : [],
-            exerciseResults: d.exerciseResults ?? {},
-            xpEvents: events,
-            xp,
-            notes: d.notes ?? {},
-            lessonStarted: d.lessonStarted ?? {},
-            settings: { ...defaultProgress.settings, ...(d.settings ?? {}) },
+            version: d.version,
+            completedLessons: d.completedLessons,
+            exerciseResults: d.exerciseResults,
+            xpEvents: d.xpEvents,
+            xp: d.xp,
+            notes: d.notes,
+            lessonStarted: d.lessonStarted,
+            settings: {
+              theme: d.settings.theme,
+              calm: d.settings.calm,
+              fontScale: d.settings.fontScale,
+              soundOff: true,
+              reduceMotion: d.settings.reduceMotion,
+            },
           });
           return true;
         } catch {

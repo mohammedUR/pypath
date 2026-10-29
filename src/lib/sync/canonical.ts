@@ -149,7 +149,7 @@ export function sanitizeXpEvent(
 ): SanitizedXpEvent | null {
   const e = asObj(raw);
   const ts = parseSafeTimestamp(e.ts);
-  if (typeof e.id !== 'string' || typeof e.amount !== 'number' || ts === null) return null;
+  if (typeof e.id !== 'string' || typeof e.amount !== 'number' || !Number.isFinite(e.amount) || ts === null) return null;
   const ref = parseXpEventId(e.id);
   if (!ref) return null;
   if (canonicalLessons.size > 0 && !canonicalLessons.has(ref.lessonId)) return null;
@@ -234,7 +234,11 @@ export function sanitizeProgressSnapshot(
     if (
       typeof r.passed !== 'boolean' ||
       typeof r.attempts !== 'number' ||
+      !Number.isFinite(r.attempts) ||
+      r.attempts < 0 ||
       typeof r.hintsUsed !== 'number' ||
+      !Number.isFinite(r.hintsUsed) ||
+      r.hintsUsed < 0 ||
       ts === null
     ) {
       continue;
@@ -291,7 +295,10 @@ export function sanitizeProgressSnapshot(
     settings: {
       theme,
       calm: s.calm === true,
-      fontScale: clampInt(s.fontScale, 50, 300),
+      fontScale:
+        typeof s.fontScale === 'number' && Number.isFinite(s.fontScale)
+          ? clampInt(s.fontScale, 50, 300)
+          : 100,
       soundOff: s.soundOff !== false, // store default is true
       reduceMotion: s.reduceMotion === true,
     },

@@ -7,7 +7,8 @@ import {
   parseSafeTimestamp,
 } from '../../src/lib/sync/canonical';
 import { mergeProgressSnapshot } from '../../src/lib/sync/merge';
-import { defaultProgress } from '../../src/lib/store/progress';
+import { defaultProgress, useProgress } from '../../src/lib/store/progress';
+import { useManifestStore } from '../../src/lib/content/registry';
 import { rateLimit } from '../../src/lib/auth/rate-limit';
 import { sameOrigin } from '../../src/lib/api/guards';
 
@@ -98,6 +99,230 @@ test('SYNC-002: non-object snapshots are rejected, not crashed on', () => {
   expect(sanitizeProgressSnapshot([], CANONICAL)).toBeNull();
   expect(sanitizeProgressSnapshot('nope', CANONICAL)).toBeNull();
   expect(sanitizeProgressSnapshot(42, CANONICAL)).toBeNull();
+});
+
+test('SYNC-002: importProgress rejects malformed JSON, arrays, and primitives safely', () => {
+  expect(useProgress.getState().importProgress('{ invalid json')).toBe(false);
+  expect(useProgress.getState().importProgress('')).toBe(false);
+  expect(useProgress.getState().importProgress('null')).toBe(false);
+  expect(useProgress.getState().importProgress('true')).toBe(false);
+  expect(useProgress.getState().importProgress('42')).toBe(false);
+  expect(useProgress.getState().importProgress('"just a string"')).toBe(false);
+  expect(useProgress.getState().importProgress('[1, 2, 3]')).toBe(false);
+});
+
+test('SYNC-002: importProgress rejects invalid envelope types and non-object data safely', () => {
+  expect(useProgress.getState().importProgress(JSON.stringify({ app: 'wrong-app', schemaVersion: 1, data: {} }))).toBe(false);
+  expect(useProgress.getState().importProgress(JSON.stringify({ app: 'pypath', schemaVersion: 999, data: {} }))).toBe(false);
+  expect(useProgress.getState().importProgress(JSON.stringify({ app: 'pypath', schemaVersion: 1, data: null }))).toBe(false);
+  expect(useProgress.getState().importProgress(JSON.stringify({ app: 'pypath', schemaVersion: 1, data: 'string' }))).toBe(false);
+  expect(useProgress.getState().importProgress(JSON.stringify({ app: 'pypath', schemaVersion: 1, data: [1, 2] }))).toBe(false);
+});
+
+test('SYNC-002: importProgress strips fake IDs and non-canonical records even before manifest hydration', () => {
+  // Explicitly simulate unhydrated manifest store
+  useManifestStore.setState({ manifest: [], ready: false });
+
+  const tamperedPayload = JSON.stringify({
+    app: 'pypath',
+    schemaVersion: 1,
+    data: {
+      version: 1,
+      completedLessons: [REAL, 'fake.lesson.404', 'totally.bogus.id'],
+      exerciseResults: {
+        [`${REAL}:ex1`]: { passed: true, attempts: 2, hintsUsed: 0, ts: 100 },
+        'fake.lesson.404:ex1': { passed: true, attempts: 1, hintsUsed: 0, ts: 100 },
+      },
+      xpEvents: [
+        { id: `xp:${REAL}:ex1:pass`, amount: 20, reason: 'exerciseFirstTry', ts: 100 },
+        { id: 'xp:fake.lesson.404:ex1:pass', amount: 5000, reason: 'debug', ts: 100 },
+      ],
+      xp: 999_999,
+      notes: { [REAL]: 'real note', 'fake.lesson.404': 'fake note' },
+      lessonStarted: { [REAL]: 100, 'fake.lesson.404': 100 },
+      settings: { theme: 'system', calm: false, fontScale: 100, soundOff: true, reduceMotion: false },
+    },
+  });
+
+  const ok = useProgress.getState().importProgress(tamperedPayload);
+  expect(ok).toBe(true);
+
+  const state = useProgress.getState();
+  expect(state.completedLessons).toEqual([REAL]);
+  expect(Object.keys(state.exerciseResults)).toEqual([`${REAL}:ex1`]);
+  expect(Object.keys(state.notes)).toEqual([REAL]);
+  expect(Object.keys(state.lessonStarted)).toEqual([REAL]);
+  expect(state.xpEvents.map((e) => e.id)).toEqual([`xp:${REAL}:ex1:pass`]);
+  expect(state.xp).toBe(20);
+});
+
+test('SYNC-002: importProgress strips inflated XP and recomputes XP canonically', () => {
+  const payload = JSON.stringify({
+    app: 'pypath',
+    schemaVersion: 1,
+    data: {
+      version: 1,
+      completedLessons: [REAL],
+      exerciseResults: {
+        [`${REAL}:ex1`]: { passed: true, attempts: 1, hintsUsed: 0, ts: 100 },
+      },
+      xpEvents: [
+        { id: `xp:${REAL}:ex1:pass`, amount: 99_999, reason: 'exerciseFirstTry', ts: 100 }, // clamp to 20
+        { id: `xp:${REAL}:complete`, amount: 30, reason: 'lessonComplete', ts: 101 }, // exact 30
+      ],
+      xp: 999_999,
+      settings: { theme: 'dark', calm: true, fontScale: 110, soundOff: true, reduceMotion: false },
+    },
+  });
+
+  expect(useProgress.getState().importProgress(payload)).toBe(true);
+  const state = useProgress.getState();
+  expect(state.xpEvents).toHaveLength(2);
+  expect(state.xpEvents[0].amount).toBe(20);
+  expect(state.xpEvents[1].amount).toBe(30);
+  expect(state.xp).toBe(50);
+});
+
+test('SYNC-002: importProgress drops invalid dates, negative timestamps, and non-finite exercise/XP values', () => {
+  const payload = JSON.stringify({
+    app: 'pypath',
+    schemaVersion: 1,
+    data: {
+      version: 1,
+      completedLessons: [REAL],
+      exerciseResults: {
+        [`${REAL}:ex1`]: { passed: true, attempts: -1, hintsUsed: 0, ts: 100 }, // negative attempts -> dropped
+        [`${REAL}:ex2`]: { passed: true, attempts: 1, hintsUsed: 0, ts: -50 }, // negative ts -> dropped
+        [`${REAL}:ex3`]: { passed: true, attempts: 2, hintsUsed: 1, ts: '2026-10-28T16:00:00.000Z' }, // ISO date -> normalized
+      },
+      xpEvents: [
+        { id: `xp:${REAL}:ex1:pass`, amount: 20, reason: 'exerciseFirstTry', ts: -10 }, // negative ts -> dropped
+        { id: `xp:${REAL}:ex3:pass`, amount: 15, reason: 'exerciseFirstTry', ts: 100 },
+      ],
+      lessonStarted: {
+        [REAL]: -500, // negative ts -> dropped
+      },
+      settings: { fontScale: 150 },
+    },
+  });
+
+  expect(useProgress.getState().importProgress(payload)).toBe(true);
+  const state = useProgress.getState();
+  expect(Object.keys(state.exerciseResults)).toEqual([`${REAL}:ex3`]);
+  expect(typeof state.exerciseResults[`${REAL}:ex3`].ts).toBe('number');
+  expect(state.exerciseResults[`${REAL}:ex3`].ts).toBeGreaterThan(0);
+  expect(state.xpEvents).toHaveLength(1);
+  expect(state.xpEvents[0].id).toBe(`xp:${REAL}:ex3:pass`);
+  expect(state.lessonStarted[REAL]).toBeUndefined();
+  expect(state.settings.fontScale).toBe(150);
+});
+
+test('SYNC-002: importProgress safely handles __proto__, constructor, and prototype keys', () => {
+  const payload = JSON.stringify({
+    __proto__: { polluted: true },
+    constructor: { polluted: true },
+    app: 'pypath',
+    schemaVersion: 1,
+    data: {
+      __proto__: { polluted: true },
+      constructor: { polluted: true },
+      prototype: { polluted: true },
+      version: 1,
+      completedLessons: [REAL],
+      exerciseResults: {
+        __proto__: { passed: true, attempts: 1, hintsUsed: 0, ts: 100 },
+        constructor: { passed: true, attempts: 1, hintsUsed: 0, ts: 100 },
+        [`${REAL}:ex1`]: { passed: true, attempts: 1, hintsUsed: 0, ts: 100 },
+      },
+      notes: {
+        prototype: 'malicious',
+        [REAL]: 'valid note',
+      },
+      settings: { theme: 'system', calm: false, fontScale: 100, soundOff: true, reduceMotion: false },
+    },
+  });
+
+  expect(useProgress.getState().importProgress(payload)).toBe(true);
+  const state = useProgress.getState();
+  expect((Object.prototype as unknown as Record<string, unknown>).polluted).toBeUndefined();
+  expect(Object.keys(state.exerciseResults)).toEqual([`${REAL}:ex1`]);
+  expect(Object.keys(state.notes)).toEqual([REAL]);
+});
+
+test('SYNC-002: failed import never modifies or partially overwrites existing valid progress', () => {
+  // Set up known valid state
+  useProgress.setState({
+    ...defaultProgress,
+    completedLessons: [REAL],
+    xp: 20,
+    xpEvents: [{ id: `xp:${REAL}:ex1:pass`, amount: 20, reason: 'exerciseFirstTry', ts: 100 }],
+    notes: { [REAL]: 'original note' },
+    settings: { ...defaultProgress.settings, theme: 'dark', fontScale: 125 },
+  });
+
+  const snapshotBefore = { ...useProgress.getState() };
+
+  // Attempt invalid imports
+  expect(useProgress.getState().importProgress('{ broken json')).toBe(false);
+  expect(useProgress.getState().importProgress('{"app":"unknown"}')).toBe(false);
+  expect(useProgress.getState().importProgress('{"app":"pypath","schemaVersion":1,"data":null}')).toBe(false);
+  expect(useProgress.getState().importProgress('{"app":"pypath","schemaVersion":1,"data":[]}')).toBe(false);
+
+  const stateAfter = useProgress.getState();
+  expect(stateAfter.completedLessons).toEqual(snapshotBefore.completedLessons);
+  expect(stateAfter.xp).toBe(snapshotBefore.xp);
+  expect(stateAfter.xpEvents).toEqual(snapshotBefore.xpEvents);
+  expect(stateAfter.notes).toEqual(snapshotBefore.notes);
+  expect(stateAfter.settings).toEqual(snapshotBefore.settings);
+});
+
+test('SYNC-002: valid export and import round-trips with full fidelity', () => {
+  const initial = {
+    ...defaultProgress,
+    completedLessons: [REAL, REAL2],
+    exerciseResults: {
+      [`${REAL}:ex1`]: { passed: true, attempts: 3, hintsUsed: 1, ts: 1000 },
+      [`${REAL2}:ex1`]: { passed: true, attempts: 1, hintsUsed: 0, ts: 2000 },
+    },
+    xpEvents: [
+      { id: `xp:${REAL}:ex1:pass`, amount: 15, reason: 'exerciseFirstTry' as const, ts: 1000 },
+      { id: `xp:${REAL}:complete`, amount: 30, reason: 'lessonComplete' as const, ts: 1500 },
+      { id: `xp:${REAL2}:ex1:pass`, amount: 20, reason: 'exerciseFirstTry' as const, ts: 2000 },
+    ],
+    xp: 65,
+    notes: { [REAL]: 'my reflection note', [REAL2]: 'second reflection' },
+    lessonStarted: { [REAL]: 500, [REAL2]: 1800 },
+    settings: {
+      theme: 'sepia' as const,
+      calm: true,
+      fontScale: 135,
+      soundOff: true as const,
+      reduceMotion: true,
+    },
+  };
+
+  useProgress.setState(initial);
+  const exportedJson = useProgress.getState().exportProgress();
+  expect(typeof exportedJson).toBe('string');
+
+  // Reset store to default
+  useProgress.setState({ ...defaultProgress });
+  expect(useProgress.getState().completedLessons).toEqual([]);
+  expect(useProgress.getState().xp).toBe(0);
+
+  // Import the exported progress
+  const ok = useProgress.getState().importProgress(exportedJson);
+  expect(ok).toBe(true);
+
+  const restored = useProgress.getState();
+  expect(restored.version).toBe(initial.version);
+  expect(restored.completedLessons.sort()).toEqual(initial.completedLessons.sort());
+  expect(restored.exerciseResults).toEqual(initial.exerciseResults);
+  expect(restored.xpEvents).toEqual(initial.xpEvents);
+  expect(restored.xp).toBe(65);
+  expect(restored.notes).toEqual(initial.notes);
+  expect(restored.lessonStarted).toEqual(initial.lessonStarted);
+  expect(restored.settings).toEqual(initial.settings);
 });
 
 test('SYNC-001: xp events with bad ids / bad reasons are dropped (unit)', () => {

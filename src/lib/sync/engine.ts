@@ -9,6 +9,7 @@ import {
 } from '@/lib/store/progress';
 import { useCertification, type CertificationState } from '@/lib/store/certification';
 import { useAccount } from '@/lib/store/account';
+import { useManifestStore } from '@/lib/content/registry';
 import { mergeProgressSnapshot, mergeCertification } from './merge';
 import { progressBodySchema } from './schema';
 import type { SyncStatus } from './types';
@@ -57,6 +58,14 @@ let busyCycle = false;
 
 function setSync(patch: { status?: SyncStatus; lastSyncedAt?: number }) {
   useSyncStore.getState().set(patch);
+}
+
+/**
+ * Canonical lesson ids from the hydrated manifest (SYNC-001). Empty until the
+ * manifest lands — merge then degrades to structural sanitizing only.
+ */
+function canonicalLessonIds(): ReadonlySet<string> {
+  return new Set(useManifestStore.getState().manifest.map((m) => m.id));
 }
 
 /* ------------------------------------------------------------------ */
@@ -189,7 +198,7 @@ async function fullCycle(initial: boolean): Promise<void> {
     const remote = normalizeRemote(await res.json());
     if (!remote) throw new Error('bad payload');
 
-    const merged = mergeProgressSnapshot(localProgress(), remote.progress);
+    const merged = mergeProgressSnapshot(localProgress(), remote.progress, canonicalLessonIds());
     applyProgressSnapshot(merged);
 
     const certBefore = useCertification.getState();

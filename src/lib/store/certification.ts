@@ -7,6 +7,12 @@
  */
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { CAPSTONE_ARTIFACT_IDS, CAPSTONE_RUBRIC_IDS } from '@/lib/cert/capstone';
+
+// The canonical IDs live in the server-safe lib/cert/capstone (server code
+// cannot read values out of a 'use client' module); re-exported here so
+// client consumers keep their existing import path.
+export { CAPSTONE_ARTIFACT_IDS, CAPSTONE_RUBRIC_IDS } from '@/lib/cert/capstone';
 
 export interface ExamAttempt {
   ts: number;
@@ -44,27 +50,12 @@ export const CAPSTONE_ARTIFACTS_TOTAL = 6;
 export const CAPSTONE_RUBRIC_MAX = 15; // 5 criteria × 0..3
 
 /**
- * Canonical Capstone requirement IDs (CAP-001). Readiness and the
- * certification gate count ONLY these — unknown/duplicate/forged keys in
- * persisted state never contribute (a `.length >= 6` over raw store values
- * used to accept fake ids like a1..a6).
+ * Canonical Capstone requirement IDs (CAP-001) are defined in the server-safe
+ * lib/cert/capstone and re-exported above; readiness and the certification
+ * gate count ONLY these — unknown/duplicate/forged keys in persisted state
+ * never contribute (a `.length >= 6` over raw store values used to accept
+ * fake ids like a1..a6).
  */
-export const CAPSTONE_ARTIFACT_IDS = [
-  'proposal',
-  'skeletal',
-  'viable',
-  'tests',
-  'readme',
-  'final',
-] as const;
-
-export const CAPSTONE_RUBRIC_IDS = [
-  'requirements',
-  'quality',
-  'testing',
-  'delivery',
-  'reflection',
-] as const;
 
 /** Count ONLY canonical artifacts that are explicitly checked. */
 export function capstoneArtifactsDone(artifacts: Record<string, boolean>): number {

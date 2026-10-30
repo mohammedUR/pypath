@@ -582,6 +582,14 @@ test('AUTH-003: sameOrigin accepts forwarded hosts, rejects evil origins and mal
 
 const ORIGIN = { origin: 'http://localhost:3000' };
 
+/**
+ * Dedicated limiter IPs (TEST-NET-3) for the register tests that consume the
+ * AUTH-001 budget: the limiter keys on clientIp, so without isolation these
+ * requests would share the 'unknown' bucket with accounts-sync.spec.ts's
+ * browser-driven registrations in a single full-suite run.
+ */
+const RATE_TEST_IP = { auth002: '203.0.113.78', hammer: '203.0.113.77' };
+
 test('AUTH-003: cross-origin mutations are rejected with 403 (never 500)', async ({ request }) => {
   for (const path of ['/api/auth/register', '/api/progress']) {
     const res = await request.post(path, {
@@ -598,20 +606,21 @@ test('AUTH-003: cross-origin mutations are rejected with 403 (never 500)', async
 });
 
 test('AUTH-002: oversized password and malformed bodies are 400 (never 500)', async ({ request }) => {
+  const headers = { ...ORIGIN, 'x-forwarded-for': RATE_TEST_IP.auth002 };
   const oversize = await request.post('/api/auth/register', {
-    headers: ORIGIN,
+    headers,
     data: { email: 'oversize-pw@test.local', password: 'a'.repeat(200), name: 'x' },
   });
   expect(oversize.status()).toBe(400);
 
   const shortPw = await request.post('/api/auth/register', {
-    headers: ORIGIN,
+    headers,
     data: { email: 'short-pw@test.local', password: 'a'.repeat(4) },
   });
   expect(shortPw.status()).toBe(400);
 
   const malformed = await request.post('/api/auth/register', {
-    headers: { ...ORIGIN, 'content-type': 'application/json' },
+    headers: { ...headers, 'content-type': 'application/json' },
     data: '{not-json',
   });
   expect(malformed.status()).toBe(400);
@@ -621,8 +630,12 @@ test('AUTH-001: hammering register trips the 429 limiter (no 500s)', async ({ re
   const statuses: number[] = [];
   for (let i = 0; i < 14; i++) {
     // Empty bodies: the limiter runs BEFORE parsing, so these consume the
-    // budget (400) without creating any real account.
-    const res = await request.post('/api/auth/register', { headers: ORIGIN, data: {} });
+    // budget (400) without creating any real account. The dedicated test IP
+    // starts from a fresh bucket: 10 × 400 then 4 × 429, deterministically.
+    const res = await request.post('/api/auth/register', {
+      headers: { ...ORIGIN, 'x-forwarded-for': RATE_TEST_IP.hammer },
+      data: {},
+    });
     statuses.push(res.status());
   }
   expect(Math.max(...statuses), 'at least one throttled response').toBe(429);

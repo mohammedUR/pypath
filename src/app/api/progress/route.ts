@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { requireSession } from '@/lib/auth/session';
 import { progressBodySchema } from '@/lib/sync/schema';
+import { sanitizeProgressSnapshot, sanitizeXpEvent, sanitizeCertificationSnapshot } from '@/lib/sync/canonical';
+import { rateLimit, clientIp } from '@/lib/auth/rate-limit';
 import { jsonError, readJson, sameOrigin } from '@/lib/api/guards';
+import manifestData from '../../../../content/manifest.json';
 
 /**
  * Progress sync — the ONLY cloud store for learning progress.
@@ -15,9 +18,20 @@ import { jsonError, readJson, sameOrigin } from '@/lib/api/guards';
  *
  * Identity always comes from the session — the body cannot name a userId.
  * XP is never trusted from a snapshot: the ledger (XpEvent) is the source.
+ *
+ * SYNC-001 (server side): every stored field is canonicalized against the
+ * 258-lesson manifest baked in below — fake lesson/exercise ids are dropped
+ * before persistence, and XP event amounts are forced into the platform's
+ * canonical envelope, so a tampered client can never inflate cloud XP.
+ * AUTH-001/003: POST/DELETE are same-origin enforced and rate limited.
  */
 
 const MAX_BODY = 2 * 1024 * 1024;
+
+/** Canonical lesson ids from the committed manifest (258 entries). */
+const CANONICAL_LESSONS = new Set<string>(
+  (manifestData.lessons as Array<{ id: string }>).map((l) => l.id),
+);
 
 interface SnapshotRow {
   updatedAt: Date;
@@ -79,11 +93,23 @@ export async function POST(req: Request) {
   const me = await requireSession();
   if (!me) return jsonError('PYANON', 401);
 
+  // AUTH-001: per-account write throttle (sync pushes are debounced client
+  // side; 60/min is far above any legitimate cadence).
+  const rl = rateLimit(`prog:${me.id}`, 60, 60_000);
+  if (!rl.allowed) return jsonError('PYRATELIMIT', 429, { retryAfterSec: rl.retryAfterSec });
+
   const body = await readJson(req, MAX_BODY);
   if (!body) return jsonError('PYBADBODY', 400);
   const parsed = progressBodySchema.safeParse(body);
   if (!parsed.success) return jsonError('PYBADFIELD', 400);
-  const { base, progress, certification, newXpEvents } = parsed.data;
+  const { base, certification, newXpEvents } = parsed.data;
+
+  // SYNC-001: canonicalize BEFORE persisting — fake ids dropped, amounts
+  // forced into the canonical XP envelope, dangerous record keys stripped.
+  const progress = sanitizeProgressSnapshot(parsed.data.progress, CANONICAL_LESSONS);
+  if (!progress) return jsonError('PYBADFIELD', 400);
+  const certSanitized =
+    certification !== undefined ? sanitizeCertificationSnapshot(certification) : undefined;
 
   const current = await db.progress.findUnique({ where: { userId: me.id } });
 
@@ -99,7 +125,7 @@ export async function POST(req: Request) {
     notes: progress.notes,
     lessonStarted: progress.lessonStarted,
     settings: progress.settings,
-    ...(certification !== undefined ? { certification } : {}),
+    ...(certSanitized !== null && certification !== undefined ? { certification: certSanitized } : {}),
   };
 
   await db.progress.upsert({
@@ -110,16 +136,23 @@ export async function POST(req: Request) {
 
   if (newXpEvents && newXpEvents.length) {
     // (userId, id) is the client's idempotency key — replays dedupe here.
-    await db.xpEvent.createMany({
-      data: newXpEvents.map((e) => ({
-        userId: me.id,
-        id: e.id,
-        amount: e.amount,
-        reason: e.reason,
-        ts: new Date(e.ts),
-      })),
-      skipDuplicates: true,
-    });
+    // Only canonical events (valid id shape + canonical lesson + reason
+    // consistency) reach the ledger, with clamped amounts.
+    const sanitizedEvents = newXpEvents
+      .map((e) => sanitizeXpEvent(e, CANONICAL_LESSONS))
+      .filter((e): e is NonNullable<typeof e> => e !== null);
+    if (sanitizedEvents.length) {
+      await db.xpEvent.createMany({
+        data: sanitizedEvents.map((e) => ({
+          userId: me.id,
+          id: e.id,
+          amount: e.amount,
+          reason: e.reason,
+          ts: new Date(e.ts),
+        })),
+        skipDuplicates: true,
+      });
+    }
   }
 
   // Return authoritative state (authoritative XP derived from the ledger).
@@ -141,9 +174,12 @@ export async function POST(req: Request) {
   });
 }
 
-export async function DELETE() {
+export async function DELETE(req: Request) {
+  if (!sameOrigin(req)) return jsonError('PYBADORIGIN', 403);
   const me = await requireSession();
   if (!me) return jsonError('PYANON', 401);
+  const rl = rateLimit(`prog-del:${me.id}:${clientIp(req)}`, 10, 60_000);
+  if (!rl.allowed) return jsonError('PYRATELIMIT', 429, { retryAfterSec: rl.retryAfterSec });
   await db.progress.delete({ where: { userId: me.id } }).catch(() => undefined);
   await db.xpEvent.deleteMany({ where: { userId: me.id } });
   return NextResponse.json({ ok: true });

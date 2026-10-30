@@ -25,10 +25,13 @@ import {
   HINT_XP_FLOOR,
   type XpReason,
 } from '@/lib/gamification/config';
+// Server-safe home for the canonical Capstone IDs — importing them from the
+// 'use client' certification store throws on the server (client references
+// are not iterable), which 500s the /api/progress write path.
 import {
   CAPSTONE_ARTIFACT_IDS,
   CAPSTONE_RUBRIC_IDS,
-} from '@/lib/store/certification';
+} from '@/lib/cert/capstone';
 
 const LESSON_ID_MAX = 140;
 const LESSON_ID_RE = /^[A-Za-z0-9._:-]{1,140}$/;
